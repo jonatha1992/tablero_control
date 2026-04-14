@@ -1,0 +1,169 @@
+'use client';
+
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import type { Task, TaskStatus, TaskPriority } from '@/types';
+
+interface TaskDetailModalProps {
+  task: Task | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUpdate: (updates: Partial<Task>) => void;
+}
+
+export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDetailModalProps) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+
+  if (!task) return null;
+
+  const handleSave = () => {
+    onUpdate({ title, description });
+    setEditing(false);
+  };
+
+  const handleStatusChange = (newStatus: TaskStatus) => {
+    onUpdate({ status: newStatus });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          {editing ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full text-xl font-bold bg-transparent border-b border-input pb-2 focus:outline-none"
+                defaultValue={task.title}
+              />
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full text-sm bg-transparent border border-input rounded p-2 focus:outline-none"
+                rows={3}
+                defaultValue={task.description}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleSave}>Guardar</Button>
+                <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <DialogTitle className="text-xl">{task.title}</DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => {
+                setTitle(task.title);
+                setDescription(task.description);
+                setEditing(true);
+              }}>
+                Editar
+              </Button>
+            </div>
+          )}
+        </DialogHeader>
+
+        {/* Status & Priority */}
+        <div className="flex flex-wrap gap-3 py-3 border-y">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Estado</p>
+            <select
+              value={task.status}
+              onChange={(e) => handleStatusChange(e.target.value as TaskStatus)}
+              className="h-8 rounded border border-input bg-background px-2 text-sm"
+            >
+              <option value="backlog">Backlog</option>
+              <option value="todo">Por hacer</option>
+              <option value="in_progress">En progreso</option>
+              <option value="in_review">En revisión</option>
+              <option value="done">Completada</option>
+              <option value="blocked">Bloqueada</option>
+            </select>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
+            <select
+              value={task.priority}
+              onChange={(e) => onUpdate({ priority: e.target.value as TaskPriority })}
+              className="h-8 rounded border border-input bg-background px-2 text-sm"
+            >
+              <option value="low">Baja</option>
+              <option value="medium">Media</option>
+              <option value="high">Alta</option>
+              <option value="urgent">Urgente</option>
+            </select>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Tipo</p>
+            <Badge variant="secondary">{task.type}</Badge>
+          </div>
+
+          {task.dueDate && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
+              <p className="text-sm">
+                {new Date(task.dueDate).toLocaleDateString('es', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Tags */}
+        {task.tags && task.tags.length > 0 && (
+          <div className="py-3 border-b">
+            <p className="text-xs text-muted-foreground mb-2">Tags</p>
+            <div className="flex flex-wrap gap-1">
+              {task.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Subtasks */}
+        {task.subtaskIds && task.subtaskIds.length > 0 && (
+          <div className="py-3 border-b">
+            <p className="text-xs text-muted-foreground mb-2">Subtareas</p>
+            <div className="space-y-1">
+              {task.subtaskIds.map((subtask, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" className="rounded" />
+                  <span>Subtarea {i + 1}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Meta info */}
+        <div className="pt-3 text-xs text-muted-foreground space-y-1">
+          <p>Creada: {new Date(task.createdAt).toLocaleString('es')}</p>
+          <p>Última actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
+          {task.completedDate && (
+            <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

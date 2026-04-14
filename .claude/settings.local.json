@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls E:/tablero_control/*.md E:/tablero_control/.agent-*.md)",
+      "WebFetch(domain:www.aitmpl.com)",
+      "WebFetch(domain:docs.aitmpl.com)",
+      "Bash(npx claude-code-templates@latest --help)",
+      "Bash(npx claude-code-templates@latest --list-agents)",
+      "Bash(npx claude-code-templates@latest:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Read(//c/Users/PC-ASUS/AppData/Roaming/npm/node_modules/**)",
+      "Read(//c/Users/PC-ASUS/AppData/Local/npm-cache/_npx/**)",
+      "Read(//c/Users/PC-ASUS/.vscode-insiders/extensions/qwenlm.qwen-code-vscode-ide-companion-0.14.4-win32-x64/dist/qwen-cli/**)",
+      "Read(//c/Users/PC-ASUS/.vscode-insiders/extensions/qwenlm.qwen-code-vscode-ide-companion-0.14.4-win32-x64/dist/qwen-cli/bundled/qc-helper/docs/configuration/**)",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/agents\")",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/skills\")",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/commands\")",
+      "Bash(cp E:/tablero_control/.claude/agents/*.md \"C:/Users/PC-ASUS/.claude/agents/\")",
+      "Bash(cp E:/tablero_control/.claude/commands/*.md \"C:/Users/PC-ASUS/.claude/commands/\")"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+'use client';
+
+import { initializeApp, getApp, getApps } from 'firebase/app';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDfdKHelBDB1N5sA_nQ5cQMDe93MAU8WjY',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'gestordetrabajo.firebaseapp.com',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gestordetrabajo',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'gestordetrabajo.firebasestorage.app',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '478008899800',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:478008899800:web:a5618898a550dff9f67fad',
+};
+
+// Initialize Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Initialize services
+const auth = getAuth(app);
+auth.languageCode = 'es';
+
+const db = getFirestore(app);
+const storage = getStorage(app);
+const functions = getFunctions(app);
+
+// Connect to emulators in development (set NEXT_PUBLIC_USE_EMULATOR=true in .env.local)
+const useEmulators = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+
+if (typeof window !== 'undefined' && useEmulators) {
+  connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectStorageEmulator(storage, 'localhost', 9199);
+  connectFunctionsEmulator(functions, 'localhost', 5001);
+}
+
+export { app, auth, db, storage, functions, useEmulators };
