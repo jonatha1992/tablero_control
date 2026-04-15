@@ -12,13 +12,8 @@
       "WebFetch(domain:api.github.com)",
       "Read(//c/Users/PC-ASUS/AppData/Roaming/npm/node_modules/**)",
       "Read(//c/Users/PC-ASUS/AppData/Local/npm-cache/_npx/**)",
-      "Read(//c/Users/PC-ASUS/.vscode-insiders/extensions/qwenlm.qwen-code-vscode-ide-companion-0.14.4-win32-x64/dist/qwen-cli/**)",
-      "Read(//c/Users/PC-ASUS/.vscode-insiders/extensions/qwenlm.qwen-code-vscode-ide-companion-0.14.4-win32-x64/dist/qwen-cli/bundled/qc-helper/docs/configuration/**)",
-      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/agents\")",
-      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/skills\")",
-      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/commands\")",
-      "Bash(cp E:/tablero_control/.claude/agents/*.md \"C:/Users/PC-ASUS/.claude/agents/\")",
-      "Bash(cp E:/tablero_control/.claude/commands/*.md \"C:/Users/PC-ASUS/.claude/commands/\")"
+      "Read(//c/Users/PC-ASUS/.claude/**)",
+      "Read(//c/Users/PC-ASUS/.claude/projects/**)"
     ]
   }
 }
