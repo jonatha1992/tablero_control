@@ -6,7 +6,6 @@ vi.mock('@/lib/firebase/client', () => ({
   app: {},
   auth: {},
   db: {},
-  storage: {},
   functions: {},
   useEmulators: true,
 }));

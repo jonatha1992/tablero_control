@@ -13,7 +13,20 @@
       "Read(//c/Users/PC-ASUS/AppData/Roaming/npm/node_modules/**)",
       "Read(//c/Users/PC-ASUS/AppData/Local/npm-cache/_npx/**)",
       "Read(//c/Users/PC-ASUS/.claude/**)",
-      "Read(//c/Users/PC-ASUS/.claude/projects/**)"
+      "Read(//c/Users/PC-ASUS/.claude/projects/**)",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.claude/hooks\")",
+      "Bash(cp \"E:/tablero_control/.claude/hooks/auto-git-add.json\" \"C:/Users/PC-ASUS/.claude/hooks/\")",
+      "Bash(cp \"E:/tablero_control/.claude/hooks/conventional-commits.json\" \"C:/Users/PC-ASUS/.claude/hooks/\")",
+      "Bash(cp \"E:/tablero_control/.claude/hooks/conventional-commits.py\" \"C:/Users/PC-ASUS/.claude/hooks/\")",
+      "Bash(cp \"E:/tablero_control/.claude/hooks/smart-commit.json\" \"C:/Users/PC-ASUS/.claude/hooks/\")",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.qwen/skills/fix\")",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.qwen/skills/review\")",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.qwen/skills/nueva-feature\")",
+      "Bash(mkdir -p \"C:/Users/PC-ASUS/.qwen/skills/test-feature\")",
+      "Bash(ls \"E:/tablero_control/\"*.md)",
+      "Bash(ls \"E:/tablero_control/\"*.env* \"E:/tablero_control/.env\"*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
