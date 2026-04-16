@@ -3,7 +3,6 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 const firebaseConfig = {
@@ -23,7 +22,6 @@ const auth = getAuth(app);
 auth.languageCode = 'es';
 
 const db = getFirestore(app);
-const storage = getStorage(app);
 const functions = getFunctions(app);
 
 // Connect to emulators in development (set NEXT_PUBLIC_USE_EMULATOR=true in .env.local)
@@ -32,8 +30,7 @@ const useEmulators = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
 if (typeof window !== 'undefined' && useEmulators) {
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8080);
-  connectStorageEmulator(storage, 'localhost', 9199);
   connectFunctionsEmulator(functions, 'localhost', 5001);
 }
 
-export { app, auth, db, storage, functions, useEmulators };
+export { app, auth, db, functions, useEmulators };

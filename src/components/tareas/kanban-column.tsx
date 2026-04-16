@@ -11,9 +11,10 @@ interface KanbanColumnProps {
   tasks: Task[];
   onCardClick: (task: Task) => void;
   onPriorityChange: (taskId: string, priority: TaskPriority) => void;
+  onAddClick: () => void;
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onAddClick }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
@@ -26,12 +27,12 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: K
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col w-72 shrink-0 rounded-lg border bg-muted/30 transition-colors',
+        'flex flex-col w-64 shrink-0 rounded-lg border bg-muted/30 transition-colors',
         isOver && 'bg-primary/5 border-primary/30'
       )}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between p-3 border-b">
+      <div className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
           <div className={cn('h-3 w-3 rounded-full', {
             'bg-gray-400': status === 'backlog',
@@ -46,13 +47,16 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: K
             {tasks.length}
           </span>
         </div>
-        <button className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all">
+        <button 
+          onClick={onAddClick}
+          className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all"
+        >
           <Plus className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
 
       {/* Tasks list */}
-      <div className="flex flex-col gap-2 p-2 overflow-y-auto flex-1 min-h-[200px]">
+      <div className="flex flex-col gap-2 p-1.5 overflow-y-auto flex-1 min-h-[200px]">
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
             <p>Sin tareas</p>

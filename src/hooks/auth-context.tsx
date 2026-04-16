@@ -2,11 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/client';
+import { auth } from '@/lib/firebase/client';
+import { authService } from '@/services/auth.service';
 import type { User, UserRole } from '@/types';
 import { ROLE_LEVEL } from '@/types';
-import { logout } from '@/lib/firebase/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -32,24 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
-        // Fetch user document from Firestore
-        const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
+        const profile = await authService.getUserProfile(fbUser.uid);
+        if (profile) {
           setUser({
-            id: fbUser.uid,
-            name: data.name,
-            email: data.email,
-            role: data.role,
-            businessId: data.businessId,
-            locationId: data.locationId,
-            avatar: data.avatar,
-            phone: data.phone,
-            teamIds: data.teamIds || [],
-            preferences: data.preferences || {},
-            isActive: data.isActive ?? true,
-            createdAt: data.createdAt?.toDate?.() || new Date(),
-            updatedAt: data.updatedAt?.toDate?.() || new Date(),
+            ...profile,
+            avatar: profile.avatar || fbUser.photoURL || undefined,
           });
         }
       } else {
@@ -63,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await logout();
+    await authService.logout();
     setUser(null);
     setFirebaseUser(null);
   };

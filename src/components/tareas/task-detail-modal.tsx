@@ -9,30 +9,39 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import { useUpdateTask } from '@/hooks/mutations/use-update-task';
+import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 
 interface TaskDetailModalProps {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdate: (updates: Partial<Task>) => void;
 }
 
-export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
+  const updateTask = useUpdateTask();
+  const moveTask = useMoveTask();
+
   if (!task) return null;
 
   const handleSave = () => {
-    onUpdate({ title, description });
-    setEditing(false);
+    updateTask.mutate(
+      { id: task.id, data: { title, description } },
+      { onSuccess: () => setEditing(false) }
+    );
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
-    onUpdate({ status: newStatus });
+    moveTask.mutate({ taskId: task.id, newStatus });
+  };
+
+  const handlePriorityChange = (priority: TaskPriority) => {
+    updateTask.mutate({ id: task.id, data: { priority } });
   };
 
   return (
@@ -46,18 +55,20 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full text-xl font-bold bg-transparent border-b border-input pb-2 focus:outline-none"
-                defaultValue={task.title}
               />
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full text-sm bg-transparent border border-input rounded p-2 focus:outline-none"
                 rows={3}
-                defaultValue={task.description}
               />
               <div className="flex gap-2">
-                <Button size="sm" onClick={handleSave}>Guardar</Button>
-                <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+                <Button size="sm" onClick={handleSave} disabled={updateTask.isPending}>
+                  {updateTask.isPending ? 'Guardando...' : 'Guardar'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+                  Cancelar
+                </Button>
               </div>
             </div>
           ) : (
@@ -66,11 +77,15 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
                 <DialogTitle className="text-xl">{task.title}</DialogTitle>
                 <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => {
-                setTitle(task.title);
-                setDescription(task.description);
-                setEditing(true);
-              }}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setTitle(task.title);
+                  setDescription(task.description);
+                  setEditing(true);
+                }}
+              >
                 Editar
               </Button>
             </div>
@@ -99,7 +114,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
             <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
             <select
               value={task.priority}
-              onChange={(e) => onUpdate({ priority: e.target.value as TaskPriority })}
+              onChange={(e) => handlePriorityChange(e.target.value as TaskPriority)}
               className="h-8 rounded border border-input bg-background px-2 text-sm"
             >
               <option value="low">Baja</option>
@@ -129,27 +144,14 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
         </div>
 
         {/* Tags */}
-        {task.tags && task.tags.length > 0 && (
+        {task.tags?.length > 0 && (
           <div className="py-3 border-b">
             <p className="text-xs text-muted-foreground mb-2">Tags</p>
             <div className="flex flex-wrap gap-1">
               {task.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Subtasks */}
-        {task.subtaskIds && task.subtaskIds.length > 0 && (
-          <div className="py-3 border-b">
-            <p className="text-xs text-muted-foreground mb-2">Subtareas</p>
-            <div className="space-y-1">
-              {task.subtaskIds.map((subtask, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" className="rounded" />
-                  <span>Subtarea {i + 1}</span>
-                </div>
+                <Badge key={tag} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
               ))}
             </div>
           </div>
@@ -158,7 +160,7 @@ export function TaskDetailModal({ task, open, onOpenChange, onUpdate }: TaskDeta
         {/* Meta info */}
         <div className="pt-3 text-xs text-muted-foreground space-y-1">
           <p>Creada: {new Date(task.createdAt).toLocaleString('es')}</p>
-          <p>Última actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
+          <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && (
             <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>
           )}

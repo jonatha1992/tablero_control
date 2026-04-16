@@ -18,16 +18,20 @@ import {
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/tareas', label: 'Tareas', icon: CheckSquare },
-  { href: '/calendario', label: 'Calendario', icon: Calendar },
-  { href: '/reportes', label: 'Reportes', icon: BarChart3 },
-  { href: '/equipo', label: 'Equipo', icon: Users },
-  { href: '/config', label: 'Configuración', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare },
+  { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar },
+  { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
+  { href: '/dashboard/equipo', label: 'Equipo', icon: Users },
+  { href: '/dashboard/config', label: 'Configuración', icon: Settings },
 ];
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  collapsed: boolean;
+  onCollapse: (val: boolean) => void;
+}
+
+export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
@@ -55,7 +59,7 @@ export function Sidebar() {
           variant="ghost"
           size="icon"
           className="hidden lg:flex"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => onCollapse(!collapsed)}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
@@ -124,15 +128,15 @@ export function Sidebar() {
 
       {/* Desktop sidebar */}
       <aside className={cn(
-        'fixed inset-y-0 left-0 z-30 hidden border-r bg-card lg:block',
-        collapsed ? 'w-16' : 'w-64'
+        'fixed inset-y-0 left-0 z-30 hidden border-r bg-card lg:block transition-all duration-300 ease-in-out',
+        collapsed ? 'w-16' : 'w-56'
       )}>
         {sidebarContent}
       </aside>
 
       {/* Mobile sidebar */}
       {mobileOpen && (
-        <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r bg-card lg:hidden">
+        <aside className="fixed inset-y-0 left-0 z-50 w-56 border-r bg-card lg:hidden">
           {sidebarContent}
         </aside>
       )}

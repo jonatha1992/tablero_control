@@ -9,15 +9,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
+import { useCreateTask } from '@/hooks/mutations/use-create-task';
+import type { TaskStatus, TaskPriority, TaskType } from '@/types';
 
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (task: Task) => void;
 }
 
-export function CreateTaskModal({ open, onOpenChange, onCreate }: CreateTaskModalProps) {
+export function CreateTaskModal({ open, onOpenChange }: CreateTaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('todo');
@@ -26,34 +26,35 @@ export function CreateTaskModal({ open, onOpenChange, onCreate }: CreateTaskModa
   const [tags, setTags] = useState('');
   const [dueDate, setDueDate] = useState('');
 
+  const createTask = useCreateTask();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title,
-      description,
-      status,
-      priority,
-      type,
-      assigneeIds: [],
-      creatorId: 'current-user',
-      tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-      dueDate: dueDate ? new Date(dueDate) : undefined,
-      subtaskIds: [],
-      attachmentUrls: [],
-      commentCount: 0,
-      position: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    onCreate(newTask);
-    onOpenChange(false);
-    setTitle('');
-    setDescription('');
-    setTags('');
-    setDueDate('');
+    createTask.mutate(
+      {
+        title,
+        description,
+        status,
+        priority,
+        type,
+        assigneeIds: [],
+        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+      },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          setTitle('');
+          setDescription('');
+          setTags('');
+          setDueDate('');
+          setStatus('todo');
+          setPriority('medium');
+          setType('task');
+        },
+      }
+    );
   };
 
   return (
@@ -145,7 +146,7 @@ export function CreateTaskModal({ open, onOpenChange, onCreate }: CreateTaskModa
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">Tags (separados por coma)</label>
+              <label className="text-sm font-medium mb-1 block">Tags (coma)</label>
               <input
                 type="text"
                 value={tags}
@@ -160,8 +161,8 @@ export function CreateTaskModal({ open, onOpenChange, onCreate }: CreateTaskModa
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!title}>
-              Crear tarea
+            <Button type="submit" disabled={!title || createTask.isPending}>
+              {createTask.isPending ? 'Creando...' : 'Crear tarea'}
             </Button>
           </DialogFooter>
         </form>
