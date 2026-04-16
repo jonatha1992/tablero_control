@@ -21,7 +21,12 @@ export class FirebaseTaskRepository implements ITaskRepository {
   }
 
   async findAll(businessId: string, filters?: TaskFilters, sort?: TaskSort): Promise<Task[]> {
-    const constraints: QueryConstraint[] = [where('businessId', '==', businessId)];
+    const constraints: QueryConstraint[] = [];
+    
+    // Superadmin bypass: si es 'all', no filtramos por businessId
+    if (businessId !== 'all') {
+      constraints.push(where('businessId', '==', businessId));
+    }
 
     if (filters?.status?.length) {
       constraints.push(where('status', 'in', filters.status));
@@ -46,10 +51,15 @@ export class FirebaseTaskRepository implements ITaskRepository {
     pageSize: number,
     filters?: TaskFilters
   ): Promise<PaginatedResponse<Task>> {
+    const paginationFilters: any = { ...filters };
+    if (businessId !== 'all') {
+      paginationFilters.businessId = businessId;
+    }
+    
     return getPaginated<Task>(COLLECTION, {
       page,
       pageSize,
-      filters: { businessId, ...filters },
+      filters: paginationFilters,
     });
   }
 

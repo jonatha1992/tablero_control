@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
+import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
+import { Trash } from 'lucide-react';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -26,6 +28,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
+  const deleteTask = useDeleteTask();
 
   if (!task) return null;
 
@@ -38,6 +41,14 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   const handleStatusChange = (newStatus: TaskStatus) => {
     moveTask.mutate({ taskId: task.id, newStatus });
+  };
+
+  const handleDelete = () => {
+    if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
+      deleteTask.mutate(task.id, {
+        onSuccess: () => onOpenChange(false),
+      });
+    }
   };
 
   const handlePriorityChange = (priority: TaskPriority) => {
@@ -77,17 +88,22 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <DialogTitle className="text-xl">{task.title}</DialogTitle>
                 <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setTitle(task.title);
-                  setDescription(task.description);
-                  setEditing(true);
-                }}
-              >
-                Editar
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setTitle(task.title);
+                    setDescription(task.description);
+                    setEditing(true);
+                  }}
+                >
+                  Editar
+                </Button>
+                <Button size="icon" variant="destructive" className="h-9 w-9" onClick={handleDelete} disabled={deleteTask.isPending}>
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </DialogHeader>

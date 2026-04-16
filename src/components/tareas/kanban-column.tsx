@@ -27,12 +27,12 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col w-64 shrink-0 rounded-lg border bg-muted/30 transition-colors',
+        'flex flex-col w-[260px] min-w-[260px] max-w-[260px] shrink-0 rounded-md border bg-muted/30 transition-colors',
         isOver && 'bg-primary/5 border-primary/30'
       )}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between p-2 border-b">
+      <div className="flex items-center justify-between p-1.5 border-b">
         <div className="flex items-center gap-2">
           <div className={cn('h-3 w-3 rounded-full', {
             'bg-gray-400': status === 'backlog',

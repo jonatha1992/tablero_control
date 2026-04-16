@@ -33,6 +33,10 @@ export class AuthService {
   async getUserProfile(uid: string): Promise<User | null> {
     return userRepository.findById(uid);
   }
+
+  async updateUserProfile(uid: string, data: Partial<User>): Promise<User> {
+    return userRepository.update(uid, data);
+  }
 }
 
 export const authService = new AuthService();

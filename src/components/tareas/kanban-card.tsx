@@ -92,7 +92,7 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onClick }: 
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative rounded-md border border-border border-l-4 bg-card p-2 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing',
+        'group relative rounded-md border border-border border-l-4 bg-card p-1.5 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing',
         priorityConfig.border,
         isDragging && 'opacity-50 rotate-2',
         task.priority === 'urgent' && 'animate-pulse-slow'
