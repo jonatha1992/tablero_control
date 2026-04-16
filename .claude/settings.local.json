@@ -26,7 +26,15 @@
       "Bash(ls \"E:/tablero_control/\"*.md)",
       "Bash(ls \"E:/tablero_control/\"*.env* \"E:/tablero_control/.env\"*)",
       "Bash(npm install:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(firebase projects:list)",
+      "Bash(firebase firestore:databases:create \"\\(default\\)\" --location southamerica-east1 --project gestordetrabajo)",
+      "Bash(firebase firestore:databases:list --project gestordetrabajo)",
+      "Bash(firebase firestore:databases:get \"\\(default\\)\" --project gestordetrabajo)",
+      "Bash(firebase deploy *)",
+      "Bash(xargs wc *)",
+      "Bash(find \"E:/tablero_control/src\" -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec dirname {} \\\\;)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
     ]
   }
 }

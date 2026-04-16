@@ -65,7 +65,7 @@ describe('Utils', () => {
 
   describe('TASK_STATUS_LABELS', () => {
     it('has labels for all statuses', () => {
-      const statuses = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'];
+      const statuses = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'] as const;
       for (const status of statuses) {
         expect(TASK_STATUS_LABELS[status]).toBeDefined();
         expect(typeof TASK_STATUS_LABELS[status]).toBe('string');
@@ -75,7 +75,7 @@ describe('Utils', () => {
 
   describe('TASK_PRIORITY_LABELS', () => {
     it('has labels for all priorities', () => {
-      const priorities = ['low', 'medium', 'high', 'urgent'];
+      const priorities = ['low', 'medium', 'high', 'urgent'] as const;
       for (const priority of priorities) {
         expect(TASK_PRIORITY_LABELS[priority]).toBeDefined();
       }

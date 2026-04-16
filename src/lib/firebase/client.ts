@@ -9,6 +9,7 @@ const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDfdKHelBDB1N5sA_nQ5cQMDe93MAU8WjY',
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'gestordetrabajo.firebaseapp.com',
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gestordetrabajo',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'gestordetrabajo.firebasestorage.app',
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '478008899800',
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:478008899800:web:a5618898a550dff9f67fad',
 };

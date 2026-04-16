@@ -26,12 +26,12 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: K
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col w-72 shrink-0 rounded-lg border bg-muted/30 transition-colors',
+        'flex flex-col w-64 shrink-0 rounded-lg border bg-muted/30 transition-colors',
         isOver && 'bg-primary/5 border-primary/30'
       )}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between p-3 border-b">
+      <div className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
           <div className={cn('h-3 w-3 rounded-full', {
             'bg-gray-400': status === 'backlog',
@@ -52,7 +52,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: K
       </div>
 
       {/* Tasks list */}
-      <div className="flex flex-col gap-2 p-2 overflow-y-auto flex-1 min-h-[200px]">
+      <div className="flex flex-col gap-2 p-1.5 overflow-y-auto flex-1 min-h-[200px]">
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
             <p>Sin tareas</p>

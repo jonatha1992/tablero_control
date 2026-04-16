@@ -1,0 +1,31 @@
+import type { TaskStatus, TaskPriority, TaskType } from '../domain/task';
+
+export interface CreateTaskDTO {
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  type: TaskType;
+  assigneeIds: string[];
+  projectId?: string;
+  locationId?: string;
+  tags: string[];
+  dueDate?: Date;
+  estimatedHours?: number;
+}
+
+export type UpdateTaskDTO = Partial<CreateTaskDTO> & {
+  completedDate?: Date;
+  actualHours?: number;
+  position?: number;
+};
+
+export interface MoveTaskDTO {
+  taskId: string;
+  newStatus: TaskStatus;
+  position?: number;
+}
+
+export interface ReorderKanbanDTO {
+  moves: { id: string; status: TaskStatus; position: number }[];
+}

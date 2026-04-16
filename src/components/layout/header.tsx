@@ -2,7 +2,7 @@
 
 import { Bell, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getInitials, stringToColor, ROLE_LABELS, ROLE_COLORS } from '@/lib/utils';
 import { useAuth } from '@/hooks/auth-context';
@@ -22,10 +22,10 @@ export function Header({ userName, notificationCount = 0 }: HeaderProps) {
   const roleColors = ROLE_COLORS;
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-card px-4 lg:px-6">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-card px-4 lg:px-6">
       {/* Left: Title */}
       <div className="hidden items-center gap-4 lg:flex lg:pl-16">
-        <h1 className="text-lg font-semibold">Tablero de Control</h1>
+        <h1 className="text-base font-semibold">Tablero de Control</h1>
         {role && (
           <Badge className={roleColors[role]}>
             {roleLabels[role]}
@@ -40,7 +40,7 @@ export function Header({ userName, notificationCount = 0 }: HeaderProps) {
           <input
             type="text"
             placeholder="Buscar tareas, proyectos..."
-            className="h-10 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
       </div>
@@ -57,7 +57,8 @@ export function Header({ userName, notificationCount = 0 }: HeaderProps) {
         </Button>
 
         <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-7 w-7">
+            {user?.avatar && <AvatarImage src={user.avatar} alt={displayName} />}
             <AvatarFallback style={{ backgroundColor: avatarColor, color: 'white' }}>
               {initials}
             </AvatarFallback>
