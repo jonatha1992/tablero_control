@@ -18,7 +18,6 @@ import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
 import { TaskDetailModal } from './task-detail-modal';
-import { CreateTaskModal } from './create-task-modal';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
@@ -41,7 +40,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     clearDrag,
     setFilters,
     openCreateModal,
-    closeCreateModal,
     openTaskDetail,
     closeTaskDetail,
   } = useKanbanUIStore();
@@ -198,6 +196,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               tasks={columns[column]}
               onCardClick={(task) => openTaskDetail(task.id)}
               onPriorityChange={handlePriorityChange}
+              onAddClick={openCreateModal}
             />
           ))}
         </div>
@@ -221,11 +220,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         task={selectedTask}
         open={isDetailModalOpen}
         onOpenChange={(open) => { if (!open) closeTaskDetail(); }}
-      />
-
-      <CreateTaskModal
-        open={isCreateModalOpen}
-        onOpenChange={(open) => { if (!open) closeCreateModal(); }}
       />
     </div>
   );

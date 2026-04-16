@@ -11,9 +11,10 @@ interface KanbanColumnProps {
   tasks: Task[];
   onCardClick: (task: Task) => void;
   onPriorityChange: (taskId: string, priority: TaskPriority) => void;
+  onAddClick: () => void;
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onAddClick }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
@@ -46,7 +47,10 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange }: K
             {tasks.length}
           </span>
         </div>
-        <button className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all">
+        <button 
+          onClick={onAddClick}
+          className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all"
+        >
           <Plus className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
