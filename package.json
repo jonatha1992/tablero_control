@@ -15,6 +15,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx src/test/seed.ts",
+    "seed:superadmin": "tsx scripts/seed-superadmin.ts",
     "seed:export": "firebase emulators:export ./firestore-seed",
     "test": "vitest",
     "test:ui": "vitest --ui",

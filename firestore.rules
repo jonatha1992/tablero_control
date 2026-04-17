@@ -1,109 +1,135 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function getUserData() {
+
+    // ---------- Helpers ----------
+    function isAuthenticated() { return request.auth != null; }
+
+    // Claims preferidos (seteados por Admin SDK). Fallback a users/{uid} si no existen.
+    function claimRole() { return request.auth.token.role; }
+    function claimBusiness() { return request.auth.token.businessId; }
+
+    function userData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
+
     function getRole() {
-      return getUserData().role;
+      return claimRole() != null ? claimRole() : userData().role;
     }
-    
-    function isSuperAdmin() {
-      return isAuthenticated() && getRole() == 'superadmin';
+
+    function getBusinessId() {
+      return claimBusiness() != null ? claimBusiness() : userData().businessId;
     }
-    
-    function isAdmin() {
-      return isAuthenticated() && (getRole() == 'superadmin' || getRole() == 'admin');
+
+    function isSuperAdmin() { return isAuthenticated() && getRole() == 'superadmin'; }
+    function isAdmin()      { return isAuthenticated() && (getRole() == 'superadmin' || getRole() == 'admin'); }
+    function isResponsable(){ return isAuthenticated() && (getRole() == 'superadmin' || getRole() == 'admin' || getRole() == 'responsable'); }
+    function isOwner(userId){ return request.auth.uid == userId; }
+
+    function sameTenant(businessId) {
+      return isSuperAdmin() || (businessId != null && getBusinessId() == businessId);
     }
-    
-    function isResponsable() {
-      return isAuthenticated() && (getRole() == 'superadmin' || getRole() == 'admin' || getRole() == 'responsable');
+
+    function isActiveBusiness(businessId) {
+      let b = get(/databases/$(database)/documents/businesses/$(businessId)).data;
+      return b.status == 'active' || b.status == 'trial';
     }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
+
     function isAssignedToTask(taskId) {
       let task = get(/databases/$(database)/documents/tasks/$(taskId)).data;
       return request.auth.uid in task.assigneeIds;
     }
-    
-    // Businesses (multi-tenant)
+
+    // ---------- Businesses ----------
     match /businesses/{businessId} {
-      allow read: if isAuthenticated() && (isSuperAdmin() || getUserData().businessId == businessId);
+      allow read:   if isAuthenticated() && sameTenant(businessId);
       allow create: if isSuperAdmin();
-      allow update: if isSuperAdmin() || (isAdmin() && getUserData().businessId == businessId);
+      allow update: if isSuperAdmin() || (isAdmin() && sameTenant(businessId));
       allow delete: if isSuperAdmin();
+
+      // Subcolección de roles custom
+      match /roles/{roleId} {
+        allow read:   if isAuthenticated() && sameTenant(businessId);
+        allow create: if isAdmin() && sameTenant(businessId);
+        allow update: if isAdmin() && sameTenant(businessId) && resource.data.isSystem == false;
+        allow delete: if isAdmin() && sameTenant(businessId) && resource.data.isSystem == false;
+      }
     }
-    
-    // Users
+
+    // ---------- Users ----------
     match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isSuperAdmin() || isAdmin());
-      allow create: if isSuperAdmin() || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isSuperAdmin() || isAdmin();
+      allow read:   if isAuthenticated() && (isOwner(userId) || isSuperAdmin() || (isAdmin() && sameTenant(resource.data.businessId)));
+      allow create: if isSuperAdmin() || (isAdmin() && sameTenant(request.resource.data.businessId));
+      allow update: if isOwner(userId) || isSuperAdmin() || (isAdmin() && sameTenant(resource.data.businessId));
+      allow delete: if isSuperAdmin() || (isAdmin() && sameTenant(resource.data.businessId));
     }
-    
-    // Teams
+
+    // ---------- Teams / Locations / Projects ----------
     match /teams/{teamId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isResponsable();
-      allow delete: if isAdmin();
+      allow read:   if isAuthenticated() && sameTenant(resource.data.businessId);
+      allow create: if isAdmin() && sameTenant(request.resource.data.businessId) && isActiveBusiness(request.resource.data.businessId);
+      allow update: if isResponsable() && sameTenant(resource.data.businessId);
+      allow delete: if isAdmin() && sameTenant(resource.data.businessId);
     }
-    
-    // Locations
+
     match /locations/{locationId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isResponsable();
-      allow delete: if isAdmin();
+      allow read:   if isAuthenticated() && sameTenant(resource.data.businessId);
+      allow create: if isAdmin() && sameTenant(request.resource.data.businessId) && isActiveBusiness(request.resource.data.businessId);
+      allow update: if isResponsable() && sameTenant(resource.data.businessId);
+      allow delete: if isAdmin() && sameTenant(resource.data.businessId);
     }
-    
-    // Tasks
-    match /tasks/{taskId} {
-      allow read: if isAuthenticated();
-      allow create: if isResponsable();
-      allow update: if isResponsable() || isAssignedToTask(taskId);
-      allow delete: if isResponsable();
-    }
-    
-    // Projects
+
     match /projects/{projectId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isResponsable();
-      allow delete: if isAdmin();
+      allow read:   if isAuthenticated() && sameTenant(resource.data.businessId);
+      allow create: if isAdmin() && sameTenant(request.resource.data.businessId) && isActiveBusiness(request.resource.data.businessId);
+      allow update: if isResponsable() && sameTenant(resource.data.businessId);
+      allow delete: if isAdmin() && sameTenant(resource.data.businessId);
     }
-    
-    // Reports (read-only for most users)
+
+    // ---------- Tasks ----------
+    match /tasks/{taskId} {
+      allow read:   if isAuthenticated() && sameTenant(resource.data.businessId);
+      allow create: if isResponsable() && sameTenant(request.resource.data.businessId) && isActiveBusiness(request.resource.data.businessId);
+      allow update: if sameTenant(resource.data.businessId) && (isResponsable() || isAssignedToTask(taskId));
+      allow delete: if isResponsable() && sameTenant(resource.data.businessId);
+    }
+
+    // ---------- Reports / Alerts ----------
     match /reports/{reportId} {
-      allow read: if isAuthenticated();
-      allow create: if isResponsable();
-      allow update: if false; // Reports are immutable
-      allow delete: if isAdmin();
+      allow read:   if isAuthenticated() && sameTenant(resource.data.businessId);
+      allow create: if isResponsable() && sameTenant(request.resource.data.businessId);
+      allow update: if false;
+      allow delete: if isAdmin() && sameTenant(resource.data.businessId);
     }
-    
-    // Alerts
+
     match /alerts/{alertId} {
-      allow read: if isAuthenticated();
-      allow create: if isResponsable();
-      allow update: if isResponsable(); // Resolve alerts
-      allow delete: if isAdmin();
+      allow read:   if isAuthenticated() && sameTenant(resource.data.businessId);
+      allow create: if isResponsable() && sameTenant(request.resource.data.businessId);
+      allow update: if isResponsable() && sameTenant(resource.data.businessId);
+      allow delete: if isAdmin() && sameTenant(resource.data.businessId);
     }
-    
-    // Agent logs (read-only)
+
+    // ---------- Subscriptions (server-write only) ----------
+    match /subscriptions/{subscriptionId} {
+      allow read:   if isSuperAdmin() || (isAdmin() && sameTenant(resource.data.businessId));
+      allow write:  if false; // solo Admin SDK (webhook MP / API routes)
+
+      match /invoices/{invoiceId} {
+        allow read:  if isSuperAdmin() || (isAdmin() && sameTenant(resource.data.businessId));
+        allow write: if false;
+      }
+    }
+
+    // ---------- Audit logs (server-write only) ----------
+    match /auditLogs/{logId} {
+      allow read:  if isSuperAdmin() || (isAdmin() && sameTenant(resource.data.businessId));
+      allow write: if false;
+    }
+
+    // ---------- Agent logs ----------
     match /agentLogs/{logId} {
-      allow read: if isResponsable();
-      allow write: if false; // Only system writes
+      allow read:  if isResponsable();
+      allow write: if false;
     }
   }
 }

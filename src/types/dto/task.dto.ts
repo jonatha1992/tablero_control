@@ -18,6 +18,9 @@ export type UpdateTaskDTO = Partial<CreateTaskDTO> & {
   completedDate?: Date;
   actualHours?: number;
   position?: number;
+  attachmentUrls?: string[];
+  title?: string;
+  description?: string;
 };
 
 export interface MoveTaskDTO {

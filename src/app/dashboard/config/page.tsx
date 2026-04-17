@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Smartphone, Camera } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 import { uploadUserAvatar } from '@/lib/firebase/storage';
 import { authService } from '@/services/auth.service';
 
@@ -52,6 +53,14 @@ export default function ConfigPage() {
           <TabsTrigger value="notificaciones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
             <Bell className="h-4 w-4 mr-2" /> Notificaciones
           </TabsTrigger>
+          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+            <Link
+              href="/dashboard/config/roles"
+              className="flex items-center gap-2 px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ShieldCheck className="h-4 w-4" /> Roles y permisos
+            </Link>
+          )}
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">

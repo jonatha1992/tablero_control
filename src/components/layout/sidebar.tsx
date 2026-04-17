@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar },
   { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/dashboard/equipo', label: 'Equipo', icon: Users },
+  { href: '/dashboard/billing', label: 'Facturación', icon: CreditCard },
   { href: '/dashboard/config', label: 'Configuración', icon: Settings },
 ];
 
