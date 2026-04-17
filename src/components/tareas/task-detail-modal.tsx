@@ -13,7 +13,8 @@ import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
-import { Trash } from 'lucide-react';
+import { Trash, Paperclip } from 'lucide-react';
+import { TaskAttachments } from './task-attachments';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -172,6 +173,14 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </div>
           </div>
         )}
+
+        {/* Adjuntos */}
+        <div className="py-3 border-b">
+          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+            <Paperclip className="h-3.5 w-3.5" /> Adjuntos
+          </p>
+          <TaskAttachments task={task} />
+        </div>
 
         {/* Meta info */}
         <div className="pt-3 text-xs text-muted-foreground space-y-1">

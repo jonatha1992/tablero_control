@@ -39,7 +39,7 @@ const USERS = [
   // TecnoFusión - Dueños del sistema
   {
     uid: 'superadmin-001',
-    email: 'admin@tecnofusion.it',
+    email: 'tecnofusion.it@gmail.com',
     password: 'superadmin123',
     name: 'TecnoFusión Admin',
     role: 'superadmin' as const,
@@ -397,9 +397,11 @@ async function main() {
     await setDoc(doc(db, 'businesses', 'business-001'), {
       name: 'Mi Negocio Demo',
       plan: 'pro',
+      status: 'active',
       adminId: 'admin-001',
       locationIds: ['local-001', 'local-002', 'sector-001'],
       teamIds: ['team-dev', 'team-design'],
+      featureFlags: { canExportReports: true },
       settings: {
         maxLocations: 20,
         maxUsers: 50,
@@ -409,6 +411,29 @@ async function main() {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+
+    // Roles del sistema para business-001
+    console.log('\n🛡️ Creating system roles...');
+    const SYSTEM_ROLES = [
+      { id: 'role-admin',       name: 'Admin',       slug: 'admin',       baseRole: 'responsable', color: '#6366f1', isSystem: true, isActive: true },
+      { id: 'role-responsable', name: 'Responsable', slug: 'responsable', baseRole: 'responsable', color: '#8b5cf6', isSystem: true, isActive: true },
+      { id: 'role-miembro',     name: 'Miembro',     slug: 'miembro',     baseRole: 'miembro',     color: '#22c55e', isSystem: true, isActive: true },
+      { id: 'role-viewer',      name: 'Viewer',      slug: 'viewer',      baseRole: 'viewer',      color: '#64748b', isSystem: true, isActive: true },
+    ];
+    for (const r of SYSTEM_ROLES) {
+      await setDoc(doc(db, 'businesses', 'business-001', 'roles', r.id), {
+        ...r,
+        businessId: 'business-001',
+        description: '',
+        scope: { type: 'business' },
+        permissions: {},
+        userCount: 0,
+        createdBy: 'system',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      console.log(`  ✅ ${r.name}`);
+    }
     console.log('  ✅ Mi Negocio Demo [pro]');
 
     // Seed locations
@@ -433,7 +458,7 @@ async function main() {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('✅ Seed completed successfully!');
     console.log('\n📧 Test credentials:');
-    console.log('  SuperAdmin: admin@tecnofusion.it / superadmin123');
+    console.log('  SuperAdmin: tecnofusion.it@gmail.com / superadmin123');
     console.log('  Admin:      admin@negocio.com / admin123');
     console.log('  Responsable: resp-local1@negocio.com / resp123');
     console.log('  Miembro:    ana@negocio.com / ana123');

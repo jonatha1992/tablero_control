@@ -34,7 +34,22 @@
       "Bash(firebase deploy *)",
       "Bash(xargs wc *)",
       "Bash(find \"E:/tablero_control/src\" -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec dirname {} \\\\;)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(echo \"PID: $!\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s -X GET http://localhost:3000/api/superadmin/metrics -H \"Content-Type: application/json\")",
+      "Bash(curl -s -X GET http://localhost:3000/api/superadmin/businesses -H \"Content-Type: application/json\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/mercadopago/webhook -H \"Content-Type: application/json\" -d '{\"type\":\"test\",\"data\":{\"id\":\"123\"}}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/mercadopago/preapproval -H \"Content-Type: application/json\" -d '{\"plan\":\"pro\",\"businessId\":\"test\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/superadmin)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/billing)",
+      "Bash(cp businesses/\\\\[id\\\\]/page.tsx superadmin/businesses/tmp/)",
+      "Bash(mkdir -p superadmin/businesses/\\\\[id\\\\])",
+      "Bash(mv superadmin/businesses/tmp/page.tsx superadmin/businesses/\\\\[id\\\\]/page.tsx)",
+      "Bash(rm -rf page.tsx businesses/page.tsx businesses/\\\\[id\\\\] users/page.tsx subscriptions/page.tsx audit/page.tsx)",
+      "Bash(rmdir businesses *)"
     ]
   }
 }
