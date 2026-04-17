@@ -1,13 +1,15 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { User } from '@/types/domain/user';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { CreateUserModal } from '@/components/equipo/create-user-modal';
 
 async function fetchAllUsers(): Promise<User[]> {
   const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc')));
@@ -16,6 +18,8 @@ async function fetchAllUsers(): Promise<User[]> {
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const queryClient = useQueryClient();
   const { data = [], isLoading } = useQuery({ queryKey: ['sa-users'], queryFn: fetchAllUsers });
 
   const filtered = data.filter(
@@ -27,9 +31,15 @@ export default function UsersPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Usuarios</h1>
-        <p className="text-muted-foreground text-sm">Todos los usuarios de la plataforma (solo lectura).</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Usuarios</h1>
+          <p className="text-muted-foreground text-sm">Todos los usuarios de la plataforma.</p>
+        </div>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <UserPlus className="mr-1.5 h-4 w-4" />
+          Crear usuario
+        </Button>
       </div>
 
       <input
@@ -82,6 +92,15 @@ export default function UsersPage() {
           </table>
         </div>
       )}
+
+      <CreateUserModal
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+          queryClient.invalidateQueries({ queryKey: ['sa-users'] });
+        }}
+        isSuperAdmin
+      />
     </div>
   );
 }

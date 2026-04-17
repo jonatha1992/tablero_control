@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import type { CustomRole } from '@/types/domain/custom-role';
 import { validateCustomRole } from '@/lib/permissions/validate-role';
 
@@ -14,12 +15,13 @@ type SaveRoleArgs = Omit<CustomRole, 'id' | 'createdAt' | 'updatedAt' | 'userCou
 export function useSaveRole() {
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { data: business } = useBusinessQuery(user?.businessId);
 
   return useMutation({
     mutationFn: async (role: SaveRoleArgs) => {
       if (!user?.businessId) throw new Error('Sin business');
-      const plan = 'pro'; // TODO: leer del business; por ahora usamos pro como valor permisivo
-      const errors = validateCustomRole(role, plan as 'pro');
+      const plan = business?.plan ?? 'free';
+      const errors = validateCustomRole(role, plan);
       if (errors.length > 0) throw new Error(errors.map((e) => e.message).join(', '));
 
       const colRef = collection(db, 'businesses', user.businessId, 'roles');

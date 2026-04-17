@@ -4,14 +4,13 @@ import { Users, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MemberCard } from '@/components/equipo/member-card';
-import { InviteMemberModal } from '@/components/equipo/invite-member-modal';
+import { CreateUserModal } from '@/components/equipo/create-user-modal';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
-import { useInviteMember } from '@/hooks/mutations/use-invite-member';
 import { useRemoveMember } from '@/hooks/mutations/use-update-member';
 import { useTeamUIStore } from '@/stores/team-ui.store';
+import { useAuth } from '@/hooks/auth-context';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types/domain/user';
-import type { InviteMemberDTO } from '@/types/dto/team.dto';
 
 const ROLE_TABS: { value: UserRole | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -25,8 +24,8 @@ export default function EquipoPage() {
   const { searchQuery, roleFilter, isInviteModalOpen, setSearchQuery, setRoleFilter, openInviteModal, closeInviteModal } =
     useTeamUIStore();
 
+  const { user } = useAuth();
   const { data: members = [], isLoading } = useMembersQuery();
-  const inviteMember = useInviteMember();
   const removeMember = useRemoveMember();
 
   const filtered = members.filter((m) => {
@@ -37,10 +36,6 @@ export default function EquipoPage() {
   });
 
   const activeCount = members.filter((m) => m.isActive).length;
-
-  function handleInvite(dto: InviteMemberDTO) {
-    inviteMember.mutate(dto);
-  }
 
   return (
     <div className="space-y-4">
@@ -106,10 +101,10 @@ export default function EquipoPage() {
         </div>
       )}
 
-      <InviteMemberModal
+      <CreateUserModal
         open={isInviteModalOpen}
         onClose={closeInviteModal}
-        onInvite={handleInvite}
+        businessId={user?.businessId}
       />
     </div>
   );
