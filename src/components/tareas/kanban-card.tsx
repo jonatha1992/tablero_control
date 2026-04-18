@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Priority config
 const PRIORITY_CONFIG: Record<TaskPriority, { color: string; bg: string; icon: typeof AlertTriangle; order: number; border: string }> = {
@@ -232,15 +232,18 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onClick }: 
       {/* Assignees */}
       {task.assigneeIds && task.assigneeIds.length > 0 && (
         <div className="flex -space-x-2 mt-2 pt-2 border-t">
-          {task.assigneeIds.slice(0, 3).map((id, i) => (
-            <Avatar key={id} className="h-5 w-5 border-2 border-card">
-              <AvatarFallback className="text-[8px]">
-                {String.fromCharCode(65 + i)}
-              </AvatarFallback>
-            </Avatar>
-          ))}
+          {task.assigneeIds.slice(0, 3).map((id) => {
+            const a = task.assignees?.find((x) => x.id === id);
+            const initials = a ? a.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : '?';
+            return (
+              <Avatar key={id} className="h-6 w-6 border-2 border-card" title={a?.name}>
+                {a?.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
+                <AvatarFallback className="text-[9px] bg-primary/10">{initials}</AvatarFallback>
+              </Avatar>
+            );
+          })}
           {task.assigneeIds.length > 3 && (
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[8px] font-medium border-2 border-card">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[9px] font-medium border-2 border-card">
               +{task.assigneeIds.length - 3}
             </div>
           )}

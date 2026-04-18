@@ -2,8 +2,7 @@
 
 import { use } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { auth, db } from '@/lib/firebase/client';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { superadminApi } from '@/lib/api/superadmin';
 import type { Business } from '@/types/domain/business';
 import type { User } from '@/types/domain/user';
 import { format } from 'date-fns';
@@ -13,29 +12,19 @@ import Link from 'next/link';
 
 interface Props { params: Promise<{ id: string }> }
 
-async function fetchBusinessDetail(id: string) {
-  const bizSnap = await getDoc(doc(db, 'businesses', id));
-  if (!bizSnap.exists()) return null;
-  const business = { id: bizSnap.id, ...(bizSnap.data() as Omit<Business, 'id'>) };
-
-  const usersSnap = await getDocs(query(collection(db, 'users'), where('businessId', '==', id)));
-  const users = usersSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<User, 'id'>) }));
-
-  return { business, users };
-}
-
 export default function BusinessDetailPage({ params }: Props) {
   const { id } = use(params);
   const { data, isLoading, error } = useQuery({
     queryKey: ['sa-business', id],
-    queryFn: () => fetchBusinessDetail(id),
+    queryFn: () => superadminApi.getBusiness(id),
   });
 
   if (isLoading) return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Cargando…</div>;
   if (error || !data) return <div className="p-8 text-red-600 text-sm">Error al cargar negocio.</div>;
 
-  const { business, users } = data;
-  const createdAt = business.createdAt as unknown as { seconds: number };
+  const business = data.business as Business;
+  const users = data.users as User[];
+  const locations = data.locations as { id: string; name: string; type: string; status: string }[];
 
   return (
     <div className="p-8 space-y-8 max-w-4xl">
@@ -51,17 +40,31 @@ export default function BusinessDetailPage({ params }: Props) {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
         {[
-          ['Plan', <span className="capitalize font-medium">{business.plan}</span>],
-          ['Estado', <span className="capitalize font-medium">{business.status}</span>],
-          ['Locales', business.locationIds?.length ?? 0],
-          ['Creado', createdAt ? format(new Date(createdAt.seconds * 1000), 'd MMM yyyy', { locale: es }) : '—'],
+          ['Plan', <span key="plan" className="capitalize font-medium">{business.plan}</span>],
+          ['Estado', <span key="status" className="capitalize font-medium">{business.status}</span>],
+          ['Locales', locations.length],
+          ['Usuarios', users.length],
+          ['Creado', business.createdAt ? format(new Date(business.createdAt as unknown as string), 'd MMM yyyy', { locale: es }) : '—'],
         ].map(([label, value]) => (
           <div key={String(label)} className="border rounded-xl p-4">
-            <p className="text-muted-foreground mb-1">{label}</p>
+            <p className="text-muted-foreground mb-1 text-xs">{label}</p>
             <p className="font-semibold">{value}</p>
           </div>
         ))}
       </div>
+
+      {locations.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-3">Locales ({locations.length})</h2>
+          <div className="flex flex-wrap gap-2">
+            {locations.map((loc) => (
+              <span key={loc.id} className="border rounded-lg px-3 py-1.5 text-sm">
+                {loc.name} <span className="text-muted-foreground capitalize text-xs">· {loc.type}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="font-semibold mb-3">Usuarios ({users.length})</h2>

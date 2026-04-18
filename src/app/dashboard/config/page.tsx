@@ -9,8 +9,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useTheme } from 'next-themes';
 import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { uploadUserAvatar } from '@/lib/firebase/storage';
-import { authService } from '@/services/auth.service';
+import { auth } from '@/lib/firebase/client';
 
 export default function ConfigPage() {
   const { user } = useAuth();
@@ -22,11 +21,28 @@ export default function ConfigPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    
+
     try {
       setIsUploading(true);
-      const url = await uploadUserAvatar(user.id, file);
-      await authService.updateUserProfile(user.id, { avatar: url });
+
+      // 1. Upload to Cloudinary via API route
+      const form = new FormData();
+      form.append('file', file);
+      form.append('type', 'avatar');
+      form.append('id', user.id);
+
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: form });
+      if (!uploadRes.ok) throw new Error('Error al subir la imagen');
+      const { url } = await uploadRes.json() as { url: string };
+
+      // 2. Save URL in PostgreSQL
+      const token = await auth.currentUser?.getIdToken();
+      await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: url }),
+      });
+
       setAvatarUrl(url);
     } catch (error) {
       console.error('Error al subir avatar:', error);

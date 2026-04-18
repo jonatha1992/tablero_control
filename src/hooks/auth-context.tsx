@@ -31,8 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
-        const profile = await authService.getUserProfile(fbUser.uid);
-        if (profile) {
+        const token = await fbUser.getIdToken();
+        const res = await fetch('/api/auth/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const profile = await res.json();
           setUser({
             ...profile,
             avatar: profile.avatar || fbUser.photoURL || undefined,

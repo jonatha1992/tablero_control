@@ -12,7 +12,7 @@ const getDocFn = vi.mocked(firebaseFirestore.getDoc);
 const setDocFn = vi.mocked(firebaseFirestore.setDoc);
 
 // Import after mocks are set up
-const { login, register, logout, resetPassword, getUserRole } = await import('@/lib/firebase/auth');
+const { login, register, logout, resetPassword } = await import('@/lib/firebase/auth');
 
 describe('Auth — login', () => {
   beforeEach(() => {
@@ -121,25 +121,3 @@ describe('Auth — resetPassword', () => {
   });
 });
 
-describe('Auth — getUserRole', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('retorna el rol del usuario si existe en Firestore', async () => {
-    getDocFn.mockResolvedValue({
-      exists: () => true,
-      data: () => ({ role: 'admin' }),
-    } as never);
-
-    const role = await getUserRole('uid-1');
-    expect(role).toBe('admin');
-  });
-
-  it('retorna null si el usuario no existe en Firestore', async () => {
-    getDocFn.mockResolvedValue({ exists: () => false } as never);
-
-    const role = await getUserRole('nonexistent');
-    expect(role).toBeNull();
-  });
-});

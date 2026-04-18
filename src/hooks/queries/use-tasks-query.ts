@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { taskService } from '@/services/task.service';
+import { tasksApi } from '@/lib/api/tasks';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskFilters } from '@/types/domain/task';
 
@@ -48,17 +48,16 @@ export function useTasksQuery(filters?: TaskFilters) {
     queryKey: taskKeys.byBusiness(targetBusinessId, filters),
     queryFn: async () => {
       try {
-        const fetchPromise = taskService.getTasksByBusiness(targetBusinessId, filters);
-        const timeoutPromise = new Promise<Task[]>((_, reject) => 
+        const fetchPromise = tasksApi.getByBusiness(targetBusinessId, filters);
+        const timeoutPromise = new Promise<Task[]>((_, reject) =>
           setTimeout(() => reject(new Error('Timeout')), 1000)
         );
-        
+
         const result = await Promise.race([fetchPromise, timeoutPromise]);
-        
         if (result && result.length > 0) return result;
         return MOCK_TASKS;
       } catch (e) {
-        console.warn("Retornando tareas de prueba debido a fallo de conexión", e);
+        console.warn('Retornando tareas de prueba debido a fallo de conexión', e);
         return MOCK_TASKS;
       }
     },
@@ -69,7 +68,7 @@ export function useTasksQuery(filters?: TaskFilters) {
 export function useTaskQuery(id: string) {
   return useQuery({
     queryKey: taskKeys.detail(id),
-    queryFn: () => taskService.getTaskById(id),
+    queryFn: () => tasksApi.getById(id),
     enabled: !!id,
   });
 }

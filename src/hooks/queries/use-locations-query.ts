@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { locationService } from '@/services/location.service';
+import { locationsApi } from '@/lib/api/locations';
 import { useAuth } from '@/hooks/auth-context';
 
 export const locationKeys = {
@@ -13,7 +13,7 @@ export function useLocationsQuery() {
   const { user } = useAuth();
   return useQuery({
     queryKey: locationKeys.byBusiness(user?.businessId ?? ''),
-    queryFn: () => locationService.getByBusiness(user!.businessId!),
+    queryFn: () => locationsApi.getByBusiness(user!.businessId!),
     enabled: !!user?.businessId,
     staleTime: 1000 * 60 * 15,
   });
@@ -23,7 +23,7 @@ export function useActiveLocationsQuery() {
   const { user } = useAuth();
   return useQuery({
     queryKey: [...locationKeys.byBusiness(user?.businessId ?? ''), 'active'],
-    queryFn: () => locationService.getActiveLocations(user!.businessId!),
+    queryFn: () => locationsApi.getActive(user!.businessId!),
     enabled: !!user?.businessId,
     staleTime: 1000 * 60 * 15,
   });
