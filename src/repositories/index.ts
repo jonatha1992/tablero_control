@@ -1,11 +1,9 @@
-// Singletons de repositorios — para cambiar de Firebase a otro backend,
-// solo cambiar las clases importadas aquí. Nada más en el código cambia.
-import { FirebaseTaskRepository } from './firebase/task.repository';
-import { FirebaseUserRepository } from './firebase/user.repository';
-import { FirebaseTeamRepository } from './firebase/team.repository';
-import { FirebaseLocationRepository } from './firebase/location.repository';
+import { PrismaTaskRepository } from './prisma/task.repository';
+import { PrismaUserRepository } from './prisma/user.repository';
+import { PrismaTeamRepository } from './prisma/team.repository';
+import { PrismaLocationRepository } from './prisma/location.repository';
 
-export const taskRepository = new FirebaseTaskRepository();
-export const userRepository = new FirebaseUserRepository();
-export const teamRepository = new FirebaseTeamRepository();
-export const locationRepository = new FirebaseLocationRepository();
+export const taskRepository = new PrismaTaskRepository();
+export const userRepository = new PrismaUserRepository();
+export const teamRepository = new PrismaTeamRepository();
+export const locationRepository = new PrismaLocationRepository();

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/prisma';
 import { getPreapproval, parseExternalReference } from '@/lib/mercadopago/preapproval';
 import { mpFetch } from '@/lib/mercadopago/client';
 import { writeAuditLog } from '@/lib/api/audit';
-import { Timestamp } from 'firebase-admin/firestore';
 import { createHmac, timingSafeEqual } from 'crypto';
 import type { SubscriptionStatus } from '@/types/domain/subscription';
 
 function verifySignature(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
-  if (!secret) return true; // skip en dev sin secret configurado
+  if (!secret) return true;
   const sig = req.headers.get('x-signature') ?? '';
   const ts = req.headers.get('x-request-id') ?? '';
   const signed = `id=${ts};request-id=${ts};ts=${ts};`;
@@ -47,35 +46,31 @@ export async function POST(req: NextRequest) {
 
   if (!dataId) return NextResponse.json({ ok: true });
 
-  const db = getAdminDb();
-
   if (type === 'subscription_preapproval') {
     const preapproval = await getPreapproval(dataId);
     const ref = parseExternalReference(preapproval.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
     const status = MP_TO_INTERNAL[preapproval.status] ?? 'pending';
-    const now = Timestamp.now();
 
-    const subsSnap = await db
-      .collection('subscriptions')
-      .where('mpPreapprovalId', '==', dataId)
-      .limit(1)
-      .get();
-
-    if (!subsSnap.empty) {
-      const subDoc = subsSnap.docs[0];
-      await subDoc.ref.update({ status, mpPayerId: preapproval.payer_id ?? null, updatedAt: now });
-    }
+    await prisma.subscription.updateMany({
+      where: { mpPreapprovalId: dataId },
+      data: { status, mpPayerId: preapproval.payer_id ?? null },
+    });
 
     if (status === 'active') {
-      const flags: Record<string, boolean> = { canExportReports: ref.plan !== 'free' && ref.plan !== 'basic' };
-      await db.collection('businesses').doc(ref.businessId).update({
-        plan: ref.plan,
-        status: 'active',
-        featureFlags: flags,
-        mpPayerId: preapproval.payer_id ?? null,
-        updatedAt: now,
+      const flags: Record<string, boolean> = {
+        canExportReports: ref.plan !== 'free' && ref.plan !== 'basic',
+      };
+
+      await prisma.business.update({
+        where: { id: ref.businessId },
+        data: {
+          plan: ref.plan,
+          status: 'active',
+          featureFlags: flags,
+          mpPayerId: preapproval.payer_id ?? null,
+        },
       });
 
       await writeAuditLog({
@@ -91,30 +86,36 @@ export async function POST(req: NextRequest) {
   }
 
   if (type === 'payment') {
-    interface MpPayment { id: string; status: string; transaction_amount: number; external_reference?: string; preapproval_id?: string }
+    interface MpPayment {
+      id: string;
+      status: string;
+      transaction_amount: number;
+      external_reference?: string;
+      preapproval_id?: string;
+    }
     const payment = await mpFetch<MpPayment>(`/v1/payments/${dataId}`);
     const ref = parseExternalReference(payment.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
-    const invoiceStatus = payment.status === 'approved' ? 'paid' : payment.status === 'rejected' ? 'failed' : 'pending';
-    const subsSnap = await db
-      .collection('subscriptions')
-      .where('mpPreapprovalId', '==', payment.preapproval_id ?? '')
-      .limit(1)
-      .get();
+    const invoiceStatus = payment.status === 'approved' ? 'paid'
+      : payment.status === 'rejected' ? 'failed'
+      : 'pending';
 
-    if (!subsSnap.empty) {
-      const subDoc = subsSnap.docs[0];
-      const invRef = subDoc.ref.collection('invoices').doc();
-      await invRef.set({
-        subscriptionId: subDoc.id,
-        businessId: ref.businessId,
-        amount: payment.transaction_amount,
-        currency: 'ARS',
-        status: invoiceStatus,
-        mpPaymentId: String(payment.id),
-        paidAt: invoiceStatus === 'paid' ? Timestamp.now() : null,
-        createdAt: Timestamp.now(),
+    const sub = await prisma.subscription.findFirst({
+      where: { mpPreapprovalId: payment.preapproval_id ?? '' },
+    });
+
+    if (sub) {
+      const invoice = await prisma.invoice.create({
+        data: {
+          subscriptionId: sub.id,
+          businessId: ref.businessId,
+          amount: payment.transaction_amount,
+          currency: 'ARS',
+          status: invoiceStatus,
+          mpPaymentId: String(payment.id),
+          paidAt: invoiceStatus === 'paid' ? new Date() : null,
+        },
       });
 
       await writeAuditLog({
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
         businessId: ref.businessId,
         action: invoiceStatus === 'paid' ? 'invoice.paid' : 'invoice.failed',
         targetType: 'invoice',
-        targetId: invRef.id,
+        targetId: invoice.id,
         metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id },
       });
     }

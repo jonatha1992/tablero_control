@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   const user = await requireUser(req);
@@ -8,31 +8,37 @@ export async function GET(req: NextRequest) {
   const denied = requireRole(user, ['superadmin']);
   if (denied) return denied;
 
-  const db = getAdminDb();
-
-  const [businessesSnap, usersSnap, tasksSnap, subscriptionsSnap] = await Promise.all([
-    db.collection('businesses').get(),
-    db.collection('users').get(),
-    db.collection('tasks').get(),
-    db.collection('subscriptions').where('status', '==', 'active').get(),
+  const [
+    totalBusinesses,
+    activeBusinesses,
+    suspendedBusinesses,
+    trialBusinesses,
+    totalUsers,
+    totalTasks,
+    activeSubscriptions,
+    freePlan, basicPlan, proPlan, enterprisePlan,
+  ] = await prisma.$transaction([
+    prisma.business.count(),
+    prisma.business.count({ where: { status: 'active' } }),
+    prisma.business.count({ where: { status: 'suspended' } }),
+    prisma.business.count({ where: { status: 'trial' } }),
+    prisma.user.count(),
+    prisma.task.count(),
+    prisma.subscription.findMany({ where: { status: 'active' }, select: { amount: true } }),
+    prisma.business.count({ where: { plan: 'free' } }),
+    prisma.business.count({ where: { plan: 'basic' } }),
+    prisma.business.count({ where: { plan: 'pro' } }),
+    prisma.business.count({ where: { plan: 'enterprise' } }),
   ]);
 
-  const businesses = businessesSnap.docs.map((d) => d.data());
-  const active = businesses.filter((b) => b.status === 'active').length;
-  const suspended = businesses.filter((b) => b.status === 'suspended').length;
-  const trial = businesses.filter((b) => b.status === 'trial').length;
-
-  const planCount: Record<string, number> = { free: 0, basic: 0, pro: 0, enterprise: 0 };
-  for (const b of businesses) planCount[b.plan as string] = (planCount[b.plan as string] ?? 0) + 1;
-
-  const PRICES: Record<string, number> = { basic: 3999, pro: 9999, enterprise: 0 };
-  const mrr = subscriptionsSnap.docs.reduce((acc, d) => acc + (d.data().amount as number ?? 0), 0);
+  const mrr = activeSubscriptions.reduce((acc: number, s: { amount: number }) => acc + s.amount, 0);
+  const planCount = { free: freePlan, basic: basicPlan, pro: proPlan, enterprise: enterprisePlan };
 
   return NextResponse.json({
-    businesses: { total: businessesSnap.size, active, suspended, trial },
-    users: { total: usersSnap.size },
-    tasks: { total: tasksSnap.size },
-    subscriptions: { active: subscriptionsSnap.size, mrr },
+    businesses: { total: totalBusinesses, active: activeBusinesses, suspended: suspendedBusinesses, trial: trialBusinesses },
+    users: { total: totalUsers },
+    tasks: { total: totalTasks },
+    subscriptions: { active: activeSubscriptions.length, mrr },
     planBreakdown: planCount,
   });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
+import { getAdminAuth } from '@/lib/firebase/admin';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { prisma } from '@/lib/prisma';
 import type { UserRole } from '@/types/domain/user';
 
 export interface CreateUserBody {
@@ -47,24 +48,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
-  // Admin can only create users in their own business
   const targetBusinessId =
     authed.role === 'superadmin' ? businessId ?? authed.businessId : authed.businessId;
 
-  // Admin cannot create admins or superadmins
   if (authed.role === 'admin' && (role === 'admin' || role === 'superadmin')) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const adminAuth = getAdminAuth();
-  const db = getAdminDb();
-
-  // Check if email already exists in Firestore
-  const existing = await db.collection('users').where('email', '==', email.trim()).limit(1).get();
-  if (!existing.empty) {
+  // Check email in PostgreSQL
+  const existing = await prisma.user.findUnique({ where: { email: email.trim() } });
+  if (existing) {
     return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
   }
 
+  const adminAuth = getAdminAuth();
   let uid: string;
   try {
     const authUser = await adminAuth.createUser({
@@ -82,37 +79,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
   }
 
-  const now = new Date();
-  const userDoc = {
-    name: name.trim(),
-    email: email.trim(),
-    role,
-    businessId: targetBusinessId ?? null,
-    teamIds: [],
-    preferences: DEFAULT_PREFERENCES,
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-  };
-
   try {
-    await db.collection('users').doc(uid).set(userDoc);
+    await prisma.user.create({
+      data: {
+        id: uid,
+        name: name.trim(),
+        email: email.trim(),
+        role,
+        businessId: targetBusinessId ?? null,
+        preferences: DEFAULT_PREFERENCES,
+        isActive: true,
+      },
+    });
   } catch {
-    // Rollback Auth user if Firestore write fails
     await adminAuth.deleteUser(uid).catch(() => {});
-    return NextResponse.json({ error: 'firestore_write_failed' }, { status: 500 });
+    return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });
   }
 
-  // Set custom claims so role is available in the token
   await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
 
-  const result: CreateUserResult = {
-    uid,
-    name: name.trim(),
-    email: email.trim(),
-    role,
-    businessId: targetBusinessId,
-  };
-
-  return NextResponse.json(result, { status: 201 });
+  return NextResponse.json(
+    { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },
+    { status: 201 }
+  );
 }

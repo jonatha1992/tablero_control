@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
-import { getAdminDb } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
-import { Timestamp } from 'firebase-admin/firestore';
 
 export async function GET(req: NextRequest) {
   const user = await requireUser(req);
@@ -10,9 +9,10 @@ export async function GET(req: NextRequest) {
   const denied = requireRole(user, ['superadmin']);
   if (denied) return denied;
 
-  const db = getAdminDb();
-  const snap = await db.collection('businesses').orderBy('createdAt', 'desc').limit(100).get();
-  const businesses = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const businesses = await prisma.business.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+  });
   return NextResponse.json({ businesses });
 }
 
@@ -23,14 +23,19 @@ export async function PATCH(req: NextRequest) {
   if (denied) return denied;
 
   const { businessId, action } = await req.json() as { businessId?: string; action?: 'suspend' | 'reactivate' };
-  if (!businessId || !action) return NextResponse.json({ error: 'businessId y action requeridos' }, { status: 400 });
+  if (!businessId || !action) {
+    return NextResponse.json({ error: 'businessId y action requeridos' }, { status: 400 });
+  }
 
-  const db = getAdminDb();
-  const now = Timestamp.now();
   const status = action === 'suspend' ? 'suspended' : 'active';
-  const extra = action === 'suspend' ? { suspendedAt: now, suspendedReason: 'Suspendido por superadmin' } : { suspendedAt: null };
-
-  await db.collection('businesses').doc(businessId).update({ status, updatedAt: now, ...extra });
+  await prisma.business.update({
+    where: { id: businessId },
+    data: {
+      status,
+      suspendedAt: action === 'suspend' ? new Date() : null,
+      suspendedReason: action === 'suspend' ? 'Suspendido por superadmin' : null,
+    },
+  });
 
   await writeAuditLog({
     actorId: user.uid,

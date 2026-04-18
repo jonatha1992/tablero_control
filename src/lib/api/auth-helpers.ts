@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, getAdminDb } from '@/lib/firebase/admin';
+import { verifyToken } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/prisma';
 import type { User, UserRole } from '@/types/domain/user';
 
 export interface AuthedUser {
@@ -23,15 +24,34 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     return NextResponse.json({ error: 'invalid_token' }, { status: 401 });
   }
 
-  const db = getAdminDb();
-  const snap = await db.collection('users').doc(decoded.uid).get();
-  if (!snap.exists) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
-  const data = snap.data() as User;
+  const row = await prisma.user.findUnique({
+    where: { id: decoded.uid },
+    include: { teams: true },
+  });
+  if (!row) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+
+  const data: User = {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    role: row.role as UserRole,
+    businessId: row.businessId ?? undefined,
+    locationId: row.locationId ?? undefined,
+    customRoleId: row.customRoleId ?? undefined,
+    avatar: row.avatar ?? undefined,
+    phone: row.phone ?? undefined,
+    teamIds: row.teams.map((t) => t.teamId),
+    preferences: row.preferences as unknown as User['preferences'],
+    isActive: row.isActive,
+    lastLogin: row.lastLogin ?? undefined,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 
   return {
     uid: decoded.uid,
-    role: (decoded.role as UserRole) ?? data.role,
-    businessId: (decoded.businessId as string | undefined) ?? data.businessId,
+    role: ((decoded.role as UserRole) ?? data.role),
+    businessId: ((decoded.businessId as string | undefined) ?? data.businessId),
     email: decoded.email,
     data,
   };
