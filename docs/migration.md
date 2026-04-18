@@ -1,6 +1,8 @@
 # Migración — Tablero de Control
 
-> Documento vivo. Actualizá el estado de cada fase a medida que avances.
+> **ESTADO: PAUSADO** — Se decidió mantener Next.js + Firebase y deployar en Firebase App Hosting en lugar de migrar a Express + PostgreSQL. Ver [deploy.md](deploy.md) para el plan actual.
+> Este documento se conserva como referencia si en el futuro se necesita migrar la base de datos o separar el backend.
+
 > Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` completado
 
 ---

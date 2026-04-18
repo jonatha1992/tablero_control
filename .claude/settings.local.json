@@ -51,7 +51,12 @@
       "Bash(rm -rf page.tsx businesses/page.tsx businesses/\\\\[id\\\\] users/page.tsx subscriptions/page.tsx audit/page.tsx)",
       "Bash(rmdir businesses *)",
       "Bash(cat next.config.ts)",
-      "Bash(cat next.config.js)"
+      "Bash(cat next.config.js)",
+      "Bash(git -C e:/tablero_control log --oneline -10)",
+      "Bash(firebase hosting:sites:list --project gestordetrabajo)",
+      "Bash(firebase apphosting:backends:list --project gestordetrabajo)",
+      "Bash(curl -sI https://gestordetrabajo.web.app)",
+      "Bash(git add *)"
     ]
   }
 }
