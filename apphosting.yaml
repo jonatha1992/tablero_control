@@ -1,0 +1,54 @@
+runConfig:
+  minInstances: 0
+  maxInstances: 2
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 80
+
+env:
+  - variable: NEXT_PUBLIC_USE_EMULATOR
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SUPERADMIN_EMAIL
+    value: "tecnofusion.it@gmail.com"
+    availability:
+      - RUNTIME
+
+  - variable: SUPERADMIN_PASSWORD
+    secret: SUPERADMIN_PASSWORD
+    availability:
+      - RUNTIME
+
+  - variable: MP_ACCESS_TOKEN
+    secret: MP_ACCESS_TOKEN
+    availability:
+      - RUNTIME
+
+  - variable: MP_WEBHOOK_SECRET
+    secret: MP_WEBHOOK_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_MP_PUBLIC_KEY
+    secret: NEXT_PUBLIC_MP_PUBLIC_KEY
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: CLOUDINARY_CLOUD_NAME
+    secret: CLOUDINARY_CLOUD_NAME
+    availability:
+      - RUNTIME
+
+  - variable: CLOUDINARY_API_KEY
+    secret: CLOUDINARY_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: CLOUDINARY_API_SECRET
+    secret: CLOUDINARY_API_SECRET
+    availability:
+      - RUNTIME

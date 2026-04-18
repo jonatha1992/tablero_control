@@ -23,12 +23,14 @@ export default function TareasPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="mb-2">
+    <div className="flex flex-col h-full min-h-0 min-w-0">
+      <div className="shrink-0 mb-4">
         <h1 className="text-2xl font-bold">Tareas</h1>
         <p className="text-muted-foreground text-sm">Kanban con drag &amp; drop</p>
       </div>
-      <KanbanBoard tasks={tasks} />
+      <div className="flex-1 min-h-0 min-w-0 flex flex-col">
+        <KanbanBoard tasks={tasks} />
+      </div>
     </div>
   );
 }

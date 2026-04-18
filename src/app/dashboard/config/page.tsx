@@ -3,13 +3,53 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
-import { User, Bell, Palette, Globe, Shield, Smartphone } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { auth } from '@/lib/firebase/client';
 
 export default function ConfigPage() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('perfil');
+  const [isUploading, setIsUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      setIsUploading(true);
+
+      // 1. Upload to Cloudinary via API route
+      const form = new FormData();
+      form.append('file', file);
+      form.append('type', 'avatar');
+      form.append('id', user.id);
+
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: form });
+      if (!uploadRes.ok) throw new Error('Error al subir la imagen');
+      const { url } = await uploadRes.json() as { url: string };
+
+      // 2. Save URL in PostgreSQL
+      const token = await auth.currentUser?.getIdToken();
+      await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: url }),
+      });
+
+      setAvatarUrl(url);
+    } catch (error) {
+      console.error('Error al subir avatar:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden max-w-5xl mx-auto w-full gap-4">
@@ -29,6 +69,14 @@ export default function ConfigPage() {
           <TabsTrigger value="notificaciones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
             <Bell className="h-4 w-4 mr-2" /> Notificaciones
           </TabsTrigger>
+          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+            <Link
+              href="/dashboard/config/roles"
+              className="flex items-center gap-2 px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ShieldCheck className="h-4 w-4" /> Roles y permisos
+            </Link>
+          )}
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">
@@ -39,8 +87,37 @@ export default function ConfigPage() {
                 <CardTitle className="text-base font-semibold">Información Personal</CardTitle>
                 <CardDescription className="text-xs">Actualiza tus datos de contacto y rol.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-6">
+                  <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
+                    <div className="w-20 h-20 rounded-full bg-primary/10 overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-all relative">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl font-bold uppercase">{user?.name?.substring(0, 2) || 'TC'}</span>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity">
+                        <Camera className="w-6 h-6 text-white mb-1" />
+                        <span className="text-[10px] text-white font-medium">Cambiar</span>
+                      </div>
+                    </div>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                      disabled={isUploading}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{user?.name}</h3>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    {isUploading && <p className="text-xs text-primary mt-1 animate-pulse font-medium">Subiendo imagen, espera por favor...</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Nombre Completo</label>
                     <input type="text" defaultValue={user?.name || ''} className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
@@ -66,7 +143,7 @@ export default function ConfigPage() {
 
             <Card className="border-destructive/20 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center text-destructive"><Shield className="h-4 w-4 mr-2"/> Seguridad</CardTitle>
+                <CardTitle className="text-base font-semibold flex items-center text-destructive"><Shield className="h-4 w-4 mr-2" /> Seguridad</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">Si deseas cambiar tu contraseña, se te enviará un correo de recuperación.</p>
@@ -87,14 +164,23 @@ export default function ConfigPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground block">Tema de la aplicación</label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md hover:bg-accent flex-1 justify-center">
-                      <input type="radio" name="theme" defaultChecked={user?.preferences?.theme === 'light'} /> Claro
+                    <label className={cn(
+                      "flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md transition-colors flex-1 justify-center",
+                      theme === 'light' ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
+                    )}>
+                      <input type="radio" name="theme" className="sr-only" checked={theme === 'light'} onChange={() => setTheme('light')} /> Claro
                     </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md hover:bg-accent flex-1 justify-center">
-                      <input type="radio" name="theme" defaultChecked={user?.preferences?.theme === 'dark'} /> Oscuro
+                    <label className={cn(
+                      "flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md transition-colors flex-1 justify-center",
+                      theme === 'dark' ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
+                    )}>
+                      <input type="radio" name="theme" className="sr-only" checked={theme === 'dark'} onChange={() => setTheme('dark')} /> Oscuro
                     </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md hover:bg-accent flex-1 justify-center">
-                      <input type="radio" name="theme" defaultChecked={user?.preferences?.theme !== 'light' && user?.preferences?.theme !== 'dark'} /> Sistema
+                    <label className={cn(
+                      "flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md transition-colors flex-1 justify-center",
+                      theme === 'system' ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
+                    )}>
+                      <input type="radio" name="theme" className="sr-only" checked={theme === 'system'} onChange={() => setTheme('system')} /> Sistema
                     </label>
                   </div>
                 </div>
@@ -106,7 +192,7 @@ export default function ConfigPage() {
 
             <Card className="border-border/50 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center"><Globe className="h-4 w-4 mr-2"/> Regional</CardTitle>
+                <CardTitle className="text-base font-semibold flex items-center"><Globe className="h-4 w-4 mr-2" /> Regional</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -145,7 +231,7 @@ export default function ConfigPage() {
                 </div>
                 <div className="flex items-center justify-between border-b pb-4">
                   <div>
-                    <div className="flex items-center gap-2"><Smartphone className="h-4 w-4"/> <p className="text-sm font-medium">Notificaciones Push</p></div>
+                    <div className="flex items-center gap-2"><Smartphone className="h-4 w-4" /> <p className="text-sm font-medium">Notificaciones Push</p></div>
                     <p className="text-xs text-muted-foreground">Notificaciones en el navegador y vista móvil al instante.</p>
                   </div>
                   <input type="checkbox" className="h-4 w-4 accent-primary" defaultChecked />

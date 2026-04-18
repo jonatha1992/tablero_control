@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { taskService } from '@/services/task.service';
+import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import type { TaskStatus } from '@/types/domain/task';
 
@@ -10,7 +10,7 @@ export function useMoveTask() {
 
   return useMutation({
     mutationFn: ({ taskId, newStatus }: { taskId: string; newStatus: TaskStatus }) =>
-      taskService.moveTask(taskId, newStatus),
+      tasksApi.move(taskId, newStatus),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },

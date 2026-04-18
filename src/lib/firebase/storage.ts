@@ -1,21 +1,13 @@
-/**
- * Storage helpers — usa Cloudinary vía API route /api/upload
- * El SDK de Cloudinary vive en src/lib/cloudinary/ (solo server-side)
- */
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { storage } from './client';
 
-async function uploadViaAPI(formData: FormData): Promise<string> {
-  const res = await fetch('/api/upload', { method: 'POST', body: formData });
-  if (!res.ok) throw new Error('Upload failed');
-  const data = await res.json();
-  return data.url as string;
-}
+export async function uploadUserAvatar(userId: string, file: File | Blob): Promise<string> {
+  const fileExt = file.type.split('/')[1] || 'jpg';
+  const filePath = `avatars/${userId}.${fileExt}`;
+  const storageRef = ref(storage, filePath);
 
-export async function uploadUserAvatar(userId: string, file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', 'avatar');
-  formData.append('id', userId);
-  return uploadViaAPI(formData);
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
 }
 
 export async function uploadTaskAttachment(
@@ -23,18 +15,18 @@ export async function uploadTaskAttachment(
   fileName: string,
   file: File
 ): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', 'attachment');
-  formData.append('id', taskId);
-  formData.append('fileName', fileName);
-  return uploadViaAPI(formData);
+  const filePath = `tasks/${taskId}/${Date.now()}_${fileName}`;
+  const storageRef = ref(storage, filePath);
+
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
 }
 
-export async function deleteFile(publicId: string): Promise<void> {
-  await fetch('/api/upload', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ publicId }),
-  });
+export async function deleteFile(publicUrl: string): Promise<void> {
+  try {
+    const storageRef = ref(storage, publicUrl);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.error('Error deleting file:', error);
+  }
 }

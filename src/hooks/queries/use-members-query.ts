@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { teamService } from '@/services/team.service';
+import { membersApi } from '@/lib/api/members';
 import { useAuth } from '@/hooks/auth-context';
 
 export const memberKeys = {
@@ -13,7 +13,7 @@ export function useMembersQuery() {
   const { user } = useAuth();
   return useQuery({
     queryKey: memberKeys.byBusiness(user?.businessId ?? ''),
-    queryFn: () => teamService.getMembersByBusiness(user!.businessId!),
+    queryFn: () => membersApi.getByBusiness(user!.businessId!),
     enabled: !!user?.businessId,
     staleTime: 1000 * 60 * 10,
   });

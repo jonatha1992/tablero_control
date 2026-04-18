@@ -22,6 +22,10 @@ interface KanbanUIStore {
   filters: KanbanUIFilters;
   setFilters: (filters: Partial<KanbanUIFilters>) => void;
   clearFilters: () => void;
+
+  // View Settings
+  activeColumns: TaskStatus[];
+  toggleColumn: (column: TaskStatus) => void;
 }
 
 const defaultDragState: KanbanDragState = {
@@ -55,4 +59,11 @@ export const useKanbanUIStore = create<KanbanUIStore>((set) => ({
   filters: defaultFilters,
   setFilters: (filters) => set((s) => ({ filters: { ...s.filters, ...filters } })),
   clearFilters: () => set({ filters: defaultFilters }),
+
+  activeColumns: ['todo', 'in_progress', 'done'],
+  toggleColumn: (column) => set((s) => ({
+    activeColumns: s.activeColumns.includes(column)
+      ? s.activeColumns.filter((c) => c !== column)
+      : [...s.activeColumns, column],
+  })),
 }));

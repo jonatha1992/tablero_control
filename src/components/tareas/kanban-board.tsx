@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   closestCorners,
@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Plus, Filter, Search } from 'lucide-react';
+import { Plus, Filter, Search, Settings2 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
@@ -23,7 +23,7 @@ import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 
-const COLUMN_ORDER: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'];
+const COLUMN_ORDER_FULL: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'];
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -42,7 +42,11 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     openCreateModal,
     openTaskDetail,
     closeTaskDetail,
+    activeColumns,
+    toggleColumn,
   } = useKanbanUIStore();
+
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const moveTask = useMoveTask();
   const updateTask = useUpdateTask();
@@ -66,7 +70,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
     const { searchQuery, priority, locationId } = filters;
     if (searchQuery || priority || locationId) {
-      for (const status of COLUMN_ORDER) {
+      for (const status of COLUMN_ORDER_FULL) {
         cols[status] = cols[status].filter((task) => {
           const matchesSearch =
             !searchQuery ||
@@ -105,7 +109,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     const overId = over.id as string;
     let targetColumn: TaskStatus | null = null;
 
-    if (COLUMN_ORDER.includes(overId as TaskStatus)) {
+    if (COLUMN_ORDER_FULL.includes(overId as TaskStatus)) {
       targetColumn = overId as TaskStatus;
     } else {
       const overTask = tasks.find((t) => t.id === overId);
@@ -126,7 +130,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     : null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 min-w-0 w-full overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-4 pb-4 border-b">
         <div className="relative flex-1 max-w-sm">
@@ -170,6 +174,41 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           Más filtros
         </button>
 
+        <div className="relative">
+          <button
+            onClick={() => setIsConfigOpen(!isConfigOpen)}
+            className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
+          >
+            <Settings2 className="h-4 w-4" />
+            Configurar Tablero
+          </button>
+
+          {isConfigOpen && (
+            <div className="absolute top-full mt-2 left-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
+              <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
+              <div className="space-y-1">
+                {COLUMN_ORDER_FULL.map((col) => (
+                  <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={activeColumns.includes(col)}
+                      onChange={() => toggleColumn(col)}
+                      className="rounded border-gray-300"
+                    />
+                    <span>
+                      {col === 'backlog' ? 'Backlog' :
+                        col === 'todo' ? 'Por hacer' :
+                          col === 'in_progress' ? 'En progreso' :
+                            col === 'in_review' ? 'En revisión' :
+                              col === 'done' ? 'Completada' : 'Bloqueada'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex-1" />
 
         <button
@@ -188,8 +227,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
-          {COLUMN_ORDER.map((column) => (
+        <div className="flex gap-4 overflow-x-auto pb-2 pt-1 flex-1 min-h-0 min-w-0 w-full">
+          {COLUMN_ORDER_FULL.filter(c => activeColumns.includes(c)).map((column) => (
             <KanbanColumn
               key={column}
               status={column}
@@ -207,9 +246,9 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               <KanbanCard
                 task={activeTask}
                 column={activeTask.status}
-                onMove={() => {}}
-                onPriorityChange={() => {}}
-                onClick={() => {}}
+                onMove={() => { }}
+                onPriorityChange={() => { }}
+                onClick={() => { }}
               />
             </div>
           ) : null}

@@ -22,21 +22,21 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
-      <div className="flex min-h-screen w-full flex-col">
-        <div className="flex flex-1">
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <div className="flex flex-1 min-h-0 min-w-0">
           <Sidebar collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} />
           <div className={cn(
-            "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+            "flex flex-1 flex-col transition-all duration-300 ease-in-out min-h-0 min-w-0",
             sidebarCollapsed ? "lg:pl-16" : "lg:pl-56"
           )}>
             <Header userName={user?.name} notificationCount={0} />
-            <main className="flex-1 overflow-y-auto p-4 flex flex-col relative">
+            <main className="flex-1 overflow-y-auto p-4 flex flex-col relative min-h-0 min-w-0">
               {children}
             </main>
           </div>
         </div>
         <Footer />
-        
+
         {/* Floating Action Button para crear tarea rápida */}
         <button
           onClick={openCreateModal}
@@ -45,7 +45,7 @@ export default function DashboardLayout({
         >
           <Plus className="h-6 w-6" />
         </button>
-        
+
         <CreateTaskModal
           open={isCreateModalOpen}
           onOpenChange={(open) => { if (!open) closeCreateModal(); }}

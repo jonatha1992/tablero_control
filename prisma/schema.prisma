@@ -1,0 +1,363 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  superadmin
+  admin
+  responsable
+  miembro
+  viewer
+}
+
+enum PlanId {
+  free
+  basic
+  pro
+  enterprise
+}
+
+enum BusinessStatus {
+  active
+  suspended
+  trial
+  cancelled
+}
+
+enum LocationStatus {
+  active
+  inactive
+  maintenance
+  closed
+  incident
+}
+
+enum TaskStatus {
+  backlog
+  todo
+  in_progress
+  in_review
+  done
+  blocked
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum TaskType {
+  feature
+  bug
+  improvement
+  task
+  documentation
+}
+
+enum ProjectStatus {
+  planning
+  active
+  paused
+  completed
+  archived
+}
+
+enum SubscriptionStatus {
+  pending
+  active
+  paused
+  cancelled
+  past_due
+  trialing
+}
+
+enum BillingFrequency {
+  monthly
+  yearly
+}
+
+enum InvoiceStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+// ─── Modelos ──────────────────────────────────────────────────────────────────
+
+model User {
+  // id = uid de Firebase Auth
+  id           String    @id
+  email        String    @unique
+  name         String
+  role         UserRole  @default(miembro)
+  businessId   String?
+  locationId   String?
+  customRoleId String?
+  avatar       String?
+  phone        String?
+  isActive     Boolean   @default(true)
+  lastLogin    DateTime?
+  preferences  Json      @default("{\"theme\":\"system\",\"locale\":\"es\",\"timezone\":\"America/Argentina/Buenos_Aires\",\"notifications\":{\"email\":true,\"push\":true,\"agentReports\":true,\"agentAlerts\":true},\"dashboardLayout\":[]}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  business      Business?    @relation(fields: [businessId], references: [id])
+  teams         TeamMember[]
+  assignedTasks Task[]       @relation("TaskAssignees")
+  createdTasks  Task[]       @relation("TaskCreator")
+  comments      Comment[]
+  auditLogs     AuditLog[]
+
+  @@index([businessId])
+  @@index([role])
+}
+
+model Business {
+  id              String         @id @default(cuid())
+  name            String
+  plan            PlanId         @default(free)
+  status          BusinessStatus @default(trial)
+  logo            String?
+  adminId         String
+  subscriptionId  String?
+  mpPayerId       String?
+  featureFlags    Json           @default("{}")
+  settings        Json           @default("{\"maxLocations\":1,\"maxUsers\":5,\"features\":[],\"localeTypes\":[]}")
+  trialEndsAt     DateTime?
+  suspendedAt     DateTime?
+  suspendedReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  users        User[]
+  locations    Location[]
+  teams        Team[]
+  projects     Project[]
+  subscription Subscription?
+  invoices     Invoice[]
+  auditLogs    AuditLog[]
+
+  @@index([status])
+  @@index([plan])
+}
+
+model Location {
+  id             String         @id @default(cuid())
+  businessId     String
+  name           String
+  type           String
+  description    String?
+  address        String?
+  managerId      String?
+  status         LocationStatus @default(active)
+  operatingHours Json?
+  metadata       Json           @default("{}")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  teams    Team[]
+  tasks    Task[]
+
+  @@index([businessId])
+  @@index([status])
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  businessId  String?
+  locationId  String?
+  leadId      String
+  settings    Json     @default("{\"defaultTaskPriority\":\"medium\",\"workingHours\":{\"start\":\"09:00\",\"end\":\"18:00\"},\"sprintDuration\":14}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business Business?    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location Location?    @relation(fields: [locationId], references: [id])
+  members  TeamMember[]
+  projects Project[]
+
+  @@index([businessId])
+  @@index([locationId])
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  teamId      String
+  businessId  String?
+  status      ProjectStatus @default(active)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id])
+  tasks    Task[]
+
+  @@index([teamId])
+  @@index([businessId])
+  @@index([status])
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  status         TaskStatus   @default(backlog)
+  priority       TaskPriority @default(medium)
+  type           TaskType     @default(task)
+  creatorId      String
+  projectId      String?
+  locationId     String?
+  parentId       String?
+  tags           String[]     @default([])
+  startDate      DateTime?
+  dueDate        DateTime?
+  completedDate  DateTime?
+  estimatedHours Float?
+  actualHours    Float?
+  recurrence     Json?
+  position       Int          @default(0)
+  commentCount   Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  creator     User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignees   User[]       @relation("TaskAssignees")
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  location    Location?    @relation(fields: [locationId], references: [id])
+  parent      Task?        @relation("Subtasks", fields: [parentId], references: [id])
+  subtasks    Task[]       @relation("Subtasks")
+  attachments Attachment[]
+  comments    Comment[]
+
+  @@index([projectId])
+  @@index([locationId])
+  @@index([creatorId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  taskId    String
+  url       String
+  publicId  String
+  filename  String
+  mimetype  String?
+  size      Int?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  taskId      String
+  authorId    String
+  content     String
+  attachments String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@index([authorId])
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  businessId        String             @unique
+  plan              PlanId
+  status            SubscriptionStatus @default(pending)
+  mpPreapprovalId   String?
+  mpPayerId         String?
+  amount            Float
+  currency          String             @default("ARS")
+  frequency         BillingFrequency   @default(monthly)
+  currentPeriodStart DateTime?
+  currentPeriodEnd  DateTime?
+  nextBillingDate   DateTime?
+  cancelAtPeriodEnd Boolean            @default(false)
+  trialEndsAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@index([status])
+  @@index([mpPreapprovalId])
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  subscriptionId String
+  businessId     String
+  amount         Float
+  currency       String        @default("ARS")
+  status         InvoiceStatus @default(pending)
+  mpPaymentId    String?
+  paidAt         DateTime?
+  pdfUrl         String?
+  createdAt      DateTime      @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  business     Business     @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  actorId    String
+  actorRole  String
+  businessId String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  actor    User      @relation(fields: [actorId], references: [id])
+  business Business? @relation(fields: [businessId], references: [id])
+
+  @@index([actorId])
+  @@index([businessId])
+  @@index([action])
+  @@index([createdAt])
+}
