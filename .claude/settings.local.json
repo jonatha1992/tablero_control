@@ -49,7 +49,9 @@
       "Bash(mkdir -p superadmin/businesses/\\\\[id\\\\])",
       "Bash(mv superadmin/businesses/tmp/page.tsx superadmin/businesses/\\\\[id\\\\]/page.tsx)",
       "Bash(rm -rf page.tsx businesses/page.tsx businesses/\\\\[id\\\\] users/page.tsx subscriptions/page.tsx audit/page.tsx)",
-      "Bash(rmdir businesses *)"
+      "Bash(rmdir businesses *)",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)"
     ]
   }
 }
