@@ -1,7 +1,4 @@
-# Migración — Tablero de Control
-
-> **ESTADO: PAUSADO** — Se decidió mantener Next.js + Firebase y deployar en Firebase App Hosting en lugar de migrar a Express + PostgreSQL. Ver [deploy.md](deploy.md) para el plan actual.
-> Este documento se conserva como referencia si en el futuro se necesita migrar la base de datos o separar el backend.
+# Migración — Firestore → PostgreSQL + Railway
 
 > Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` completado
 
@@ -9,466 +6,224 @@
 
 ## Contexto
 
-Migración desde **Next.js 16 + Firebase monolítico** hacia **Backend Express + Frontend Next.js (SPA) + PostgreSQL** desplegado en **Railway**.
+Migración de **Firestore** a **PostgreSQL** manteniendo Next.js fullstack y Firebase Auth.
 
 **Motivos**:
-- `firebase.json` configurado para export estático (`"public": "out"`), incompatible con API routes.
-- Vercel Pro cuesta USD 20/mes para uso comercial.
-- Se busca separación clara backend/frontend y control total sobre la base de datos.
+- Queries relacionales complejas (reportes, filtros cruzados) son difíciles en Firestore
+- PostgreSQL da control total sobre la estructura de datos
+- Railway hostea Postgres + Next.js en un solo lugar
+- Vercel Pro cuesta USD 20/mes
+
+**Lo que NO cambia**:
+- Firebase Auth — login, sesiones, tokens
+- Next.js con API routes — misma estructura
+- Cloudinary — storage de archivos
+- MercadoPago — pagos y suscripciones
 
 ---
 
 ## Stack final
 
-| Capa | Tecnología |
-|------|------------|
-| Backend | Express + Prisma + TypeScript |
-| Frontend | Next.js 16 (SPA, sin API routes) |
-| Base de datos | PostgreSQL |
-| Auth | JWT (`jsonwebtoken` + `bcrypt`) |
-| Validación | Zod (compartido) |
-| Storage | Cloudinary |
-| Pagos | MercadoPago Preapproval API |
-| Deploy | Railway |
-
----
-
-## Estructura objetivo
-
-```
-tablero_control/
-├── backend/              # Express + Prisma (nuevo)
-│   ├── src/
-│   │   ├── routes/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── services/
-│   │   ├── lib/
-│   │   └── index.ts
-│   ├── prisma/
-│   │   └── schema.prisma
-│   ├── .env
-│   ├── package.json
-│   └── tsconfig.json
-├── frontend/             # Next.js actual movido acá
-└── shared/               # Tipos y schemas compartidos
-    └── types/
-```
+| Capa | Antes | Después |
+|------|-------|---------|
+| Hosting | Vercel | Railway |
+| Base de datos | Firestore | PostgreSQL (Railway) |
+| ORM | — | Prisma |
+| Auth | Firebase Auth | Firebase Auth (igual) |
+| Storage | Firebase Storage → Cloudinary | Cloudinary |
+| Pagos | MercadoPago | MercadoPago (igual) |
 
 ---
 
 ## Estado global
 
-| Fase | Estado | Duración est. | Notas |
-|------|--------|---------------|-------|
-| 0. Preservar estado | `[ ]` | 15 min | |
-| 1. Setup Express | `[ ]` | 1 día | |
-| 2. Auth + Users | `[ ]` | 2-3 días | |
-| 3. Multi-tenant | `[ ]` | 2-3 días | |
-| 4. Tasks + Projects | `[ ]` | 3-4 días | |
-| 5. MercadoPago | `[ ]` | 2-3 días | |
-| 6. Frontend | `[ ]` | 4-5 días | |
-| 7. Deploy Railway | `[ ]` | 1-2 días | |
-| 8. Testing | `[ ]` | 3-5 días | |
-| **Total** | | **~4-5 semanas** | |
+| Fase | Estado | Notas |
+|------|--------|-------|
+| 1. Prisma setup + schema | `[ ]` | |
+| 2. Cliente Prisma + repositorios | `[ ]` | |
+| 3. Migrar API routes | `[ ]` | |
+| 4. Migrar hooks/queries del frontend | `[ ]` | |
+| 5. Deploy Railway | `[ ]` | |
+| 6. Seed datos en producción | `[ ]` | |
+| 7. Testing completo | `[ ]` | |
 
 ---
 
-## Fase 0 — Preservar estado actual
+## Fase 1 — Prisma setup + schema
 
-**Objetivo**: No perder el trabajo antes de empezar.
+### Instalar dependencias
 
-- [ ] `git status` para verificar estado
-- [ ] `git add .`
-- [ ] `git commit -m "chore: estado previo a migración backend Express"`
-- [ ] `git push origin dev`
-- [ ] `git checkout -b feature/backend-express`
-- [ ] `git tag pre-migration-backup && git push --tags`
+```bash
+npm install prisma @prisma/client
+npx prisma init
+```
 
-**Verificación**: `git log --oneline -5` muestra el commit nuevo, GitHub tiene la rama y el tag.
+Configurar `DATABASE_URL` en `.env.local`:
+```
+DATABASE_URL="postgresql://user:password@localhost:5432/tablero_control"
+```
 
----
+### Schema completo
 
-## Fase 1 — Setup Backend Express
+Ver `prisma/schema.prisma` en el repo.
 
-**Objetivo**: Esqueleto del backend corriendo en `http://localhost:4000/health`.
+**Tablas principales**:
+- `User` — perfil extendido (uid = Firebase Auth uid)
+- `Business` — negocio/empresa
+- `Location` — local o sede
+- `Team` — equipo dentro de un local
+- `TeamMember` — relación User ↔ Team
+- `Project` — proyecto dentro de un equipo
+- `Task` — tarea dentro de un proyecto
+- `Subtask` — subtarea de una tarea
+- `Comment` — comentario en una tarea
+- `Attachment` — adjunto de Cloudinary en una tarea
+- `Subscription` — suscripción MercadoPago del Business
+- `Invoice` — factura de pago
+- `AuditLog` — registro de acciones críticas
 
-- [ ] Crear carpeta `backend/`
-- [ ] `npm init -y` dentro de `backend/`
-- [ ] Instalar deps: `express cors helmet dotenv jsonwebtoken bcrypt zod @prisma/client`
-- [ ] Instalar dev deps: `typescript tsx @types/node @types/express @types/cors @types/jsonwebtoken @types/bcrypt prisma`
-- [ ] `npx tsc --init` (strict, target ES2022)
+### Comandos Prisma
+
+```bash
+npx prisma migrate dev --name init     # Crear primera migración
+npx prisma migrate deploy              # Aplicar en producción
+npx prisma studio                      # UI visual de la BD
+npx prisma generate                    # Regenerar cliente tras cambios
+```
+
+- [ ] Instalar `prisma` y `@prisma/client`
 - [ ] `npx prisma init`
-- [ ] Configurar `DATABASE_URL` en `backend/.env`
-- [ ] Crear estructura de carpetas (`routes/`, `controllers/`, `middleware/`, `services/`, `lib/`)
-- [ ] `src/index.ts` — Express app + endpoint `/health`
-- [ ] `src/lib/prisma.ts` — cliente Prisma singleton
-- [ ] `src/middleware/error.ts` — error handler global
-- [ ] `src/middleware/auth.ts` — verificación JWT
-- [ ] Scripts `dev`, `build`, `start`, `db:migrate`, `db:studio` en `package.json`
-
-**Verificación**: `npm run dev` levanta el server, `curl http://localhost:4000/health` responde 200.
+- [ ] Escribir `prisma/schema.prisma` completo
+- [ ] `npx prisma migrate dev --name init`
+- [ ] Verificar tablas en `npx prisma studio`
 
 ---
 
-## Fase 2 — Auth + Users con JWT
+## Fase 2 — Cliente Prisma + repositorios
 
-**Objetivo**: Reemplazar Firebase Auth por JWT propio.
+### Crear `src/lib/prisma.ts`
 
-### Modelo Prisma
+Singleton del cliente para no crear múltiples conexiones en dev:
 
-```prisma
-model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  displayName  String?
-  role         Role      @default(miembro)
-  businessId   String?
-  business     Business? @relation(fields: [businessId], references: [id])
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-}
+```typescript
+import { PrismaClient } from '@prisma/client'
 
-enum Role {
-  superadmin
-  admin
-  responsable
-  miembro
-  viewer
-}
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+
+export const prisma =
+  globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
-### Endpoints
+### Crear repositorios Prisma
 
-- [ ] `POST /api/auth/register`
-- [ ] `POST /api/auth/login` → `{ token, user }`
-- [ ] `POST /api/auth/logout`
-- [ ] `GET /api/auth/me`
-- [ ] `POST /api/auth/forgot-password` (opcional, puede quedar para después)
-- [ ] `GET /api/users`
-- [ ] `POST /api/users`
-- [ ] `PATCH /api/users/:id`
-- [ ] `DELETE /api/users/:id`
+Estructura en `src/repositories/prisma/`:
+- `user.repository.ts` — reemplaza `firebase/user.repository.ts`
+- `task.repository.ts` — reemplaza `firebase/task.repository.ts`
+- `team.repository.ts` — reemplaza `firebase/team.repository.ts`
+- `location.repository.ts` — reemplaza `firebase/location.repository.ts`
+- `business.repository.ts` — nuevo
+- `project.repository.ts` — nuevo
 
-### Referencias a reutilizar
+Cada uno implementa la misma interfaz `IXxxRepository` — los services no cambian.
 
-- `src/app/api/users/route.ts` — lógica de validación y permisos
-- `src/lib/api/auth-helpers.ts` — `requireUser`, `requireRole` (adaptar a JWT)
-- `src/types/domain/user.ts` — mover a `shared/types/`
+### Actualizar `src/repositories/index.ts`
 
-**Verificación**: Login por Postman retorna JWT. `GET /api/auth/me` con `Authorization: Bearer <token>` funciona. Un usuario `miembro` no puede crear usuarios.
-
----
-
-## Fase 3 — Multi-tenant (Business + Locales + Teams)
-
-**Objetivo**: Negocios, locales y equipos en PostgreSQL con aislamiento por tenant.
-
-### Modelos Prisma
-
-```prisma
-model Business {
-  id             String    @id @default(cuid())
-  name           String
-  ownerId        String
-  subscriptionId String?
-  plan           Plan      @default(free)
-  planExpiresAt  DateTime?
-  users          User[]
-  locations      Location[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-}
-
-model Location {
-  id         String   @id @default(cuid())
-  businessId String
-  name       String
-  address    String?
-  business   Business @relation(fields: [businessId], references: [id])
-  teams      Team[]
-}
-
-model Team {
-  id         String       @id @default(cuid())
-  locationId String
-  name       String
-  members    TeamMember[]
-}
-
-enum Plan {
-  free
-  basic
-  pro
-  enterprise
-}
+Cambiar los singletons de Firebase a Prisma:
+```typescript
+// Antes
+export const userRepository = new FirebaseUserRepository()
+// Después
+export const userRepository = new PrismaUserRepository()
 ```
 
-### Endpoints
-
-- [ ] `POST /api/businesses` (superadmin)
-- [ ] `GET /api/businesses/:id`
-- [ ] `PATCH /api/businesses/:id`
-- [ ] `GET /api/businesses/:id/locations`
-- [ ] `POST /api/locations`
-- [ ] `POST /api/teams`
-- [ ] `POST /api/teams/:id/members`
-
-### Middleware
-
-- [ ] `requireBusinessAccess` — admin de negocio A no puede tocar negocio B.
-
-**Verificación**: Admin de otro negocio recibe 403 al intentar ver recursos ajenos. Superadmin ve todo.
+- [ ] Crear `src/lib/prisma.ts`
+- [ ] Crear `src/repositories/prisma/user.repository.ts`
+- [ ] Crear `src/repositories/prisma/task.repository.ts`
+- [ ] Crear `src/repositories/prisma/team.repository.ts`
+- [ ] Crear `src/repositories/prisma/location.repository.ts`
+- [ ] Crear `src/repositories/prisma/business.repository.ts`
+- [ ] Crear `src/repositories/prisma/project.repository.ts`
+- [ ] Actualizar `src/repositories/index.ts`
 
 ---
 
-## Fase 4 — Tasks + Projects + Kanban
+## Fase 3 — Migrar API routes
 
-**Objetivo**: Migrar el corazón funcional (proyectos, columnas, tareas, adjuntos).
+Las API routes usan Firebase Admin para leer/escribir datos. Hay que cambiarlas a Prisma.
 
-### Modelos Prisma
+### Rutas a migrar
 
-```prisma
-model Project {
-  id          String   @id @default(cuid())
-  businessId  String
-  name        String
-  description String?
-  status      String   @default("active")
-  tasks       Task[]
-  columns     Column[]
-  createdAt   DateTime @default(now())
-}
+| Ruta | Cambio |
+|------|--------|
+| `api/users/create/route.ts` | Firestore → `prisma.user.create()` |
+| `api/superadmin/businesses/route.ts` | Firestore → `prisma.business.findMany()` |
+| `api/superadmin/metrics/route.ts` | Firestore → queries Prisma |
+| `api/mercadopago/webhook/route.ts` | Firestore → `prisma.subscription.update()` |
+| `api/mercadopago/preapproval/route.ts` | Firestore → `prisma.subscription.create()` |
+| `api/mercadopago/cancel/route.ts` | Firestore → `prisma.subscription.update()` |
 
-model Column {
-  id        String @id @default(cuid())
-  projectId String
-  name      String
-  order     Int
-  tasks     Task[]
-}
+**Auth de las rutas**: Firebase Admin `verifyIdToken()` se mantiene igual — solo cambia la parte de datos.
 
-model Task {
-  id          String       @id @default(cuid())
-  projectId   String
-  columnId    String
-  title       String
-  description String?
-  priority    String?
-  dueDate     DateTime?
-  assigneeId  String?
-  order       Int
-  attachments Attachment[]
-  createdAt   DateTime     @default(now())
-}
-
-model Attachment {
-  id        String   @id @default(cuid())
-  taskId    String
-  url       String
-  publicId  String
-  filename  String
-  createdAt DateTime @default(now())
-}
-```
-
-### Endpoints
-
-- [ ] `GET /api/projects`
-- [ ] `POST /api/projects`
-- [ ] `GET /api/projects/:id`
-- [ ] `PATCH /api/projects/:id`
-- [ ] `DELETE /api/projects/:id`
-- [ ] `POST /api/projects/:id/columns`
-- [ ] `POST /api/tasks`
-- [ ] `PATCH /api/tasks/:id` (incluye mover entre columnas)
-- [ ] `POST /api/tasks/:id/attachments` (Cloudinary)
-
-### Límites por plan
-
-- [ ] Mover `src/lib/mercadopago/plans.ts` a `backend/src/lib/plans.ts`
-- [ ] Middleware que verifique `PLANS[plan].limits` antes de crear recursos
-
-**Verificación**: Plan Free bloquea el 3er proyecto, Plan Basic bloquea el 11vo usuario.
+- [ ] Migrar `api/users/create/route.ts`
+- [ ] Migrar `api/superadmin/businesses/route.ts`
+- [ ] Migrar `api/superadmin/metrics/route.ts`
+- [ ] Migrar `api/mercadopago/webhook/route.ts`
+- [ ] Migrar `api/mercadopago/preapproval/route.ts`
+- [ ] Migrar `api/mercadopago/cancel/route.ts`
 
 ---
 
-## Fase 5 — MercadoPago (Suscripciones)
+## Fase 4 — Migrar hooks/queries del frontend
 
-**Objetivo**: Trasladar integración MP al backend Express.
+El frontend usa hooks que llaman directamente a Firestore client-side. Hay que convertirlos a llamadas `fetch` a las API routes.
 
-### Archivos a migrar
+**Regla**: Firestore client SDK (`onSnapshot`, `getDoc`, `getDocs`) → `fetch('/api/...')` + React Query.
 
-| Actual | Destino |
-|--------|---------|
-| `src/lib/mercadopago/plans.ts` | `backend/src/lib/plans.ts` |
-| `src/lib/mercadopago/preapproval.ts` | `backend/src/services/mercadopago.ts` |
-| `src/lib/mercadopago/client.ts` | `backend/src/lib/mercadopago-client.ts` |
-| `src/app/api/mercadopago/preapproval/route.ts` | `backend/src/routes/mercadopago.ts` |
-| `src/app/api/mercadopago/webhook/route.ts` | `backend/src/routes/webhook.ts` |
-
-### Modelos Prisma
-
-```prisma
-model Subscription {
-  id                String             @id @default(cuid())
-  businessId        String             @unique
-  plan              Plan
-  status            SubscriptionStatus
-  mpPreapprovalId   String?
-  amount            Float
-  currency          String             @default("ARS")
-  frequency         String
-  cancelAtPeriodEnd Boolean            @default(false)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-}
-
-enum SubscriptionStatus {
-  pending
-  authorized
-  paused
-  cancelled
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  actorId    String
-  actorRole  String
-  businessId String?
-  action     String
-  targetType String?
-  targetId   String?
-  metadata   Json?
-  ip         String?
-  createdAt  DateTime @default(now())
-}
-```
-
-### Endpoints
-
-- [ ] `POST /api/mercadopago/preapproval` → devuelve `initPoint`
-- [ ] `POST /api/mercadopago/webhook` → verificar HMAC con `MP_WEBHOOK_SECRET`
-- [ ] `DELETE /api/subscriptions/:id`
-
-### Precios sugeridos (actualizar `plans.ts`)
-
-| Plan | Mensual | Anual |
-|------|---------|-------|
-| Basic | $8.999 ARS | $89.990 ARS |
-| Pro | $24.999 ARS | $249.990 ARS |
-
-**Verificación**: Crear preapproval TEST → checkout → webhook actualiza suscripción a `authorized`.
+- [ ] Migrar `hooks/queries/use-tasks-query.ts`
+- [ ] Migrar `hooks/queries/use-members-query.ts`
+- [ ] Migrar `hooks/queries/use-locations-query.ts`
+- [ ] Migrar `hooks/mutations/` (create, update, delete, move)
+- [ ] Eliminar imports de `firebase/firestore` en componentes cliente
+- [ ] Eliminar `src/lib/firebase/firestore.ts` (ya no se necesita)
 
 ---
 
-## Fase 6 — Frontend se conecta al Backend
+## Fase 5 — Deploy Railway
 
-**Objetivo**: Next.js consume API Express, sin Firebase.
+Ver [deploy.md](deploy.md) para el paso a paso completo.
 
-- [ ] Mover Next.js actual a `frontend/` (respetar `.git`)
-- [ ] `frontend/src/lib/api/client.ts` — fetch centralizado:
-  - Base URL desde `NEXT_PUBLIC_API_URL`
-  - Token JWT desde `localStorage` o cookies
-  - 401 → redirect a login
-- [ ] Reemplazar `src/lib/firebase/auth.ts` por `src/lib/auth.ts` (llama a `/api/auth/*`)
-- [ ] Actualizar `useAuth` hook → usa `/api/auth/me`
-- [ ] Actualizar fetchers de React Query
-- [ ] Eliminar `frontend/src/app/api/` entero
-- [ ] Eliminar `frontend/src/lib/firebase/admin.ts` y usos server-side de Firebase Admin
-- [ ] `frontend/.env.local`:
-  ```
-  NEXT_PUBLIC_API_URL=http://localhost:4000
-  ```
-- [ ] Eliminar `firebase.json`, `firestore.rules`, `storage.rules` de la raíz
-- [ ] Evaluar si se migra Firebase Storage a Cloudinary (recomendado)
-
-**Verificación**: Login → token guardado → dashboard carga datos vía Express → crear tarea end-to-end funciona.
+Resumen:
+- Crear proyecto en Railway
+- Agregar servicio PostgreSQL
+- Conectar repo GitHub → Next.js detectado automáticamente
+- Cargar env vars (Firebase, MP, Cloudinary, DATABASE_URL)
+- Build command: `npx prisma generate && npm run build`
+- Start command: `npm start`
+- Correr migraciones: `npx prisma migrate deploy`
 
 ---
 
-## Fase 7 — Deploy a Railway
+## Fase 6 — Seed en producción
 
-**Objetivo**: Backend + Frontend + PostgreSQL corriendo en producción.
-
-### Servicios Railway
-
-- [ ] Proyecto nuevo en https://railway.app
-- [ ] Plugin PostgreSQL → copiar `DATABASE_URL`
-- [ ] Servicio **Backend**:
-  - Root: `backend/`
-  - Build: `npm install && npx prisma generate && npm run build && npx prisma migrate deploy`
-  - Start: `npm start`
-  - Env: `DATABASE_URL`, `JWT_SECRET`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `CLOUDINARY_*`, `CORS_ORIGIN`
-- [ ] Servicio **Frontend**:
-  - Root: `frontend/`
-  - Build: `npm install && npm run build`
-  - Start: `npm start`
-  - Env: `NEXT_PUBLIC_API_URL`
-
-### Dominios
-
-- [ ] `api.tudominio.com` → backend
-- [ ] `app.tudominio.com` → frontend
-- [ ] Actualizar `CORS_ORIGIN` con el dominio real
-- [ ] Actualizar webhook MP: `https://api.tudominio.com/api/mercadopago/webhook`
-
-**Verificación**: Login desde producción → dashboard funciona → pago MP TEST completa flujo.
+- [ ] Crear script `scripts/seed-production.ts`
+- [ ] Crear superadmin en Firebase Auth + perfil en Postgres
+- [ ] Crear Business de TecnoFusión
+- [ ] Verificar acceso con superadmin
 
 ---
 
-## Fase 8 — Testing y ajustes
+## Fase 7 — Testing completo
 
-**Objetivo**: Validar migración completa y corregir regresiones.
-
-### Checklist funcional
-
-- [ ] Login / registro / logout
-- [ ] Crear negocio, locales, equipos
-- [ ] CRUD de usuarios con roles
-- [ ] CRUD de proyectos
-- [ ] Kanban: crear columnas, arrastrar tareas, asignar responsables
-- [ ] Adjuntos a tareas (Cloudinary)
-- [ ] Upgrade plan Free → Basic con MP
-- [ ] Webhook MP actualiza suscripción
-- [ ] Cancelación de suscripción
-- [ ] Límites de plan respetados
-- [ ] Audit log registra acciones críticas
-- [ ] Responsive en mobile
-
-### Tests automatizados
-
-- [ ] Backend: Vitest + supertest (auth, subscriptions, límites)
-- [ ] Frontend: actualizar mocks de API en tests existentes
-
----
-
-## Archivos críticos de referencia
-
-- [src/lib/mercadopago/plans.ts](src/lib/mercadopago/plans.ts) — planes y límites
-- [src/lib/mercadopago/preapproval.ts](src/lib/mercadopago/preapproval.ts) — cliente MP
-- [src/app/api/mercadopago/preapproval/route.ts](src/app/api/mercadopago/preapproval/route.ts) — endpoint actual
-- [src/lib/api/auth-helpers.ts](src/lib/api/auth-helpers.ts) — `requireUser`, `requireRole`
-- [src/lib/api/audit.ts](src/lib/api/audit.ts) — `writeAuditLog`
-- [src/types/domain/](src/types/domain/) — tipos (mover a `shared/`)
-- [.env.local](.env.local) — credenciales
+Ver checklist completo en [deploy.md](deploy.md) Fase 5.
 
 ---
 
 ## Notas
 
-- **No borrar Firebase** hasta que la migración esté 100% completa (fallback durante transición).
-- **Cloudinary** se mantiene — no requiere migración.
-- **MercadoPago Preapproval** ya está bien implementada, solo cambia el entorno (Next → Express).
-- La rama `dev` queda intacta. Toda la migración ocurre en `feature/backend-express`.
-
----
-
-## Bitácora
-
-> Registrá acá decisiones, bloqueos o cambios de alcance que surjan en el camino.
-
-| Fecha | Fase | Nota |
-|-------|------|------|
-| 2026-04-18 | — | Documento creado |
+- **Firebase Auth no se toca**. `verifyIdToken()` sigue funcionando en las API routes.
+- **Firestore se desactiva progresivamente** — no borrar hasta que todo esté en Postgres.
+- **Realtime**: Firestore `onSnapshot` se pierde. Si hay componentes que usan realtime, migrar a polling con React Query `refetchInterval` o SSE.
+- **Cloudinary**: ya implementado, no cambia nada.
+- **No hay Express separado** — Next.js API routes siguen siendo el backend.
