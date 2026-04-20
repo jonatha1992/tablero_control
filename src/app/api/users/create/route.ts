@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
+import { MailService } from '@/services/mail.service';
 import type { UserRole } from '@/types/domain/user';
 
 export interface CreateUserBody {
@@ -116,9 +117,13 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const error = err as Error;
     console.error('Failed to set custom claims:', error.message);
-    // No borramos el usuario porque el registro ya está en Auth y DB,
-    // pero el admin debería saber que hubo un problema parcial.
   }
+
+  // Notificación de Bienvenida (Asíncrona)
+  // No bloqueamos la respuesta al cliente, lo enviamos en segundo plano.
+  MailService.sendWelcomeEmail(email.trim(), name.trim()).catch(err => {
+    console.error('Failed to send welcome email:', err);
+  });
 
   return NextResponse.json(
     { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },
