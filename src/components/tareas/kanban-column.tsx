@@ -47,7 +47,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
             {tasks.length}
           </span>
         </div>
-        <button 
+        <button
           onClick={onAddClick}
           className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all"
         >
@@ -67,7 +67,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
               key={task.id}
               task={task}
               column={status}
-              onMove={() => {}}
+              onMove={() => { }}
               onPriorityChange={onPriorityChange}
               onClick={onCardClick}
             />

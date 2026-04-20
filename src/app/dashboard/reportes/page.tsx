@@ -135,7 +135,7 @@ export default function ReportesPage() {
       .filter((m) => m.asignadas > 0)
       .sort((a, b) => b.asignadas - a.asignadas)
       .slice(0, 8),
-  [tasks, members]);
+    [tasks, members]);
 
   const weeklyActivity = useMemo(() =>
     Array.from({ length: 6 }, (_, i) => {
@@ -152,7 +152,7 @@ export default function ReportesPage() {
         bloqueadas: tasks.filter((t) => t.status === 'blocked' && inRange(t.updatedAt)).length,
       };
     }),
-  [tasks]);
+    [tasks]);
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.status === 'done').length;

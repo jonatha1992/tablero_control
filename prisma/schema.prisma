@@ -91,12 +91,6 @@ enum InvoiceStatus {
   refunded
 }
 
-enum EntityType {
-  negocio
-  empresa
-  area
-}
-
 // ─── Modelos ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -136,10 +130,8 @@ model Business {
   adminId         String
   subscriptionId  String?
   mpPayerId       String?
-  entityType      EntityType     @default(negocio)
   featureFlags    Json           @default("{}")
   settings        Json           @default("{\"maxLocations\":1,\"maxUsers\":5,\"features\":[],\"localeTypes\":[]}")
-  taskDefaults    Json           @default("{\"status\":\"todo\",\"priority\":\"medium\",\"type\":\"task\"}")
   trialEndsAt     DateTime?
   suspendedAt     DateTime?
   suspendedReason String?

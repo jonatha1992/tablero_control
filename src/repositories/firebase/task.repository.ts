@@ -22,7 +22,7 @@ export class FirebaseTaskRepository implements ITaskRepository {
 
   async findAll(businessId: string, filters?: TaskFilters, sort?: TaskSort): Promise<Task[]> {
     const constraints: QueryConstraint[] = [];
-    
+
     // Superadmin bypass: si es 'all', no filtramos por businessId
     if (businessId !== 'all') {
       constraints.push(where('businessId', '==', businessId));
@@ -55,7 +55,7 @@ export class FirebaseTaskRepository implements ITaskRepository {
     if (businessId !== 'all') {
       paginationFilters.businessId = businessId;
     }
-    
+
     return getPaginated<Task>(COLLECTION, {
       page,
       pageSize,

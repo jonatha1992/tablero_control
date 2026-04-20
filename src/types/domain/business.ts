@@ -10,18 +10,6 @@ export interface BusinessSettings {
   localeTypes: string[];
 }
 
-export type EntityType = 'negocio' | 'empresa' | 'area';
-
-export interface TaskDefaults {
-  status: string;
-  priority: string;
-  type: string;
-  // Estos campos permitirán filtrar qué opciones se muestran en los selectores por negocio
-  availableStatuses?: string[];
-  availablePriorities?: string[];
-  availableTypes?: string[];
-}
-
 export interface Business {
   id: string;
   name: string;
@@ -31,9 +19,7 @@ export interface Business {
   adminId: string;
   locationIds: string[];
   teamIds: string[];
-  entityType: EntityType;
   settings: BusinessSettings;
-  taskDefaults: TaskDefaults;
   featureFlags: Record<string, boolean>;
   subscriptionId?: string;
   mpPayerId?: string;

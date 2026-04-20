@@ -35,6 +35,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const deleteTask = useDeleteTask();
   const { data: members = [] } = useMembersQuery();
 
+  const updateTask = useUpdateTask();
+  const moveTask = useMoveTask();
+
   if (!task) return null;
 
   const handleSave = () => {
