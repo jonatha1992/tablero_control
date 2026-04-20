@@ -10,6 +10,10 @@ import { useTheme } from 'next-themes';
 import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase/client';
+import { useBusinessConfig } from '@/hooks/queries/use-business-config';
+import { useUpdateBusinessConfig } from '@/hooks/mutations/use-update-business-config';
+import { Loader2, Settings2 } from 'lucide-react';
+import type { EntityType } from '@/types/domain/business';
 
 export default function ConfigPage() {
   const { user } = useAuth();
@@ -70,12 +74,17 @@ export default function ConfigPage() {
             <Bell className="h-4 w-4 mr-2" /> Notificaciones
           </TabsTrigger>
           {(user?.role === 'admin' || user?.role === 'superadmin') && (
-            <Link
-              href="/dashboard/config/roles"
-              className="flex items-center gap-2 px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ShieldCheck className="h-4 w-4" /> Roles y permisos
-            </Link>
+            <>
+              <TabsTrigger value="plataforma" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
+                <Settings2 className="h-4 w-4 mr-2" /> Plataforma
+              </TabsTrigger>
+              <Link
+                href="/dashboard/config/roles"
+                className="flex items-center gap-2 px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ShieldCheck className="h-4 w-4" /> Roles y permisos
+              </Link>
+            </>
           )}
         </TabsList>
 
@@ -246,8 +255,154 @@ export default function ConfigPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* PLATAFORMA */}
+          {(user?.role === 'admin' || user?.role === 'superadmin') && (
+            <TabsContent value="plataforma" className="mt-0 space-y-4 outline-none">
+              <PlatformSettings />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
+    </div>
+  );
+}
+
+function PlatformSettings() {
+  const { data: business, isLoading } = useBusinessConfig();
+  const updateMutation = useUpdateBusinessConfig();
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
+  const handleUpdateType = (type: EntityType) => {
+    updateMutation.mutate({ entityType: type });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-border/50 shadow-sm glass">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold">Tipo de Entidad</CardTitle>
+          <CardDescription className="text-xs">Define cómo se identifica tu organización en el sistema.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(['negocio', 'empresa', 'area'] as const).map((type) => (
+              <label 
+                key={type}
+                className={cn(
+                  "flex flex-col items-center gap-2 text-sm cursor-pointer border p-4 rounded-md transition-all hover:bg-accent/50",
+                  business?.entityType === type ? 'bg-primary/10 border-primary shadow-sm' : 'border-border'
+                )}
+              >
+                <input 
+                  type="radio" 
+                  name="entityType" 
+                  className="sr-only" 
+                  checked={business?.entityType === type} 
+                  onChange={() => handleUpdateType(type)} 
+                />
+                <span className="font-bold capitalize">{type}</span>
+                <p className="text-[10px] text-center text-muted-foreground">
+                  {type === 'negocio' && "Ideal para locales comerciales o tiendas físicas."}
+                  {type === 'empresa' && "Configuración corporativa para múltiples departamentos."}
+                  {type === 'area' && "Gestión interna para un sector específico."}
+                </p>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 shadow-sm glass">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold">Configuración de Tareas</CardTitle>
+          <CardDescription className="text-xs">Personaliza los valores predeterminados para las tareas de tu {business?.entityType || 'entidad'}.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Default Status */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Estado inicial por defecto</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {['backlog', 'todo', 'in_progress'].map((status) => (
+                <Button
+                  key={status}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 text-[10px] justify-start px-3",
+                    business?.taskDefaults?.status === status ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground"
+                  )}
+                  onClick={() => updateMutation.mutate({ 
+                    taskDefaults: { ...business!.taskDefaults, status } 
+                  })}
+                >
+                  <div className={cn("w-1.5 h-1.5 rounded-full mr-2", 
+                    status === 'backlog' ? 'bg-slate-400' : status === 'todo' ? 'bg-blue-400' : 'bg-amber-400'
+                  )} />
+                  {status.replace('_', ' ').toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Default Priority */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Prioridad predeterminada</label>
+            <div className="flex flex-wrap gap-2">
+              {['low', 'medium', 'high', 'urgent'].map((priority) => (
+                <Button
+                  key={priority}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 text-[10px] px-3",
+                    business?.taskDefaults?.priority === priority ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground"
+                  )}
+                  onClick={() => updateMutation.mutate({ 
+                    taskDefaults: { ...business!.taskDefaults, priority } 
+                  })}
+                >
+                  {priority.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Default Type */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Tipo de tarea predeterminado</label>
+            <div className="flex flex-wrap gap-2">
+              {['task', 'feature', 'bug', 'improvement'].map((type) => (
+                <Button
+                  key={type}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 text-[10px] px-3",
+                    business?.taskDefaults?.type === type ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground"
+                  )}
+                  onClick={() => updateMutation.mutate({ 
+                    taskDefaults: { ...business!.taskDefaults, type } 
+                  })}
+                >
+                  {type.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="border-t bg-muted/20 py-3">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <Settings2 className="h-3 w-3" />
+            <p>Estos valores se aplicarán automáticamente al crear nuevas tareas.</p>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
   const targetBusinessId =
     authed.role === 'superadmin' ? businessId ?? authed.businessId : authed.businessId;
 
+  if (authed.role === 'admin' && !targetBusinessId) {
+    console.error('User create error: Admin trying to create user without businessId context');
+    return NextResponse.json({ error: 'business_id_required' }, { status: 400 });
+  }
+
   if (authed.role === 'admin' && (role === 'admin' || role === 'superadmin')) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
@@ -72,11 +77,16 @@ export async function POST(req: NextRequest) {
     });
     uid = authUser.uid;
   } catch (err: unknown) {
-    const code = (err as { code?: string }).code;
-    if (code === 'auth/email-already-exists') {
+    const error = err as { code?: string; message?: string };
+    console.error('Firebase Auth creation failed:', error.code, error.message);
+    
+    if (error.code === 'auth/email-already-exists') {
       return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
     }
-    return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'auth_creation_failed', 
+      details: error.message 
+    }, { status: 500 });
   }
 
   try {
@@ -91,12 +101,24 @@ export async function POST(req: NextRequest) {
         isActive: true,
       },
     });
-  } catch {
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error('Prisma DB write failed:', error.message);
     await adminAuth.deleteUser(uid).catch(() => {});
-    return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'db_write_failed',
+      details: error.message 
+    }, { status: 500 });
   }
 
-  await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+  try {
+    await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error('Failed to set custom claims:', error.message);
+    // No borramos el usuario porque el registro ya está en Auth y DB,
+    // pero el admin debería saber que hubo un problema parcial.
+  }
 
   return NextResponse.json(
     { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },

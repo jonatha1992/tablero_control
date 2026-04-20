@@ -28,10 +28,13 @@ async function createUserViaApi(input: CreateUserInput): Promise<CreateUserResul
   });
 
   if (!res.ok) {
-    const { error } = await res.json().catch(() => ({ error: 'unknown' }));
+    const { error, details } = await res.json().catch(() => ({ error: 'unknown' }));
     if (error === 'email_already_exists') throw new Error('El email ya está registrado');
     if (error === 'forbidden') throw new Error('Sin permisos para crear este tipo de usuario');
-    throw new Error('No se pudo crear el usuario');
+    if (error === 'business_id_required') throw new Error('Error de contexto: No tienes un Negocio asociado');
+    if (error === 'db_write_failed') throw new Error(`Error en base de datos: ${details || ''}`);
+    if (error === 'auth_creation_failed') throw new Error(`Error en autenticación: ${details || ''}`);
+    throw new Error('No se pudo crear el usuario. Verifica los datos e intenta de nuevo.');
   }
 
   return res.json();

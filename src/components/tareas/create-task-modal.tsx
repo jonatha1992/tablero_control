@@ -12,8 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
-import { X } from 'lucide-react';
+import { useBusinessConfig } from '@/hooks/queries/use-business-config';
+import { X, Loader2 } from 'lucide-react';
 import type { TaskStatus, TaskPriority, TaskType } from '@/types';
+import { useEffect } from 'react';
 
 interface CreateTaskModalProps {
   open: boolean;
@@ -29,11 +31,22 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [type, setType] = useState<TaskType>('task');
   const [tags, setTags] = useState('');
-  const [dueDate, setDueDate] = useState(defaultDueDate ?? '');
+  const today = new Date().toISOString().split('T')[0];
+  const [dueDate, setDueDate] = useState(defaultDueDate ?? today);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
 
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
+  const { data: business } = useBusinessConfig();
+
+  // Inicializar estados con defaults del negocio cuando carguen
+  useEffect(() => {
+    if (business?.taskDefaults && open) {
+      if (!defaultStatus) setStatus((business.taskDefaults.status as TaskStatus) || 'todo');
+      setPriority((business.taskDefaults.priority as TaskPriority) || 'medium');
+      setType((business.taskDefaults.type as TaskType) || 'task');
+    }
+  }, [business, open, defaultStatus]);
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -43,8 +56,10 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   const reset = () => {
     setTitle(''); setDescription(''); setTags('');
-    setDueDate(defaultDueDate ?? ''); setAssigneeIds([]);
-    setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
+    setDueDate(defaultDueDate ?? today); setAssigneeIds([]);
+    setStatus(defaultStatus ?? (business?.taskDefaults?.status as TaskStatus) ?? 'todo'); 
+    setPriority((business?.taskDefaults?.priority as TaskPriority) ?? 'medium'); 
+    setType((business?.taskDefaults?.type as TaskType) ?? 'task');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -103,7 +118,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                 <option value="todo">Por hacer</option>
                 <option value="in_progress">En progreso</option>
                 <option value="in_review">En revisión</option>
-                <option value="blocked">Bloqueada</option>
+                <option value="done">Finalizado</option>
+                <option value="blocked">Bloqueado</option>
               </select>
             </div>
 
@@ -177,6 +193,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               <input
                 type="date"
                 value={dueDate}
+                min={today}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
