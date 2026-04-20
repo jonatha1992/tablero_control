@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,9 +35,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const moveTask = useMoveTask();
   const deleteTask = useDeleteTask();
   const { data: members = [] } = useMembersQuery();
-
-  const updateTask = useUpdateTask();
-  const moveTask = useMoveTask();
 
   if (!task) return null;
 
@@ -100,7 +98,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             <div className="flex items-start justify-between gap-4">
               <div>
                 <DialogTitle className="text-xl">{task.title}</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                <DialogDescription className="mt-1">
+                  {task.description || 'Sin descripción adicional.'}
+                </DialogDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button

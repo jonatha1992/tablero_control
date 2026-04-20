@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,6 +35,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
+  const today = new Date().toISOString().split('T')[0];
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -46,8 +48,6 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setDueDate(defaultDueDate ?? ''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
   };
-
-  const createTask = useCreateTask();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +67,9 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Crear Nueva Tarea</DialogTitle>
+          <DialogDescription>
+            Completa los detalles de la nueva tarea para tu equipo.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

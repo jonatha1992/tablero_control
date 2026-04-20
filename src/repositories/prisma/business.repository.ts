@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import type { Business, EntityType, TaskDefaults } from '@/types/domain/business';
+import type { Business, BusinessStatus } from '@/types/domain/business';
+import type { PlanId } from '@/types/domain/subscription';
 
 export class PrismaBusinessRepository {
   async findById(id: string): Promise<Business | null> {
@@ -11,28 +12,34 @@ export class PrismaBusinessRepository {
     return {
       id: row.id,
       name: row.name,
-      plan: row.plan as any,
-      status: row.status as any,
+      plan: row.plan as PlanId,
+      status: row.status as BusinessStatus,
       logo: row.logo ?? undefined,
       adminId: row.adminId,
-      locationIds: [], // Se cargan por relación si es necesario
+      locationIds: [], // Relational fields logic for later
       teamIds: [],
-      entityType: row.entityType as EntityType,
-      settings: row.settings as any,
-      taskDefaults: row.taskDefaults as unknown as TaskDefaults,
+      settings: row.settings as any, // Json remains as any or cast to BusinessSettings
+      featureFlags: row.featureFlags as Record<string, boolean>,
+      subscriptionId: row.subscriptionId ?? undefined,
+      mpPayerId: row.mpPayerId ?? undefined,
+      trialEndsAt: row.trialEndsAt ?? undefined,
+      suspendedAt: row.suspendedAt ?? undefined,
+      suspendedReason: row.suspendedReason ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
   }
 
   async update(id: string, data: Partial<Business>): Promise<void> {
+    const { ...rest } = data;
     await prisma.business.update({
       where: { id },
       data: {
-        name: data.name,
-        entityType: data.entityType as any,
-        taskDefaults: data.taskDefaults as any,
-        settings: data.settings as any,
+        ...rest,
+        plan: rest.plan as any,
+        status: rest.status as any,
+        settings: rest.settings as any,
+        featureFlags: rest.featureFlags as any,
       },
     });
   }

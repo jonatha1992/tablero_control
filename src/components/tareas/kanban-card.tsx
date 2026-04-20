@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   ChevronUp,
 } from 'lucide-react';
-import { cn, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -58,7 +58,7 @@ interface KanbanCardProps {
   onClick: (task: Task) => void;
 }
 
-export function KanbanCard({ task, column, onMove, onPriorityChange, onClick }: KanbanCardProps) {
+export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
   const priorityConfig = PRIORITY_CONFIG[task.priority];
@@ -84,8 +84,6 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onClick }: 
 
   // Priority order: urgent > high > medium > low
   const priorities: TaskPriority[] = ['urgent', 'high', 'medium', 'low'];
-  const currentPriorityIndex = priorities.indexOf(task.priority);
-  const nextPriority = priorities[(currentPriorityIndex + 1) % priorities.length];
 
   return (
     <div

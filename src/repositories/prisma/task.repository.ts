@@ -133,7 +133,7 @@ export class PrismaTaskRepository implements ITaskRepository {
   async create(
     data: CreateTaskDTO & { creatorId: string; businessId: string }
   ): Promise<Task> {
-    const { assigneeIds, businessId, creatorId, ...rest } = data;
+    const { assigneeIds, creatorId, ...rest } = data;
     const t = await prisma.task.create({
       data: {
         ...rest,
@@ -149,7 +149,7 @@ export class PrismaTaskRepository implements ITaskRepository {
   }
 
   async update(id: string, data: UpdateTaskDTO): Promise<Task> {
-    const { assigneeIds, attachmentUrls, ...rest } = data;
+    const { assigneeIds, ...rest } = data;
     const t = await prisma.task.update({
       where: { id },
       data: {
