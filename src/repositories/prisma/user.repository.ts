@@ -43,12 +43,12 @@ export class PrismaUserRepository implements IUserRepository {
     return users.map(toDomain);
   }
 
-  async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    const { teamIds, ...rest } = data;
+  async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<User> {
+    const { teamIds, id, ...rest } = data;
     const u = await prisma.user.create({
       data: {
         ...rest,
-        id: crypto.randomUUID(),
+        id: id ?? crypto.randomUUID(),
         role: rest.role,
         preferences: rest.preferences as unknown as Prisma.InputJsonValue,
         teams: teamIds?.length
@@ -61,7 +61,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
-    const { teamIds, ...rest } = data;
+    const { ...rest } = data;
     const u = await prisma.user.update({
       where: { id },
       data: {

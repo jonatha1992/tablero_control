@@ -9,6 +9,12 @@ export interface RecurrenceConfig {
   count?: number;
 }
 
+export interface TaskAssignee {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -17,6 +23,7 @@ export interface Task {
   priority: TaskPriority;
   type: TaskType;
   assigneeIds: string[];
+  assignees?: TaskAssignee[];
   creatorId: string;
   businessId?: string;
   projectId?: string;

@@ -7,7 +7,7 @@ import type { Prisma } from '@prisma/client';
 
 type PrismaTask = Prisma.TaskGetPayload<{
   include: {
-    assignees: { select: { id: true } };
+    assignees: { select: { id: true; name: true; avatar: true } };
     subtasks: { select: { id: true } };
     attachments: { select: { url: true } };
   };
@@ -21,7 +21,8 @@ function toDomain(t: PrismaTask): Task {
     status: t.status as TaskStatus,
     priority: t.priority as Task['priority'],
     type: t.type as Task['type'],
-    assigneeIds: t.assignees.map((a: { id: string }) => a.id),
+    assigneeIds: t.assignees.map((a) => a.id),
+    assignees: t.assignees.map((a) => ({ id: a.id, name: a.name, avatar: a.avatar ?? undefined })),
     creatorId: t.creatorId,
     projectId: t.projectId ?? undefined,
     locationId: t.locationId ?? undefined,
@@ -43,7 +44,7 @@ function toDomain(t: PrismaTask): Task {
 }
 
 const include = {
-  assignees: { select: { id: true } },
+  assignees: { select: { id: true, name: true, avatar: true } },
   subtasks: { select: { id: true } },
   attachments: { select: { url: true } },
 } satisfies Prisma.TaskInclude;
@@ -52,7 +53,10 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
   const where: Prisma.TaskWhereInput = {};
 
   if (businessId !== 'all') {
-    where.project = { businessId };
+    where.OR = [
+      { location: { businessId } },
+      { project: { businessId } },
+    ];
   }
 
   if (filters?.status?.length) where.status = { in: filters.status };
@@ -129,7 +133,7 @@ export class PrismaTaskRepository implements ITaskRepository {
   async create(
     data: CreateTaskDTO & { creatorId: string; businessId: string }
   ): Promise<Task> {
-    const { assigneeIds, businessId, creatorId, ...rest } = data;
+    const { assigneeIds, creatorId, ...rest } = data;
     const t = await prisma.task.create({
       data: {
         ...rest,
@@ -145,7 +149,7 @@ export class PrismaTaskRepository implements ITaskRepository {
   }
 
   async update(id: string, data: UpdateTaskDTO): Promise<Task> {
-    const { assigneeIds, attachmentUrls, ...rest } = data;
+    const { assigneeIds, ...rest } = data;
     const t = await prisma.task.update({
       where: { id },
       data: {

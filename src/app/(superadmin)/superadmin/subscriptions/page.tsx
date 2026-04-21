@@ -1,8 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { superadminApi } from '@/lib/api/superadmin';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Subscription } from '@/types/domain/subscription';
@@ -17,13 +16,13 @@ const STATUS_UI: Record<string, { label: string; icon: React.ReactNode; color: s
   trialing:  { label: 'Trial',     icon: <Clock className="h-4 w-4" />,       color: 'text-blue-600' },
 };
 
-async function fetchSubscriptions(): Promise<Subscription[]> {
-  const snap = await getDocs(query(collection(db, 'subscriptions'), orderBy('createdAt', 'desc')));
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Subscription, 'id'>) }));
-}
-
 export default function SubscriptionsPage() {
-  const { data = [], isLoading } = useQuery({ queryKey: ['sa-subscriptions'], queryFn: fetchSubscriptions });
+  const { data, isLoading } = useQuery({
+    queryKey: ['sa-subscriptions'],
+    queryFn: () => superadminApi.getSubscriptions(),
+  });
+
+  const subscriptions = (data?.subscriptions ?? []) as (Subscription & { business?: { name: string } })[];
 
   return (
     <div className="p-8 space-y-6">
@@ -43,34 +42,33 @@ export default function SubscriptionsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Business ID</th>
+                <th className="text-left px-4 py-3 font-medium">Negocio</th>
                 <th className="text-left px-4 py-3 font-medium">Plan</th>
                 <th className="text-left px-4 py-3 font-medium">Frecuencia</th>
                 <th className="text-left px-4 py-3 font-medium">Monto</th>
                 <th className="text-left px-4 py-3 font-medium">Estado</th>
-                <th className="text-left px-4 py-3 font-medium">Próximo cobro</th>
+                <th className="text-left px-4 py-3 font-medium">Vence</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {data.map((sub) => {
+              {subscriptions.map((sub) => {
                 const ui = STATUS_UI[sub.status] ?? STATUS_UI.pending;
-                const next = sub.nextBillingDate as unknown as { seconds: number } | undefined;
                 return (
                   <tr key={sub.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono text-xs">{sub.businessId}</td>
+                    <td className="px-4 py-3 font-medium">{sub.business?.name ?? sub.businessId}</td>
                     <td className="px-4 py-3 capitalize">{sub.plan}</td>
                     <td className="px-4 py-3 capitalize">{sub.frequency}</td>
                     <td className="px-4 py-3">${sub.amount.toLocaleString('es-AR')}</td>
-                    <td className={`px-4 py-3`}>
+                    <td className="px-4 py-3">
                       <span className={`flex items-center gap-1.5 ${ui.color}`}>{ui.icon}{ui.label}</span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {next ? format(new Date(next.seconds * 1000), 'd MMM yyyy', { locale: es }) : '—'}
+                      {sub.currentPeriodEnd ? format(new Date(sub.currentPeriodEnd as unknown as string), 'd MMM yyyy', { locale: es }) : '—'}
                     </td>
                   </tr>
                 );
               })}
-              {data.length === 0 && (
+              {subscriptions.length === 0 && (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin suscripciones</td></tr>
               )}
             </tbody>

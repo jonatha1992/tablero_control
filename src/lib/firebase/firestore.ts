@@ -40,7 +40,7 @@ export async function getAll<T = DocumentData>(
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as T);
 }
 
-export async function create<T extends Record<string, any>>(
+export async function create<T extends Record<string, unknown>>(
   collectionName: string,
   data: T,
   id?: string
@@ -63,7 +63,7 @@ export async function create<T extends Record<string, any>>(
 export async function update(
   collectionName: string,
   id: string,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): Promise<void> {
   const docRef = doc(db, collectionName, id);
   await updateDoc(docRef, {
@@ -89,7 +89,7 @@ export async function getPaginated<T = DocumentData>(
   }: {
     page?: number;
     pageSize?: number;
-    filters?: Record<string, any>;
+    filters?: Record<string, unknown>;
     sort?: TaskSort;
   }
 ): Promise<PaginatedResponse<T>> {
@@ -119,7 +119,7 @@ export async function getPaginated<T = DocumentData>(
   const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as T);
   
   // Get total count (separate query without pagination)
-  const countQuery = query(collectionRef, ...constraints.filter(c => !isLimitConstraint(c)));
+  // const countQuery = query(collectionRef, ...constraints.filter(c => !isLimitConstraint(c)));
   // Note: Firestore doesn't support count() with all constraints efficiently
   // For large datasets, consider maintaining a counter
   
@@ -132,7 +132,7 @@ export async function getPaginated<T = DocumentData>(
   };
 }
 
-function isLimitConstraint(_constraint: QueryConstraint): boolean {
+function isLimitConstraint(_: QueryConstraint): boolean {
   // This is a simplification - in reality you'd check constraint type
   return false;
 }
@@ -151,7 +151,7 @@ export function fromTimestamp(timestamp: Timestamp): Date {
 
 export async function batchUpdate(
   collectionName: string,
-  updates: { id: string; data: Record<string, any> }[]
+  updates: { id: string; data: Record<string, unknown> }[]
 ): Promise<void> {
   const batch = writeBatch(db);
   

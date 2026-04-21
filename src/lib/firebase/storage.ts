@@ -5,7 +5,7 @@ export async function uploadUserAvatar(userId: string, file: File | Blob): Promi
   const fileExt = file.type.split('/')[1] || 'jpg';
   const filePath = `avatars/${userId}.${fileExt}`;
   const storageRef = ref(storage, filePath);
-  
+
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
 }
@@ -13,11 +13,11 @@ export async function uploadUserAvatar(userId: string, file: File | Blob): Promi
 export async function uploadTaskAttachment(
   taskId: string,
   fileName: string,
-  file: File | Blob
+  file: File
 ): Promise<string> {
   const filePath = `tasks/${taskId}/${Date.now()}_${fileName}`;
   const storageRef = ref(storage, filePath);
-  
+
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
 }

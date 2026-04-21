@@ -1,7 +1,7 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import { cn, TASK_STATUS_LABELS, TASK_STATUS_COLORS } from '@/lib/utils';
+import { cn, TASK_STATUS_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { KanbanCard } from './kanban-card';
 import { Plus } from 'lucide-react';
@@ -47,7 +47,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
             {tasks.length}
           </span>
         </div>
-        <button 
+        <button
           onClick={onAddClick}
           className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all"
         >
@@ -62,12 +62,12 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
             <p>Sin tareas</p>
           </div>
         ) : (
-          tasks.map((task) => (
+          sortedTasks.map((task) => (
             <KanbanCard
               key={task.id}
               task={task}
               column={status}
-              onMove={() => {}}
+              onMove={() => { }}
               onPriorityChange={onPriorityChange}
               onClick={onCardClick}
             />

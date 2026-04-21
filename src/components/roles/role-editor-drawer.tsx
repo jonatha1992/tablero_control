@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils';
-import type { CustomRole, BaseRoleForCustom, PermissionSet, RoleScope } from '@/types/domain/custom-role';
-import { EMPTY_PERMISSIONS } from '@/types/domain/custom-role';
+import type { CustomRole, BaseRoleForCustom, RoleScope } from '@/types/domain/custom-role';
 import { basePermissions } from '@/lib/permissions/resolve';
 import { PermissionGrid } from './permission-grid';
 import { useSaveRole } from '@/hooks/mutations/use-save-role';
-import { X, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 
 const STEPS = ['Identidad', 'Base', 'Permisos', 'Guardar'] as const;
 type Step = 0 | 1 | 2 | 3;
@@ -40,8 +39,6 @@ function slug(name: string) {
 export function RoleEditorDrawer({ open, onClose, initial }: Props) {
   const save = useSaveRole();
   const [step, setStep] = useState<Step>(0);
-  const [draft, setDraft] = useState<DraftRole>(() => defaultDraft());
-
   function defaultDraft(): DraftRole {
     return {
       name: '',
@@ -57,9 +54,10 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
     };
   }
 
+  const [draft, setDraft] = useState<DraftRole>(() => defaultDraft());
+
   useEffect(() => {
     if (open) {
-      setStep(0);
       if (initial) {
         setDraft({
           name: initial.name,
@@ -76,6 +74,8 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
       } else {
         setDraft(defaultDraft());
       }
+    } else {
+      setStep(0);
     }
   }, [open, initial]);
 

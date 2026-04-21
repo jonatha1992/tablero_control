@@ -5,8 +5,6 @@ import {
   logout,
   resetPassword,
 } from '@/lib/firebase/auth';
-import { userRepository } from '@/repositories';
-import type { User } from '@/types/domain/user';
 import type { LoginDTO, RegisterDTO } from '@/types/dto/auth.dto';
 
 export class AuthService {
@@ -28,14 +26,6 @@ export class AuthService {
 
   async resetPassword(email: string) {
     return resetPassword(email);
-  }
-
-  async getUserProfile(uid: string): Promise<User | null> {
-    return userRepository.findById(uid);
-  }
-
-  async updateUserProfile(uid: string, data: Partial<User>): Promise<User> {
-    return userRepository.update(uid, data);
   }
 }
 

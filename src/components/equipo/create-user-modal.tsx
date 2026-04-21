@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,6 +101,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 <UserPlus className="h-5 w-5" />
                 Crear usuario
               </DialogTitle>
+              <DialogDescription>
+                Ingresa los datos básicos para el nuevo integrante de la plataforma.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
@@ -203,6 +207,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 <Check className="h-5 w-5" />
                 Usuario creado
               </DialogTitle>
+              <DialogDescription>
+                El usuario ha sido registrado exitosamente en el sistema.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">

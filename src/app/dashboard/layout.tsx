@@ -36,7 +36,7 @@ export default function DashboardLayout({
           </div>
         </div>
         <Footer />
-        
+
         {/* Floating Action Button para crear tarea rápida */}
         <button
           onClick={openCreateModal}
@@ -45,7 +45,7 @@ export default function DashboardLayout({
         >
           <Plus className="h-6 w-6" />
         </button>
-        
+
         <CreateTaskModal
           open={isCreateModalOpen}
           onOpenChange={(open) => { if (!open) closeCreateModal(); }}

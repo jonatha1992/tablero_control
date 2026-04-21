@@ -9,8 +9,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useTheme } from 'next-themes';
 import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { uploadUserAvatar } from '@/lib/firebase/storage';
-import { authService } from '@/services/auth.service';
+import { auth } from '@/lib/firebase/client';
 
 export default function ConfigPage() {
   const { user } = useAuth();
@@ -22,11 +21,28 @@ export default function ConfigPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    
+
     try {
       setIsUploading(true);
-      const url = await uploadUserAvatar(user.id, file);
-      await authService.updateUserProfile(user.id, { avatar: url });
+
+      // 1. Upload to Cloudinary via API route
+      const form = new FormData();
+      form.append('file', file);
+      form.append('type', 'avatar');
+      form.append('id', user.id);
+
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: form });
+      if (!uploadRes.ok) throw new Error('Error al subir la imagen');
+      const { url } = await uploadRes.json() as { url: string };
+
+      // 2. Save URL in PostgreSQL
+      const token = await auth.currentUser?.getIdToken();
+      await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: url }),
+      });
+
       setAvatarUrl(url);
     } catch (error) {
       console.error('Error al subir avatar:', error);
@@ -85,12 +101,12 @@ export default function ConfigPage() {
                         <span className="text-[10px] text-white font-medium">Cambiar</span>
                       </div>
                     </div>
-                    <input 
-                      id="avatar-upload" 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleAvatarUpload} 
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
                       disabled={isUploading}
                     />
                   </div>
@@ -127,7 +143,7 @@ export default function ConfigPage() {
 
             <Card className="border-destructive/20 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center text-destructive"><Shield className="h-4 w-4 mr-2"/> Seguridad</CardTitle>
+                <CardTitle className="text-base font-semibold flex items-center text-destructive"><Shield className="h-4 w-4 mr-2" /> Seguridad</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">Si deseas cambiar tu contraseña, se te enviará un correo de recuperación.</p>
@@ -176,7 +192,7 @@ export default function ConfigPage() {
 
             <Card className="border-border/50 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center"><Globe className="h-4 w-4 mr-2"/> Regional</CardTitle>
+                <CardTitle className="text-base font-semibold flex items-center"><Globe className="h-4 w-4 mr-2" /> Regional</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -215,7 +231,7 @@ export default function ConfigPage() {
                 </div>
                 <div className="flex items-center justify-between border-b pb-4">
                   <div>
-                    <div className="flex items-center gap-2"><Smartphone className="h-4 w-4"/> <p className="text-sm font-medium">Notificaciones Push</p></div>
+                    <div className="flex items-center gap-2"><Smartphone className="h-4 w-4" /> <p className="text-sm font-medium">Notificaciones Push</p></div>
                     <p className="text-xs text-muted-foreground">Notificaciones en el navegador y vista móvil al instante.</p>
                   </div>
                   <input type="checkbox" className="h-4 w-4 accent-primary" defaultChecked />
