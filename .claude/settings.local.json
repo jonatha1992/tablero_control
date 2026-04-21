@@ -57,24 +57,11 @@
       "Bash(firebase apphosting:backends:list --project gestordetrabajo)",
       "Bash(curl -sI https://gestordetrabajo.web.app)",
       "Bash(git add *)",
-      "Bash(git rm *)",
-      "Bash(echo \".claude/worktrees/\")",
-      "Bash(git commit -m ' *)",
-      "Bash(git push *)",
-      "Bash(rm e:/tablero_control/key.json)",
-      "Bash(sed -i 's|DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@postgres.railway.internal:5432/railway\"|DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\"|' e:/tablero_control/.env.local)",
-      "Bash(sed -i 's|DATABASE_URL=\"postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public\"|DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\"|' e:/tablero_control/.env)",
-      "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\(Object.keys\\(p\\).slice\\(0,20\\)\\)\")",
-      "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\(Object.keys\\(p\\).slice\\(0,30\\)\\)\")",
-      "Bash(node -e \"const {Prisma} = require\\('@prisma/client'\\); console.log\\(typeof Prisma.UserGetPayload\\)\")",
-      "Bash(railway --version)",
-      "Bash(railway list *)",
-      "Bash(railway variables *)",
-      "Bash(railway env *)",
-      "Bash(railway up *)",
-      "Bash(railway service *)",
-      "Bash(railway variable *)",
-      "Bash(railway logs *)"
+      "Bash(xargs grep *)",
+      "Bash(npx prisma *)",
+      "Bash(node -e \"const p = require\\('./node_modules/next/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

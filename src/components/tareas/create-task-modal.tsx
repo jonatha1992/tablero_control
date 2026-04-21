@@ -35,7 +35,6 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
-  const today = new Date().toISOString().split('T')[0];
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -48,6 +47,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setDueDate(defaultDueDate ?? ''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
   };
+
+  const createTask = useCreateTask();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

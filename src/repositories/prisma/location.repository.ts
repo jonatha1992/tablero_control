@@ -50,14 +50,13 @@ export class PrismaLocationRepository implements ILocationRepository {
     return locs.map(toDomain);
   }
 
-  async create(data: Partial<Location>): Promise<Location> {
-    const { ...rest } = data;
+  async create(data: Omit<Location, 'id' | 'createdAt' | 'updatedAt'>): Promise<Location> {
+    const { teamIds, taskIds, ...rest } = data;
     const l = await prisma.location.create({
       data: {
-        name: rest.name!,
-        businessId: rest.businessId!,
-        address: rest.address,
-        isActive: rest.isActive ?? true,
+        ...rest,
+        operatingHours: rest.operatingHours as Prisma.InputJsonValue | undefined,
+        metadata: rest.metadata as Prisma.InputJsonValue,
       },
       include,
     });
@@ -65,7 +64,7 @@ export class PrismaLocationRepository implements ILocationRepository {
   }
 
   async update(id: string, data: Partial<Location>): Promise<Location> {
-    const { ...rest } = data;
+    const { teamIds, taskIds, ...rest } = data;
     const l = await prisma.location.update({
       where: { id },
       data: {

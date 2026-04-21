@@ -48,7 +48,7 @@ export class PrismaTeamRepository implements ITeamRepository {
   }
 
   async update(id: string, data: Partial<Team>): Promise<Team> {
-    const { ...rest } = data;
+    const { memberIds, ...rest } = data;
     const t = await prisma.team.update({
       where: { id },
       data: {

@@ -1,19 +1,13 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
-const globalForPrisma = globalThis as unknown as { _prisma: PrismaClient | undefined }
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
-function getClient(): PrismaClient {
-  if (!globalForPrisma._prisma) {
-    globalForPrisma._prisma = new PrismaClient()
-  }
-  return globalForPrisma._prisma
+function createPrismaClient() {
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+  return new PrismaClient({ adapter })
 }
 
-// Lazy proxy: PrismaClient is NOT instantiated on import, only on first use.
-// This prevents build-time failures when DATABASE_URL is not available.
-export const prisma = new Proxy({} as PrismaClient, {
-  get(_target, prop: string | symbol) {
-    return getClient()[prop as keyof PrismaClient]
-  },
-})
+export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

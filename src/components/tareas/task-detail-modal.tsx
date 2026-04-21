@@ -36,6 +36,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const deleteTask = useDeleteTask();
   const { data: members = [] } = useMembersQuery();
 
+  const updateTask = useUpdateTask();
+  const moveTask = useMoveTask();
+
   if (!task) return null;
 
   const handleSave = () => {
@@ -101,6 +104,18 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <DialogDescription className="mt-1">
                   {task.description || 'Sin descripción adicional.'}
                 </DialogDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { setTitle(task.title); setDescription(task.description); setEditing(true); }}
+                >
+                  Editar
+                </Button>
+                <Button size="icon" variant="destructive" className="h-9 w-9" onClick={handleDelete} disabled={deleteTask.isPending}>
+                  <Trash className="h-4 w-4" />
+                </Button>
               </div>
               <div className="flex items-center gap-2">
                 <Button

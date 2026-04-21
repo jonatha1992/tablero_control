@@ -33,6 +33,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const {
     dragState,
     filters,
+    isCreateModalOpen,
     isDetailModalOpen,
     selectedTaskId,
     setDraggedTask,

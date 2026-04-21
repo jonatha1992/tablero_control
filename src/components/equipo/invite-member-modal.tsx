@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,9 +47,6 @@ export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModal
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Invitar miembro</DialogTitle>
-          <DialogDescription>
-            Envía una invitación por correo electrónico para unirse a tu equipo.
-          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
