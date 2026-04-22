@@ -138,7 +138,7 @@ export class PrismaTaskRepository implements ITaskRepository {
       data: {
         ...rest,
         creatorId,
-        position: Date.now(),
+        position: Math.floor(Date.now() / 1000),
         assignees: assigneeIds?.length
           ? { connect: assigneeIds.map((id) => ({ id })) }
           : undefined,

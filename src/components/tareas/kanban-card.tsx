@@ -228,25 +228,34 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
       </div>
 
       {/* Assignees */}
-      {task.assigneeIds && task.assigneeIds.length > 0 && (
-        <div className="flex -space-x-2 mt-2 pt-2 border-t">
-          {task.assigneeIds.slice(0, 3).map((id) => {
-            const a = task.assignees?.find((x) => x.id === id);
-            const initials = a ? a.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : '?';
-            return (
-              <Avatar key={id} className="h-6 w-6 border-2 border-card" title={a?.name}>
-                {a?.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
-                <AvatarFallback className="text-[9px] bg-primary/10">{initials}</AvatarFallback>
-              </Avatar>
-            );
-          })}
-          {task.assigneeIds.length > 3 && (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[9px] font-medium border-2 border-card">
-              +{task.assigneeIds.length - 3}
-            </div>
-          )}
-        </div>
-      )}
+      {(() => {
+        if (!task.assigneeIds || task.assigneeIds.length === 0) return null;
+        
+        const validAssignees = task.assigneeIds
+          .map(id => task.assignees?.find(x => x.id === id))
+          .filter((a): a is NonNullable<typeof a> => !!a);
+          
+        if (validAssignees.length === 0) return null;
+
+        return (
+          <div className="flex -space-x-2 mt-2 pt-2 border-t">
+            {validAssignees.slice(0, 3).map((a) => {
+              const initials = a.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+              return (
+                <Avatar key={a.id} className="h-6 w-6 border-2 border-card" title={a.name}>
+                  {a.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
+                  <AvatarFallback className="text-[9px] bg-primary/10">{initials}</AvatarFallback>
+                </Avatar>
+              );
+            })}
+            {validAssignees.length > 3 && (
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[9px] font-medium border-2 border-card">
+                +{validAssignees.length - 3}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

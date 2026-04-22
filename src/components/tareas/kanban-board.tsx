@@ -22,6 +22,7 @@ import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
+import { useAuth } from '@/hooks/auth-context';
 
 const COLUMN_ORDER_FULL: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'];
 
@@ -51,6 +52,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const moveTask = useMoveTask();
   const updateTask = useUpdateTask();
   const { data: locations = [] } = useLocationsQuery();
+  const { user } = useAuth();
 
   const selectedTask = selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null;
 
@@ -211,13 +213,15 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
         <div className="flex-1" />
 
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          Nueva tarea
-        </button>
+        {user?.role !== 'viewer' && (
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva tarea
+          </button>
+        )}
       </div>
 
       {/* Board */}

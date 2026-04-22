@@ -46,10 +46,12 @@ export default function EquipoPage() {
             {members.length} miembros · {activeCount} activos
           </p>
         </div>
-        <Button size="sm" onClick={openInviteModal}>
-          <UserPlus className="mr-1.5 h-4 w-4" />
-          Invitar
-        </Button>
+        {user?.role !== 'viewer' && (
+          <Button size="sm" onClick={openInviteModal}>
+            <UserPlus className="mr-1.5 h-4 w-4" />
+            Invitar
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

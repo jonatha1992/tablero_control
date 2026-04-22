@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -46,16 +47,12 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       )}>
         {!collapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-              TC
-            </div>
-            <span className="font-semibold">Tablero Control</span>
+            <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="rounded-lg object-contain" />
+            <span className="font-semibold text-lg">Tablero Control</span>
           </Link>
         )}
         {collapsed && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            TC
-          </div>
+          <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="rounded-lg object-contain" />
         )}
         <Button
           variant="ghost"
