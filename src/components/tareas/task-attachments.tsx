@@ -71,7 +71,6 @@ export function TaskAttachments({ task }: Props) {
     updateTask.mutate({ id: task.id, data: { attachmentUrls: updated } });
   }
 
-  const attachments: string[] = task.attachmentUrls ?? [];
 
   return (
     <div className="space-y-3">
@@ -106,11 +105,12 @@ export function TaskAttachments({ task }: Props) {
         />
       </div>
 
-      {attachments.length > 0 && (
+      {task.attachmentUrls?.length > 0 && (
         <ul className="space-y-2">
-          {attachments.map((url) => {
+          {task.attachmentUrls.map((url) => {
             const Icon = getFileIcon(url);
-            const name = getFileName(url);
+            const attachment = task.attachments?.find(a => a.url === url);
+            const name = attachment?.name ?? getFileName(url);
             const isImage = /\.(jpg|jpeg|png|gif|webp)/.test(url.toLowerCase());
             return (
               <li key={url} className="flex items-center gap-3 border rounded-lg p-2 group">
@@ -142,7 +142,7 @@ export function TaskAttachments({ task }: Props) {
         </ul>
       )}
 
-      {attachments.length === 0 && !uploading && (
+      {(!task.attachmentUrls || task.attachmentUrls.length === 0) && !uploading && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <Paperclip className="h-3.5 w-3.5" /> Sin adjuntos
         </p>

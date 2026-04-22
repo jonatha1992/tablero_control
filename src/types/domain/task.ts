@@ -38,6 +38,7 @@ export interface Task {
   recurrence?: RecurrenceConfig;
   subtaskIds: string[];
   attachmentUrls: string[];
+  attachments?: { url: string; name: string }[];
   commentCount: number;
   position: number;
   createdAt: Date;

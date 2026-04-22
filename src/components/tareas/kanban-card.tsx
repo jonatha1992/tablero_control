@@ -89,28 +89,32 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
         'group relative rounded-md border border-border border-l-4 bg-card p-1.5 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing',
         priorityConfig.border,
-        isDragging && 'opacity-50 rotate-2',
+        isDragging && 'opacity-30 border-dashed scale-95 z-50',
         task.priority === 'urgent' && 'animate-pulse-slow'
       )}
-      onClick={() => onClick(task)}
+      onClick={(e) => {
+        // Evitar que el clic para abrir el detalle se confunda con un drag corto
+        if (transform) return;
+        onClick(task);
+      }}
     >
       {/* Urgent indicator */}
       {task.priority === 'urgent' && (
-        <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm">
+        <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm z-10">
           <AlertTriangle className="h-3 w-3" />
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-start gap-2 flex-1">
+        <div className="flex items-start gap-2 flex-1 pointer-events-none">
           <GripVertical
-            className="h-4 w-4 text-muted-foreground/50 mt-0.5 shrink-0 group-hover:text-muted-foreground"
-            {...listeners}
-            {...attributes}
+            className="h-4 w-4 text-muted-foreground/30 mt-0.5 shrink-0 group-hover:text-muted-foreground"
           />
           <h4 className="text-xs font-medium leading-tight line-clamp-2">{task.title}</h4>
         </div>

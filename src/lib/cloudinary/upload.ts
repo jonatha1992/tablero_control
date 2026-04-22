@@ -22,15 +22,19 @@ export async function uploadTaskAttachment(
   taskId: string,
   fileName: string,
   file: File | Blob
-): Promise<string> {
+): Promise<any> {
   const dataURI = await fileToDataURI(file);
   const result = await cloudinary.uploader.upload(dataURI, {
     folder: `tablero_control/tasks/${taskId}`,
     resource_type: 'auto',
+    format: 'webp',
+    quality: 'auto',
+    fetch_format: 'auto',
+    transformation: [{ width: 1000, crop: 'limit' }],
     use_filename: true,
     unique_filename: true,
   });
-  return result.secure_url;
+  return result;
 }
 
 export async function deleteFile(publicId: string): Promise<void> {

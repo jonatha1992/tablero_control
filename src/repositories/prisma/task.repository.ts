@@ -36,6 +36,7 @@ function toDomain(t: PrismaTask): Task {
     recurrence: t.recurrence as unknown as Task['recurrence'],
     subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
     attachmentUrls: t.attachments.map((a: { url: string }) => a.url),
+    attachments: t.attachments.map((a) => ({ url: a.url, name: a.filename })),
     commentCount: t.commentCount,
     position: t.position,
     createdAt: t.createdAt,
@@ -56,6 +57,7 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
     where.OR = [
       { location: { businessId } },
       { project: { businessId } },
+      { creator: { businessId } },
     ];
   }
 
@@ -156,6 +158,13 @@ export class PrismaTaskRepository implements ITaskRepository {
         ...rest,
         assignees: assigneeIds
           ? { set: assigneeIds.map((uid) => ({ id: uid })) }
+          : undefined,
+        attachments: attachmentUrls
+          ? {
+            deleteMany: {
+              url: { notIn: attachmentUrls }
+            }
+          }
           : undefined,
       },
       include,

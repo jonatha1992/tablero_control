@@ -95,14 +95,14 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </div>
             </div>
           ) : (
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <DialogTitle className="text-xl">{task.title}</DialogTitle>
+            <div className="flex items-start justify-between gap-4 pr-6">
+              <div className="flex-1">
+                <DialogTitle className="text-xl leading-tight">{task.title}</DialogTitle>
                 <DialogDescription className="mt-1">
                   {task.description || 'Sin descripción adicional.'}
                 </DialogDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <Button
                   size="sm"
                   variant="outline"

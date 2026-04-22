@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadUserAvatar, uploadTaskAttachment } from '@/lib/cloudinary/upload';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,9 +17,23 @@ export async function POST(request: NextRequest) {
     let url: string;
 
     if (type === 'avatar') {
-      url = await uploadUserAvatar(id, file);
+      const result = await uploadUserAvatar(id, file);
+      url = result;
     } else if (type === 'attachment') {
-      url = await uploadTaskAttachment(id, fileName ?? file.name, file);
+      const result = await uploadTaskAttachment(id, fileName ?? file.name, file);
+      url = result.secure_url;
+      
+      // Guardamos en la base de datos
+      await prisma.attachment.create({
+        data: {
+          taskId: id,
+          url: result.secure_url,
+          publicId: result.public_id,
+          filename: fileName ?? file.name,
+          mimetype: file.type,
+          size: file.size,
+        }
+      });
     } else {
       return NextResponse.json({ error: 'Invalid upload type' }, { status: 400 });
     }

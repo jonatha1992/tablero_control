@@ -75,16 +75,14 @@
 @layer base {
   html {
     font-size: 14px; /* Scaled down from 16px to make all rems 12.5% smaller globally */
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
   }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
   }
 }
 

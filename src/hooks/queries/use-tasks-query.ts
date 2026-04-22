@@ -50,7 +50,7 @@ export function useTasksQuery(filters?: TaskFilters) {
       try {
         const fetchPromise = tasksApi.getByBusiness(targetBusinessId, filters);
         const timeoutPromise = new Promise<Task[]>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), 1000)
+          setTimeout(() => reject(new Error('Timeout')), 10000)
         );
 
         const result = await Promise.race([fetchPromise, timeoutPromise]);
