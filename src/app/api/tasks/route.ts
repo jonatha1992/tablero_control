@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
   const filters: TaskFilters = {};
   const status = searchParams.get('status');
   const priority = searchParams.get('priority');
-  if (status) filters.status = status as TaskFilters['status'];
-  if (priority) filters.priority = priority as TaskFilters['priority'];
+  if (status) filters.status = status.split(',') as TaskStatus[];
+  if (priority) filters.priority = priority.split(',') as TaskPriority[];
 
   const tasks = await taskService.getTasksByBusiness(businessId, filters);
   return NextResponse.json(tasks);

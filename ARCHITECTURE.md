@@ -15,7 +15,8 @@ SaaS multi-tenant de gestión de tareas y proyectos. Arquitectura en capas dise�
 | Estilos | Tailwind CSS 4 + Radix UI |
 | Estado UI | Zustand 5 |
 | Estado servidor | React Query 5 |
-| Backend | Firebase (Auth + Firestore + Storage) |
+| Backend (Auth/Storage) | Firebase |
+| Base de Datos (Core) | PostgreSQL + Prisma ORM |
 | Almacenamiento archivos | Cloudinary |
 | Tests | Vitest + Testing Library + Firebase Emulator |
 
@@ -31,9 +32,11 @@ hooks/stores                        ← Zustand (UI state)
       ↓  (llama a)
 services/                           ← lógica de negocio
       ↓  (llama a)
-repositories/                       ← acceso a datos
+repositories/                       ← acceso a datos (Interfaces)
       ↓  (llama a)
-lib/firebase/firestore.ts           ← driver Firebase
+repositories/prisma/                ← implementación principal (Prisma)
+      ↓  (llama a)
+Base de Datos (PostgreSQL)          ← persistencia física
 ```
 
 **Regla de oro:** las capas externas importan de las internas, nunca al revés.
@@ -98,8 +101,9 @@ src/
 │
 ├── repositories/        # Acceso a datos — implementaciones intercambiables
 │   ├── interfaces/      # Contratos TypeScript (ITaskRepository, etc.)
-│   ├── firebase/        # Implementaciones con Firebase Firestore
-│   └── index.ts         # Singletons exportados (punto de cambio para migrar)
+│   ├── prisma/          # Implementaciones con Prisma (PostgreSQL)
+│   ├── firebase/        # Implementaciones con Firebase (Legacy/Opcional)
+│   └── index.ts         # Singletons exportados (Inyecta la implementación activa)
 │
 ├── services/            # Lógica de negocio / use cases
 │   ├── task.service.ts  # createTask, moveTask, reorderKanban
@@ -163,7 +167,7 @@ src/
    → taskRepository.create(payload)           [Repository]
 
 5. Repositorio llama al driver
-   → create('tasks', payload)                 [lib/firebase/firestore.ts]
+   → prisma.task.create({ data: payload })    [repositories/prisma/task.repository.ts]
 
 6. Éxito → React Query invalida el cache
    → queryClient.invalidateQueries(['tasks'])
@@ -189,10 +193,10 @@ src/
 
 ## Portabilidad
 
-### Cambiar Firebase por PostgreSQL
-1. Crear `src/repositories/postgres/task.repository.ts` implementando `ITaskRepository`
-2. Cambiar `src/repositories/index.ts` para exportar las instancias postgres
-3. **Nada más cambia** — services, hooks, stores, components son idénticos
+### Cambiar PostgreSQL por MongoDB / Otro
+1. Crear `src/repositories/mongodb/task.repository.ts` implementando `ITaskRepository`
+2. Cambiar `src/repositories/index.ts` para exportar las instancias nuevas
+3. **Nada más cambia** — services, hooks, stores, components son idénticos (Portabilidad Realizada)
 
 ### Cambiar Next.js por Remix
 1. Migrar `src/app/` (rutas de Next.js → loaders/actions de Remix)

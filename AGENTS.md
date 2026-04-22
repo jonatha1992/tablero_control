@@ -13,10 +13,11 @@ SaaS multi-tenant de gestión de tareas y proyectos. Cada negocio (Business) tie
 
 ## Stack
 - **Next.js 16** App Router + React 19 + TypeScript strict
-- **Firebase** proyecto `gestordetrabajo` — Auth, Firestore, Storage
+- **Backend (Auth/Storage)**: Firebase (proyecto `gestordetrabajo`)
+- **Backend (Base de Datos)**: PostgreSQL + Prisma ORM
 - **Estado client**: Zustand 5 | **Estado server**: React Query 5
 - **UI**: Tailwind CSS 4 + Radix UI (patrón shadcn/ui)
-- **Tests**: Vitest + Testing Library + Firebase Emulator
+- **Tests**: Vitest + Testing Library + PostgreSQL
 
 ## Jerarquía de roles (multi-tenant)
 ```
