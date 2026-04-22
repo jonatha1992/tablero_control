@@ -33,8 +33,6 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     await businessRepository.update(authed.businessId, {
-      entityType: body.entityType,
-      taskDefaults: body.taskDefaults,
       name: body.name,
       settings: body.settings,
     });
