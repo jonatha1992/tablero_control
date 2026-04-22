@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
-import type { TaskFilters } from '@/types/domain/task';
+import type { TaskFilters, TaskStatus, TaskPriority } from '@/types/domain/task';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
