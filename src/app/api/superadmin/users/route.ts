@@ -18,6 +18,9 @@ export async function GET(req: NextRequest) {
       businessId: true,
       isActive: true,
       createdAt: true,
+      business: {
+        select: { name: true }
+      }
     },
   });
   return NextResponse.json({ users });

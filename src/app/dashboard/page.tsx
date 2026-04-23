@@ -1,80 +1,95 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { KanbanBoard } from '@/components/tareas/kanban-board';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
+import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
+import { AlertCircle, CheckCircle2, Clock, Zap, TrendingUp } from 'lucide-react';
 
 export default function DashboardPage() {
   const { data: tasks = [], isLoading } = useTasksQuery();
 
+  const metrics = {
+    active: tasks.filter((t) => t.status !== 'done').length,
+    done: tasks.filter((t) => t.status === 'done').length,
+    blocked: tasks.filter((t) => t.status === 'blocked').length,
+    urgent: tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length,
+  };
+
   return (
-    <div className="flex flex-col h-full overflow-hidden gap-4">
-      <div className="shrink-0">
-        <h1 className="text-xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground text-xs mt-0.5">Vista general de tu negocio</p>
+    <div className="flex flex-col h-full overflow-y-auto space-y-6 pb-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard de Negocio</h1>
+          <p className="text-muted-foreground">Resumen global de rendimiento y métricas operativas.</p>
+        </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 shrink-0">
-        <Card>
-          <CardHeader className="pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Tareas Activas</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-lg font-bold">
-              {isLoading ? '—' : tasks.filter((t) => t.status !== 'done').length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Completadas</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-lg font-bold">
-              {isLoading ? '—' : tasks.filter((t) => t.status === 'done').length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Bloqueadas</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-lg font-bold text-red-500">
-              {isLoading ? '—' : tasks.filter((t) => t.status === 'blocked').length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 pt-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Urgentes</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="text-lg font-bold text-orange-500">
-              {isLoading ? '—' : tasks.filter((t) => t.priority === 'urgent').length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Kanban */}
-      <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <CardHeader className="py-2 px-4 shrink-0">
-          <CardTitle className="text-sm">Kanban Board</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
-          <div className="p-2 flex-1 overflow-hidden flex flex-col">
-            {isLoading ? (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                Cargando...
-              </div>
-            ) : (
-              <KanbanBoard tasks={tasks} />
-            )}
+      {/* KPI Section */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Clock className="h-12 w-12 text-blue-600" />
           </div>
-        </CardContent>
-      </Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Pendientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{isLoading ? '—' : metrics.active}</div>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" /> Tareas activas en el tablero
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <CheckCircle2 className="h-12 w-12 text-green-600" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Finalizadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{isLoading ? '—' : metrics.done}</div>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              Total completado históricamente
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <AlertCircle className="h-12 w-12 text-red-600" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Críticas / Bloqueadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-600">{isLoading ? '—' : metrics.blocked}</div>
+            <p className="text-xs text-muted-foreground mt-1">Requieren atención inmediata</p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Zap className="h-12 w-12 text-orange-600" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Urgentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-600">{isLoading ? '—' : metrics.urgent}</div>
+            <p className="text-xs text-muted-foreground mt-1">Alta prioridad pendiente</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Charts Section */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          Análisis de Operaciones
+        </h2>
+        <DashboardMetrics />
+      </div>
     </div>
   );
 }

@@ -14,14 +14,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.push('/dashboard');
+    if (!authLoading && isAuthenticated && user) {
+      router.push(user.role === 'superadmin' ? '/superadmin' : '/dashboard');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +30,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+      // El useEffect se encargará de la redirección cuando el perfil cargue
       router.refresh();
     } catch (err) {
       setError('Email o contraseña incorrectos');
@@ -47,7 +47,7 @@ export default function LoginPage() {
     try {
       const result = await loginWithGoogle();
       if (result) {
-        router.push('/dashboard');
+        // El useEffect se encargará de la redirección
         router.refresh();
       }
     } catch (err: any) {

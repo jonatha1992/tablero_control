@@ -16,14 +16,15 @@ import {
   ChevronRight,
   Menu,
   CreditCard,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/auth-context';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare },
   { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar },
-  { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
   { href: '/dashboard/equipo', label: 'Equipo', icon: Users },
   { href: '/dashboard/billing', label: 'Facturación', icon: CreditCard },
   { href: '/dashboard/config', label: 'Configuración', icon: Settings },
@@ -37,6 +38,7 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { isSuperAdmin } = useAuth();
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -47,12 +49,12 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       )}>
         {!collapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="rounded-lg object-contain" />
+            <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="object-contain" />
             <span className="font-semibold text-lg">Tablero Control</span>
           </Link>
         )}
         {collapsed && (
-          <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="rounded-lg object-contain" />
+          <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="object-contain" />
         )}
         <Button
           variant="ghost"
@@ -73,7 +75,6 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -94,6 +95,28 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
             </Link>
           );
         })}
+
+        {isSuperAdmin && (
+          <div className="pt-4 mt-4 border-t border-border">
+            <p className={cn("px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground", collapsed && "text-center")}>
+              {collapsed ? 'SA' : 'SuperAdmin'}
+            </p>
+            <Link
+              href="/superadmin"
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                pathname.startsWith('/superadmin')
+                  ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                collapsed && 'justify-center'
+              )}
+              title={collapsed ? 'Panel Global' : undefined}
+            >
+              <ShieldCheck className="h-5 w-5 shrink-0" />
+              {!collapsed && <span>Panel Global</span>}
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}

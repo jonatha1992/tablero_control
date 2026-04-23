@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
     totalTasks,
     activeSubscriptions,
     freePlan, basicPlan, proPlan, enterprisePlan,
+    recentUsers,
+    recentBusinesses,
+    recentActivity,
   ] = await prisma.$transaction([
     prisma.business.count(),
     prisma.business.count({ where: { status: 'active' } }),
@@ -29,16 +32,38 @@ export async function GET(req: NextRequest) {
     prisma.business.count({ where: { plan: 'basic' } }),
     prisma.business.count({ where: { plan: 'pro' } }),
     prisma.business.count({ where: { plan: 'enterprise' } }),
+    prisma.user.findMany({ 
+      take: 5, 
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, email: true, createdAt: true, business: { select: { name: true } } } 
+    }),
+    prisma.business.findMany({ 
+      take: 5, 
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, plan: true, status: true, createdAt: true } 
+    }),
+    prisma.auditLog.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { actor: { select: { name: true } }, business: { select: { name: true } } }
+    }),
   ]);
 
   const mrr = activeSubscriptions.reduce((acc: number, s: { amount: number }) => acc + s.amount, 0);
   const planCount = { free: freePlan, basic: basicPlan, pro: proPlan, enterprise: enterprisePlan };
 
   return NextResponse.json({
-    businesses: { total: totalBusinesses, active: activeBusinesses, suspended: suspendedBusinesses, trial: trialBusinesses },
-    users: { total: totalUsers },
+    businesses: { 
+      total: totalBusinesses, 
+      active: activeBusinesses, 
+      suspended: suspendedBusinesses, 
+      trial: trialBusinesses,
+      recent: recentBusinesses 
+    },
+    users: { total: totalUsers, recent: recentUsers },
     tasks: { total: totalTasks },
     subscriptions: { active: activeSubscriptions.length, mrr },
     planBreakdown: planCount,
+    activity: recentActivity,
   });
 }
