@@ -47,19 +47,34 @@ function toDomain(t: PrismaTask): Task {
 const include = {
   assignees: { select: { id: true, name: true, avatar: true } },
   subtasks: { select: { id: true } },
-  attachments: { select: { url: true } },
+  attachments: { select: { url: true, filename: true } },
 } satisfies Prisma.TaskInclude;
 
 function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhereInput {
-  const where: Prisma.TaskWhereInput = {};
+  const conditions: Prisma.TaskWhereInput[] = [];
 
+  // Filtro por negocio
   if (businessId !== 'all') {
-    where.OR = [
-      { location: { businessId } },
-      { project: { businessId } },
-      { creator: { businessId } },
-    ];
+    conditions.push({
+      OR: [
+        { location: { businessId } },
+        { project: { businessId } },
+        { creator: { businessId } },
+      ],
+    });
   }
+
+  // Filtro de búsqueda (usando AND para no pisar el OR de businessId)
+  if (filters?.search) {
+    conditions.push({
+      OR: [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  const where: Prisma.TaskWhereInput = conditions.length > 0 ? { AND: conditions } : {};
 
   if (filters?.status?.length) where.status = { in: filters.status };
   if (filters?.priority?.length) where.priority = { in: filters.priority };
@@ -69,12 +84,6 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
   }
   if (filters?.projectId?.length) where.projectId = { in: filters.projectId };
   if (filters?.tags?.length) where.tags = { hasSome: filters.tags };
-  if (filters?.search) {
-    where.OR = [
-      { title: { contains: filters.search, mode: 'insensitive' } },
-      { description: { contains: filters.search, mode: 'insensitive' } },
-    ];
-  }
   if (filters?.dueDateFrom || filters?.dueDateTo) {
     where.dueDate = {};
     if (filters.dueDateFrom) where.dueDate.gte = filters.dueDateFrom;
@@ -129,6 +138,26 @@ export class PrismaTaskRepository implements ITaskRepository {
 
   async findByLocation(locationId: string): Promise<Task[]> {
     const tasks = await prisma.task.findMany({ where: { locationId }, include });
+    return tasks.map(toDomain);
+  }
+
+  async findByCreator(creatorId: string, filters?: TaskFilters): Promise<Task[]> {
+    const where: Prisma.TaskWhereInput = { creatorId };
+    if (filters?.status?.length) where.status = { in: filters.status };
+    if (filters?.priority?.length) where.priority = { in: filters.priority };
+    if (filters?.search) {
+      where.AND = [
+        { OR: [
+          { title: { contains: filters.search, mode: 'insensitive' } },
+          { description: { contains: filters.search, mode: 'insensitive' } },
+        ]},
+      ];
+    }
+    const tasks = await prisma.task.findMany({
+      where,
+      orderBy: { position: 'asc' },
+      include,
+    });
     return tasks.map(toDomain);
   }
 

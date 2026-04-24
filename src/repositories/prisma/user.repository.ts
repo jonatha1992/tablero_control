@@ -82,4 +82,13 @@ export class PrismaUserRepository implements IUserRepository {
   async deactivate(id: string): Promise<void> {
     await prisma.user.update({ where: { id }, data: { isActive: false } });
   }
+
+  async updateId(oldId: string, newId: string): Promise<User> {
+    const u = await prisma.user.update({
+      where: { id: oldId },
+      data: { id: newId },
+      include,
+    });
+    return toDomain(u);
+  }
 }

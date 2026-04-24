@@ -26,6 +26,7 @@ export default function BusinessDetailPage({ params }: Props) {
   const users = data.users as User[];
   const locations = data.locations as { id: string; name: string; type: string; status: string }[];
   const teams = data.teams as { id: string; name: string; _count: { members: number } }[];
+  const projects = data.projects as { id: string; name: string; _count: { tasks: number } }[];
 
   return (
     <div className="p-8 space-y-8 max-w-4xl">
@@ -117,6 +118,27 @@ export default function BusinessDetailPage({ params }: Props) {
           </table>
         </div>
       </div>
+
+      {projects.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-3">Proyectos ({projects.length})</h2>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+            {projects.map((p) => (
+              <div key={p.id} className="border rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">{p.name}</h3>
+                  <p className="text-xs text-muted-foreground">{p.id}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-1 rounded-full">
+                    {p._count.tasks} tareas
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

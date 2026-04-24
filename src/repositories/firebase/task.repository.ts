@@ -67,6 +67,10 @@ export class FirebaseTaskRepository implements ITaskRepository {
     return getAll<Task>(COLLECTION, [where('locationId', '==', locationId)]);
   }
 
+  async findByCreator(creatorId: string, _filters?: TaskFilters): Promise<Task[]> {
+    return getAll<Task>(COLLECTION, [where('creatorId', '==', creatorId), orderBy('position', 'asc')]);
+  }
+
   async create(
     data: CreateTaskDTO & { creatorId: string; businessId: string }
   ): Promise<Task> {

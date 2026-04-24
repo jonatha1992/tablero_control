@@ -18,8 +18,16 @@ export class LocationService {
     return locationRepository.findById(id);
   }
 
-  async updateStatus(id: string, status: LocationStatus): Promise<Location> {
-    return locationRepository.update(id, { status });
+  async create(data: Omit<Location, 'id' | 'createdAt' | 'updatedAt'>): Promise<Location> {
+    return locationRepository.create(data);
+  }
+
+  async update(id: string, data: Partial<Location>): Promise<Location> {
+    return locationRepository.update(id, data);
+  }
+
+  async delete(id: string): Promise<void> {
+    return locationRepository.delete(id);
   }
 }
 

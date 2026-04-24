@@ -24,7 +24,7 @@ export default function EquipoPage() {
   const { searchQuery, roleFilter, isInviteModalOpen, setSearchQuery, setRoleFilter, openInviteModal, closeInviteModal } =
     useTeamUIStore();
 
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { data: members = [], isLoading } = useMembersQuery();
   const removeMember = useRemoveMember();
 
@@ -39,14 +39,8 @@ export default function EquipoPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold">Equipo</h1>
-          <p className="text-muted-foreground text-xs mt-0.5">
-            {members.length} miembros · {activeCount} activos
-          </p>
-        </div>
-        {user?.role !== 'viewer' && (
+      <div className="flex items-start justify-end gap-4">
+        {isAdmin && (
           <Button size="sm" onClick={openInviteModal}>
             <UserPlus className="mr-1.5 h-4 w-4" />
             Invitar

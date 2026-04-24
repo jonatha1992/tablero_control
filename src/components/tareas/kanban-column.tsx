@@ -27,7 +27,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col w-[260px] min-w-[260px] max-w-[260px] shrink-0 rounded-md border bg-muted/30 transition-colors',
+        'flex flex-col w-[280px] min-w-[280px] max-w-[280px] shrink-0 rounded-md border bg-muted/30 transition-colors h-full',
         isOver && 'bg-primary/5 border-primary/30'
       )}
     >

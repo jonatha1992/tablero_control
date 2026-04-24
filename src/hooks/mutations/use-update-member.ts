@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { membersApi } from '@/lib/api/members';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UpdateMemberDTO } from '@/types/dto/team.dto';
+import { toast } from 'sonner';
 
 export function useUpdateMember() {
   const queryClient = useQueryClient();
@@ -13,6 +14,10 @@ export function useUpdateMember() {
       membersApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      toast.success('Miembro actualizado');
+    },
+    onError: (err: Error) => {
+      toast.error('Error al actualizar miembro', { description: err.message });
     },
   });
 }
@@ -24,6 +29,10 @@ export function useRemoveMember() {
     mutationFn: (id: string) => membersApi.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      toast.success('Miembro eliminado del equipo');
+    },
+    onError: (err: Error) => {
+      toast.error('Error al eliminar miembro', { description: err.message });
     },
   });
 }

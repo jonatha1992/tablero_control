@@ -107,37 +107,39 @@ export function DashboardMetrics() {
   }, [tasks]);
 
   return (
-    <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+    <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
       {/* Burndown Chart */}
-      <Card className="shadow-sm hover:shadow-md transition-shadow">
+      <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Burndown (7d)</CardTitle>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500">Burndown (7d)</CardTitle>
           <CardDescription className="text-xs">Trabajo restante vs ideal</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[180px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={burndownData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                <XAxis dataKey="dia" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickLine={false} axisLine={false} />
+          <div className="h-[200px] w-full min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+              <LineChart data={burndownData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-slate-200 dark:stroke-slate-800" />
+                <XAxis dataKey="dia" fontSize={10} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
                 <Tooltip content={<CustomTooltip />} />
                 <Line 
                   type="monotone" 
                   dataKey="restante" 
                   name="Pendientes" 
                   stroke="#3b82f6" 
-                  strokeWidth={2} 
-                  dot={{ r: 3, fill: "#3b82f6" }}
+                  strokeWidth={2.5} 
+                  dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }}
+                  activeDot={{ r: 6, strokeWidth: 0 }}
                 />
                 <Line 
-                  type="dashed" 
+                  type="monotone" 
                   dataKey="ideal" 
                   name="Ideal" 
                   stroke="#94a3b8" 
-                  strokeDasharray="4 4" 
-                  strokeWidth={1}
+                  strokeDasharray="5 5" 
+                  strokeWidth={1.5}
                   dot={false}
+                  opacity={0.5}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -146,24 +148,24 @@ export function DashboardMetrics() {
       </Card>
 
       {/* Productividad Trend */}
-      <Card className="shadow-sm hover:shadow-md transition-shadow">
+      <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Tendencia</CardTitle>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500">Tendencia</CardTitle>
           <CardDescription className="text-xs">Resolución semanal</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[180px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
+          <div className="h-[200px] w-full min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+              <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorComp" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                <XAxis dataKey="semana" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-slate-200 dark:stroke-slate-800" />
+                <XAxis dataKey="semana" fontSize={10} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area 
                   type="monotone" 
@@ -172,7 +174,7 @@ export function DashboardMetrics() {
                   stroke="#10b981" 
                   fillOpacity={1} 
                   fill="url(#colorComp)" 
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -181,23 +183,24 @@ export function DashboardMetrics() {
       </Card>
 
       {/* Estado de Tareas (Pie) */}
-      <Card className="shadow-sm hover:shadow-md transition-shadow">
+      <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Distribución</CardTitle>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500">Distribución</CardTitle>
           <CardDescription className="text-xs">Estado actual global</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[180px] w-full flex items-center">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[200px] w-full min-h-[200px] flex items-center">
+            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
               <PieChart>
                 <Pie 
                   data={statusDist} 
                   cx="50%" 
-                  cy="50%" 
-                  innerRadius={40} 
-                  outerRadius={65} 
-                  paddingAngle={4} 
+                  cy="45%" 
+                  innerRadius={50} 
+                  outerRadius={75} 
+                  paddingAngle={5} 
                   dataKey="value"
+                  stroke="none"
                 >
                   {statusDist.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
@@ -207,7 +210,7 @@ export function DashboardMetrics() {
                   align="center" 
                   verticalAlign="bottom" 
                   iconType="circle" 
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} 
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} 
                 />
               </PieChart>
             </ResponsiveContainer>

@@ -16,6 +16,14 @@ export const tasksApi = {
     return fetchJson<Task[]>(`/api/tasks?${params}`);
   },
 
+  getByCreator: (userId: string, filters?: TaskFilters) => {
+    const params = new URLSearchParams({ creatorId: userId });
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
+    }
+    return fetchJson<Task[]>(`/api/tasks?${params}`);
+  },
+
   getById: (id: string) => fetchJson<Task>(`/api/tasks/${id}`),
 
   create: (dto: CreateTaskDTO, creatorId: string, businessId: string) =>

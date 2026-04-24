@@ -13,3 +13,28 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json(locations);
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    if (!body.businessId || !body.name) {
+      return NextResponse.json({ error: 'businessId y name son requeridos' }, { status: 400 });
+    }
+
+    const location = await locationService.create({
+      businessId: body.businessId,
+      name: body.name,
+      type: body.type || 'department',
+      description: body.description,
+      address: body.address,
+      status: body.status || 'active',
+      teamIds: [],
+      taskIds: [],
+      metadata: body.metadata || {},
+    });
+
+    return NextResponse.json(location, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

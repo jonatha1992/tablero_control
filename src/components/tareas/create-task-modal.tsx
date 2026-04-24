@@ -24,17 +24,17 @@ interface CreateTaskModalProps {
 }
 
 export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueDate }: CreateTaskModalProps) {
+  const today = new Date().toISOString().split('T')[0];
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>(defaultStatus ?? 'todo');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [type, setType] = useState<TaskType>('task');
   const [tags, setTags] = useState('');
-  const [dueDate, setDueDate] = useState(defaultDueDate ?? '');
+  const [dueDate, setDueDate] = useState(defaultDueDate ?? today);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
 
   const createTask = useCreateTask();
-  const today = new Date().toISOString().split('T')[0];
   const { data: members = [] } = useMembersQuery();
 
   const toggleAssignee = (id: string) => {
@@ -45,7 +45,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   const reset = () => {
     setTitle(''); setDescription(''); setTags('');
-    setDueDate(defaultDueDate ?? ''); setAssigneeIds([]);
+    setDueDate(defaultDueDate ?? today); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
   };
 

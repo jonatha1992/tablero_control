@@ -17,6 +17,11 @@ export class TaskService {
     return taskRepository.findAll(businessId, filters);
   }
 
+  async getTasksByCreator(creatorId: string, filters?: TaskFilters): Promise<Task[]> {
+    return taskRepository.findByCreator(creatorId, filters);
+  }
+
+
   async getTasksPaginated(
     businessId: string,
     page: number,

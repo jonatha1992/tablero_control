@@ -17,12 +17,14 @@ import {
   Menu,
   CreditCard,
   ShieldCheck,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/sectores', label: 'Departamentos', icon: Building2 },
   { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare },
   { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar },
   { href: '/dashboard/equipo', label: 'Equipo', icon: Users },
@@ -75,8 +77,13 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       </div>
 
       {/* Navigation */}
+      <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Dashboard exact match; all others activate on prefix
+          const isActive =
+            item.href === '/dashboard'
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -99,22 +106,52 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
         {isSuperAdmin && (
           <div className="pt-4 mt-4 border-t border-border">
             <p className={cn("px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground", collapsed && "text-center")}>
-              {collapsed ? 'SA' : 'SuperAdmin'}
+              {collapsed ? 'SA' : 'Administración'}
             </p>
-            <Link
-              href="/superadmin"
-              className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                pathname.startsWith('/superadmin')
-                  ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                collapsed && 'justify-center'
-              )}
-              title={collapsed ? 'Panel Global' : undefined}
-            >
-              <ShieldCheck className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>Panel Global</span>}
-            </Link>
+            <div className="space-y-1">
+              <Link
+                href="/superadmin"
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  pathname === '/superadmin'
+                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  collapsed && 'justify-center'
+                )}
+                title={collapsed ? 'Panel Global' : undefined}
+              >
+                <ShieldCheck className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>Panel Global</span>}
+              </Link>
+              <Link
+                href="/superadmin/businesses"
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  pathname.startsWith('/superadmin/businesses')
+                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  collapsed && 'justify-center'
+                )}
+                title={collapsed ? 'Negocios' : undefined}
+              >
+                <Building2 className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>Negocios</span>}
+              </Link>
+              <Link
+                href="/superadmin/users"
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  pathname === '/superadmin/users'
+                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  collapsed && 'justify-center'
+                )}
+                title={collapsed ? 'Usuarios Globales' : undefined}
+              >
+                <Users className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>Usuarios Globales</span>}
+              </Link>
+            </div>
           </div>
         )}
       </nav>

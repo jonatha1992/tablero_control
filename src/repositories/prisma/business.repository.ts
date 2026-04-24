@@ -30,6 +30,21 @@ export class PrismaBusinessRepository {
     };
   }
 
+  async create(data: Omit<Business, 'id' | 'createdAt' | 'updatedAt'>): Promise<Business> {
+    const row = await prisma.business.create({
+      data: {
+        name: data.name,
+        adminId: data.adminId,
+        plan: data.plan,
+        status: data.status,
+        settings: data.settings as any,
+        featureFlags: data.featureFlags as any,
+      },
+    });
+    
+    return this.findById(row.id) as Promise<Business>;
+  }
+
   async update(id: string, data: Partial<Business>): Promise<void> {
     const { ...rest } = data;
     await prisma.business.update({
