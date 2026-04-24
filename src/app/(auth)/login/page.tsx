@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { login, loginWithGoogle } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/auth-context';
@@ -81,8 +82,15 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-            TC
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="Tablero de Control"
+              width={80}
+              height={80}
+              className="object-contain mix-blend-multiply dark:invert dark:mix-blend-screen"
+              priority
+            />
           </div>
           <CardTitle className="text-2xl">Tablero de Control</CardTitle>
           <CardDescription>Inicia sesión para continuar</CardDescription>

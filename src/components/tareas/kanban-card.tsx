@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -12,13 +11,25 @@ import {
   CheckSquare,
   AlertTriangle,
   ChevronUp,
+  Check,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Priority config
-const PRIORITY_CONFIG: Record<TaskPriority, { color: string; bg: string; icon: typeof AlertTriangle; order: number; border: string }> = {
+const PRIORITY_CONFIG: Record<
+  TaskPriority,
+  { color: string; bg: string; icon: typeof AlertTriangle; order: number; border: string }
+> = {
   urgent: {
     color: 'text-red-600 dark:text-red-400',
     bg: 'bg-red-100 dark:bg-red-900/30',
@@ -49,7 +60,8 @@ const PRIORITY_CONFIG: Record<TaskPriority, { color: string; bg: string; icon: t
   },
 };
 
-// Task card component for Kanban board
+const PRIORITIES: TaskPriority[] = ['urgent', 'high', 'medium', 'low'];
+
 interface KanbanCardProps {
   task: Task;
   column: TaskStatus;
@@ -59,8 +71,6 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
 
@@ -71,20 +81,6 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
 
   const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
 
-  const handlePriorityClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowPriorityPicker(!showPriorityPicker);
-  };
-
-  const handlePrioritySelect = (e: React.MouseEvent, priority: TaskPriority) => {
-    e.stopPropagation();
-    onPriorityChange(task.id, priority);
-    setShowPriorityPicker(false);
-  };
-
-  // Priority order: urgent > high > medium > low
-  const priorities: TaskPriority[] = ['urgent', 'high', 'medium', 'low'];
-
   return (
     <div
       ref={setNodeRef}
@@ -92,53 +88,62 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
       {...attributes}
       {...listeners}
       className={cn(
-        'group relative rounded-md border border-border border-l-4 bg-card p-1.5 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing',
+        'group relative rounded-lg border border-border border-l-4 bg-card p-3 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing select-none',
         priorityConfig.border,
         isDragging && 'opacity-30 border-dashed scale-95 z-50',
         task.priority === 'urgent' && 'animate-pulse-slow'
       )}
       onClick={(e) => {
-        // Evitar que el clic para abrir el detalle se confunda con un drag corto
         if (transform) return;
         onClick(task);
       }}
     >
       {/* Urgent indicator */}
       {task.priority === 'urgent' && (
-        <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm z-10">
+        <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm z-10">
           <AlertTriangle className="h-3 w-3" />
         </div>
       )}
 
-      {/* Header */}
+      {/* Header: drag handle + title + menu */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-start gap-2 flex-1 pointer-events-none">
-          <GripVertical
-            className="h-4 w-4 text-muted-foreground/30 mt-0.5 shrink-0 group-hover:text-muted-foreground"
-          />
-          <h4 className="text-xs font-medium leading-tight line-clamp-2">{task.title}</h4>
+        <div className="flex items-start gap-1.5 flex-1 min-w-0">
+          <GripVertical className="h-4 w-4 text-muted-foreground/30 mt-0.5 shrink-0 group-hover:text-muted-foreground" />
+          <h4 className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{task.title}</h4>
         </div>
-        <button
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowMenu(!showMenu);
-          }}
-        >
-          <MoreVertical className="h-4 w-4" />
-        </button>
+        {/* 3-dot menu — stop propagation to avoid card click */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-muted"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="bottom" className="z-[200]">
+            <DropdownMenuLabel className="text-xs">Acciones</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick(task);
+              }}
+            >
+              Ver detalle
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Description preview */}
       {task.description && (
-        <p className="text-[10px] text-muted-foreground line-clamp-2 mb-2">
-          {task.description}
-        </p>
+        <p className="text-[10px] text-muted-foreground line-clamp-2 mb-2 pl-5">{task.description}</p>
       )}
 
       {/* Tags */}
       {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div className="flex flex-wrap gap-1 mb-2 pl-5">
           {task.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
@@ -153,51 +158,57 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
         </div>
       )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between">
-        {/* Priority badge with click to change */}
-        <div className="relative">
-          <button
-            onClick={handlePriorityClick}
-            className={cn(
-              'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:opacity-80',
-              priorityConfig.bg,
-              priorityConfig.color
-            )}
-            title={`Prioridad: ${TASK_PRIORITY_LABELS[task.priority]} (clic para cambiar)`}
+      {/* Footer: priority (dropdown via portal) + meta */}
+      <div className="flex items-center justify-between mt-1">
+        {/* Priority badge — uses DropdownMenu portal, no layout break */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:opacity-80',
+                priorityConfig.bg,
+                priorityConfig.color
+              )}
+              title={`Prioridad: ${TASK_PRIORITY_LABELS[task.priority]} — clic para cambiar`}
+            >
+              <PriorityIcon className="h-3 w-3" />
+              {TASK_PRIORITY_LABELS[task.priority]}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            side="top"
+            className="z-[200] min-w-[140px]"
+            onClick={(e) => e.stopPropagation()}
           >
-            <PriorityIcon className="h-3 w-3" />
-            {TASK_PRIORITY_LABELS[task.priority]}
-          </button>
+            <DropdownMenuLabel className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              Cambiar prioridad
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {PRIORITIES.map((p) => {
+              const cfg = PRIORITY_CONFIG[p];
+              const Icon = cfg.icon;
+              const isActive = p === task.priority;
+              return (
+                <DropdownMenuItem
+                  key={p}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPriorityChange(task.id, p);
+                  }}
+                  className={cn('flex items-center gap-2 text-xs cursor-pointer', isActive && 'bg-muted')}
+                >
+                  <Icon className={cn('h-3 w-3', cfg.color)} />
+                  <span className={cfg.color}>{TASK_PRIORITY_LABELS[p]}</span>
+                  {isActive && <Check className="ml-auto h-3 w-3 text-muted-foreground" />}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-          {/* Priority picker dropdown */}
-          {showPriorityPicker && (
-            <div className="absolute bottom-full left-0 mb-1 rounded-md border bg-card shadow-lg p-1 z-10 min-w-[120px]">
-              <p className="text-[10px] font-medium text-muted-foreground px-2 py-1 mb-1">Cambiar prioridad</p>
-              {priorities.map((p) => {
-                const config = PRIORITY_CONFIG[p];
-                const Icon = config.icon;
-                const isActive = p === task.priority;
-                return (
-                  <button
-                    key={p}
-                    onClick={(e) => handlePrioritySelect(e, p)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded px-2 py-1 text-xs transition-colors',
-                      isActive ? 'bg-muted font-semibold' : 'hover:bg-muted'
-                    )}
-                  >
-                    <Icon className={cn('h-3 w-3', config.color)} />
-                    <span className={config.color}>{TASK_PRIORITY_LABELS[p]}</span>
-                    {isActive && <span className="ml-auto text-muted-foreground">✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Meta info */}
+        {/* Meta: comments, attachments, date */}
         <div className="flex items-center gap-2 text-muted-foreground">
           {task.commentCount > 0 && (
             <div className="flex items-center gap-0.5 text-[10px]">
@@ -211,21 +222,25 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
               <span>{task.attachmentUrls.length}</span>
             </div>
           )}
-          {task.dueDate && (
-            <div className={cn(
-              'flex items-center gap-0.5 text-[10px]',
-              new Date(task.dueDate) < new Date() && task.status !== 'done'
-                ? 'text-red-500 font-semibold'
-                : ''
-            )}>
-              <Clock className="h-3 w-3" />
-              <span>{new Date(task.dueDate).toLocaleDateString('es', { month: 'short', day: 'numeric' })}</span>
-            </div>
-          )}
           {task.subtaskIds && task.subtaskIds.length > 0 && (
             <div className="flex items-center gap-0.5 text-[10px]">
               <CheckSquare className="h-3 w-3" />
-              <span>{task.subtaskIds.filter(() => true).length}/{task.subtaskIds.length}</span>
+              <span>{task.subtaskIds.length}</span>
+            </div>
+          )}
+          {task.dueDate && (
+            <div
+              className={cn(
+                'flex items-center gap-0.5 text-[10px]',
+                new Date(task.dueDate) < new Date() && task.status !== 'done'
+                  ? 'text-red-500 font-semibold'
+                  : ''
+              )}
+            >
+              <Clock className="h-3 w-3" />
+              <span>
+                {new Date(task.dueDate).toLocaleDateString('es', { month: 'short', day: 'numeric' })}
+              </span>
             </div>
           )}
         </div>
@@ -234,27 +249,30 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
       {/* Assignees */}
       {(() => {
         if (!task.assigneeIds || task.assigneeIds.length === 0) return null;
-        
         const validAssignees = task.assigneeIds
-          .map(id => task.assignees?.find(x => x.id === id))
+          .map((id) => task.assignees?.find((x) => x.id === id))
           .filter((a): a is NonNullable<typeof a> => !!a);
-          
         if (validAssignees.length === 0) return null;
 
         return (
-          <div className="flex -space-x-2 mt-2 pt-2 border-t">
-            {validAssignees.slice(0, 3).map((a) => {
-              const initials = a.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+          <div className="flex -space-x-2 mt-2 pt-2 border-t border-border/50">
+            {validAssignees.slice(0, 4).map((a) => {
+              const initials = a.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase();
               return (
-                <Avatar key={a.id} className="h-6 w-6 border-2 border-card" title={a.name}>
+                <Avatar key={a.id} className="h-5 w-5 border-2 border-card" title={a.name}>
                   {a.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
-                  <AvatarFallback className="text-[9px] bg-primary/10">{initials}</AvatarFallback>
+                  <AvatarFallback className="text-[8px] bg-primary/10">{initials}</AvatarFallback>
                 </Avatar>
               );
             })}
-            {validAssignees.length > 3 && (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[9px] font-medium border-2 border-card">
-                +{validAssignees.length - 3}
+            {validAssignees.length > 4 && (
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[8px] font-medium border-2 border-card">
+                +{validAssignees.length - 4}
               </div>
             )}
           </div>

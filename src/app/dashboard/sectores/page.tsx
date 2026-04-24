@@ -1,26 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Plus, Building2 } from 'lucide-react';
+import { MapPin, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useDeleteLocation } from '@/hooks/mutations/use-locations';
 import { SectorList } from '@/components/sectores/sector-list';
 import { SectorModal } from '@/components/sectores/sector-modal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Location } from '@/types/domain/location';
 
 export default function SectoresPage() {
-  const { user, isSuperAdmin, isAdmin } = useAuth();
+  const { user } = useAuth();
   const businessId = user?.businessId || '';
-  
+
   const { data: sectors = [], isLoading } = useLocationsQuery();
   const deleteMutation = useDeleteLocation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<Location | undefined>();
-
-  const canManage = isSuperAdmin || isAdmin;
+  const [sectorToDelete, setSectorToDelete] = useState<Location | null>(null);
 
   const handleEdit = (sector: Location) => {
     setSelectedSector(sector);
@@ -32,10 +32,17 @@ export default function SectoresPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este sector? Esta acción no se puede deshacer.')) {
-      deleteMutation.mutate({ id, businessId });
-    }
+  const handleDeleteRequest = (id: string) => {
+    const sector = sectors.find((s) => s.id === id);
+    if (sector) setSectorToDelete(sector);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!sectorToDelete) return;
+    deleteMutation.mutate(
+      { id: sectorToDelete.id, businessId },
+      { onSettled: () => setSectorToDelete(null) }
+    );
   };
 
   return (
@@ -47,19 +54,30 @@ export default function SectoresPage() {
         </Button>
       </div>
 
-      <SectorList 
-        sectors={sectors} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete}
+      <SectorList
+        sectors={sectors}
+        onEdit={handleEdit}
+        onDelete={handleDeleteRequest}
         onCreate={handleCreate}
         isLoading={isLoading}
       />
 
-      <SectorModal 
+      <SectorModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         businessId={businessId}
         location={selectedSector}
+      />
+
+      <ConfirmDialog
+        open={!!sectorToDelete}
+        onOpenChange={(open) => { if (!open) setSectorToDelete(null); }}
+        title="Eliminar sector"
+        description={`¿Estás seguro de eliminar "${sectorToDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        onConfirm={handleDeleteConfirm}
+        variant="destructive"
+        loading={deleteMutation.isPending}
       />
     </div>
   );
