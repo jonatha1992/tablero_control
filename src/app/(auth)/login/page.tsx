@@ -84,11 +84,11 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
             <Image
-              src="/logo.png"
+              src="/icon-192.png"
               alt="Tablero de Control"
-              width={80}
-              height={80}
-              className="object-contain mix-blend-multiply dark:invert dark:mix-blend-screen"
+              width={72}
+              height={72}
+              className="rounded-2xl object-contain shadow-md"
               priority
             />
           </div>

@@ -51,12 +51,12 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       )}>
         {!collapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="object-contain mix-blend-multiply dark:invert dark:mix-blend-screen" />
+            <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
             <span className="font-semibold text-lg">Tablero Control</span>
           </Link>
         )}
         {collapsed && (
-          <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="object-contain mix-blend-multiply dark:invert dark:mix-blend-screen" />
+          <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
         )}
         <Button
           variant="ghost"

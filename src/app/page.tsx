@@ -20,7 +20,7 @@ export default function HomePage() {
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="object-contain mix-blend-multiply dark:invert dark:mix-blend-screen" />
+            <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
             <span className="text-xl font-bold">Tablero de Control</span>
           </div>
           <div className="flex items-center gap-3">
