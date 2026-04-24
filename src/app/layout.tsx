@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "Tablero de Control",
   description: "Tablero de control profesional para gestión de tareas y proyectos",
   manifest: "/manifest.json",
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
