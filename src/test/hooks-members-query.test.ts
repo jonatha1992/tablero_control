@@ -35,8 +35,6 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-import { toast } from 'sonner';
-const mockToastError = vi.mocked(toast.error);
 const mockGetByBusiness = vi.mocked(membersApi.getByBusiness);
 const mockInvite = vi.mocked(membersApi.invite);
 const mockUpdate = vi.mocked(membersApi.update);

@@ -25,18 +25,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       actorId: user.uid,
       actorRole: user.role,
       businessId: user.businessId,
-      action: 'UPDATE',
+      action: 'task.move',
       targetType: 'TASK',
       targetId: id,
-      metadata: { move: true, status: data.status },
+      metadata: { status: data.status },
     });
 
     if (nextTask) {
       await writeAuditLog({
-        actorId: 'system',
-        actorRole: 'system',
+        actorId: user.uid,
+        actorRole: user.role,
         businessId: user.businessId,
-        action: 'CREATE',
+        action: 'task.create',
         targetType: 'TASK',
         targetId: nextTask.id,
         metadata: { recurring: true, parentId: id },
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'UPDATE',
+    action: 'task.update',
     targetType: 'TASK',
     targetId: id,
     metadata: { ...data },
@@ -72,7 +72,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'DELETE',
+    action: 'task.delete',
     targetType: 'TASK',
     targetId: id,
   });

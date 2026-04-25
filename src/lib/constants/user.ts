@@ -1,13 +1,5 @@
 import type { UserRole } from '@/types/domain/user';
 
-export const ROLE_LEVEL: Record<UserRole, number> = {
-  superadmin: 5,
-  admin: 4,
-  responsable: 3,
-  miembro: 2,
-  viewer: 1,
-};
-
 export const ROLE_LABELS: Record<UserRole, string> = {
   superadmin: 'Super Admin',
   admin: 'Admin',

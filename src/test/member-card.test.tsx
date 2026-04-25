@@ -3,6 +3,26 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemberCard } from '@/components/equipo/member-card';
 import type { User } from '@/types';
 
+vi.mock('@/hooks/mutations/use-update-member', () => ({
+  useUpdateMember: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
+}));
+
+vi.mock('@/hooks/auth-context', () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: 'user-1', businessId: 'biz-1', role: 'admin' },
+    isSuperAdmin: false,
+  })),
+}));
+
+vi.mock('@/hooks/queries/use-locations-query', () => ({
+  useLocationsQuery: vi.fn(() => ({
+    data: [],
+  })),
+}));
+
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
 const activeMember: User = {
@@ -25,12 +45,6 @@ const inactiveMember: User = {
   email: 'bob@biz.com',
   role: 'responsable',
   isActive: false,
-} as unknown as User;
-
-const memberWithAvatar: User = {
-  ...activeMember,
-  id: 'mem-3',
-  avatar: 'https://example.com/avatar.jpg',
 } as unknown as User;
 
 beforeEach(() => {

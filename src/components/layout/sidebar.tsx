@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
   CheckSquare,
   Calendar,
-  BarChart3,
+
   Users,
   Settings,
   ChevronLeft,

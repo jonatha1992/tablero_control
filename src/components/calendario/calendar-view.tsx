@@ -40,8 +40,8 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
       };
     });
 
-  const handleEventDrop = (info: any) => {
-    if (onEventDrop) {
+  const handleEventDrop = (info: { event: { id: string; start: Date | null } }) => {
+    if (onEventDrop && info.event.start) {
       onEventDrop(info.event.id, info.event.start);
     }
   };

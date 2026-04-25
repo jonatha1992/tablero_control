@@ -1,7 +1,7 @@
 import { locationRepository } from '@/repositories';
 import type { Location, LocationStatus } from '@/types/domain/location';
 
-export class LocationService {
+class LocationService {
   async getByBusiness(businessId: string): Promise<Location[]> {
     return locationRepository.findByBusiness(businessId);
   }

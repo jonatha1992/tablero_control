@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       actorId: user.uid,
       actorRole: user.role,
       businessId: user.businessId,
-      action: 'CREATE',
+      action: 'task.create',
       targetType: 'TASK',
       targetId: task.id,
       metadata: { title: task.title },

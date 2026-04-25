@@ -3,7 +3,6 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  GripVertical,
   MessageSquare,
   Paperclip,
   Clock,
@@ -68,11 +67,15 @@ interface KanbanCardProps {
   onMove: (taskId: string, from: TaskStatus, to: TaskStatus) => void;
   onPriorityChange: (taskId: string, newPriority: TaskPriority) => void;
   onClick: (task: Task) => void;
+  isSelected: boolean;
+  isSelectMode: boolean;
+  isOverlay?: boolean;
 }
 
-export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCardProps) {
+export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected, isSelectMode, isOverlay }: KanbanCardProps) {
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
+  const shortId = task.id.slice(0, 6).toUpperCase();
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
@@ -88,12 +91,15 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
       {...attributes}
       {...listeners}
       className={cn(
-        'group relative rounded-lg border border-border border-l-4 bg-card p-3 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing select-none',
+        'group relative rounded-lg border border-l-4 bg-card p-3 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing select-none',
         priorityConfig.border,
-        isDragging && 'opacity-30 border-dashed scale-95 z-50',
+        isSelected
+          ? 'border-primary/60 bg-primary/5 ring-1 ring-primary/30'
+          : 'border-border',
+        isDragging && !isOverlay && 'opacity-30 border-dashed scale-95 z-50',
         task.priority === 'urgent' && 'animate-pulse-slow'
       )}
-      onClick={(e) => {
+      onClick={() => {
         if (transform) return;
         onClick(task);
       }}
@@ -105,13 +111,29 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
         </div>
       )}
 
-      {/* Header: drag handle + title + menu */}
+      {/* Header: checkbox + title + menu */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-start gap-1.5 flex-1 min-w-0">
-          <GripVertical className="h-4 w-4 text-muted-foreground/30 mt-0.5 shrink-0 group-hover:text-muted-foreground" />
+        {/* Checkbox (visible in select mode or when selected) */}
+        {(isSelectMode || isSelected) && (
+          <div className="shrink-0 mt-0.5">
+            <div
+              className={cn(
+                'h-4 w-4 rounded border-2 flex items-center justify-center transition-colors',
+                isSelected
+                  ? 'bg-primary border-primary'
+                  : 'border-muted-foreground/40'
+              )}
+            >
+              {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-start gap-1 flex-1 min-w-0">
           <h4 className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{task.title}</h4>
         </div>
-        {/* 3-dot menu — stop propagation to avoid card click */}
+
+        {/* 3-dot menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -158,9 +180,8 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
         </div>
       )}
 
-      {/* Footer: priority (dropdown via portal) + meta */}
+      {/* Footer: priority + meta */}
       <div className="flex items-center justify-between mt-1">
-        {/* Priority badge — uses DropdownMenu portal, no layout break */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -208,8 +229,9 @@ export function KanbanCard({ task, column, onPriorityChange, onClick }: KanbanCa
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Meta: comments, attachments, date */}
+        {/* Meta: id corto + comentarios + adjuntos + fecha */}
         <div className="flex items-center gap-2 text-muted-foreground">
+          <span className="font-mono text-[9px] text-muted-foreground/60">#{shortId}</span>
           {task.commentCount > 0 && (
             <div className="flex items-center gap-0.5 text-[10px]">
               <MessageSquare className="h-3 w-3" />

@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'UPDATE',
+    action: 'user.update',
     targetType: 'USER',
     targetId: id,
     metadata: { ...data },
@@ -35,7 +35,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'DELETE',
+    action: 'user.deactivate',
     targetType: 'USER',
     targetId: id,
   });

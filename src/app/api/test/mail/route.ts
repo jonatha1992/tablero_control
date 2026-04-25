@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         try {
             const adminAuth = getAdminAuth();
             resetLink = await adminAuth.generatePasswordResetLink(email);
-        } catch (e) {
+        } catch {
             console.log('Usando link ficticio para el test de diseño');
         }
         result = await MailService.sendPasswordResetEmail(email, resetLink);
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

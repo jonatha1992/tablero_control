@@ -31,8 +31,7 @@ export default function UsersPage() {
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.business?.name ?? '').toLowerCase().includes(search.toLowerCase())
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -70,7 +69,7 @@ export default function UsersPage() {
                 <th className="text-left px-4 py-3 font-medium">Nombre</th>
                 <th className="text-left px-4 py-3 font-medium">Email</th>
                 <th className="text-left px-4 py-3 font-medium">Rol</th>
-                <th className="text-left px-4 py-3 font-medium">Negocio</th>
+
                 <th className="text-left px-4 py-3 font-medium">Estado</th>
                 <th className="text-left px-4 py-3 font-medium">Creado</th>
               </tr>
@@ -85,13 +84,7 @@ export default function UsersPage() {
                       {u.role}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    {u.business?.name ? (
-                      <span className="font-medium text-primary/80">{u.business.name}</span>
-                    ) : (
-                      <span className="text-muted-foreground italic">—</span>
-                    )}
-                  </td>
+
                   <td className="px-4 py-3">
                     {u.isActive ? (
                       <span className="text-green-600 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Activo</span>
@@ -105,7 +98,7 @@ export default function UsersPage() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td></tr>
+                <tr><td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td></tr>
               )}
             </tbody>
           </table>

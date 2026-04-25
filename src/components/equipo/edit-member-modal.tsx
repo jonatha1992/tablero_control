@@ -59,7 +59,7 @@ export function EditMemberModal({ member, open, onClose }: Props) {
         data: { 
           name: name.trim(), 
           role, 
-          locationId: locationId || null 
+          locationId: locationId || undefined 
         } 
       },
       {

@@ -12,7 +12,7 @@ async function fetchSA<T>(path: string): Promise<T> {
 export const superadminApi = {
   getUsers: () => fetchSA<{ users: unknown[] }>('/api/superadmin/users'),
   getBusinesses: () => fetchSA<{ businesses: unknown[] }>('/api/superadmin/businesses'),
-  getBusiness: (id: string) => fetchSA<{ business: unknown; users: unknown[]; locations: unknown[] }>(`/api/superadmin/businesses/${id}`),
+  getBusiness: (id: string) => fetchSA<{ business: unknown; users: unknown[]; locations: unknown[]; teams?: unknown[]; projects?: unknown[] }>(`/api/superadmin/businesses/${id}`),
   getSubscriptions: () => fetchSA<{ subscriptions: unknown[] }>('/api/superadmin/subscriptions'),
   getAudit: () => fetchSA<{ logs: unknown[] }>('/api/superadmin/audit'),
   patchBusiness: async (businessId: string, action: 'suspend' | 'reactivate') => {

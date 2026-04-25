@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { KanbanColumn } from '@/components/tareas/kanban-column';
 import type { Task, TaskStatus } from '@/types';
 
@@ -38,6 +37,10 @@ const defaultProps = {
   onCardClick: vi.fn(),
   onPriorityChange: vi.fn(),
   onAddClick: vi.fn(),
+  selectedTaskIds: [],
+  isSelectMode: false,
+  onSelectAll: vi.fn(),
+  onBulkDelete: vi.fn(),
 };
 
 beforeEach(() => {

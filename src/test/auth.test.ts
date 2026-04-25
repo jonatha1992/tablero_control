@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as firebaseAuth from 'firebase/auth';
-import * as firebaseFirestore from 'firebase/firestore';
 
 // firebase/auth and firebase/firestore are mocked globally in setup.ts
 const signInFn = vi.mocked(firebaseAuth.signInWithEmailAndPassword);
@@ -62,11 +61,6 @@ describe('Auth — register', () => {
   });
 
   it('asigna el rol recibido como parámetro', async () => {
-    const mockUser = {
-      uid: 'uid-3',
-      email: 'admin@example.com',
-      getIdToken: vi.fn().mockResolvedValue('t'),
-    };
     await register('admin@example.com', 'pass', 'Admin User', 'admin');
 
     expect(createUserFn).toHaveBeenCalled();
@@ -74,11 +68,6 @@ describe('Auth — register', () => {
   });
 
   it('usa role miembro por defecto', async () => {
-    const mockUser = {
-      uid: 'uid-4',
-      email: 'member@example.com',
-      getIdToken: vi.fn().mockResolvedValue('t'),
-    };
     await register('member@example.com', 'pass', 'Member');
 
     expect(createUserFn).toHaveBeenCalled();

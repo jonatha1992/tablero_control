@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { PLANS } from '@/lib/mercadopago/plans';
-import { useAuth } from '@/hooks/auth-context';
+
 import { cn } from '@/lib/utils';
 import type { PlanId, BillingFrequency } from '@/types/domain/subscription';
 import { CheckCircle, Loader2, Sparkles } from 'lucide-react';
 import { auth } from '@/lib/firebase/client';
+
 
 interface Props {
   currentPlan: PlanId;

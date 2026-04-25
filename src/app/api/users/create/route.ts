@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     actorId: authed.uid,
     actorRole: authed.role,
     businessId: authed.businessId,
-    action: 'CREATE',
+    action: 'user.create',
     targetType: 'USER',
     targetId: uid,
     metadata: { email, role, locationId },

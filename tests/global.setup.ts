@@ -1,5 +1,5 @@
 import { test as setup } from '@playwright/test';
-import { loginAsSuperAdmin, waitForDashboardReady } from './helpers/auth';
+import { loginAsSuperAdmin, gotoAuthenticated } from './helpers/auth';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -7,7 +7,7 @@ const STORAGE_PATH = 'tests/.auth/superadmin.json';
 
 setup('autenticar superadmin y guardar sesión', async ({ page }) => {
   await loginAsSuperAdmin(page);
-  await waitForDashboardReady(page);
+  await gotoAuthenticated(page, '/dashboard');
 
   // Verificar que llegamos al dashboard (admin) o superadmin
   await page.waitForURL(/\/(dashboard|superadmin)/, { timeout: 15000 });

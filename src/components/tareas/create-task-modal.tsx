@@ -15,6 +15,7 @@ import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { X, MapPin, Repeat } from 'lucide-react';
+
 import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '@/types';
 
 interface CreateTaskModalProps {
@@ -40,12 +41,11 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [interval, setIntervalValue] = useState(1);
   const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
   const [dayOfMonth, setDayOfMonth] = useState<number | undefined>(undefined);
-
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
 
-  const toggleAssignee = (id: string) => {
+const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -255,7 +255,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                   <label className="text-xs text-muted-foreground mb-1 block">Frecuencia</label>
                   <select
                     value={frequency}
-                    onChange={(e) => setFrequency(e.target.value as any)}
+                    onChange={(e) => setFrequency(e.target.value as RecurrenceConfig['frequency'])}
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                   >
                     <option value="daily">Diaria</option>

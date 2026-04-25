@@ -38,8 +38,9 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[BUSINESS_CONFIG_PATCH]', error);
-    return NextResponse.json({ error: 'update_failed', details: error.message }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'update_failed';
+    return NextResponse.json({ error: 'update_failed', details: msg }, { status: 500 });
   }
 }

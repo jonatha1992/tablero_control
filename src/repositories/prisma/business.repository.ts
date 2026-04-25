@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import type { Business, BusinessStatus } from '@/types/domain/business';
 import type { PlanId } from '@/types/domain/subscription';
 
@@ -18,7 +19,7 @@ export class PrismaBusinessRepository {
       adminId: row.adminId,
       locationIds: [], // Relational fields logic for later
       teamIds: [],
-      settings: row.settings as any, // Json remains as any or cast to BusinessSettings
+      settings: row.settings as unknown as Business['settings'], // Json cast to BusinessSettings
       featureFlags: row.featureFlags as Record<string, boolean>,
       subscriptionId: row.subscriptionId ?? undefined,
       mpPayerId: row.mpPayerId ?? undefined,
@@ -37,8 +38,8 @@ export class PrismaBusinessRepository {
         adminId: data.adminId,
         plan: data.plan,
         status: data.status,
-        settings: data.settings as any,
-        featureFlags: data.featureFlags as any,
+        settings: data.settings as Prisma.InputJsonValue,
+        featureFlags: data.featureFlags as Prisma.InputJsonValue,
       },
     });
     
@@ -51,11 +52,9 @@ export class PrismaBusinessRepository {
       where: { id },
       data: {
         ...rest,
-        plan: rest.plan as any,
-        status: rest.status as any,
-        settings: rest.settings as any,
-        featureFlags: rest.featureFlags as any,
-      },
+        settings: rest.settings as Prisma.InputJsonValue,
+        featureFlags: rest.featureFlags as Prisma.InputJsonValue,
+      } as Prisma.BusinessUpdateInput,
     });
   }
 }

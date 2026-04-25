@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase/client';
 import type { Subscription } from '@/types/domain/subscription';
 
-async function fetchSubscription(businessId: string): Promise<Subscription | null> {
+async function fetchSubscription(_businessId: string): Promise<Subscription | null> {
   const token = await auth.currentUser?.getIdToken();
   const res = await fetch('/api/business/subscription', {
     headers: { Authorization: `Bearer ${token}` },

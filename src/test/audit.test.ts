@@ -90,17 +90,18 @@ describe('writeAuditLog()', () => {
     });
   });
 
-  it('propaga errores de Prisma', async () => {
+  it('no propaga errores de Prisma (non-fatal)', async () => {
     const dbError = new Error('DB connection error');
     mockCreate.mockRejectedValueOnce(dbError);
 
+    // writeAuditLog captura el error y no lo relanza
     await expect(
       writeAuditLog({
         actorId: 'user-1',
         actorRole: 'admin',
         action: 'task.create' as never,
       })
-    ).rejects.toThrow('DB connection error');
+    ).resolves.toBeUndefined();
   });
 
   it('no incluye userAgent en los datos enviados a Prisma (no está en el schema)', async () => {

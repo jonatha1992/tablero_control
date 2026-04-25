@@ -22,7 +22,7 @@ vi.mock('@dnd-kit/utilities', () => ({
 // Mock DropdownMenu — en jsdom Radix no abre portales con fireEvent, renderizamos siempre el contenido
 vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  DropdownMenuTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => <>{children}</>,
+  DropdownMenuTrigger: ({ children, asChild: _asChild }: { children: React.ReactNode; asChild?: boolean }) => <>{children}</>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div data-testid="dropdown-content">{children}</div>,
   DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
     <button onClick={onClick}>{children}</button>
@@ -55,6 +55,8 @@ const defaultProps = {
   onMove: vi.fn(),
   onPriorityChange: vi.fn(),
   onClick: vi.fn(),
+  isSelected: false,
+  isSelectMode: false,
 };
 
 describe('KanbanCard', () => {

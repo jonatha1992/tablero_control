@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Building2, CheckCircle, XCircle, AlertCircle, Loader2, MoreVertical } from 'lucide-react';
+import { Building2, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import type { Business, BusinessStatus } from '@/types/domain/business';
 import { useState } from 'react';
 import Link from 'next/link';

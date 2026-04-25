@@ -4,7 +4,6 @@ import { assertSameTenant, isSameTenant, TenantMismatchError } from '@/lib/permi
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
 const userA = { role: 'admin' as const, businessId: 'biz-A' };
-const userB = { role: 'admin' as const, businessId: 'biz-B' };
 const superadmin = { role: 'superadmin' as const, businessId: undefined };
 const userNoBiz = { role: 'miembro' as const, businessId: undefined };
 

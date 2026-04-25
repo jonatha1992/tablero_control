@@ -9,7 +9,7 @@ type PrismaTask = Prisma.TaskGetPayload<{
   include: {
     assignees: { select: { id: true; name: true; avatar: true } };
     subtasks: { select: { id: true } };
-    attachments: { select: { url: true } };
+    attachments: { select: { url: true; filename: true } };
   };
 }>;
 
@@ -164,27 +164,30 @@ export class PrismaTaskRepository implements ITaskRepository {
   async create(
     data: CreateTaskDTO & { creatorId: string; businessId: string }
   ): Promise<Task> {
-    const { assigneeIds, businessId, creatorId, ...rest } = data;
+    const { assigneeIds, businessId: _businessId, creatorId, ...rest } = data;
     const t = await prisma.task.create({
       data: {
         ...rest,
         creatorId,
         position: Math.floor(Date.now() / 1000),
+        recurrence: rest.recurrence as Prisma.InputJsonValue | undefined,
         assignees: assigneeIds?.length
           ? { connect: assigneeIds.map((id) => ({ id })) }
           : undefined,
       },
       include,
-    });
+    }) as PrismaTask;
     return toDomain(t);
   }
 
   async update(id: string, data: UpdateTaskDTO): Promise<Task> {
-    const { assigneeIds, attachmentUrls, ...rest } = data;
+    const { assigneeIds, attachmentUrls, locationId, projectId, ...rest } = data;
     const t = await prisma.task.update({
       where: { id },
       data: {
         ...rest,
+        locationId: locationId === undefined ? undefined : (locationId ?? null),
+        projectId: projectId === undefined ? undefined : (projectId ?? null),
         assignees: assigneeIds
           ? { set: assigneeIds.map((uid) => ({ id: uid })) }
           : undefined,
@@ -195,9 +198,9 @@ export class PrismaTaskRepository implements ITaskRepository {
             }
           }
           : undefined,
-      },
+      } as Prisma.TaskUpdateInput,
       include,
-    });
+    }) as PrismaTask;
     return toDomain(t);
   }
 

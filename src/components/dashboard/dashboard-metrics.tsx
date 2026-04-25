@@ -2,14 +2,14 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { 
-  format, subDays, startOfDay, endOfDay, isBefore, isAfter, 
+  format, subDays, endOfDay, isAfter, 
   eachDayOfInterval, subWeeks, startOfWeek, endOfWeek, isWithinInterval 
 } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -23,12 +23,26 @@ const STATUS_LABELS: Record<string, string> = {
   backlog: 'Backlog', blocked: 'Bloqueadas', in_review: 'En revisión',
 };
 
-function CustomTooltip({ active, payload, label }: any) {
+interface TooltipPayloadItem {
+  dataKey: string;
+  name: string;
+  value: number;
+  color?: string;
+  fill?: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border bg-background p-3 shadow-md text-sm">
       <p className="font-medium mb-1">{label}</p>
-      {payload.map((e: any) => (
+      {payload.map((e) => (
         <div key={e.dataKey} className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full" style={{ backgroundColor: e.color || e.fill }} />
           <span className="text-muted-foreground">{e.name}:</span>
@@ -43,7 +57,8 @@ export function DashboardMetrics() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const r = requestAnimationFrame(() => setIsMounted(true));
+    return () => cancelAnimationFrame(r);
   }, []);
 
   const { data: tasks = [] } = useTasksQuery();

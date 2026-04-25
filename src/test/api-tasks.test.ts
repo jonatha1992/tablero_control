@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/tasks/route';
 import { taskService } from '@/services/task.service';
+import { requireUser } from '@/lib/api/auth-helpers';
+
+vi.mock('@/lib/api/auth-helpers', () => ({
+  requireUser: vi.fn(),
+}));
+
+const mockRequireUser = vi.mocked(requireUser);
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -22,7 +29,7 @@ const mockGetByCreator = vi.mocked(taskService.getTasksByCreator);
 const mockCreate = vi.mocked(taskService.createTask);
 
 function makeRequest(url: string, options?: RequestInit): NextRequest {
-  return new NextRequest(url, options);
+  return new NextRequest(url, options as never);
 }
 
 const mockTasks = [
@@ -32,6 +39,13 @@ const mockTasks = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockRequireUser.mockResolvedValue({
+    uid: 'user-1',
+    role: 'admin',
+    businessId: 'biz-1',
+    email: 'admin@biz.com',
+    name: 'Admin',
+  } as never);
 });
 
 // ─── GET /api/tasks ────────────────────────────────────────────────────────────

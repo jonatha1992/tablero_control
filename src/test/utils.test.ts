@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { formatDate, formatRelative, cn, getInitials, stringToColor, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import { describe, it, expect } from 'vitest';
+import { formatDate, cn, getInitials, stringToColor, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/utils';
 
 describe('Utils', () => {
   describe('cn', () => {

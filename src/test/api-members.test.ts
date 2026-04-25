@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/members/route';
 import { teamService } from '@/services/team.service';
+import { requireUser } from '@/lib/api/auth-helpers';
+
+vi.mock('@/lib/api/auth-helpers', () => ({
+  requireUser: vi.fn(),
+}));
+
+const mockRequireUser = vi.mocked(requireUser);
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -24,6 +31,14 @@ const mockMembers = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockRequireUser.mockResolvedValue({
+    uid: 'user-1',
+    role: 'admin',
+    businessId: 'biz-1',
+    email: 'admin@biz.com',
+    name: 'Admin',
+    data: { id: 'user-1', role: 'admin', businessId: 'biz-1', name: 'Admin', email: 'admin@biz.com', teamIds: [], preferences: {}, isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  } as never);
 });
 
 // ─── GET /api/members ────────────────────────────────────────────────────────
@@ -49,7 +64,7 @@ describe('GET /api/members', () => {
 
   it('retorna array vacío si no hay miembros', async () => {
     mockGetMembers.mockResolvedValueOnce([] as never);
-    const req = new NextRequest('http://localhost/api/members?businessId=biz-2');
+    const req = new NextRequest('http://localhost/api/members?businessId=biz-1');
     const res = await GET(req);
     expect(res.status).toBe(200);
     const body = await res.json();

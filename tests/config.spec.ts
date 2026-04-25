@@ -18,7 +18,7 @@ test.describe('Configuración de usuario', () => {
     if (await perfilTab.count() > 0) await perfilTab.first().click();
 
     // Email del usuario visible (campo disabled)
-    const emailField = page.locator('input[disabled], input[readonly]').filter({ hasValue: /tecnofusion|@/ });
+    const emailField = page.locator('input[disabled][value*="@"], input[readonly][value*="@"]');
     const hasEmailField = await emailField.count() > 0;
     // O email como texto
     const emailText = page.locator('text=tecnofusion.it@gmail.com');

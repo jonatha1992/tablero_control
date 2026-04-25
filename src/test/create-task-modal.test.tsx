@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement } from 'react';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -36,6 +38,14 @@ const defaultProps = {
   onOpenChange: vi.fn(),
 };
 
+function createWrapper() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    createElement(QueryClientProvider, { client: qc }, children);
+  Wrapper.displayName = 'TestWrapper';
+  return Wrapper;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -44,41 +54,41 @@ beforeEach(() => {
 
 describe('CreateTaskModal', () => {
   it('no renderiza cuando open=false', () => {
-    render(<CreateTaskModal {...defaultProps} open={false} />);
+    render(<CreateTaskModal {...defaultProps} open={false} />, { wrapper: createWrapper() });
     expect(screen.queryByText('Crear Nueva Tarea')).not.toBeInTheDocument();
   });
 
   it('renderiza cuando open=true', () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('Crear Nueva Tarea')).toBeInTheDocument();
   });
 
   it('estado por defecto es "todo"', () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const statusSelect = screen.getByDisplayValue('Por hacer');
     expect(statusSelect).toBeInTheDocument();
   });
 
   it('prioridad por defecto es "medium"', () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const prioritySelect = screen.getByDisplayValue('Media');
     expect(prioritySelect).toBeInTheDocument();
   });
 
   it('defaultStatus prop se aplica correctamente', () => {
-    render(<CreateTaskModal {...defaultProps} defaultStatus="in_progress" />);
+    render(<CreateTaskModal {...defaultProps} defaultStatus="in_progress" />, { wrapper: createWrapper() });
     const statusSelect = screen.getByDisplayValue('En progreso');
     expect(statusSelect).toBeInTheDocument();
   });
 
   it('submit disabled si título vacío', () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const submitBtn = screen.getByRole('button', { name: /Crear tarea/i });
     expect(submitBtn).toBeDisabled();
   });
 
   it('submit habilitado cuando hay título', async () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const titleInput = screen.getByPlaceholderText('Título de la tarea');
     await userEvent.type(titleInput, 'Mi tarea');
     const submitBtn = screen.getByRole('button', { name: /Crear tarea/i });
@@ -86,7 +96,7 @@ describe('CreateTaskModal', () => {
   });
 
   it('clic en assignee lo agrega a assigneeIds', async () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const anaBtn = screen.getByRole('button', { name: /Ana/i });
     fireEvent.click(anaBtn);
     // Aparece indicador de cantidad
@@ -94,7 +104,7 @@ describe('CreateTaskModal', () => {
   });
 
   it('segundo clic en assignee lo quita de assigneeIds', async () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const anaBtn = screen.getByRole('button', { name: /Ana/i });
     fireEvent.click(anaBtn);
     fireEvent.click(anaBtn);
@@ -102,7 +112,7 @@ describe('CreateTaskModal', () => {
   });
 
   it('submit llama mutate con datos correctos', async () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const titleInput = screen.getByPlaceholderText('Título de la tarea');
     await userEvent.type(titleInput, 'Mi nueva tarea');
 
@@ -120,7 +130,7 @@ describe('CreateTaskModal', () => {
   });
 
   it('tags separadas por coma → array sin vacíos', async () => {
-    render(<CreateTaskModal {...defaultProps} />);
+    render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
     const titleInput = screen.getByPlaceholderText('Título de la tarea');
     await userEvent.type(titleInput, 'Test');
 
@@ -140,7 +150,7 @@ describe('CreateTaskModal', () => {
 
   it('llama onOpenChange(false) en onSuccess del mutate', async () => {
     const onOpenChange = vi.fn();
-    render(<CreateTaskModal {...defaultProps} onOpenChange={onOpenChange} />);
+    render(<CreateTaskModal {...defaultProps} onOpenChange={onOpenChange} />, { wrapper: createWrapper() });
     const titleInput = screen.getByPlaceholderText('Título de la tarea');
     await userEvent.type(titleInput, 'Tarea X');
     fireEvent.click(screen.getByRole('button', { name: /Crear tarea/i }));

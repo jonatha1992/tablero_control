@@ -101,9 +101,14 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="pr-6">
-            <DialogTitle className={cn("text-xl leading-tight", editing && "sr-only")}>
-              {editing ? `Editando: ${title}` : task.title}
-            </DialogTitle>
+            <div className="flex items-center gap-2 mb-0.5">
+              <DialogTitle className={cn("text-xl leading-tight", editing && "sr-only")}>
+                {editing ? `Editando: ${title}` : task.title}
+              </DialogTitle>
+              <span className="font-mono text-xs text-muted-foreground/60 shrink-0">
+                #{task.id.slice(0, 6).toUpperCase()}
+              </span>
+            </div>
             <DialogDescription className={cn("mt-1", editing && "sr-only")}>
               {task.description || 'Detalles de la tarea seleccionada.'}
             </DialogDescription>
@@ -149,7 +154,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                       <label className="text-xs text-muted-foreground mb-1 block">Frecuencia</label>
                       <select
                         value={frequency}
-                        onChange={(e) => setFrequency(e.target.value as any)}
+                        onChange={(e) => setFrequency(e.target.value as RecurrenceConfig['frequency'])}
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                       >
                         <option value="daily">Diaria</option>
@@ -254,7 +259,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <option value="todo">Por hacer</option>
               <option value="in_progress">En progreso</option>
               <option value="in_review">En revisión</option>
-              <option value="done">Completada</option>
+              <option value="done">Finalizado</option>
               <option value="blocked">Bloqueada</option>
             </select>
           </div>

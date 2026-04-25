@@ -37,8 +37,10 @@ function createWrapper() {
       queries: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) =>
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
     createElement(QueryClientProvider, { client: qc }, children);
+  Wrapper.displayName = 'TestWrapper';
+  return Wrapper;
 }
 
 const mockUser = {

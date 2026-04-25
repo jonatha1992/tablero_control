@@ -2,7 +2,7 @@ import { userRepository } from '@/repositories';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
 
-export class TeamService {
+class TeamService {
   async getMembersByBusiness(businessId: string): Promise<User[]> {
     return userRepository.findByBusiness(businessId);
   }

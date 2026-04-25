@@ -1,3 +1,5 @@
+'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { locationsApi } from '@/lib/api/locations';
 import { toast } from 'sonner';
@@ -47,7 +49,7 @@ export function useDeleteLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, businessId }: { id: string; businessId: string }) =>
+    mutationFn: ({ id, businessId: _businessId }: { id: string; businessId: string }) =>
       locationsApi.delete(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['locations', variables.businessId] });

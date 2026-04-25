@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadUserAvatar, uploadTaskAttachment } from '@/lib/cloudinary/upload';
+import { uploadUserAvatar, uploadTaskAttachment, type CloudinaryUploadResult } from '@/lib/cloudinary/upload';
 import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/lib/api/auth-helpers';
+import { writeAuditLog } from '@/lib/api/audit';
 
 export async function POST(request: NextRequest) {
+  const user = await requireUser(request);
+  if (user instanceof NextResponse) return user;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -20,10 +25,9 @@ export async function POST(request: NextRequest) {
       const result = await uploadUserAvatar(id, file);
       url = result;
     } else if (type === 'attachment') {
-      const result = await uploadTaskAttachment(id, fileName ?? file.name, file);
+      const result: CloudinaryUploadResult = await uploadTaskAttachment(id, fileName ?? file.name, file);
       url = result.secure_url;
-      
-      // Guardamos en la base de datos
+
       await prisma.attachment.create({
         data: {
           taskId: id,
@@ -33,6 +37,16 @@ export async function POST(request: NextRequest) {
           mimetype: file.type,
           size: file.size,
         }
+      });
+
+      await writeAuditLog({
+        actorId: user.uid,
+        actorRole: user.role,
+        businessId: user.businessId,
+        action: 'attachment.upload',
+        targetType: 'ATTACHMENT',
+        targetId: result.public_id,
+        metadata: { taskId: id, filename: fileName ?? file.name },
       });
     } else {
       return NextResponse.json({ error: 'Invalid upload type' }, { status: 400 });

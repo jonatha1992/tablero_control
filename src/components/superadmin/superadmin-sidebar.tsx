@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard, Building2, Users, CreditCard, ScrollText, Settings, LogOut,
+  LayoutDashboard, Building2, Users, CreditCard, ScrollText, LogOut,
 } from 'lucide-react';
 import { logout as signOut } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';

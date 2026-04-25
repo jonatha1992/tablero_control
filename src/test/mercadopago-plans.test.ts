@@ -123,9 +123,10 @@ describe('planLimit()', () => {
 describe('parseExternalReference (si se implementa)', () => {
   it('parsea formato "biz:id:plan:frequency"', async () => {
     try {
-      const { parseExternalReference } = await import('@/lib/mercadopago/plans');
+      const mod = await import('@/lib/mercadopago/plans') as Record<string, unknown>;
+      const parseExternalReference = mod.parseExternalReference;
       if (typeof parseExternalReference !== 'function') return;
-      const result = parseExternalReference('biz:biz-123:pro:monthly');
+      const result = (parseExternalReference as (ref: string) => unknown)('biz:biz-123:pro:monthly');
       expect(result).toMatchObject({ businessId: 'biz-123', plan: 'pro', frequency: 'monthly' });
     } catch {
       // función no existe todavía — skip
@@ -134,10 +135,11 @@ describe('parseExternalReference (si se implementa)', () => {
 
   it('retorna null para formato inválido', async () => {
     try {
-      const { parseExternalReference } = await import('@/lib/mercadopago/plans');
+      const mod = await import('@/lib/mercadopago/plans') as Record<string, unknown>;
+      const parseExternalReference = mod.parseExternalReference;
       if (typeof parseExternalReference !== 'function') return;
-      expect(parseExternalReference('invalid')).toBeNull();
-      expect(parseExternalReference('')).toBeNull();
+      expect((parseExternalReference as (ref: string) => unknown)('invalid')).toBeNull();
+      expect((parseExternalReference as (ref: string) => unknown)('')).toBeNull();
     } catch {
       // skip
     }

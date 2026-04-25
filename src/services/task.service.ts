@@ -3,7 +3,7 @@ import type { Task, TaskFilters, TaskStatus } from '@/types/domain/task';
 import type { CreateTaskDTO, UpdateTaskDTO, ReorderKanbanDTO } from '@/types/dto/task.dto';
 import type { PaginatedResponse } from '@/types/api/responses';
 
-export class TaskService {
+class TaskService {
   async createTask(
     dto: CreateTaskDTO,
     creatorId: string,
@@ -48,7 +48,7 @@ export class TaskService {
       updates.completedDate = new Date();
     }
     
-    const updatedTask = await taskRepository.update(taskId, updates);
+    await taskRepository.update(taskId, updates);
 
     // Lógica de recurrencia
     if (newStatus === 'done' && task.recurrence) {
@@ -83,7 +83,7 @@ export class TaskService {
     return this.createTask(dto, task.creatorId, businessId);
   }
 
-  private calculateNextDate(current: Date, config: any): Date {
+  private calculateNextDate(current: Date, config: { interval?: number; frequency?: string; dayOfWeek?: number; dayOfMonth?: number }): Date {
     const date = new Date(current);
     const interval = config.interval || 1;
     

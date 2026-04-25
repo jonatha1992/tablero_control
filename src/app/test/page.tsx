@@ -24,8 +24,9 @@ export default function TestPage() {
       } else {
         setClientStatus('Error: Document not found after write');
       }
-    } catch (e: any) {
-      setClientStatus(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      setClientStatus(`Error: ${message}`);
     }
   };
 
@@ -39,8 +40,9 @@ export default function TestPage() {
       } else {
         setBackendStatus(`Error: ${data.error || 'Unknown error'}`);
       }
-    } catch (e: any) {
-      setBackendStatus(`Fetch Error: ${e.message}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      setBackendStatus(`Fetch Error: ${message}`);
     }
   };
 

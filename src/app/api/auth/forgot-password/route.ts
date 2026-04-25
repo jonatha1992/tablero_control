@@ -27,12 +27,14 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: 'Email enviado correctamente' });
-  } catch (err: any) {
-    console.error('Forgot Password Error:', err.message);
-    
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    const code = (err as { code?: string }).code;
+    console.error('Forgot Password Error:', message);
+
     // Si el usuario no existe, por seguridad solemos devolver 200 para evitar enumeración,
     // pero aquí devolvemos el error específico si prefieres manejarlo en UI.
-    if (err.code === 'auth/user-not-found') {
+    if (code === 'auth/user-not-found') {
       return NextResponse.json({ success: true, message: 'Si el correo existe, recibirá un link' });
     }
 

@@ -18,6 +18,14 @@ interface KanbanUIStore {
   openTaskDetail: (taskId: string) => void;
   closeTaskDetail: () => void;
 
+  // Selección múltiple
+  isSelectMode: boolean;
+  toggleSelectMode: () => void;
+  selectedTaskIds: string[];
+  toggleTaskSelection: (taskId: string) => void;
+  selectAllInColumn: (taskIds: string[]) => void;
+  clearSelection: () => void;
+
   // Filtros de UI (no server state — no se persisten)
   filters: KanbanUIFilters;
   setFilters: (filters: Partial<KanbanUIFilters>) => void;
@@ -55,6 +63,30 @@ export const useKanbanUIStore = create<KanbanUIStore>((set) => ({
   closeCreateModal: () => set({ isCreateModalOpen: false }),
   openTaskDetail: (taskId) => set({ isDetailModalOpen: true, selectedTaskId: taskId }),
   closeTaskDetail: () => set({ isDetailModalOpen: false, selectedTaskId: null }),
+
+  isSelectMode: false,
+  toggleSelectMode: () =>
+    set((s) => ({
+      isSelectMode: !s.isSelectMode,
+      ...(s.isSelectMode ? { selectedTaskIds: [] } : {}),
+    })),
+  selectedTaskIds: [],
+  toggleTaskSelection: (taskId) =>
+    set((s) => ({
+      selectedTaskIds: s.selectedTaskIds.includes(taskId)
+        ? s.selectedTaskIds.filter((id) => id !== taskId)
+        : [...s.selectedTaskIds, taskId],
+    })),
+  selectAllInColumn: (taskIds) =>
+    set((s) => {
+      const allSelected = taskIds.length > 0 && taskIds.every((id) => s.selectedTaskIds.includes(id));
+      if (allSelected) {
+        return { selectedTaskIds: s.selectedTaskIds.filter((id) => !taskIds.includes(id)) };
+      }
+      const toAdd = taskIds.filter((id) => !s.selectedTaskIds.includes(id));
+      return { selectedTaskIds: [...s.selectedTaskIds, ...toAdd] };
+    }),
+  clearSelection: () => set({ selectedTaskIds: [] }),
 
   filters: defaultFilters,
   setFilters: (filters) => set((s) => ({ filters: { ...s.filters, ...filters } })),

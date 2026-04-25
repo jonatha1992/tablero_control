@@ -15,16 +15,20 @@ interface LogArgs {
 }
 
 export async function writeAuditLog(args: LogArgs): Promise<void> {
-  await prisma.auditLog.create({
-    data: {
-      actorId: args.actorId,
-      actorRole: args.actorRole,
-      businessId: args.businessId,
-      action: args.action,
-      targetType: args.targetType,
-      targetId: args.targetId,
-      metadata: args.metadata as import('@prisma/client').Prisma.InputJsonValue ?? undefined,
-      ip: args.ip,
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId: args.actorId,
+        actorRole: args.actorRole,
+        businessId: args.businessId,
+        action: args.action,
+        targetType: args.targetType,
+        targetId: args.targetId,
+        metadata: args.metadata as import('@prisma/client').Prisma.InputJsonValue ?? undefined,
+        ip: args.ip,
+      },
+    });
+  } catch (err) {
+    console.error('[audit] writeAuditLog failed (non-fatal):', err);
+  }
 }

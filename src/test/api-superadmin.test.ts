@@ -40,7 +40,7 @@ const superadminUser = {
 };
 
 function makeRequest(url: string, options?: RequestInit): NextRequest {
-  return new NextRequest(url, { headers: { Authorization: 'Bearer sa-token' }, ...options });
+  return new NextRequest(url, { headers: { Authorization: 'Bearer sa-token' }, ...options } as never);
 }
 
 beforeEach(() => {
@@ -73,7 +73,6 @@ describe('GET /api/superadmin/metrics', () => {
 
   it('retorna estructura correcta con MRR y planBreakdown', async () => {
     // Mockear $transaction para retornar los 14 valores en orden
-    const now = new Date();
     mockTransaction.mockResolvedValueOnce([
       5,   // totalBusinesses
       4,   // activeBusinesses

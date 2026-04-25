@@ -33,8 +33,9 @@ export async function loginWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return { user: result.user, token: await result.user.getIdToken() };
-  } catch (error: any) {
-    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+  } catch (error: unknown) {
+    const code = (error as { code?: string }).code;
+    if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
@@ -50,7 +51,7 @@ export async function checkGoogleRedirectResult() {
   return null;
 }
 
-export async function register(email: string, password: string, name: string, role: UserRole = 'miembro') {
+export async function register(email: string, password: string, name: string, _role: UserRole = 'miembro') {
   const result = await createUserWithEmailAndPassword(auth, email, password);
   await updateProfile(result.user, { displayName: name });
   // User record in PostgreSQL is created on first /api/auth/profile call
@@ -65,11 +66,7 @@ export async function resetPassword(email: string) {
   await sendPasswordResetEmail(auth, email);
 }
 
-export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
-  return onAuthStateChanged(auth, callback);
-}
-
-export async function getCurrentUser(): Promise<FirebaseUser | null> {
+async function getCurrentUser(): Promise<FirebaseUser | null> {
   return new Promise((resolve) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();

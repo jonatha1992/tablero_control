@@ -33,7 +33,7 @@ describe('loginWithGoogle()', () => {
   });
 
   it('llama a signInWithRedirect y retorna null si popup es bloqueado', async () => {
-    const popupError = new Error('Popup blocked') as any;
+    const popupError = new Error('Popup blocked') as Error & { code: string };
     popupError.code = 'auth/popup-blocked';
     mockSignInWithPopup.mockRejectedValueOnce(popupError);
     mockSignInWithRedirect.mockResolvedValueOnce(undefined as never);
@@ -46,7 +46,7 @@ describe('loginWithGoogle()', () => {
   });
 
   it('llama a signInWithRedirect y retorna null si popup es cerrado por el usuario', async () => {
-    const popupError = new Error('Popup closed') as any;
+    const popupError = new Error('Popup closed') as Error & { code: string };
     popupError.code = 'auth/popup-closed-by-user';
     mockSignInWithPopup.mockRejectedValueOnce(popupError);
     mockSignInWithRedirect.mockResolvedValueOnce(undefined as never);
@@ -59,7 +59,7 @@ describe('loginWithGoogle()', () => {
   });
 
   it('relanza el error si es distinto a popup-blocked/closed', async () => {
-    const otherError = new Error('Network error') as any;
+    const otherError = new Error('Network error') as Error & { code: string };
     otherError.code = 'auth/network-request-failed';
     mockSignInWithPopup.mockRejectedValueOnce(otherError);
 

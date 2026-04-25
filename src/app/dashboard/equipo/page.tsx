@@ -40,7 +40,7 @@ export default function EquipoPage() {
     return matchesRole && matchesLocation && matchesSearch;
   });
 
-  const activeCount = members.filter((m) => m.isActive).length;
+  const _activeCount = members.filter((m) => m.isActive).length;
 
   return (
     <div className="space-y-4">

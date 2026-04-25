@@ -1,12 +1,10 @@
-import type { CustomRole, PermissionSet } from '@/types/domain/custom-role';
+import type { CustomRole } from '@/types/domain/custom-role';
 import type { PlanId } from '@/types/domain/subscription';
 
 export interface RoleValidationError {
   field: string;
   message: string;
 }
-
-const FORBIDDEN_FOR_CUSTOM: Array<keyof PermissionSet> = ['billing'];
 
 const PLAN_ALLOWS_REPORTS_EXPORT: Record<PlanId, boolean> = {
   free: false,
@@ -53,4 +51,4 @@ export function isCustomRoleValid(role: Pick<CustomRole, 'name' | 'slug' | 'perm
   return validateCustomRole(role, plan).length === 0;
 }
 
-export { FORBIDDEN_FOR_CUSTOM };
+

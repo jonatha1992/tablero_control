@@ -67,13 +67,13 @@ beforeEach(() => {
 
 describe('useCreateTask', () => {
   it('llama tasksApi.create con dto, userId y businessId', async () => {
-    const { wrapper, qc } = createWrapper();
+    const { wrapper, qc: _qc } = createWrapper();
     const newTask = { id: 't-new', title: 'Nueva tarea' };
     mockCreate.mockResolvedValueOnce(newTask as never);
 
     const { result } = renderHook(() => useCreateTask(), { wrapper });
     await act(async () => {
-      result.current.mutate({ title: 'Nueva tarea', status: 'todo', priority: 'medium' });
+      result.current.mutate({ title: 'Nueva tarea', status: 'todo', priority: 'medium', type: 'task', assigneeIds: [], tags: [] });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -91,7 +91,7 @@ describe('useCreateTask', () => {
 
     const { result } = renderHook(() => useCreateTask(), { wrapper });
     await act(async () => {
-      result.current.mutate({ title: 'T', status: 'todo', priority: 'low' });
+      result.current.mutate({ title: 'T', status: 'todo', priority: 'low', type: 'task', assigneeIds: [], tags: [] });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -103,7 +103,7 @@ describe('useCreateTask', () => {
     mockCreate.mockResolvedValueOnce({ id: 't-1', title: 'Creada' } as never);
 
     const { result } = renderHook(() => useCreateTask(), { wrapper });
-    await act(async () => { result.current.mutate({ title: 'Creada', status: 'todo', priority: 'low' }); });
+    await act(async () => { result.current.mutate({ title: 'Creada', status: 'todo', priority: 'low', type: 'task', assigneeIds: [], tags: [] }); });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Tarea creada', expect.any(Object));
@@ -114,7 +114,7 @@ describe('useCreateTask', () => {
     mockCreate.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useCreateTask(), { wrapper });
-    await act(async () => { result.current.mutate({ title: 'Fail', status: 'todo', priority: 'low' }); });
+    await act(async () => { result.current.mutate({ title: 'Fail', status: 'todo', priority: 'low', type: 'task', assigneeIds: [], tags: [] }); });
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(mockToastError).toHaveBeenCalled();

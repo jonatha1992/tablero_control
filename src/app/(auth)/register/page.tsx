@@ -44,10 +44,11 @@ export default function RegisterPage() {
       await register(email, password, name, 'miembro');
       router.push('/');
       router.refresh();
-    } catch (err: any) {
-      if (err?.code === 'auth/email-already-in-use') {
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/email-already-in-use') {
         setError('Este email ya está registrado');
-      } else if (err?.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         setError('La contraseña es demasiado débil');
       } else {
         setError('Error al crear la cuenta. Inténtalo de nuevo.');

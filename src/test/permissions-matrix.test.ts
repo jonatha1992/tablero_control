@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { can, EMPTY_PERMISSIONS } from '@/lib/permissions/matrix';
+import { can } from '@/lib/permissions/matrix';
+import { EMPTY_PERMISSIONS } from '@/types/domain/custom-role';
 import type { PermissionSet } from '@/types/domain/custom-role';
 
 // ─── Fixtures ───────────────────────────────────────────────────────────────

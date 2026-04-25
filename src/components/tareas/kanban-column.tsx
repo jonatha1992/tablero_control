@@ -4,7 +4,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { cn, TASK_STATUS_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { KanbanCard } from './kanban-card';
-import { Plus } from 'lucide-react';
+import { Plus, Check, Minus, Trash2 } from 'lucide-react';
 
 interface KanbanColumnProps {
   status: TaskStatus;
@@ -12,9 +12,13 @@ interface KanbanColumnProps {
   onCardClick: (task: Task) => void;
   onPriorityChange: (taskId: string, priority: TaskPriority) => void;
   onAddClick: () => void;
+  selectedTaskIds: string[];
+  isSelectMode: boolean;
+  onSelectAll: (taskIds: string[]) => void;
+  onBulkDelete: (taskIds: string[]) => void;
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onAddClick }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
@@ -33,8 +37,42 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
     >
       {/* Column header */}
       <div className="flex items-center justify-between p-1.5 border-b">
-        <div className="flex items-center gap-2">
-          <div className={cn('h-3 w-3 rounded-full', {
+        <div className="flex items-center gap-2 min-w-0">
+          {isSelectMode && tasks.length > 0 && (() => {
+            const taskIds = tasks.map((t) => t.id);
+            const selectedCount = taskIds.filter((id) => selectedTaskIds.includes(id)).length;
+            const allSelected = selectedCount === tasks.length;
+            const someSelected = selectedCount > 0 && !allSelected;
+            return (
+              <>
+                <button
+                  onClick={() => onSelectAll(taskIds)}
+                  className={cn(
+                    'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                    allSelected
+                      ? 'bg-primary border-primary'
+                      : someSelected
+                      ? 'bg-primary/40 border-primary/60'
+                      : 'border-muted-foreground/40 hover:border-primary/60'
+                  )}
+                  title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                >
+                  {allSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                  {someSelected && <Minus className="h-2.5 w-2.5 text-primary-foreground" />}
+                </button>
+                {selectedCount > 0 && (
+                  <button
+                    onClick={() => onBulkDelete(taskIds.filter((id) => selectedTaskIds.includes(id)))}
+                    className="h-5 w-5 flex items-center justify-center rounded hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
+                    title={`Eliminar ${selectedCount} tarea${selectedCount > 1 ? 's' : ''}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </>
+            );
+          })()}
+          <div className={cn('h-3 w-3 rounded-full shrink-0', {
             'bg-gray-400': status === 'backlog',
             'bg-blue-500': status === 'todo',
             'bg-yellow-500': status === 'in_progress',
@@ -67,9 +105,11 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
               key={task.id}
               task={task}
               column={status}
-              onMove={() => { }}
+              onMove={() => {}}
               onPriorityChange={onPriorityChange}
               onClick={onCardClick}
+              isSelected={selectedTaskIds.includes(task.id)}
+              isSelectMode={isSelectMode}
             />
           ))
         )}

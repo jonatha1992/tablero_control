@@ -51,10 +51,11 @@ export default function LoginPage() {
         // El useEffect se encargará de la redirección
         router.refresh();
       }
-    } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/popup-closed-by-user') {
         setError(''); // User closed popup, no error message needed
-      } else if (err.code === 'auth/unauthorized-domain') {
+      } else if (code === 'auth/unauthorized-domain') {
         setError('Google Sign-In no está configurado para este dominio. Contacta al administrador.');
       } else {
         setError('Error al iniciar sesión con Google');
