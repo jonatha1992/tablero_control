@@ -13,7 +13,8 @@
       "Bash(taskkill /F /IM node.exe /FI \"WINDOWTITLE eq next*\")",
       "Bash(curl -s -X POST 'http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{\"email\":\"tecnofusion.it@gmail.com\",\"password\":\"TecnoFusion2024!\",\"returnSecureToken\":true}')",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('UID:', d.get\\('localId','ERROR'\\), '| Email:', d.get\\('email',''\\)\\)\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in d.get\\('scripts',{}\\).items\\(\\)]\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in d.get\\('scripts',{}\\).items\\(\\)]\")",
+      "WebSearch"
     ]
   }
 }
