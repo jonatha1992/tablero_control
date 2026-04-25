@@ -1,11 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { auth } from '@/lib/firebase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
-import type { Invoice, InvoiceStatus } from '@/types/domain/subscription';
+import type { InvoiceStatus } from '@/types/domain/subscription';
+import { useInvoicesQuery } from '@/hooks/queries/use-invoices-query';
 
 const STATUS_UI: Record<InvoiceStatus, { label: string; icon: React.ReactNode; color: string }> = {
   paid:     { label: 'Pagado',    icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-600' },
@@ -14,28 +13,13 @@ const STATUS_UI: Record<InvoiceStatus, { label: string; icon: React.ReactNode; c
   refunded: { label: 'Reembolso', icon: <CheckCircle className="h-4 w-4" />, color: 'text-blue-600' },
 };
 
-async function fetchInvoices(businessId: string, subscriptionId?: string): Promise<Invoice[]> {
-  const token = await auth.currentUser?.getIdToken();
-  const params = subscriptionId ? `?subscriptionId=${subscriptionId}` : '';
-  const res = await fetch(`/api/business/invoices${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) return [];
-  return res.json() as Promise<Invoice[]>;
-}
-
 interface Props {
   businessId: string;
   subscriptionId?: string;
 }
 
 export function BillingInvoices({ businessId, subscriptionId }: Props) {
-  const { data: invoices = [], isLoading } = useQuery({
-    queryKey: ['invoices', businessId, subscriptionId],
-    queryFn: () => fetchInvoices(businessId, subscriptionId),
-    enabled: Boolean(businessId),
-  });
+  const { data: invoices = [], isLoading } = useInvoicesQuery(businessId, subscriptionId);
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Cargando historial…</p>;
