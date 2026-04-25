@@ -13,8 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
-import { X } from 'lucide-react';
-import type { TaskStatus, TaskPriority, TaskType } from '@/types';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { X, MapPin, Repeat } from 'lucide-react';
+import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '@/types';
 
 interface CreateTaskModalProps {
   open: boolean;
@@ -33,9 +34,16 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [tags, setTags] = useState('');
   const [dueDate, setDueDate] = useState(defaultDueDate ?? today);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [locationId, setLocationId] = useState<string>('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
+  const [interval, setIntervalValue] = useState(1);
+  const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
+  const [dayOfMonth, setDayOfMonth] = useState<number | undefined>(undefined);
 
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
+  const { data: locations = [] } = useLocationsQuery();
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -47,6 +55,9 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setTitle(''); setDescription(''); setTags('');
     setDueDate(defaultDueDate ?? today); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
+    setLocationId('');
+    setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
+    setDayOfWeek(undefined); setDayOfMonth(undefined);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,8 +66,15 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
       {
         title, description, status, priority, type,
         assigneeIds,
+        locationId: locationId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         dueDate: dueDate ? new Date(dueDate) : undefined,
+        recurrence: isRecurring ? { 
+          frequency, 
+          interval,
+          dayOfWeek: frequency === 'weekly' ? dayOfWeek : undefined,
+          dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined
+        } : undefined,
       },
       { onSuccess: () => { onOpenChange(false); reset(); } }
     );
@@ -143,6 +161,24 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             </div>
           </div>
 
+          <div>
+            <label className="text-sm font-medium mb-1 block flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" /> Local/Sector (Opcional)
+            </label>
+            <select
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Sin asignar (Global)</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Asignados */}
           {members.length > 0 && (
             <div>
@@ -198,6 +234,83 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
+          </div>
+
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                />
+                <Repeat className="h-4 w-4" /> Tarea repetitiva
+              </label>
+            </div>
+
+            {isRecurring && (
+              <div className="grid grid-cols-2 gap-3 pl-6">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Frecuencia</label>
+                  <select
+                    value={frequency}
+                    onChange={(e) => setFrequency(e.target.value as any)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  >
+                    <option value="daily">Diaria</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="biweekly">Quincenal</option>
+                    <option value="monthly">Mensual</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Cada (intervalo)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={interval}
+                    onChange={(e) => setIntervalValue(Number(e.target.value))}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  />
+                </div>
+                
+                {frequency === 'weekly' && (
+                  <div className="col-span-2">
+                    <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
+                    <select
+                      value={dayOfWeek ?? ''}
+                      onChange={(e) => setDayOfWeek(e.target.value ? Number(e.target.value) : undefined)}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                    >
+                      <option value="">Cualquier día (7 días desde el anterior)</option>
+                      <option value="1">Lunes</option>
+                      <option value="2">Martes</option>
+                      <option value="3">Miércoles</option>
+                      <option value="4">Jueves</option>
+                      <option value="5">Viernes</option>
+                      <option value="6">Sábado</option>
+                      <option value="0">Domingo</option>
+                    </select>
+                  </div>
+                )}
+
+                {frequency === 'monthly' && (
+                  <div className="col-span-2">
+                    <label className="text-xs text-muted-foreground mb-1 block">Día del mes (1-31)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      placeholder="Ej: 1"
+                      value={dayOfMonth ?? ''}
+                      onChange={(e) => setDayOfMonth(e.target.value ? Number(e.target.value) : undefined)}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>

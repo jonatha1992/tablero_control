@@ -47,6 +47,9 @@ export function InviteMemberModal({ open, onClose, onInvite }: InviteMemberModal
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Invitar miembro</DialogTitle>
+          <DialogDescription>
+            Enviá una invitación para que un nuevo integrante se una a tu equipo.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">

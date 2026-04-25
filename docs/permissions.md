@@ -13,7 +13,7 @@
 
 ## Matriz de permisos (base)
 
-Ver tabla completa en el plan del proyecto o en `src/lib/permissions/matrix.ts`.
+Ver tabla completa en `src/lib/permissions/matrix.ts`.
 
 ## Roles custom por cliente
 
@@ -31,7 +31,7 @@ import { can } from '@/lib/permissions/matrix';
 import { resolvePermissions } from '@/lib/permissions/resolve';
 
 // En componente (UI gate)
-if (!can(user, 'task.create', { businessId: task.businessId })) {
+if (!can(user, 'task.create')) {
   // ocultar botón
 }
 
@@ -50,8 +50,7 @@ assertSameTenant(user, { businessId: resource.businessId }); // lanza 403 si no 
 ## Defensa en profundidad
 
 1. **UI** — `can()` oculta elementos.
-2. **API routes** — `requireUser()` + `assertSameTenant()` + `requireRole()`.
-3. **Firestore rules** — validación final (no se puede bypassar desde cliente).
+2. **API routes** — `requireUser()` + `assertSameTenant()` + `can()`. Todo rol verificado aquí antes de llegar al service.
 
 ## Custom claims en Firebase Auth
 
@@ -60,9 +59,9 @@ Al crear/actualizar un usuario se setean custom claims:
 { "role": "admin", "businessId": "biz-123" }
 ```
 
-Las Firestore rules los leen de `request.auth.token` (sin leer Firestore extra → más rápido).
+Estos claims se usan para validación rápida en `requireUser()` — el User completo se carga desde PostgreSQL.
 
 Al cambiar rol de un usuario:
-1. Actualizar `users/{uid}.role` en Firestore.
+1. Actualizar `users.role` en PostgreSQL.
 2. Llamar `auth.setCustomUserClaims(uid, { role, businessId })` con Admin SDK.
 3. El token del usuario se invalida al próximo refresh (forzar con `getIdToken(true)`).

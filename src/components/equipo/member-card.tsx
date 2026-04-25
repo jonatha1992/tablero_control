@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, UserX } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +8,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/constants/user';
 import { getInitials } from '@/lib/utils/string';
+import { EditMemberModal } from './edit-member-modal';
+import { Edit2, Mail, UserX, MapPin } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 
 interface MemberCardProps {
@@ -20,6 +21,7 @@ interface MemberCardProps {
 
 export function MemberCard({ member, onRemove, canManage }: MemberCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <>
@@ -54,10 +56,25 @@ export function MemberCard({ member, onRemove, canManage }: MemberCardProps) {
                 </span>
               </div>
               <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+              {member.locationId && (
+                <p className="mt-1 flex items-center gap-1 text-[10px] text-primary/80 font-medium">
+                  <MapPin className="h-2.5 w-2.5" />
+                  Local asignado
+                </p>
+              )}
             </div>
 
             {canManage && (
               <div className="flex shrink-0 items-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setEditOpen(true)}
+                  title="Editar miembro"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -96,6 +113,12 @@ export function MemberCard({ member, onRemove, canManage }: MemberCardProps) {
           onRemove?.(member.id);
           setConfirmOpen(false);
         }}
+      />
+
+      <EditMemberModal
+        member={member}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
       />
     </>
   );

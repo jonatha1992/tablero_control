@@ -12,10 +12,11 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Location } from '@/types/domain/location';
 
 export default function SectoresPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const businessId = user?.businessId || '';
 
-  const { data: sectors = [], isLoading } = useLocationsQuery();
+  const { data: sectors = [], isLoading: queryLoading } = useLocationsQuery();
+  const isLoading = authLoading || queryLoading;
   const deleteMutation = useDeleteLocation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);

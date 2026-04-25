@@ -75,7 +75,10 @@ export function ConfirmDialog({
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 
         {/* Content */}
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-2xl border bg-card p-6 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+        <Dialog.Content 
+          className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-2xl border bg-card p-6 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          aria-describedby={description ? undefined : "dialog-description"}
+        >
           {/* Icon + Title */}
           <div className="flex items-start gap-4">
             <div className={cn('mt-0.5 shrink-0', iconColor)}>
@@ -85,9 +88,13 @@ export function ConfirmDialog({
               <Dialog.Title className="text-base font-semibold leading-tight">
                 {title}
               </Dialog.Title>
-              {description && (
+              {description ? (
                 <Dialog.Description className="text-sm text-muted-foreground leading-relaxed">
                   {description}
+                </Dialog.Description>
+              ) : (
+                <Dialog.Description id="dialog-description" className="sr-only">
+                  Confirmar acción
                 </Dialog.Description>
               )}
             </div>

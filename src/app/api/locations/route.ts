@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('[API Locations] POST body:', body);
     if (!body.businessId || !body.name) {
+      console.warn('[API Locations] Missing businessId or name:', { businessId: body.businessId, name: body.name });
       return NextResponse.json({ error: 'businessId y name son requeridos' }, { status: 400 });
     }
 

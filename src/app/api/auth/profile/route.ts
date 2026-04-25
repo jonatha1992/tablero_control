@@ -38,32 +38,30 @@ export async function GET(request: NextRequest) {
       
       let businessId = undefined;
 
-      if (!isSuperadmin) {
-        // Create business for the new admin
-        const business = await businessRepository.create({
-          name: `Negocio de ${name}`,
-          adminId: decoded.uid,
-          plan: 'free',
-          status: 'active',
-          settings: {
-            theme: 'system',
-            language: 'es',
-            timezone: 'America/Argentina/Buenos_Aires',
-            notifications: {
-              email: true,
-            },
-            features: {
-              customBranding: false,
-              advancedReports: false,
-              apiAccess: false,
-            },
+      // Create business for the new admin/superadmin
+      const business = await businessRepository.create({
+        name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
+        adminId: decoded.uid,
+        plan: 'free',
+        status: 'active',
+        settings: {
+          theme: 'system',
+          language: 'es',
+          timezone: 'America/Argentina/Buenos_Aires',
+          notifications: {
+            email: true,
           },
-          featureFlags: {},
-          locationIds: [],
-          teamIds: [],
-        });
-        businessId = business.id;
-      }
+          features: {
+            customBranding: false,
+            advancedReports: false,
+            apiAccess: false,
+          },
+        },
+        featureFlags: {},
+        locationIds: [],
+        teamIds: [],
+      });
+      businessId = business.id;
 
       user = await userRepository.create({
         id: decoded.uid,
@@ -82,6 +80,32 @@ export async function GET(request: NextRequest) {
         },
         isActive: true,
       } as Parameters<typeof userRepository.create>[0]);
+    }
+
+    // Fix for existing users without businessId (like the test superadmin)
+    if (user && !user.businessId) {
+      const email = decoded.email ?? '';
+      const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
+      const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
+      const isSuperadmin = superadminEmails.includes(email);
+
+      const business = await businessRepository.create({
+        name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
+        adminId: decoded.uid,
+        plan: 'free',
+        status: 'active',
+        settings: {
+          theme: 'system',
+          language: 'es',
+          timezone: 'America/Argentina/Buenos_Aires',
+          notifications: { email: true },
+          features: { customBranding: false, advancedReports: false, apiAccess: false },
+        },
+        featureFlags: {},
+        locationIds: [],
+        teamIds: [],
+      });
+      user = await userRepository.update(user.id, { businessId: business.id });
     }
 
     return NextResponse.json(user);

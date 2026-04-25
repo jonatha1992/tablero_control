@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -40,6 +40,12 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function DashboardMetrics() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const { data: tasks = [] } = useTasksQuery();
 
   // 1. Distribución por Estado (Pie)
@@ -105,6 +111,8 @@ export function DashboardMetrics() {
     });
     return weeks;
   }, [tasks]);
+
+  if (!isMounted) return <div className="h-[200px] w-full bg-slate-50/50 animate-pulse rounded-xl" />;
 
   return (
     <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">

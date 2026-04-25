@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { MemberCard } from '@/components/equipo/member-card';
 import { CreateUserModal } from '@/components/equipo/create-user-modal';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useRemoveMember } from '@/hooks/mutations/use-update-member';
 import { useTeamUIStore } from '@/stores/team-ui.store';
 import { useAuth } from '@/hooks/auth-context';
@@ -21,18 +22,22 @@ const ROLE_TABS: { value: UserRole | 'all'; label: string }[] = [
 ];
 
 export default function EquipoPage() {
-  const { searchQuery, roleFilter, isInviteModalOpen, setSearchQuery, setRoleFilter, openInviteModal, closeInviteModal } =
-    useTeamUIStore();
+  const { 
+    searchQuery, roleFilter, locationFilter, isInviteModalOpen, 
+    setSearchQuery, setRoleFilter, setLocationFilter, openInviteModal, closeInviteModal 
+  } = useTeamUIStore();
 
   const { user, isAdmin } = useAuth();
   const { data: members = [], isLoading } = useMembersQuery();
+  const { data: locations = [] } = useLocationsQuery();
   const removeMember = useRemoveMember();
 
   const filtered = members.filter((m) => {
     const matchesRole = roleFilter === 'all' || m.role === roleFilter;
+    const matchesLocation = !locationFilter || m.locationId === locationFilter;
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
-    return matchesRole && matchesSearch;
+    return matchesRole && matchesLocation && matchesSearch;
   });
 
   const activeCount = members.filter((m) => m.isActive).length;
@@ -55,6 +60,19 @@ export default function EquipoPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="sm:max-w-xs"
         />
+        
+        <select
+          value={locationFilter}
+          onChange={(e) => setLocationFilter(e.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 sm:max-w-[200px]"
+        >
+          <option value="">Todos los locales</option>
+          {locations.map((loc) => (
+            <option key={loc.id} value={loc.id}>
+              {loc.name}
+            </option>
+          ))}
+        </select>
         <div className="flex gap-1 flex-wrap">
           {ROLE_TABS.map((tab) => (
             <button

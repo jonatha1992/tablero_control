@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCreateLocation, useUpdateLocation } from '@/hooks/mutations/use-locations';
 import type { Location } from '@/types/domain/location';
 import { MapPin, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Props {
   open: boolean;
@@ -44,7 +46,15 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !businessId) {
+      if (!businessId) {
+        toast.error('Error de sesión', {
+          description: 'No se pudo identificar tu negocio. Por favor, recargá la página.',
+        });
+        console.error('[SectorModal] No se puede crear/editar: businessId ausente');
+      }
+      return;
+    }
 
     const data = {
       name: name.trim(),
@@ -73,6 +83,9 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
             <MapPin className="h-5 w-5 text-primary" />
             {location ? 'Editar Sector/Departamento' : 'Nuevo Sector/Departamento'}
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {location ? 'Modificá la información del sector seleccionado.' : 'Completá los datos para crear un nuevo sector en tu negocio.'}
+          </p>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
