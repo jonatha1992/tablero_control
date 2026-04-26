@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { PLANS } from '@/lib/mercadopago/plans';
-
 import { cn } from '@/lib/utils';
 import type { PlanId, BillingFrequency } from '@/types/domain/subscription';
 import { CheckCircle, Loader2, Sparkles } from 'lucide-react';
-import { auth } from '@/lib/firebase/client';
+import { billingApi } from '@/lib/api/billing';
 
 
 interface Props {
@@ -26,15 +25,8 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
     }
     setLoading(plan);
     try {
-      const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('/api/mercadopago/preapproval', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ plan, frequency, businessId }),
-      });
-      const data = await res.json() as { initPoint?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? 'Error desconocido');
-      window.location.href = data.initPoint!;
+      const { initPoint } = await billingApi.createPreapproval(plan, frequency, businessId);
+      window.location.href = initPoint;
     } catch (err) {
       alert(`Error al iniciar el pago: ${(err as Error).message}`);
     } finally {
