@@ -35,7 +35,9 @@
       "Bash(git push *)",
       "Bash(git merge *)",
       "Bash(git stash *)",
-      "Bash(git cherry-pick *)"
+      "Bash(git cherry-pick *)",
+      "Bash(railway deployments *)",
+      "Bash(railway deployment *)"
     ]
   }
 }
