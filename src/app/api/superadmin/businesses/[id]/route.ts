@@ -23,5 +23,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     select: { id: true, name: true, type: true, status: true },
   });
 
-  return NextResponse.json({ business, users, locations });
+  const teams = await prisma.team.findMany({
+    where: { businessId: id },
+    include: {
+      _count: {
+        select: { members: true }
+      }
+    }
+  });
+
+  const projects = await prisma.project.findMany({
+    where: { businessId: id },
+    include: {
+      _count: {
+        select: { tasks: true }
+      }
+    }
+  });
+
+  return NextResponse.json({ business, users, locations, teams, projects });
 }

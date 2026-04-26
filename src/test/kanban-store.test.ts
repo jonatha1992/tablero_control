@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
-import type { TaskStatus } from '@/types';
+
 
 describe('KanbanUIStore', () => {
   beforeEach(() => {

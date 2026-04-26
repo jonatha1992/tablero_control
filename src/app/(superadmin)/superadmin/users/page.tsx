@@ -31,8 +31,7 @@ export default function UsersPage() {
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.businessId ?? '').includes(search)
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -63,37 +62,43 @@ export default function UsersPage() {
       )}
 
       {!isLoading && (
-        <div className="border rounded-xl overflow-hidden">
+        <div className="border rounded-xl overflow-hidden bg-card">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
+            <thead className="bg-muted/50 text-muted-foreground text-[11px] uppercase tracking-wider">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Nombre</th>
                 <th className="text-left px-4 py-3 font-medium">Email</th>
                 <th className="text-left px-4 py-3 font-medium">Rol</th>
-                <th className="text-left px-4 py-3 font-medium">Negocio</th>
-                <th className="text-left px-4 py-3 font-medium">Activo</th>
+
+                <th className="text-left px-4 py-3 font-medium">Estado</th>
                 <th className="text-left px-4 py-3 font-medium">Creado</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {filtered.map((u) => (
-                <tr key={u.id} className="hover:bg-muted/30">
+                <tr key={u.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_COLORS[u.role] ?? ''}`}>
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${ROLE_COLORS[u.role] ?? ''}`}>
                       {u.role}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.businessId ?? '—'}</td>
-                  <td className="px-4 py-3">{u.isActive ? '✅' : '❌'}</td>
+
+                  <td className="px-4 py-3">
+                    {u.isActive ? (
+                      <span className="text-green-600 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Activo</span>
+                    ) : (
+                      <span className="text-red-600 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Inactivo</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {u.createdAt ? format(new Date(u.createdAt as unknown as string), 'd MMM yyyy', { locale: es }) : '—'}
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin resultados</td></tr>
+                <tr><td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td></tr>
               )}
             </tbody>
           </table>

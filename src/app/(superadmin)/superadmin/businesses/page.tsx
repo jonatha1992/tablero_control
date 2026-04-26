@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Building2, CheckCircle, XCircle, AlertCircle, Loader2, MoreVertical } from 'lucide-react';
+import { Building2, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import type { Business, BusinessStatus } from '@/types/domain/business';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -89,7 +89,6 @@ export default function BusinessesPage() {
             <tbody className="divide-y">
               {filtered.map((biz) => {
                 const st = STATUS_UI[biz.status ?? 'active'];
-                const createdAt = biz.createdAt as unknown as { seconds: number };
                 return (
                   <tr key={biz.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3">
@@ -104,7 +103,7 @@ export default function BusinessesPage() {
                       <span className={`flex items-center gap-1.5 ${st.color}`}>{st.icon}{st.label}</span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {createdAt ? format(new Date(createdAt.seconds * 1000), 'd MMM yyyy', { locale: es }) : '—'}
+                      {biz.createdAt ? format(new Date(biz.createdAt as unknown as string), 'd MMM yyyy', { locale: es }) : '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">

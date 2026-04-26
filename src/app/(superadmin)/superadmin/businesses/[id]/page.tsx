@@ -25,6 +25,8 @@ export default function BusinessDetailPage({ params }: Props) {
   const business = data.business as Business;
   const users = data.users as User[];
   const locations = data.locations as { id: string; name: string; type: string; status: string }[];
+  const teams = data.teams as { id: string; name: string; _count: { members: number } }[];
+  const projects = data.projects as { id: string; name: string; _count: { tasks: number } }[];
 
   return (
     <div className="p-8 space-y-8 max-w-4xl">
@@ -43,6 +45,7 @@ export default function BusinessDetailPage({ params }: Props) {
           ['Plan', <span key="plan" className="capitalize font-medium">{business.plan}</span>],
           ['Estado', <span key="status" className="capitalize font-medium">{business.status}</span>],
           ['Locales', locations.length],
+          ['Equipos', teams.length],
           ['Usuarios', users.length],
           ['Creado', business.createdAt ? format(new Date(business.createdAt as unknown as string), 'd MMM yyyy', { locale: es }) : '—'],
         ].map(([label, value]) => (
@@ -55,12 +58,33 @@ export default function BusinessDetailPage({ params }: Props) {
 
       {locations.length > 0 && (
         <div>
-          <h2 className="font-semibold mb-3">Locales ({locations.length})</h2>
+          <h2 className="font-semibold mb-3 text-lg">Locales ({locations.length})</h2>
           <div className="flex flex-wrap gap-2">
             {locations.map((loc) => (
-              <span key={loc.id} className="border rounded-lg px-3 py-1.5 text-sm">
+              <span key={loc.id} className="border bg-card rounded-lg px-3 py-1.5 text-sm shadow-sm">
                 {loc.name} <span className="text-muted-foreground capitalize text-xs">· {loc.type}</span>
               </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {teams.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-3 text-lg">Equipos ({teams.length})</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {teams.map((t) => (
+              <div key={t.id} className="border bg-card rounded-xl p-4 shadow-sm flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{t.id}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-semibold bg-muted px-2 py-1 rounded-full">
+                    {t._count.members} miembros
+                  </span>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -94,6 +118,27 @@ export default function BusinessDetailPage({ params }: Props) {
           </table>
         </div>
       </div>
+
+      {projects.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-3">Proyectos ({projects.length})</h2>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+            {projects.map((p) => (
+              <div key={p.id} className="border rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">{p.name}</h3>
+                  <p className="text-xs text-muted-foreground">{p.id}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-1 rounded-full">
+                    {p._count.tasks} tareas
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

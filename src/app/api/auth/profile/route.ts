@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
-import { userRepository } from '@/repositories';
+import { userRepository, businessRepository } from '@/repositories';
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -12,16 +12,66 @@ export async function GET(request: NextRequest) {
     const decoded = await verifyToken(token);
     let user = await userRepository.findById(decoded.uid);
 
+    if (!user && decoded.email) {
+      // Check if user was invited (exists by email but with a different ID)
+      const existingByEmail = await userRepository.findByEmail(decoded.email);
+      if (existingByEmail) {
+        try {
+          user = await userRepository.updateId(existingByEmail.id, decoded.uid);
+          
+          // If the invited user doesn't have an avatar but Google provided one, update it
+          if (!user.avatar && decoded.picture) {
+            user = await userRepository.update(user.id, { avatar: decoded.picture });
+          }
+        } catch (e) {
+          console.error('Error linking invited user:', e);
+        }
+      }
+    }
+
     if (!user) {
       const email = decoded.email ?? '';
       const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
       const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
-      const role = superadminEmails.includes(email) ? 'superadmin' : 'miembro';
+      const isSuperadmin = superadminEmails.includes(email);
+      const role = isSuperadmin ? 'superadmin' : 'admin';
+      
+      let businessId = undefined;
+
+      // Create business for the new admin/superadmin
+      const business = await businessRepository.create({
+        name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
+        adminId: decoded.uid,
+        plan: 'free',
+        status: 'active',
+        settings: {
+          maxLocations: 1,
+          maxUsers: 5,
+          theme: 'system',
+          language: 'es',
+          timezone: 'America/Argentina/Buenos_Aires',
+          notifications: {
+            email: true,
+          },
+          features: {
+            customBranding: false,
+            advancedReports: false,
+            apiAccess: false,
+          },
+          localeTypes: [],
+        },
+        featureFlags: {},
+        locationIds: [],
+        teamIds: [],
+      });
+      businessId = business.id;
+
       user = await userRepository.create({
         id: decoded.uid,
         email,
         name,
         role,
+        businessId,
         avatar: decoded.picture ?? undefined,
         teamIds: [],
         preferences: {
@@ -35,8 +85,38 @@ export async function GET(request: NextRequest) {
       } as Parameters<typeof userRepository.create>[0]);
     }
 
+    // Fix for existing users without businessId (like the test superadmin)
+    if (user && !user.businessId) {
+      const email = decoded.email ?? '';
+      const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
+      const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
+      const isSuperadmin = superadminEmails.includes(email);
+
+      const business = await businessRepository.create({
+        name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
+        adminId: decoded.uid,
+        plan: 'free',
+        status: 'active',
+        settings: {
+          maxLocations: 1,
+          maxUsers: 5,
+          theme: 'system',
+          language: 'es',
+          timezone: 'America/Argentina/Buenos_Aires',
+          notifications: { email: true },
+          features: { customBranding: false, advancedReports: false, apiAccess: false },
+          localeTypes: [],
+        },
+        featureFlags: {},
+        locationIds: [],
+        teamIds: [],
+      });
+      user = await userRepository.update(user.id, { businessId: business.id });
+    }
+
     return NextResponse.json(user);
-  } catch {
+  } catch (error) {
+    console.error('Profile fetch/create error:', error);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 }

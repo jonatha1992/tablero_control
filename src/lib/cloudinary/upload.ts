@@ -18,21 +18,29 @@ export async function uploadUserAvatar(userId: string, file: File | Blob): Promi
   return result.secure_url;
 }
 
+export interface CloudinaryUploadResult {
+  secure_url: string;
+  public_id: string;
+  [key: string]: unknown;
+}
+
 export async function uploadTaskAttachment(
   taskId: string,
   fileName: string,
   file: File | Blob
-): Promise<string> {
+): Promise<CloudinaryUploadResult> {
   const dataURI = await fileToDataURI(file);
   const result = await cloudinary.uploader.upload(dataURI, {
     folder: `tablero_control/tasks/${taskId}`,
     resource_type: 'auto',
+    format: 'webp',
+    quality: 'auto',
+    fetch_format: 'auto',
+    transformation: [{ width: 1000, crop: 'limit' }],
     use_filename: true,
     unique_filename: true,
   });
-  return result.secure_url;
+  return result;
 }
 
-export async function deleteFile(publicId: string): Promise<void> {
-  await cloudinary.uploader.destroy(publicId);
-}
+

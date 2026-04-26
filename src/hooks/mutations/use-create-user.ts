@@ -12,6 +12,7 @@ export interface CreateUserInput {
   password: string;
   role: UserRole;
   businessId?: string;
+  locationId?: string;
 }
 
 async function createUserViaApi(input: CreateUserInput): Promise<CreateUserResult> {

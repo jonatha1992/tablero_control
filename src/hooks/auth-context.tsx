@@ -5,7 +5,6 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { authService } from '@/services/auth.service';
 import type { User, UserRole } from '@/types';
-import { ROLE_LEVEL } from '@/types';
 
 interface AuthContextType {
   user: User | null;

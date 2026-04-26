@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import { BillingPlanCards } from '@/components/billing/billing-plan-cards';
 import { BillingCurrentPlan } from '@/components/billing/billing-current-plan';

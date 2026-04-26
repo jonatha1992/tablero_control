@@ -91,19 +91,4 @@ export function ProtectedRoute({
   return <>{children}</>;
 }
 
-// HOC for easier usage
-export function withAuth<P extends object>(
-  Component: React.ComponentType<P>,
-  options?: { requiredRole?: UserRole; redirectTo?: string }
-) {
-  return function AuthenticatedComponent(props: P) {
-    return (
-      <ProtectedRoute
-        requiredRole={options?.requiredRole}
-        redirectTo={options?.redirectTo}
-      >
-        <Component {...props} />
-      </ProtectedRoute>
-    );
-  };
-}
+

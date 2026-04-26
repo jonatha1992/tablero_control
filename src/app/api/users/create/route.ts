@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
 import type { UserRole } from '@/types/domain/user';
 
@@ -10,6 +11,7 @@ export interface CreateUserBody {
   password: string;
   role: UserRole;
   businessId?: string;
+  locationId?: string;
 }
 
 export interface CreateUserResult {
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { name, email, password, role, businessId } = body;
+  const { name, email, password, role, businessId, locationId } = body;
 
   if (!name?.trim() || !email?.trim() || !password || !role) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
         email: email.trim(),
         role,
         businessId: targetBusinessId ?? null,
+        locationId: locationId ?? null,
         preferences: DEFAULT_PREFERENCES,
         isActive: true,
       },
@@ -97,6 +100,16 @@ export async function POST(req: NextRequest) {
   }
 
   await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+
+  await writeAuditLog({
+    actorId: authed.uid,
+    actorRole: authed.role,
+    businessId: authed.businessId,
+    action: 'user.create',
+    targetType: 'USER',
+    targetId: uid,
+    metadata: { email, role, locationId },
+  });
 
   return NextResponse.json(
     { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },

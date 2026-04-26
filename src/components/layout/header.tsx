@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { Bell, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +15,8 @@ interface HeaderProps {
 
 export function Header({ userName, notificationCount = 0 }: HeaderProps) {
   const { user, signOut, role } = useAuth();
+  const pathname = usePathname();
+  
   const displayName = userName || user?.name || 'Usuario';
   const initials = getInitials(displayName);
   const avatarColor = stringToColor(displayName);
@@ -21,16 +24,31 @@ export function Header({ userName, notificationCount = 0 }: HeaderProps) {
   const roleLabels = ROLE_LABELS;
   const roleColors = ROLE_COLORS;
 
+  const getPageContext = () => {
+    if (!pathname) return { title: 'Tablero de Control', description: '' };
+    if (pathname === '/dashboard') return { title: 'Dashboard de Negocio', description: 'Resumen global de rendimiento y métricas operativas.' };
+    if (pathname === '/dashboard/sectores') return { title: 'Departamentos y Sectores', description: 'Gestioná la estructura organizativa de tu negocio.' };
+    if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas', description: 'Kanban con drag & drop' };
+    if (pathname === '/dashboard/equipo') return { title: 'Equipo', description: 'Miembros del equipo.' };
+    if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos', description: 'Administración de accesos y permisos del equipo.' };
+    if (pathname.startsWith('/dashboard/config')) return { title: 'Configuración', description: 'Ajustes de la plataforma' };
+    if (pathname === '/dashboard/calendario') return { title: 'Calendario', description: 'Cronograma de tareas' };
+    if (pathname === '/dashboard/billing') return { title: 'Facturación', description: 'Suscripción y pagos' };
+    return { title: 'Tablero de Control', description: '' };
+  };
+
+  const { title, description } = getPageContext();
+
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b bg-card px-4 lg:px-6">
       {/* Left: Title */}
       <div className="hidden items-center gap-4 lg:flex lg:pl-16">
-        <h1 className="text-base font-semibold">Tablero de Control</h1>
-        {role && (
-          <Badge className={roleColors[role]}>
-            {roleLabels[role]}
-          </Badge>
-        )}
+        <div className="flex flex-col justify-center">
+          <h1 className="text-base font-semibold leading-none">{title}</h1>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1 leading-none">{description}</p>
+          )}
+        </div>
       </div>
 
       {/* Center: Search */}
@@ -63,7 +81,14 @@ export function Header({ userName, notificationCount = 0 }: HeaderProps) {
               {initials}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden text-sm font-medium md:inline-block">{displayName}</span>
+          <div className="hidden md:flex items-center gap-1.5">
+            <span className="text-sm font-medium">{displayName}</span>
+            {role && (
+              <Badge className={`${roleColors[role]} h-5 text-[10px] px-1.5`}>
+                {roleLabels[role]}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <Button

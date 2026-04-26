@@ -7,7 +7,7 @@ import {
 } from '@/lib/firebase/auth';
 import type { LoginDTO, RegisterDTO } from '@/types/dto/auth.dto';
 
-export class AuthService {
+class AuthService {
   async login(dto: LoginDTO) {
     return login(dto.email, dto.password);
   }

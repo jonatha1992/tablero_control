@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils';
-import type { CustomRole, BaseRoleForCustom, PermissionSet, RoleScope } from '@/types/domain/custom-role';
-import { EMPTY_PERMISSIONS } from '@/types/domain/custom-role';
+import type { CustomRole, BaseRoleForCustom, RoleScope } from '@/types/domain/custom-role';
 import { basePermissions } from '@/lib/permissions/resolve';
 import { PermissionGrid } from './permission-grid';
 import { useSaveRole } from '@/hooks/mutations/use-save-role';
@@ -37,25 +36,25 @@ function slug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
+function getDefaultDraft(): DraftRole {
+  return {
+    name: '',
+    slug: '',
+    description: '',
+    color: COLORS[0],
+    icon: undefined,
+    baseRole: 'miembro',
+    scope: { type: 'business' },
+    permissions: basePermissions('miembro'),
+    isActive: true,
+    isSystem: false,
+  };
+}
+
 export function RoleEditorDrawer({ open, onClose, initial }: Props) {
   const save = useSaveRole();
   const [step, setStep] = useState<Step>(0);
-  const [draft, setDraft] = useState<DraftRole>(() => defaultDraft());
-
-  function defaultDraft(): DraftRole {
-    return {
-      name: '',
-      slug: '',
-      description: '',
-      color: COLORS[0],
-      icon: undefined,
-      baseRole: 'miembro',
-      scope: { type: 'business' },
-      permissions: basePermissions('miembro'),
-      isActive: true,
-      isSystem: false,
-    };
-  }
+  const [draft, setDraft] = useState<DraftRole>(() => getDefaultDraft());
 
   useEffect(() => {
     if (open) {
@@ -74,7 +73,7 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
           isSystem: initial.isSystem,
         });
       } else {
-        setDraft(defaultDraft());
+        setDraft(getDefaultDraft());
       }
     }
   }, [open, initial]);

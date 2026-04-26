@@ -1,23 +1,8 @@
 # Agentes de Desarrollo
 
-Esta carpeta contenía originalmente agentes de IA, pero se ha reorganizado.
+Esta carpeta está reservada para futuros agentes de IA que implementará la aplicación (resúmenes, reportes, alertas, planificación automática). Se implementarán como API routes que llaman a servicios externos (Groq, OpenAI u otro).
 
-Los **agentes de IA para asistir el desarrollo** ahora viven en la raíz del proyecto como archivos `.agent-*.md`:
+Las guías para agentes de desarrollo (Claude, Kimi, etc.) viven en la raíz del proyecto:
 
-- **`.agent-architect.md`**: Define la arquitectura, estructura y decisiones de diseño del proyecto.
-- **`.agent-codegen.md`**: Define patrones de código, convenciones y templates para generación de código.
-- **`.agent-testing.md`**: Define estrategias, patrones y casos de testing.
-
-Estos agentes son **guias para Qwen Code y Claude** — no son parte de la aplicación en sí.
-
-## Agentes que implementará la aplicación
-
-La aplicación tendrá su propio sistema de IA para:
-- Generar resúmenes ejecutivos del dashboard
-- Crear reportes automáticos
-- Detectar alertas y anomalías
-- Sugerir planificación
-- Analizar tendencias
-- Clasificar tareas automáticamente
-
-Estos se implementarán como **API routes** que llaman a un servicio de IA externo (OpenAI u otro), no como agentes embebidos en el frontend.
+- **`AGENTS.md`** — guía completa de arquitectura, convenciones y patrones para agentes de código
+- **`CLAUDE.md`** — instrucciones específicas para Claude Code

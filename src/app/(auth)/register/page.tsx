@@ -15,14 +15,14 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.push('/');
+    if (!authLoading && isAuthenticated && user) {
+      router.push(user.role === 'superadmin' ? '/superadmin' : '/dashboard');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,12 +42,12 @@ export default function RegisterPage() {
 
     try {
       await register(email, password, name, 'miembro');
-      router.push('/');
       router.refresh();
-    } catch (err: any) {
-      if (err?.code === 'auth/email-already-in-use') {
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/email-already-in-use') {
         setError('Este email ya está registrado');
-      } else if (err?.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         setError('La contraseña es demasiado débil');
       } else {
         setError('Error al crear la cuenta. Inténtalo de nuevo.');

@@ -51,7 +51,7 @@ export class PrismaLocationRepository implements ILocationRepository {
   }
 
   async create(data: Omit<Location, 'id' | 'createdAt' | 'updatedAt'>): Promise<Location> {
-    const { teamIds, taskIds, ...rest } = data;
+    const { teamIds: _teamIds, taskIds: _taskIds, ...rest } = data;
     const l = await prisma.location.create({
       data: {
         ...rest,
@@ -64,7 +64,7 @@ export class PrismaLocationRepository implements ILocationRepository {
   }
 
   async update(id: string, data: Partial<Location>): Promise<Location> {
-    const { teamIds, taskIds, ...rest } = data;
+    const { teamIds: _teamIds, taskIds: _taskIds, ...rest } = data;
     const l = await prisma.location.update({
       where: { id },
       data: {

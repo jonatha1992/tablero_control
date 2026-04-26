@@ -1,4 +1,4 @@
-import type { TaskStatus, TaskPriority, TaskType } from '../domain/task';
+import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '../domain/task';
 
 export interface CreateTaskDTO {
   title: string;
@@ -12,6 +12,7 @@ export interface CreateTaskDTO {
   tags: string[];
   dueDate?: Date;
   estimatedHours?: number;
+  recurrence?: RecurrenceConfig;
 }
 
 export type UpdateTaskDTO = Partial<CreateTaskDTO> & {

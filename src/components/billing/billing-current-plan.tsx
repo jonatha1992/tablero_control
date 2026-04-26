@@ -41,7 +41,7 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
           <h2 className="text-2xl font-bold">{plan.name}</h2>
           {subscription?.nextBillingDate && (
             <p className="text-sm text-muted-foreground mt-1">
-              Próximo cobro: {format(new Date((subscription.nextBillingDate as unknown as { seconds: number }).seconds * 1000), "d MMM yyyy", { locale: es })}
+              Próximo cobro: {format(new Date(subscription.nextBillingDate), "d MMM yyyy", { locale: es })}
             </p>
           )}
         </div>

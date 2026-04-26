@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
 import { KanbanCard } from '@/components/tareas/kanban-card';
 import type { Task } from '@/types';
 
@@ -16,6 +17,18 @@ vi.mock('@dnd-kit/core', () => ({
 
 vi.mock('@dnd-kit/utilities', () => ({
   CSS: { Translate: { toString: () => '' } },
+}));
+
+// Mock DropdownMenu — en jsdom Radix no abre portales con fireEvent, renderizamos siempre el contenido
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DropdownMenuTrigger: ({ children, asChild: _asChild }: { children: React.ReactNode; asChild?: boolean }) => <>{children}</>,
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div data-testid="dropdown-content">{children}</div>,
+  DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSeparator: () => <hr />,
 }));
 
 const makeTask = (overrides: Partial<Task> = {}): Task => ({
@@ -42,6 +55,8 @@ const defaultProps = {
   onMove: vi.fn(),
   onPriorityChange: vi.fn(),
   onClick: vi.fn(),
+  isSelected: false,
+  isSelectMode: false,
 };
 
 describe('KanbanCard', () => {
@@ -62,12 +77,14 @@ describe('KanbanCard', () => {
 
   it('muestra el badge de prioridad media', () => {
     render(<KanbanCard task={makeTask({ priority: 'medium' })} {...defaultProps} />);
-    expect(screen.getByText('Media')).toBeInTheDocument();
+    // Usamos getByTitle porque el mock de DropdownMenu renderiza siempre el contenido
+    // y puede haber múltiples textos "Media" (badge + opción del menú)
+    expect(screen.getByTitle(/Prioridad: Media/i)).toBeInTheDocument();
   });
 
   it('muestra el badge de prioridad urgente', () => {
     render(<KanbanCard task={makeTask({ priority: 'urgent' })} {...defaultProps} />);
-    expect(screen.getByText('Urgente')).toBeInTheDocument();
+    expect(screen.getByTitle(/Prioridad: Urgente/i)).toBeInTheDocument();
   });
 
   it('llama a onClick al hacer click en la tarjeta', () => {

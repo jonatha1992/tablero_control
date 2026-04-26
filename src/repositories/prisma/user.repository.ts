@@ -61,7 +61,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
-    const { teamIds, ...rest } = data;
+    const { teamIds: _teamIds, ...rest } = data;
     const u = await prisma.user.update({
       where: { id },
       data: {
@@ -81,5 +81,14 @@ export class PrismaUserRepository implements IUserRepository {
 
   async deactivate(id: string): Promise<void> {
     await prisma.user.update({ where: { id }, data: { isActive: false } });
+  }
+
+  async updateId(oldId: string, newId: string): Promise<User> {
+    const u = await prisma.user.update({
+      where: { id: oldId },
+      data: { id: newId },
+      include,
+    });
+    return toDomain(u);
   }
 }

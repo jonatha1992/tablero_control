@@ -25,11 +25,4 @@ export * from './ui/forms.ui';
 
 export * from './api/responses';
 
-// Constante de compatibilidad (se mantiene aquí por si algo la importa de @/types)
-export const ROLE_LEVEL: Record<import('./domain/user').UserRole, number> = {
-  superadmin: 5,
-  admin: 4,
-  responsable: 3,
-  miembro: 2,
-  viewer: 1,
-};
+

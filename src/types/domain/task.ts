@@ -5,6 +5,8 @@ export type TaskType = 'feature' | 'bug' | 'improvement' | 'task' | 'documentati
 export interface RecurrenceConfig {
   frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
   interval: number;
+  dayOfWeek?: number;  // 0-6
+  dayOfMonth?: number; // 1-31
   endDate?: Date;
   count?: number;
 }
@@ -38,6 +40,7 @@ export interface Task {
   recurrence?: RecurrenceConfig;
   subtaskIds: string[];
   attachmentUrls: string[];
+  attachments?: { url: string; name: string }[];
   commentCount: number;
   position: number;
   createdAt: Date;

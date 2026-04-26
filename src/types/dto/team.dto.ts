@@ -4,6 +4,7 @@ export interface InviteMemberDTO {
   name: string;
   email: string;
   role: UserRole;
+  locationId?: string;
 }
 
 export interface UpdateMemberDTO {

@@ -1,6 +1,5 @@
 import type { User, UserRole } from '@/types/domain/user';
-import type { CustomRole, PermissionSet } from '@/types/domain/custom-role';
-import { EMPTY_PERMISSIONS } from '@/types/domain/custom-role';
+import type { PermissionSet } from '@/types/domain/custom-role';
 
 export type Action =
   // plataforma
@@ -95,7 +94,7 @@ const MIEMBRO: Action[] = [
 
 const VIEWER: Action[] = ['task.read', 'business.reports.read'];
 
-export const ROLE_MATRIX: RoleMatrix = {
+const ROLE_MATRIX: RoleMatrix = {
   superadmin: new Set(SUPERADMIN),
   admin: new Set(ADMIN),
   responsable: new Set(RESPONSABLE),
@@ -168,4 +167,4 @@ function checkGranular(action: Action, role: UserRole, perms?: PermissionSet): b
   return map[action] ?? true;
 }
 
-export { EMPTY_PERMISSIONS };
+

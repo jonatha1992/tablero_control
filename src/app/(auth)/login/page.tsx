@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { login, loginWithGoogle } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/auth-context';
@@ -14,14 +15,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.push('/dashboard');
+    if (!authLoading && isAuthenticated && user) {
+      router.push(user.role === 'superadmin' ? '/superadmin' : '/dashboard');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+      // El useEffect se encargará de la redirección cuando el perfil cargue
       router.refresh();
     } catch (err) {
       setError('Email o contraseña incorrectos');
@@ -47,13 +48,14 @@ export default function LoginPage() {
     try {
       const result = await loginWithGoogle();
       if (result) {
-        router.push('/dashboard');
+        // El useEffect se encargará de la redirección
         router.refresh();
       }
-    } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/popup-closed-by-user') {
         setError(''); // User closed popup, no error message needed
-      } else if (err.code === 'auth/unauthorized-domain') {
+      } else if (code === 'auth/unauthorized-domain') {
         setError('Google Sign-In no está configurado para este dominio. Contacta al administrador.');
       } else {
         setError('Error al iniciar sesión con Google');
@@ -81,8 +83,15 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-            TC
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+            <Image
+              src="/icon-192.png"
+              alt="Tablero de Control"
+              width={72}
+              height={72}
+              className="rounded-2xl object-contain shadow-md"
+              priority
+            />
           </div>
           <CardTitle className="text-2xl">Tablero de Control</CardTitle>
           <CardDescription>Inicia sesión para continuar</CardDescription>

@@ -8,11 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useCreateUser } from '@/hooks/mutations/use-create-user';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import type { UserRole } from '@/types/domain/user';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
@@ -48,10 +50,12 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const [password, setPassword] = useState(() => generatePassword());
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>('miembro');
+  const [locationId, setLocationId] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
   const { mutate, isPending } = useCreateUser();
+  const { data: locations = [] } = useLocationsQuery();
 
   const roles = isSuperAdmin ? SUPERADMIN_ROLES : ROLES;
 
@@ -71,7 +75,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setError('');
 
     mutate(
-      { name: name.trim(), email: email.trim(), password, role, businessId },
+      { name: name.trim(), email: email.trim(), password, role, businessId, locationId: locationId || undefined },
       {
         onSuccess: () => setStep('success'),
         onError: (err) => setError(err.message),
@@ -85,6 +89,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setEmail('');
     setPassword(generatePassword());
     setRole('miembro');
+    setLocationId('');
     setError('');
     setCopied(false);
     onClose();
@@ -100,6 +105,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 <UserPlus className="h-5 w-5" />
                 Crear usuario
               </DialogTitle>
+              <DialogDescription>
+                Ingresá los datos del nuevo usuario para darle acceso al sistema.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
@@ -159,6 +167,22 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-sm font-medium">Asignar Local/Sector (Opcional)</label>
+                <select
+                  value={locationId}
+                  onChange={(e) => setLocationId(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Sin asignar (Global)</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">Rol</label>
                 <div className="grid grid-cols-2 gap-2">
                   {roles.map((r) => (
@@ -203,6 +227,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 <Check className="h-5 w-5" />
                 Usuario creado
               </DialogTitle>
+              <DialogDescription>
+                El usuario ha sido registrado exitosamente en el sistema.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">

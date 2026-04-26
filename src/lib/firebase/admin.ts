@@ -3,7 +3,6 @@
 // This module is only available in Node.js environment
 
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -31,7 +30,13 @@ function loadServiceAccount(): object | null {
   }
 }
 
-export function getAdminApp(): App {
+function getAdminApp(): App {
+  if (process.env.NEXT_PUBLIC_USE_EMULATOR !== 'true') {
+    delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+    delete process.env.FIRESTORE_EMULATOR_HOST;
+    delete process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+  }
+
   if (getApps().length === 0) {
     const projectId = process.env.FIREBASE_PROJECT_ID || 'gestordetrabajo';
     const serviceAccount = loadServiceAccount();
@@ -49,10 +54,6 @@ export function getAdminApp(): App {
   }
 
   return adminApp;
-}
-
-export function getAdminDb() {
-  return getFirestore(getAdminApp());
 }
 
 export function getAdminAuth() {

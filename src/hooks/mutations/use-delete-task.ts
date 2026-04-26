@@ -3,14 +3,40 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
+import { toast } from 'sonner';
+import type { Task } from '@/types/domain/task';
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => tasksApi.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.all });
+      const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all });
+      
+      queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
+        if (!old) return old;
+        return old.filter((task) => task.id !== id);
+      });
+      
+      return { previousQueries };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      toast.success('Tarea eliminada');
+    },
+    onError: (err: Error, _variables, context) => {
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error('Error al eliminar la tarea', { description: err.message });
+    },
+    onSettled: (_data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      }
     },
   });
 }

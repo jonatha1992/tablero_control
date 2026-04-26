@@ -13,7 +13,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, collection, doc, setDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, doc, setDoc, Timestamp } from 'firebase/firestore';
 
 // Firebase config for emulator
 const firebaseConfig = {
@@ -282,8 +282,9 @@ async function seedUsers() {
       });
       
       console.log(`  ✅ ${u.name} (${u.email}) [${u.role}]`);
-    } catch (error: any) {
-      console.error(`  ❌ ${u.email}: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`  ❌ ${u.email}: ${message}`);
     }
   }
 }
@@ -334,7 +335,7 @@ async function seedTasks() {
   
   let count = 0;
   for (const task of TASKS) {
-    const taskData: any = {
+    const taskData: Record<string, unknown> = {
       title: task.title,
       description: task.description,
       status: task.status,

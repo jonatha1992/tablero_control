@@ -36,4 +36,4 @@ if (typeof window !== 'undefined' && useEmulators) {
   connectStorageEmulator(storage, 'localhost', 9199);
 }
 
-export { app, auth, db, functions, storage, useEmulators };
+export { auth, db };

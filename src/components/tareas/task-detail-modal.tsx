@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,10 +14,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
-import { Trash, Paperclip, Users, X } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
+import type { RecurrenceConfig } from '@/types';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -29,20 +33,36 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [editingAssignees, setEditingAssignees] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
+  const [interval, setIntervalValue] = useState(1);
+  const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
+  const [dayOfMonth, setDayOfMonth] = useState<number | undefined>(undefined);
 
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
   const deleteTask = useDeleteTask();
   const { data: members = [] } = useMembersQuery();
 
-  const updateTask = useUpdateTask();
-  const moveTask = useMoveTask();
-
   if (!task) return null;
 
   const handleSave = () => {
     updateTask.mutate(
-      { id: task.id, data: { title, description } },
+      { 
+        id: task.id, 
+        data: { 
+          title, 
+          description,
+          recurrence: isRecurring ? { 
+            frequency, 
+            interval,
+            dayOfWeek: frequency === 'weekly' ? dayOfWeek : undefined,
+            dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined
+          } : undefined
+        } 
+      },
       { onSuccess: () => setEditing(false) }
     );
   };
@@ -52,9 +72,16 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   };
 
   const handleDelete = () => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-      deleteTask.mutate(task.id, { onSuccess: () => onOpenChange(false) });
-    }
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = () => {
+    deleteTask.mutate(task.id, { 
+      onSuccess: () => {
+        setShowConfirmDelete(false);
+        onOpenChange(false);
+      }
+    });
   };
 
   const handlePriorityChange = (priority: TaskPriority) => {
@@ -73,20 +100,118 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
+          <div className="pr-6">
+            <div className="flex items-center gap-2 mb-0.5">
+              <DialogTitle className={cn("text-xl leading-tight", editing && "sr-only")}>
+                {editing ? `Editando: ${title}` : task.title}
+              </DialogTitle>
+              <span className="font-mono text-xs text-muted-foreground/60 shrink-0">
+                #{task.id.slice(0, 6).toUpperCase()}
+              </span>
+            </div>
+            <DialogDescription className={cn("mt-1", editing && "sr-only")}>
+              {task.description || 'Detalles de la tarea seleccionada.'}
+            </DialogDescription>
+          </div>
+
           {editing ? (
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-xl font-bold bg-transparent border-b border-input pb-2 focus:outline-none"
-              />
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full text-sm bg-transparent border border-input rounded p-2 focus:outline-none"
-                rows={3}
-              />
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full text-lg font-medium bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Descripción</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full text-sm bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  rows={4}
+                />
+              </div>
+
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                    />
+                    <Repeat className="h-4 w-4" /> Tarea repetitiva
+                  </label>
+                </div>
+
+                {isRecurring && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Frecuencia</label>
+                      <select
+                        value={frequency}
+                        onChange={(e) => setFrequency(e.target.value as RecurrenceConfig['frequency'])}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      >
+                        <option value="daily">Diaria</option>
+                        <option value="weekly">Semanal</option>
+                        <option value="biweekly">Quincenal</option>
+                        <option value="monthly">Mensual</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Cada (intervalo)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={interval}
+                        onChange={(e) => setIntervalValue(Number(e.target.value))}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      />
+                    </div>
+
+                  {frequency === 'weekly' && (
+                    <div className="col-span-2">
+                      <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
+                      <select
+                        value={dayOfWeek ?? ''}
+                        onChange={(e) => setDayOfWeek(e.target.value ? Number(e.target.value) : undefined)}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      >
+                        <option value="">Cualquier día</option>
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
+                        <option value="0">Domingo</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {frequency === 'monthly' && (
+                    <div className="col-span-2">
+                      <label className="text-xs text-muted-foreground mb-1 block">Día del mes (1-31)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        placeholder="Ej: 1"
+                        value={dayOfMonth ?? ''}
+                        onChange={(e) => setDayOfMonth(e.target.value ? Number(e.target.value) : undefined)}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      />
+                    </div>
+                  )}
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleSave} disabled={updateTask.isPending}>
                   {updateTask.isPending ? 'Guardando...' : 'Guardar'}
@@ -97,23 +222,26 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </div>
             </div>
           ) : (
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <DialogTitle className="text-xl">{task.title}</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { setTitle(task.title); setDescription(task.description); setEditing(true); }}
-                >
-                  Editar
-                </Button>
-                <Button size="icon" variant="destructive" className="h-9 w-9" onClick={handleDelete} disabled={deleteTask.isPending}>
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 mt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { 
+                  setTitle(task.title); 
+                  setDescription(task.description); 
+                  setIsRecurring(!!task.recurrence);
+                  setFrequency(task.recurrence?.frequency ?? 'weekly');
+                  setIntervalValue(task.recurrence?.interval ?? 1);
+                  setDayOfWeek(task.recurrence?.dayOfWeek);
+                  setDayOfMonth(task.recurrence?.dayOfMonth);
+                  setEditing(true); 
+                }}
+              >
+                Editar
+              </Button>
+              <Button size="icon" variant="destructive" className="h-9 w-9" onClick={handleDelete} disabled={deleteTask.isPending}>
+                <Trash className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </DialogHeader>
@@ -131,7 +259,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <option value="todo">Por hacer</option>
               <option value="in_progress">En progreso</option>
               <option value="in_review">En revisión</option>
-              <option value="done">Completada</option>
+              <option value="done">Finalizado</option>
               <option value="blocked">Bloqueada</option>
             </select>
           </div>
@@ -161,6 +289,90 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <p className="text-sm">
                 {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
+            </div>
+          )}
+
+          {task.recurrence && (
+            <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md self-center">
+              <Repeat className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">
+                Se repite cada {task.recurrence.interval > 1 ? `${task.recurrence.interval} ` : ''}
+                {task.recurrence.frequency === 'daily' ? 'día' : 
+                 task.recurrence.frequency === 'weekly' ? 'semana' :
+                 task.recurrence.frequency === 'biweekly' ? 'quincena' : 'mes'}
+                {task.recurrence.dayOfWeek !== undefined && ` los ${['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][task.recurrence.dayOfWeek]}`}
+                {task.recurrence.dayOfMonth !== undefined && ` el día ${task.recurrence.dayOfMonth}`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Asignados */}
+        <div className="py-3 border-b">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" /> Asignados ({task.assigneeIds?.length ?? 0})
+            </p>
+            {members.length > 0 && (
+              <button
+                onClick={() => setEditingAssignees((v) => !v)}
+                className="text-xs text-primary hover:underline"
+              >
+                {editingAssignees ? 'Cerrar' : 'Editar'}
+              </button>
+            )}
+          </div>
+
+          {/* Current assignees */}
+          {task.assigneeIds?.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {task.assigneeIds.map((id) => {
+                const a = task.assignees?.find((x) => x.id === id);
+                const member = members.find((m) => m.id === id);
+                const name = a?.name ?? member?.name ?? id;
+                const avatar = a?.avatar ?? member?.avatar;
+                const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                return (
+                  <div key={id} className="flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs bg-muted/50">
+                    <Avatar className="h-4 w-4">
+                      {avatar && <AvatarImage src={avatar} alt={name} />}
+                      <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                    </Avatar>
+                    {name.split(' ')[0]}
+                    {editingAssignees && (
+                      <button onClick={() => toggleAssignee(id)} className="ml-0.5 text-muted-foreground hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mb-2">Sin asignados</p>
+          )}
+
+          {/* Add assignees */}
+          {editingAssignees && (
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t">
+              {members
+                .filter((m) => !task.assigneeIds?.includes(m.id))
+                .map((m) => {
+                  const initials = m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => toggleAssignee(m.id)}
+                      className="flex items-center gap-1.5 rounded-full border border-dashed px-2 py-1 text-xs hover:bg-accent hover:border-primary"
+                    >
+                      <Avatar className="h-4 w-4">
+                        {m.avatar && <AvatarImage src={m.avatar} alt={m.name} />}
+                        <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                      </Avatar>
+                      + {m.name.split(' ')[0]}
+                    </button>
+                  );
+                })}
             </div>
           )}
         </div>
@@ -262,6 +474,17 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showConfirmDelete}
+        onOpenChange={setShowConfirmDelete}
+        title="Eliminar tarea"
+        description={`¿Estás seguro de eliminar la tarea "${task.title}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        onConfirm={handleConfirmDelete}
+        variant="destructive"
+        loading={deleteTask.isPending}
+      />
     </Dialog>
   );
 }

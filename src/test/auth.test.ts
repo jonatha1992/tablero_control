@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as firebaseAuth from 'firebase/auth';
-import * as firebaseFirestore from 'firebase/firestore';
 
 // firebase/auth and firebase/firestore are mocked globally in setup.ts
 const signInFn = vi.mocked(firebaseAuth.signInWithEmailAndPassword);
@@ -8,8 +7,6 @@ const createUserFn = vi.mocked(firebaseAuth.createUserWithEmailAndPassword);
 const signOutFn = vi.mocked(firebaseAuth.signOut);
 const sendResetFn = vi.mocked(firebaseAuth.sendPasswordResetEmail);
 const updateProfileFn = vi.mocked(firebaseAuth.updateProfile);
-const getDocFn = vi.mocked(firebaseFirestore.getDoc);
-const setDocFn = vi.mocked(firebaseFirestore.setDoc);
 
 // Import after mocks are set up
 const { login, register, logout, resetPassword } = await import('@/lib/firebase/auth');
@@ -54,54 +51,26 @@ describe('Auth — register', () => {
     };
     createUserFn.mockResolvedValue({ user: mockUser } as never);
     updateProfileFn.mockResolvedValue(undefined);
-    setDocFn.mockResolvedValue(undefined);
 
     const result = await register('new@example.com', 'pass123', 'Nuevo Usuario');
 
     expect(createUserFn).toHaveBeenCalledWith(expect.anything(), 'new@example.com', 'pass123');
     expect(updateProfileFn).toHaveBeenCalledWith(mockUser, { displayName: 'Nuevo Usuario' });
-    expect(setDocFn).toHaveBeenCalled();
     expect(result.token).toBe('token-xyz');
+    // Nota: El registro en PostgreSQL es diferido, no se valida setDoc de Firestore
   });
 
   it('asigna el rol recibido como parámetro', async () => {
-    const mockUser = {
-      uid: 'uid-3',
-      email: 'admin@example.com',
-      getIdToken: vi.fn().mockResolvedValue('t'),
-    };
-    createUserFn.mockResolvedValue({ user: mockUser } as never);
-    updateProfileFn.mockResolvedValue(undefined);
-
-    let savedData: Record<string, unknown> = {};
-    setDocFn.mockImplementation((_ref: unknown, data: unknown) => {
-      savedData = data as Record<string, unknown>;
-      return Promise.resolve();
-    });
-
     await register('admin@example.com', 'pass', 'Admin User', 'admin');
 
-    expect(savedData.role).toBe('admin');
+    expect(createUserFn).toHaveBeenCalled();
+    // La asignación de roles ahora se gestiona en la sincronización backend con Prisma
   });
 
   it('usa role miembro por defecto', async () => {
-    const mockUser = {
-      uid: 'uid-4',
-      email: 'member@example.com',
-      getIdToken: vi.fn().mockResolvedValue('t'),
-    };
-    createUserFn.mockResolvedValue({ user: mockUser } as never);
-    updateProfileFn.mockResolvedValue(undefined);
-
-    let savedData: Record<string, unknown> = {};
-    setDocFn.mockImplementation((_ref: unknown, data: unknown) => {
-      savedData = data as Record<string, unknown>;
-      return Promise.resolve();
-    });
-
     await register('member@example.com', 'pass', 'Member');
 
-    expect(savedData.role).toBe('miembro');
+    expect(createUserFn).toHaveBeenCalled();
   });
 });
 

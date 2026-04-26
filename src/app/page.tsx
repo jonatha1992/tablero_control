@@ -1,13 +1,14 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   CheckSquare,
   Calendar,
   BarChart3,
   Shield,
-  Zap,
+
   ArrowRight,
-  Users,
+
   Bell,
   Globe,
 } from 'lucide-react';
@@ -19,9 +20,7 @@ export default function HomePage() {
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-              TC
-            </div>
+            <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
             <span className="text-xl font-bold">Tablero de Control</span>
           </div>
           <div className="flex items-center gap-3">
@@ -136,8 +135,8 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Multi-Tenant</h3>
                 <p className="text-sm text-muted-foreground">
-                  SuperAdmin, Admin de negocio, Responsable de local, Miembro
-                  y Viewer. Cada rol con sus permisos.
+                  Admin de negocio, Responsable de local, Miembro
+                  y Viewer. Cada rol con sus propios permisos.
                 </p>
               </div>
 
@@ -213,9 +212,8 @@ export default function HomePage() {
                 Control de acceso granular para cada tipo de usuario
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { role: 'SuperAdmin', desc: 'TecnoFusión: dueños del sistema', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
                 { role: 'Admin', desc: 'Admin de cada negocio', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
                 { role: 'Responsable', desc: 'Responsable de cada local', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
                 { role: 'Miembro', desc: 'Persona dentro de un local', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },

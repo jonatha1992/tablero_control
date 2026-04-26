@@ -22,6 +22,8 @@ export type AuditAction =
   | 'invoice.paid'
   | 'invoice.failed'
   | 'task.create'
+  | 'task.update'
+  | 'task.move'
   | 'task.delete'
   | 'attachment.upload'
   | 'attachment.delete';

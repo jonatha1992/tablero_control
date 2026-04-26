@@ -3,11 +3,15 @@ import type { PlanId } from './subscription';
 export type BusinessStatus = 'active' | 'suspended' | 'trial' | 'cancelled';
 
 export interface BusinessSettings {
-  maxLocations: number;
-  maxUsers: number;
+  maxLocations?: number;
+  maxUsers?: number;
   customDomain?: string;
-  features: string[];
-  localeTypes: string[];
+  theme?: string;
+  language?: string;
+  timezone?: string;
+  notifications?: Record<string, boolean>;
+  features?: string[] | Record<string, boolean>;
+  localeTypes?: string[];
 }
 
 export interface Business {
