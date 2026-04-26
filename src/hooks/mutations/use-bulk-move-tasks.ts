@@ -27,8 +27,10 @@ export function useBulkMoveTasks() {
         queryClient.setQueryData(queryKey, data);
       });
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    onSettled: (_data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      }
     },
   });
 }

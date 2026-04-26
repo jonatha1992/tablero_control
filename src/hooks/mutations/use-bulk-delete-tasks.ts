@@ -12,7 +12,7 @@ export function useBulkDeleteTasks() {
     mutationFn: ({ taskIds }: { taskIds: string[] }) =>
       Promise.all(taskIds.map((id) => tasksApi.delete(id))),
     onMutate: async ({ taskIds }) => {
-      queryClient.cancelQueries({ queryKey: taskKeys.all });
+      await queryClient.cancelQueries({ queryKey: taskKeys.all });
       const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all });
       queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
         if (!old) return old;
@@ -25,8 +25,10 @@ export function useBulkDeleteTasks() {
         queryClient.setQueryData(queryKey, data);
       });
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    onSettled: (_data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      }
     },
   });
 }

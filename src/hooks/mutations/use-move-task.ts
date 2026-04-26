@@ -37,9 +37,11 @@ export function useMoveTask() {
         });
       }
     },
-    // Siempre invalidar al final para sincronizar con el servidor real
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    // Solo refetchear si hubo error — en éxito el optimistic update ya es correcto
+    onSettled: (_data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      }
     },
   });
 }
