@@ -139,7 +139,7 @@ export function DashboardMetrics() {
         </CardHeader>
         <CardContent>
           <div className="h-[200px] w-full min-h-[200px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
               <LineChart data={burndownData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-slate-200 dark:stroke-slate-800" />
                 <XAxis dataKey="dia" fontSize={10} tickLine={false} axisLine={false} tick={{fill: 'currentColor', opacity: 0.5}} />
@@ -178,7 +178,7 @@ export function DashboardMetrics() {
         </CardHeader>
         <CardContent>
           <div className="h-[200px] w-full min-h-[200px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
               <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorComp" x1="0" y1="0" x2="0" y2="1">
@@ -213,7 +213,7 @@ export function DashboardMetrics() {
         </CardHeader>
         <CardContent>
           <div className="h-[200px] w-full min-h-[200px] flex items-center">
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={200} minWidth={0}>
               <PieChart>
                 <Pie 
                   data={statusDist} 

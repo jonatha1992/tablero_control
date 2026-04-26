@@ -6,12 +6,23 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
-import type { Task } from '@/types';
+import type { Task, TaskPriority } from '@/types';
 
 interface CalendarViewProps {
   tasks: Task[];
   onEventDrop?: (taskId: string, newDate: Date) => void;
 }
+
+// Colores de fondo por prioridad (consistentes con el kanban)
+const PRIORITY_EVENT_COLORS: Record<
+  TaskPriority,
+  { backgroundColor: string; textColor: string }
+> = {
+  urgent: { backgroundColor: '#ef4444', textColor: '#ffffff' }, // red-500
+  high: { backgroundColor: '#f97316', textColor: '#ffffff' },   // orange-500
+  medium: { backgroundColor: '#3b82f6', textColor: '#ffffff' }, // blue-500
+  low: { backgroundColor: '#64748b', textColor: '#ffffff' },    // slate-500
+};
 
 export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null);
@@ -20,18 +31,15 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
   const events = tasks
     .filter((task) => task.dueDate) // Solo mostramos las que tienen fecha
     .map((task) => {
-      // Definimos colores según prioridad o estado para mejor UX visual
-      let backgroundColor = 'var(--color-primary)';
-      if (task.status === 'done') backgroundColor = '#10b981'; // Green
-      if (task.status === 'blocked') backgroundColor = '#ef4444'; // Red
-      if (task.priority === 'urgent' && task.status !== 'done') backgroundColor = '#f97316'; // Orange
+      const colors = PRIORITY_EVENT_COLORS[task.priority];
 
       return {
         id: task.id,
         title: task.title,
         start: task.dueDate!, // Podría ser startDate si quisieramos rangos
         allDay: true,
-        backgroundColor,
+        backgroundColor: colors.backgroundColor,
+        textColor: colors.textColor,
         borderColor: 'transparent',
         extendedProps: {
           status: task.status,

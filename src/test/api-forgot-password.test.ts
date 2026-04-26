@@ -22,7 +22,7 @@ const mockSendEmail = vi.mocked(MailService.sendPasswordResetEmail);
 beforeEach(() => {
   vi.clearAllMocks();
   mockGenerateLink.mockResolvedValue('https://reset.link/token');
-  mockSendEmail.mockResolvedValue({ success: true });
+  mockSendEmail.mockResolvedValue({ success: true, data: { id: 'test-email-id' }, error: undefined });
 });
 
 describe('POST /api/auth/forgot-password', () => {

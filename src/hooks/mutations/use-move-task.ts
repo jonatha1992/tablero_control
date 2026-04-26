@@ -13,8 +13,8 @@ export function useMoveTask() {
       tasksApi.move(taskId, newStatus),
     // Optimistic Update
     onMutate: async ({ taskId, newStatus }) => {
-      // Cancelar sin await — optimistic update debe ser síncrono para evitar flash visual
-      queryClient.cancelQueries({ queryKey: taskKeys.all });
+      // Cancelar con await para que la actualización optimista se aplique sin conflictos con fetch en vuelo
+      await queryClient.cancelQueries({ queryKey: taskKeys.all });
 
       // Guardar el estado previo de todas las queries relacionadas
       const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all });

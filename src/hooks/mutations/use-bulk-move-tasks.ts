@@ -12,7 +12,7 @@ export function useBulkMoveTasks() {
     mutationFn: ({ taskIds, newStatus }: { taskIds: string[]; newStatus: TaskStatus }) =>
       Promise.all(taskIds.map((id) => tasksApi.move(id, newStatus))),
     onMutate: async ({ taskIds, newStatus }) => {
-      queryClient.cancelQueries({ queryKey: taskKeys.all });
+      await queryClient.cancelQueries({ queryKey: taskKeys.all });
       const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all });
       queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
         if (!old) return old;

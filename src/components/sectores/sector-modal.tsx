@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -58,7 +59,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
 
     const data = {
       name: name.trim(),
-      description: description.trim(),
+      description: description.trim() || undefined,
       type,
       businessId,
     };
@@ -83,9 +84,9 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
             <MapPin className="h-5 w-5 text-primary" />
             {location ? 'Editar Sector/Departamento' : 'Nuevo Sector/Departamento'}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             {location ? 'Modificá la información del sector seleccionado.' : 'Completá los datos para crear un nuevo sector en tu negocio.'}
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">

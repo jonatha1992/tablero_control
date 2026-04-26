@@ -76,6 +76,12 @@ async function getCurrentUser(): Promise<FirebaseUser | null> {
 }
 
 export async function getToken(): Promise<string | null> {
+  // Optimizamos usando el usuario en memoria si ya está disponible (sin espera)
+  if (auth.currentUser) {
+    return auth.currentUser.getIdToken();
+  }
+
+  // Fallback para la carga inicial de la app
   const user = await getCurrentUser();
   if (!user) return null;
   return user.getIdToken();
