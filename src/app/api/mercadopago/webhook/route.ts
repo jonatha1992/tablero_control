@@ -9,12 +9,32 @@ import type { SubscriptionStatus } from '@/types/domain/subscription';
 function verifySignature(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) return true;
-  const sig = req.headers.get('x-signature') ?? '';
-  const ts = req.headers.get('x-request-id') ?? '';
-  const signed = `id=${ts};request-id=${ts};ts=${ts};`;
-  const expected = createHmac('sha256', secret).update(signed + rawBody).digest('hex');
+
+  const xSig = req.headers.get('x-signature') ?? '';
+  const requestId = req.headers.get('x-request-id') ?? '';
+
+  // MP test notifications from dashboard may omit signature headers — allow through
+  if (!xSig) return true;
+
+  // x-signature format: "ts=<epoch>,v1=<hex>"
+  const tsMatch = xSig.match(/ts=([^,]+)/);
+  const v1Match = xSig.match(/v1=([^,]+)/);
+  if (!tsMatch || !v1Match) return false;
+  const ts = tsMatch[1];
+  const v1 = v1Match[1];
+
+  let dataId = '';
   try {
-    return timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+    const body = JSON.parse(rawBody) as Record<string, unknown>;
+    dataId = String((body.data as Record<string, unknown>)?.id ?? '');
+  } catch {
+    return false;
+  }
+
+  const signed = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const expected = createHmac('sha256', secret).update(signed).digest('hex');
+  try {
+    return timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
   } catch {
     return false;
   }

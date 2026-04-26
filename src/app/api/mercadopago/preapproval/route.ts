@@ -22,13 +22,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const origin = req.headers.get('origin') ?? 'http://localhost:3000';
-  const backUrl = `${origin}/dashboard/billing?status=success`;
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get('origin') ?? 'http://localhost:3000';
+  const backUrl = `${origin}/dashboard/billing?status=pending`;
+
+  if (!user.email) {
+    return NextResponse.json({ error: 'user_email_required' }, { status: 400 });
+  }
 
   const preapproval = await createPreapproval({
     plan,
     frequency,
-    payerEmail: user.email ?? '',
+    payerEmail: user.email,
     businessId,
     backUrl,
   });
