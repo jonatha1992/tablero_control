@@ -24,7 +24,18 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\" npx prisma db pull)",
       "Bash(git checkout *)",
       "mcp__mercadopago__application_list",
-      "mcp__mercadopago__quality_checklist"
+      "mcp__mercadopago__quality_checklist",
+      "Bash(railway status *)",
+      "Bash(railway logs *)",
+      "Bash(railway vars *)",
+      "mcp__mercadopago__save_webhook",
+      "Bash(railway variables *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "Bash(git cherry-pick *)"
     ]
   }
 }
