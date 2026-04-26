@@ -105,7 +105,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
               key={task.id}
               task={task}
               column={status}
-              onMove={() => {}}
+              onMove={() => { }}
               onPriorityChange={onPriorityChange}
               onClick={onCardClick}
               isSelected={selectedTaskIds.includes(task.id)}

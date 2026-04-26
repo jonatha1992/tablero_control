@@ -222,6 +222,41 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           Más filtros
         </button>
 
+        <div className="relative">
+          <button
+            onClick={() => setIsConfigOpen(!isConfigOpen)}
+            className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
+          >
+            <Settings2 className="h-4 w-4" />
+            Configurar Tablero
+          </button>
+
+          {isConfigOpen && (
+            <div className="absolute top-full mt-2 left-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
+              <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
+              <div className="space-y-1">
+                {COLUMN_ORDER_FULL.map((col) => (
+                  <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={activeColumns.includes(col)}
+                      onChange={() => toggleColumn(col)}
+                      className="rounded border-gray-300"
+                    />
+                    <span>
+                      {col === 'backlog' ? 'Backlog' :
+                        col === 'todo' ? 'Por hacer' :
+                          col === 'in_progress' ? 'En progreso' :
+                            col === 'in_review' ? 'En revisión' :
+                              col === 'done' ? 'Completada' : 'Bloqueada'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex-1" />
 
         {/* Configurar Tablero — siempre visible */}
