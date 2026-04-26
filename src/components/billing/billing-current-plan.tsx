@@ -5,6 +5,7 @@ import type { Subscription } from '@/types/domain/subscription';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
+import { useCancelSubscription } from '@/hooks/mutations/use-cancel-subscription';
 
 const STATUS_LABEL: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   active:    { label: 'Activa',    icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-600' },
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function BillingCurrentPlan({ subscription, isLoading }: Props) {
+  const cancel = useCancelSubscription(subscription?.businessId);
   if (isLoading) {
     return (
       <div className="border rounded-lg p-6 flex items-center gap-3">
@@ -61,6 +63,25 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
           </li>
         ))}
       </ul>
+
+      {subscription && subscription.status === 'active' && (
+        <div className="mt-5 pt-4 border-t">
+          <button
+            onClick={() => {
+              if (!confirm('¿Cancelar suscripción? El plan cambiará a Free al final del período.')) return;
+              cancel.mutate(subscription.id);
+            }}
+            disabled={cancel.isPending}
+            className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 disabled:opacity-60"
+          >
+            {cancel.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+            Cancelar suscripción
+          </button>
+          {cancel.isError && (
+            <p className="text-xs text-red-600 mt-1">{(cancel.error as Error).message}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
