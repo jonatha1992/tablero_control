@@ -29,7 +29,7 @@ npm run dev:all        # Firebase Emulators + Next.js juntos
 npm run seed           # Datos de prueba en Firebase emulators
 npm run seed:pg        # Datos de prueba en PostgreSQL
 npm run test:run       # Todos los tests (sin watch)
-npx vitest run src/test/api-tasks.test.ts  # Un solo archivo de test
+./node_modules/.bin/vitest run src/test/api-tasks.test.ts  # Un solo archivo de test
 npm run type:check     # Verifica tipos sin compilar
 npm run check          # lint + tipos + tests (pre-commit)
 ```
@@ -65,7 +65,7 @@ API Route (src/app/api/**/route.ts)
 
 ## Estado del cliente
 
-- **React Query**: queries en `src/hooks/queries/`, mutations en `src/hooks/mutations/`. Los query keys están co-localizados en el archivo de query (e.g. `taskKeys`). Las funciones HTTP viven en `src/lib/api/` (e.g. `tasksApi`, `membersApi`).
+- **React Query**: queries en `src/hooks/queries/`, mutations en `src/hooks/mutations/`. Los query keys están co-localizados en el archivo de query (e.g. `taskKeys`). Las funciones HTTP viven en `src/lib/api/` (e.g. `tasksApi`, `membersApi`, `billingApi`).
 - **Zustand stores** (`src/stores/`): solo estado UI efímero — modales abiertos, drag state, filtros de vista. Stores existentes: `kanban-ui.store.ts`, `scrum-ui.store.ts`, `team-ui.store.ts`.
 
 ## Rutas de la app
@@ -101,7 +101,7 @@ Todos los tipos en `src/types/`, re-exportados desde `src/types/index.ts`:
 1. `.env.local`: `SUPERADMIN_EMAILS=email@ejemplo.com`
 2. Registrarse en `/register` con ese email
 3. `GET /api/auth/profile` auto-provisiona el user en PostgreSQL con `role: 'superadmin'`
-4. Login redirige automáticamente a `/superadmin`
+4. Login y registro redirigen automáticamente a `/superadmin` (usuarios con otro rol van a `/dashboard`)
 
 ## Tests
 
@@ -119,5 +119,5 @@ Nomenclatura: `api-*.test.ts` para API routes, `hooks-*.test.ts` para hooks, `*.
 - Prisma client: singleton en `src/lib/prisma.ts`, importar desde ahí
 - Repositories: siempre importar singletons desde `src/repositories/index.ts`
 - Emails: `src/lib/mail/` (templates) + `src/lib/resend.ts` (cliente Resend)
-- Pagos: `src/lib/mercadopago/` — `plans.ts` (definición de planes) + `preapproval.ts`
+- Pagos: `src/lib/mercadopago/` — `plans.ts` (definición de planes) + `preapproval.ts`; API client: `src/lib/api/billing.ts` (`billingApi`)
 - Uploads: `src/lib/cloudinary/` — `upload.ts` + `config.ts`
