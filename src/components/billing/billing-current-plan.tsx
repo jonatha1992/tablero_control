@@ -64,11 +64,14 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
         ))}
       </ul>
 
-      {subscription && subscription.status === 'active' && (
+      {subscription && (subscription.status === 'active' || subscription.status === 'pending') && (
         <div className="mt-5 pt-4 border-t">
           <button
             onClick={() => {
-              if (!confirm('¿Cancelar suscripción? El plan cambiará a Free al final del período.')) return;
+              const msg = subscription.status === 'pending'
+                ? '¿Cancelar suscripción pendiente?'
+                : '¿Cancelar suscripción? El plan cambiará a Free al final del período.';
+              if (!confirm(msg)) return;
               cancel.mutate(subscription.id);
             }}
             disabled={cancel.isPending}
