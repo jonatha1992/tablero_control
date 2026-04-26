@@ -31,4 +31,10 @@ export const billingApi = {
       method: 'POST',
       body: JSON.stringify({ subscriptionId }),
     }),
+
+  syncSubscription: (businessId: string) =>
+    fetchJsonAuth<{ status: string; synced: boolean; reason?: string }>('/api/mercadopago/sync', {
+      method: 'POST',
+      body: JSON.stringify({ businessId }),
+    }),
 };
