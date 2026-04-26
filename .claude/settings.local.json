@@ -19,7 +19,12 @@
       "Bash(npx tsc *)",
       "Bash(npx vitest *)",
       "Bash(node -e \"const { Minus } = require\\('./node_modules/lucide-react'\\); console.log\\('Minus:', !!Minus\\);\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(grep -iE '\\\\.\\(md|txt\\)$')",
+      "Bash(DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\" npx prisma db pull)",
+      "Bash(git checkout *)",
+      "mcp__mercadopago__application_list",
+      "mcp__mercadopago__quality_checklist"
     ]
   }
 }
