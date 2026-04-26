@@ -67,7 +67,13 @@ export async function POST(req: NextRequest) {
   if (!dataId) return NextResponse.json({ ok: true });
 
   if (type === 'subscription_preapproval') {
-    const preapproval = await getPreapproval(dataId);
+    let preapproval;
+    try {
+      preapproval = await getPreapproval(dataId);
+    } catch {
+      // Test IDs or MP API errors — ack to avoid MP retries
+      return NextResponse.json({ ok: true });
+    }
     const ref = parseExternalReference(preapproval.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
@@ -113,7 +119,12 @@ export async function POST(req: NextRequest) {
       external_reference?: string;
       preapproval_id?: string;
     }
-    const payment = await mpFetch<MpPayment>(`/v1/payments/${dataId}`);
+    let payment: MpPayment;
+    try {
+      payment = await mpFetch<MpPayment>(`/v1/payments/${dataId}`);
+    } catch {
+      return NextResponse.json({ ok: true });
+    }
     const ref = parseExternalReference(payment.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
