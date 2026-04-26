@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (sub.mpPreapprovalId) {
-    await cancelPreapproval(sub.mpPreapprovalId);
+    try { await cancelPreapproval(sub.mpPreapprovalId); } catch { /* MP error non-fatal — still cancel in DB */ }
   }
 
   await prisma.subscription.update({

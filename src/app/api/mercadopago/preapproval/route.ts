@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
-import { createPreapproval } from '@/lib/mercadopago/preapproval';
+import { createPreapproval, cancelPreapproval } from '@/lib/mercadopago/preapproval';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'user_email_required' }, { status: 400 });
   }
 
+  // Cancel existing preapproval in MP before creating a new one (best effort)
+  const existing = await prisma.subscription.findUnique({ where: { businessId } });
+  if (existing?.mpPreapprovalId) {
+    try { await cancelPreapproval(existing.mpPreapprovalId); } catch { /* MP may already be cancelled */ }
+  }
+
   const preapproval = await createPreapproval({
     plan,
     frequency,
@@ -37,14 +43,23 @@ export async function POST(req: NextRequest) {
     backUrl,
   });
 
-  const sub = await prisma.subscription.create({
-    data: {
+  const sub = await prisma.subscription.upsert({
+    where: { businessId },
+    create: {
       businessId,
       plan,
       status: 'pending',
       mpPreapprovalId: preapproval.id,
       amount: preapproval.auto_recurring?.transaction_amount ?? 0,
       currency: 'ARS',
+      frequency,
+      cancelAtPeriodEnd: false,
+    },
+    update: {
+      plan,
+      status: 'pending',
+      mpPreapprovalId: preapproval.id,
+      amount: preapproval.auto_recurring?.transaction_amount ?? 0,
       frequency,
       cancelAtPeriodEnd: false,
     },

@@ -235,7 +235,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             <div className="absolute top-full mt-2 left-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
               <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
               <div className="space-y-1">
-                {COLUMN_ORDER_FULL.map((col) => (
+                {BOARD_COLUMNS.map((col) => (
                   <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
                     <input
                       type="checkbox"

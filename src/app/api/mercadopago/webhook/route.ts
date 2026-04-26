@@ -67,41 +67,50 @@ export async function POST(req: NextRequest) {
   if (!dataId) return NextResponse.json({ ok: true });
 
   if (type === 'subscription_preapproval') {
-    const preapproval = await getPreapproval(dataId);
+    let preapproval;
+    try {
+      preapproval = await getPreapproval(dataId);
+    } catch {
+      return NextResponse.json({ ok: true });
+    }
     const ref = parseExternalReference(preapproval.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
     const status = MP_TO_INTERNAL[preapproval.status] ?? 'pending';
 
-    await prisma.subscription.updateMany({
-      where: { mpPreapprovalId: dataId },
-      data: { status, mpPayerId: preapproval.payer_id ?? null },
-    });
-
-    if (status === 'active') {
-      const flags: Record<string, boolean> = {
-        canExportReports: ref.plan !== 'free' && ref.plan !== 'basic',
-      };
-
-      await prisma.business.update({
-        where: { id: ref.businessId },
-        data: {
-          plan: ref.plan,
-          status: 'active',
-          featureFlags: flags,
-          mpPayerId: preapproval.payer_id ?? null,
-        },
+    try {
+      await prisma.subscription.updateMany({
+        where: { mpPreapprovalId: dataId },
+        data: { status, mpPayerId: preapproval.payer_id ?? null },
       });
 
-      await writeAuditLog({
-        actorId: 'system',
-        actorRole: 'superadmin',
-        businessId: ref.businessId,
-        action: 'subscription.update',
-        targetType: 'subscription',
-        targetId: dataId,
-        metadata: { status, plan: ref.plan },
-      });
+      if (status === 'active') {
+        const flags: Record<string, boolean> = {
+          canExportReports: ref.plan !== 'free' && ref.plan !== 'basic',
+        };
+
+        await prisma.business.update({
+          where: { id: ref.businessId },
+          data: {
+            plan: ref.plan,
+            status: 'active',
+            featureFlags: flags,
+            mpPayerId: preapproval.payer_id ?? null,
+          },
+        });
+
+        await writeAuditLog({
+          actorId: 'system',
+          actorRole: 'superadmin',
+          businessId: ref.businessId,
+          action: 'subscription.update',
+          targetType: 'subscription',
+          targetId: dataId,
+          metadata: { status, plan: ref.plan },
+        });
+      }
+    } catch (err) {
+      console.error('[webhook] subscription_preapproval db error:', err);
     }
   }
 
@@ -113,7 +122,12 @@ export async function POST(req: NextRequest) {
       external_reference?: string;
       preapproval_id?: string;
     }
-    const payment = await mpFetch<MpPayment>(`/v1/payments/${dataId}`);
+    let payment: MpPayment;
+    try {
+      payment = await mpFetch<MpPayment>(`/v1/payments/${dataId}`);
+    } catch {
+      return NextResponse.json({ ok: true });
+    }
     const ref = parseExternalReference(payment.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
@@ -121,32 +135,36 @@ export async function POST(req: NextRequest) {
       : payment.status === 'rejected' ? 'failed'
       : 'pending';
 
-    const sub = await prisma.subscription.findFirst({
-      where: { mpPreapprovalId: payment.preapproval_id ?? '' },
-    });
+    try {
+      const sub = await prisma.subscription.findFirst({
+        where: { mpPreapprovalId: payment.preapproval_id ?? '' },
+      });
 
-    if (sub) {
-      const invoice = await prisma.invoice.create({
-        data: {
-          subscriptionId: sub.id,
+      if (sub) {
+        const invoice = await prisma.invoice.create({
+          data: {
+            subscriptionId: sub.id,
+            businessId: ref.businessId,
+            amount: payment.transaction_amount,
+            currency: 'ARS',
+            status: invoiceStatus,
+            mpPaymentId: String(payment.id),
+            paidAt: invoiceStatus === 'paid' ? new Date() : null,
+          },
+        });
+
+        await writeAuditLog({
+          actorId: 'system',
+          actorRole: 'superadmin',
           businessId: ref.businessId,
-          amount: payment.transaction_amount,
-          currency: 'ARS',
-          status: invoiceStatus,
-          mpPaymentId: String(payment.id),
-          paidAt: invoiceStatus === 'paid' ? new Date() : null,
-        },
-      });
-
-      await writeAuditLog({
-        actorId: 'system',
-        actorRole: 'superadmin',
-        businessId: ref.businessId,
-        action: invoiceStatus === 'paid' ? 'invoice.paid' : 'invoice.failed',
-        targetType: 'invoice',
-        targetId: invoice.id,
-        metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id },
-      });
+          action: invoiceStatus === 'paid' ? 'invoice.paid' : 'invoice.failed',
+          targetType: 'invoice',
+          targetId: invoice.id,
+          metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id },
+        });
+      }
+    } catch (err) {
+      console.error('[webhook] payment db error:', err);
     }
   }
 

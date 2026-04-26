@@ -6,14 +6,16 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 import { useCancelSubscription } from '@/hooks/mutations/use-cancel-subscription';
+import { useSyncSubscription } from '@/hooks/mutations/use-sync-subscription';
+import { RefreshCw } from 'lucide-react';
 
 const STATUS_LABEL: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  active:    { label: 'Activa',    icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-600' },
-  trialing:  { label: 'Prueba',    icon: <Clock className="h-4 w-4" />,        color: 'text-blue-600' },
-  pending:   { label: 'Pendiente', icon: <Clock className="h-4 w-4" />,        color: 'text-yellow-600' },
-  paused:    { label: 'Pausada',   icon: <Clock className="h-4 w-4" />,        color: 'text-orange-500' },
-  cancelled: { label: 'Cancelada', icon: <XCircle className="h-4 w-4" />,      color: 'text-red-600' },
-  past_due:  { label: 'Vencida',   icon: <XCircle className="h-4 w-4" />,      color: 'text-red-600' },
+  active: { label: 'Activa', icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-600' },
+  trialing: { label: 'Prueba', icon: <Clock className="h-4 w-4" />, color: 'text-blue-600' },
+  pending: { label: 'Pendiente', icon: <Clock className="h-4 w-4" />, color: 'text-yellow-600' },
+  paused: { label: 'Pausada', icon: <Clock className="h-4 w-4" />, color: 'text-orange-500' },
+  cancelled: { label: 'Cancelada', icon: <XCircle className="h-4 w-4" />, color: 'text-red-600' },
+  past_due: { label: 'Vencida', icon: <XCircle className="h-4 w-4" />, color: 'text-red-600' },
 };
 
 interface Props {
@@ -23,6 +25,7 @@ interface Props {
 
 export function BillingCurrentPlan({ subscription, isLoading }: Props) {
   const cancel = useCancelSubscription(subscription?.businessId);
+  const sync = useSyncSubscription(subscription?.businessId);
   if (isLoading) {
     return (
       <div className="border rounded-lg p-6 flex items-center gap-3">
@@ -64,11 +67,34 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
         ))}
       </ul>
 
-      {subscription && subscription.status === 'active' && (
-        <div className="mt-5 pt-4 border-t">
+      {subscription && (subscription.status === 'active' || subscription.status === 'pending') && (
+        <div className="mt-5 pt-4 border-t flex flex-col gap-3">
+          {subscription.status === 'pending' && (
+            <div>
+              <button
+                onClick={() => sync.mutate()}
+                disabled={sync.isPending}
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-60"
+              >
+                {sync.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Verificar estado con Mercado Pago
+              </button>
+              {sync.isError && (
+                <p className="text-xs text-red-600 mt-1">{(sync.error as Error).message}</p>
+              )}
+              {sync.isSuccess && !sync.data.synced && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {sync.data.reason === 'already_up_to_date' ? 'Estado ya actualizado.' : 'Sin preapproval registrado en MP.'}
+                </p>
+              )}
+            </div>
+          )}
           <button
             onClick={() => {
-              if (!confirm('¿Cancelar suscripción? El plan cambiará a Free al final del período.')) return;
+              const msg = subscription.status === 'pending'
+                ? '¿Cancelar suscripción pendiente?'
+                : '¿Cancelar suscripción? El plan cambiará a Free al final del período.';
+              if (!confirm(msg)) return;
               cancel.mutate(subscription.id);
             }}
             disabled={cancel.isPending}
