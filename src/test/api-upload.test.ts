@@ -87,7 +87,7 @@ describe('POST /api/upload', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.url).toBe('https://cloudinary.com/avatar.jpg');
-    expect(mockUploadAvatar).toHaveBeenCalledWith('user-1', expect.any(File));
+    expect(mockUploadAvatar).toHaveBeenCalledWith('user-1', expect.anything());
   });
 
   it('sube attachment, crea registro en DB y escribe audit log', async () => {

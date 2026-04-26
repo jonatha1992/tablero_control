@@ -3,10 +3,12 @@ import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/forgot-password/route';
 import { MailService } from '@/services/mail.service';
 
+const mockGenerateLink = vi.fn().mockResolvedValue('https://reset.link/token');
+
 vi.mock('@/lib/firebase/admin', () => ({
-  getAdminAuth: () => ({
-    generatePasswordResetLink: vi.fn().mockResolvedValue('https://reset.link/token'),
-  }),
+  getAdminAuth: vi.fn(() => ({
+    generatePasswordResetLink: mockGenerateLink,
+  })),
 }));
 
 vi.mock('@/services/mail.service', () => ({
@@ -19,6 +21,7 @@ const mockSendEmail = vi.mocked(MailService.sendPasswordResetEmail);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockGenerateLink.mockResolvedValue('https://reset.link/token');
   mockSendEmail.mockResolvedValue({ success: true });
 });
 
@@ -68,9 +71,7 @@ describe('POST /api/auth/forgot-password', () => {
   });
 
   it('retorna 200 aunque el usuario no exista (evita enumeración)', async () => {
-    vi.mocked((await import('@/lib/firebase/admin')).getAdminAuth).mockReturnValueOnce({
-      generatePasswordResetLink: vi.fn().mockRejectedValue({ code: 'auth/user-not-found' }),
-    } as never);
+    mockGenerateLink.mockRejectedValueOnce({ code: 'auth/user-not-found' });
     const req = new NextRequest('http://localhost/api/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email: 'noexiste@ejemplo.com' }),
