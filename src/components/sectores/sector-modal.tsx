@@ -14,9 +14,44 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateLocation, useUpdateLocation } from '@/hooks/mutations/use-locations';
 import type { Location } from '@/types/domain/location';
-import { MapPin, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import * as LucideIcons from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
+export const SECTOR_ICONS: { name: string; icon: LucideIcon }[] = [
+  { name: 'MapPin',        icon: LucideIcons.MapPin },
+  { name: 'Building2',     icon: LucideIcons.Building2 },
+  { name: 'Home',          icon: LucideIcons.Home },
+  { name: 'Store',         icon: LucideIcons.Store },
+  { name: 'Warehouse',     icon: LucideIcons.Warehouse },
+  { name: 'Briefcase',     icon: LucideIcons.Briefcase },
+  { name: 'Users',         icon: LucideIcons.Users },
+  { name: 'Code',          icon: LucideIcons.Code },
+  { name: 'Server',        icon: LucideIcons.Server },
+  { name: 'Database',      icon: LucideIcons.Database },
+  { name: 'Globe',         icon: LucideIcons.Globe },
+  { name: 'ShoppingCart',  icon: LucideIcons.ShoppingCart },
+  { name: 'Package',       icon: LucideIcons.Package },
+  { name: 'Truck',         icon: LucideIcons.Truck },
+  { name: 'GraduationCap', icon: LucideIcons.GraduationCap },
+  { name: 'BookOpen',      icon: LucideIcons.BookOpen },
+  { name: 'Stethoscope',   icon: LucideIcons.Stethoscope },
+  { name: 'ChefHat',       icon: LucideIcons.ChefHat },
+  { name: 'Coffee',        icon: LucideIcons.Coffee },
+  { name: 'Hammer',        icon: LucideIcons.Hammer },
+  { name: 'Wrench',        icon: LucideIcons.Wrench },
+  { name: 'BarChart2',     icon: LucideIcons.BarChart2 },
+  { name: 'DollarSign',    icon: LucideIcons.DollarSign },
+  { name: 'Megaphone',     icon: LucideIcons.Megaphone },
+  { name: 'Mail',          icon: LucideIcons.Mail },
+  { name: 'Scissors',      icon: LucideIcons.Scissors },
+  { name: 'Palette',       icon: LucideIcons.Palette },
+  { name: 'Car',           icon: LucideIcons.Car },
+  { name: 'Music',         icon: LucideIcons.Music },
+  { name: 'Dumbbell',      icon: LucideIcons.Dumbbell },
+];
 
 interface Props {
   open: boolean;
@@ -29,6 +64,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('department');
+  const [icon, setIcon] = useState('MapPin');
 
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
@@ -38,10 +74,12 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
       setName(location.name);
       setDescription(location.description || '');
       setType(location.type);
+      setIcon((location.metadata?.icon as string) || 'MapPin');
     } else {
       setName('');
       setDescription('');
       setType('department');
+      setIcon('MapPin');
     }
   }, [location, open]);
 
@@ -52,7 +90,6 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
         toast.error('Error de sesión', {
           description: 'No se pudo identificar tu negocio. Por favor, recargá la página.',
         });
-        console.error('[SectorModal] No se puede crear/editar: businessId ausente');
       }
       return;
     }
@@ -62,6 +99,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
       description: description.trim() || undefined,
       type,
       businessId,
+      metadata: { icon },
     };
 
     if (location) {
@@ -75,20 +113,45 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const SelectedIcon = SECTOR_ICONS.find((i) => i.name === icon)?.icon ?? LucideIcons.MapPin;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" />
+            <SelectedIcon className="h-5 w-5 text-primary" />
             {location ? 'Editar Sector/Departamento' : 'Nuevo Sector/Departamento'}
           </DialogTitle>
           <DialogDescription>
-            {location ? 'Modificá la información del sector seleccionado.' : 'Completá los datos para crear un nuevo sector en tu negocio.'}
+            {location
+              ? 'Modificá la información del sector seleccionado.'
+              : 'Completá los datos para crear un nuevo sector en tu negocio.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Ícono</label>
+            <div className="grid grid-cols-10 gap-1 rounded-lg border p-2 bg-muted/20 max-h-32 overflow-y-auto">
+              {SECTOR_ICONS.map(({ name: iName, icon: Icon }) => (
+                <button
+                  key={iName}
+                  type="button"
+                  title={iName}
+                  onClick={() => setIcon(iName)}
+                  className={cn(
+                    'flex items-center justify-center rounded-md p-1.5 transition-colors',
+                    icon === iName
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Nombre</label>
             <Input

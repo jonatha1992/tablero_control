@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Location } from '@/types/domain/location';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { SECTOR_ICONS } from './sector-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,7 +67,12 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <MapPin className="h-5 w-5" />
+                  {(() => {
+                    const iconName = sector.metadata?.icon as string | undefined;
+                    const entry = SECTOR_ICONS.find((i) => i.name === iconName);
+                    const Icon = entry?.icon ?? MapPin;
+                    return <Icon className="h-5 w-5" />;
+                  })()}
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-semibold leading-none">{sector.name}</h3>

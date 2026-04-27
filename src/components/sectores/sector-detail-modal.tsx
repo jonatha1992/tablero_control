@@ -10,12 +10,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Edit2, Users } from 'lucide-react';
+import { Edit2, Users, X } from 'lucide-react';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { useRemoveMember } from '@/hooks/mutations/use-update-member';
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/constants/user';
 import { getInitials } from '@/lib/utils/string';
 import { cn } from '@/lib/utils';
 import type { Location } from '@/types/domain/location';
+import { SECTOR_ICONS } from './sector-modal';
+import { MapPin } from 'lucide-react';
 
 interface Props {
   sector: Location | null;
@@ -26,16 +29,21 @@ interface Props {
 
 export function SectorDetailModal({ sector, open, onClose, onEdit }: Props) {
   const { data: allMembers = [] } = useMembersQuery();
+  const removeMember = useRemoveMember();
   const members = allMembers.filter((m) => m.locationId === sector?.id);
 
   if (!sector) return null;
+
+  const iconName = sector.metadata?.icon as string | undefined;
+  const iconEntry = SECTOR_ICONS.find((i) => i.name === iconName);
+  const SectorIcon = iconEntry?.icon ?? MapPin;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-primary" />
+            <SectorIcon className="h-4 w-4 text-primary" />
             {sector.name}
           </DialogTitle>
           <DialogDescription>
@@ -92,6 +100,14 @@ export function SectorDetailModal({ sector, open, onClose, onEdit }: Props) {
                   )}>
                     {ROLE_LABELS[member.role]}
                   </span>
+                  <button
+                    onClick={() => removeMember.mutate(member.id)}
+                    disabled={removeMember.isPending}
+                    className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                    title="Quitar miembro del sector"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>

@@ -13,9 +13,11 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Plus, Filter, Settings2, CheckSquare, Trash2 } from 'lucide-react';
+import { Plus, Filter, Settings2, CheckSquare, Trash2, ChevronDown, MapPin } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { TASK_STATUS_LABELS } from '@/lib/constants/task';
+import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/lib/constants/task-colors';
+import { SECTOR_ICONS } from '@/components/sectores/sector-modal';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
@@ -180,31 +182,64 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 w-full">
       {/* Toolbar */}
-      <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b">
-        <select
-          value={filters.locationId}
-          onChange={(e) => setFilters({ locationId: e.target.value })}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <option value="">Todos los locales/sectores</option>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.name} ({loc.type})
-            </option>
-          ))}
-        </select>
+      <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
+        {/* Location filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background min-w-0 max-w-[200px]">
+              {(() => {
+                const loc = locations.find((l) => l.id === filters.locationId);
+                if (!loc) return <><span className="truncate">Todos los locales/sectores</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+                const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
+                const Icon = iconEntry?.icon ?? MapPin;
+                return <><Icon className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="truncate">{loc.name}</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+              })()}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[200px]">
+            <DropdownMenuItem onClick={() => setFilters({ locationId: '' })}>
+              <span className={cn('flex-1', !filters.locationId && 'font-medium')}>Todos los locales/sectores</span>
+            </DropdownMenuItem>
+            {locations.map((loc) => {
+              const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
+              const Icon = iconEntry?.icon ?? MapPin;
+              return (
+                <DropdownMenuItem key={loc.id} onClick={() => setFilters({ locationId: loc.id })}>
+                  <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                  <span className={cn('flex-1 truncate', filters.locationId === loc.id && 'font-medium')}>{loc.name}</span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <select
-          value={filters.priority}
-          onChange={(e) => setFilters({ priority: e.target.value as TaskPriority | '' })}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <option value="">Todas las prioridades</option>
-          <option value="urgent">Urgente</option>
-          <option value="high">Alta</option>
-          <option value="medium">Media</option>
-          <option value="low">Baja</option>
-        </select>
+        {/* Priority filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
+              {filters.priority ? (
+                <>
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
+                  <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
+                </>
+              ) : (
+                <span>Todas las prioridades</span>
+              )}
+              <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setFilters({ priority: '' as TaskPriority | '' })}>
+              <span className={cn('flex-1', !filters.priority && 'font-medium')}>Todas las prioridades</span>
+            </DropdownMenuItem>
+            {PRIORITY_OPTIONS.map((opt) => (
+              <DropdownMenuItem key={opt.value} onClick={() => setFilters({ priority: opt.value })}>
+                <span className={cn('h-2 w-2 rounded-full mr-2 shrink-0', opt.dot)} />
+                <span className={cn('flex-1', filters.priority === opt.value && 'font-medium')}>{opt.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent">
           <Filter className="h-4 w-4" />
@@ -213,7 +248,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
         <div className="flex-1" />
 
-        {/* Configurar Tablero — siempre visible */}
+        {/* Configurar Tablero */}
         <div className="relative">
           <button
             onClick={() => setIsConfigOpen(!isConfigOpen)}
@@ -227,17 +262,21 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             <div className="absolute top-full mt-2 right-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
               <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
               <div className="space-y-1">
-                {BOARD_COLUMNS.map((col) => (
-                  <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={activeColumns.includes(col)}
-                      onChange={() => toggleColumn(col)}
-                      className="rounded border-gray-300"
-                    />
-                    <span>{TASK_STATUS_LABELS[col]}</span>
-                  </label>
-                ))}
+                {BOARD_COLUMNS.map((col) => {
+                  const opt = STATUS_OPTIONS.find((o) => o.value === col);
+                  return (
+                    <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={activeColumns.includes(col)}
+                        onChange={() => toggleColumn(col)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
+                      <span>{TASK_STATUS_LABELS[col]}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}
