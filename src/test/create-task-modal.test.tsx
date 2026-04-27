@@ -33,6 +33,16 @@ vi.mock('@/hooks/auth-context', () => ({
   })),
 }));
 
+vi.mock('@/stores/kanban-ui.store', () => ({
+  useKanbanUIStore: vi.fn(() => ({
+    activeColumns: ['todo', 'in_progress', 'done'],
+  })),
+}));
+
+vi.mock('@/hooks/queries/use-locations-query', () => ({
+  useLocationsQuery: vi.fn(() => ({ data: [] })),
+}));
+
 const defaultProps = {
   open: true,
   onOpenChange: vi.fn(),
@@ -65,20 +75,17 @@ describe('CreateTaskModal', () => {
 
   it('estado por defecto es "todo"', () => {
     render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
-    const statusSelect = screen.getByDisplayValue('Por hacer');
-    expect(statusSelect).toBeInTheDocument();
+    expect(screen.getByText('Por hacer')).toBeInTheDocument();
   });
 
   it('prioridad por defecto es "medium"', () => {
     render(<CreateTaskModal {...defaultProps} />, { wrapper: createWrapper() });
-    const prioritySelect = screen.getByDisplayValue('Media');
-    expect(prioritySelect).toBeInTheDocument();
+    expect(screen.getByText('Media')).toBeInTheDocument();
   });
 
   it('defaultStatus prop se aplica correctamente', () => {
     render(<CreateTaskModal {...defaultProps} defaultStatus="in_progress" />, { wrapper: createWrapper() });
-    const statusSelect = screen.getByDisplayValue('En progreso');
-    expect(statusSelect).toBeInTheDocument();
+    expect(screen.getByText('En progreso')).toBeInTheDocument();
   });
 
   it('submit disabled si título vacío', () => {

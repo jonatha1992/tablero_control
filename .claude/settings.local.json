@@ -59,7 +59,29 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); mc=d.get\\('mcpServers',{}\\); [print\\(k,'→',v.get\\('type','stdio'\\), v.get\\('url',''\\), v.get\\('command',''\\)\\) for k,v in mc.items\\(\\)]\")",
       "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); const m=d.mcpServers||{}; Object.entries\\(m\\).forEach\\(\\([k,v]\\)=>console.log\\(k,JSON.stringify\\(v,null,2\\)\\)\\)\")",
       "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/Users/PC-ASUS/.claude.json','utf8'\\)\\); const m=d.mcpServers||{}; console.log\\(JSON.stringify\\(m,null,2\\)\\)\")",
+<<<<<<< HEAD
       "Bash(npx prisma *)"
+=======
+      "Bash(npx prisma *)",
+      "Bash(node -e \"const s=require\\('sharp'\\)\")",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_wait_for",
+      "Bash(node scripts/complete-mp-payment.js)",
+      "Bash(npx playwright *)",
+      "Bash(findstr /I \"DATABASE\")",
+      "Bash(npx dotenv *)",
+      "Bash(node -e \"require\\('dotenv'\\).config\\({path:'.env.local'}\\); const {execSync}=require\\('child_process'\\); execSync\\('npx prisma db push', {stdio:'inherit', env:process.env}\\);\")",
+      "Bash(node -e \"require\\('dotenv'\\).config\\({path:'.env.local'}\\); const {execSync}=require\\('child_process'\\); execSync\\('npx prisma db push --accept-data-loss', {stdio:'inherit', env:process.env}\\);\")",
+      "Bash(git log *)",
+      "Bash(npm install *)"
+>>>>>>> 7f084e3f2f34daade68a167974bf478b161d1561
     ]
   }
 }

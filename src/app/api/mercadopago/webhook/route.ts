@@ -16,7 +16,6 @@ function verifySignature(req: NextRequest, rawBody: string): boolean {
   // MP test notifications from dashboard may omit signature headers — allow through
   if (!xSig) return true;
 
-  // x-signature format: "ts=<epoch>,v1=<hex>"
   const tsMatch = xSig.match(/ts=([^,]+)/);
   const v1Match = xSig.match(/v1=([^,]+)/);
   if (!tsMatch || !v1Match) return false;
@@ -40,12 +39,24 @@ function verifySignature(req: NextRequest, rawBody: string): boolean {
   }
 }
 
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
 const MP_TO_INTERNAL: Record<string, SubscriptionStatus> = {
   authorized: 'active',
   paused: 'paused',
   cancelled: 'cancelled',
   pending: 'pending',
 };
+
+interface MpPayment {
+  id: string;
+  status: string;
+  transaction_amount: number;
+  external_reference?: string;
+  preapproval_id?: string;
+}
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -66,6 +77,7 @@ export async function POST(req: NextRequest) {
 
   if (!dataId) return NextResponse.json({ ok: true });
 
+  // Preapproval authorized/paused/cancelled — update subscription status + set initial period
   if (type === 'subscription_preapproval') {
     let preapproval;
     try {
@@ -79,9 +91,18 @@ export async function POST(req: NextRequest) {
     const status = MP_TO_INTERNAL[preapproval.status] ?? 'pending';
 
     try {
+      const now = new Date();
+      const periodDays = ref.frequency === 'yearly' ? 365 : 30;
+
+      const periodData = status === 'active' ? {
+        currentPeriodStart: now,
+        currentPeriodEnd: addDays(now, periodDays),
+        nextBillingDate: addDays(now, periodDays),
+      } : {};
+
       await prisma.subscription.updateMany({
-        where: { mpPreapprovalId: dataId },
-        data: { status, mpPayerId: preapproval.payer_id ?? null },
+        where: { mpPreferenceId: dataId },
+        data: { status, mpPayerId: preapproval.payer_id ?? null, ...periodData },
       });
 
       if (status === 'active') {
@@ -103,7 +124,7 @@ export async function POST(req: NextRequest) {
           actorId: 'system',
           actorRole: 'superadmin',
           businessId: ref.businessId,
-          action: 'subscription.update',
+          action: 'subscription.activated',
           targetType: 'subscription',
           targetId: dataId,
           metadata: { status, plan: ref.plan },
@@ -114,14 +135,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Payment — automatic charge or manual. Extend period + create invoice.
   if (type === 'payment') {
-    interface MpPayment {
-      id: string;
-      status: string;
-      transaction_amount: number;
-      external_reference?: string;
-      preapproval_id?: string;
-    }
     let payment: MpPayment;
     try {
       payment = await mpFetch<MpPayment>(`/v1/payments/${dataId}`);
@@ -133,15 +148,40 @@ export async function POST(req: NextRequest) {
 
     const invoiceStatus = payment.status === 'approved' ? 'paid'
       : payment.status === 'rejected' ? 'failed'
-      : 'pending';
+        : 'pending';
 
     try {
       const sub = await prisma.subscription.findFirst({
-        where: { mpPreapprovalId: payment.preapproval_id ?? '' },
+        where: { businessId: ref.businessId },
       });
 
       if (sub) {
-        const invoice = await prisma.invoice.create({
+        if (payment.status === 'approved') {
+          const now = new Date();
+          const periodDays = ref.frequency === 'yearly' ? 365 : 30;
+          // Extend from current end or from now if expired
+          const base = sub.currentPeriodEnd && sub.currentPeriodEnd > now
+            ? sub.currentPeriodEnd
+            : now;
+          const newEnd = addDays(base, periodDays);
+
+          await prisma.subscription.update({
+            where: { id: sub.id },
+            data: {
+              status: 'active',
+              currentPeriodStart: now,
+              currentPeriodEnd: newEnd,
+              nextBillingDate: newEnd,
+            },
+          });
+
+          await prisma.business.update({
+            where: { id: ref.businessId },
+            data: { status: 'active', plan: ref.plan },
+          });
+        }
+
+        await prisma.invoice.create({
           data: {
             subscriptionId: sub.id,
             businessId: ref.businessId,
@@ -159,7 +199,7 @@ export async function POST(req: NextRequest) {
           businessId: ref.businessId,
           action: invoiceStatus === 'paid' ? 'invoice.paid' : 'invoice.failed',
           targetType: 'invoice',
-          targetId: invoice.id,
+          targetId: sub.id,
           metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id },
         });
       }

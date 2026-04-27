@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserCog } from 'lucide-react';
+import { UserCog, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useUpdateMember } from '@/hooks/mutations/use-update-member';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { User, UserRole } from '@/types/domain/user';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
@@ -28,13 +29,15 @@ interface Props {
   member: User | null;
   open: boolean;
   onClose: () => void;
+  onRemove?: (id: string) => void;
 }
 
-export function EditMemberModal({ member, open, onClose }: Props) {
+export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('miembro');
   const [locationId, setLocationId] = useState<string>('');
   const [error, setError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { mutate, isPending } = useUpdateMember();
   const { data: locations = [] } = useLocationsQuery();
@@ -70,6 +73,7 @@ export function EditMemberModal({ member, open, onClose }: Props) {
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -145,16 +149,46 @@ export function EditMemberModal({ member, open, onClose }: Props) {
             </p>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Guardando...' : 'Guardar cambios'}
-            </Button>
+          <DialogFooter className="sm:justify-between">
+            {onRemove && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+                disabled={isPending}
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Eliminar miembro
+              </Button>
+            )}
+            <div className="flex gap-2 sm:ml-auto">
+              <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+
+    {member && onRemove && (
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        variant="destructive"
+        title={`¿Eliminar a ${member.name}?`}
+        description="El miembro perderá el acceso al equipo. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        onConfirm={() => {
+          onRemove(member.id);
+          setConfirmDelete(false);
+          onClose();
+        }}
+      />
+    )}
+    </>
   );
 }

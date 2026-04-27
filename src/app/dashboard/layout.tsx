@@ -18,18 +18,28 @@ export default function DashboardLayout({
 }) {
   const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { isCreateModalOpen, closeCreateModal, openCreateModal } = useKanbanUIStore();
 
   return (
     <ProtectedRoute>
       <div className="flex flex-1 h-full min-h-0 w-full flex-col">
         <div className="flex flex-1 min-h-0 min-w-0">
-          <Sidebar collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} />
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onCollapse={setSidebarCollapsed}
+            mobileOpen={mobileSidebarOpen}
+            onMobileOpenChange={setMobileSidebarOpen}
+          />
           <div className={cn(
             "flex flex-1 flex-col transition-all duration-300 ease-in-out min-h-0 min-w-0",
             sidebarCollapsed ? "lg:pl-16" : "lg:pl-56"
           )}>
-            <Header userName={user?.name} notificationCount={0} />
+            <Header
+              userName={user?.name}
+              notificationCount={0}
+              onMobileMenuOpen={() => setMobileSidebarOpen(true)}
+            />
             <main className="flex-1 overflow-auto p-4 flex flex-col relative min-h-0 min-w-0">
               {children}
             </main>
@@ -37,11 +47,11 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* FAB: crear tarea rápida */}
+        {/* FAB: crear tarea */}
         <button
           onClick={openCreateModal}
           className="fixed bottom-10 right-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all z-40"
-          title="Agregar una tarea rápidamente"
+          title="Crear tarea"
         >
           <Plus className="h-6 w-6" />
         </button>

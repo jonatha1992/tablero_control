@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
-import { getPreapproval, parseExternalReference } from '@/lib/mercadopago/preapproval';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
-import type { SubscriptionStatus } from '@/types/domain/subscription';
-
-const MP_TO_INTERNAL: Record<string, SubscriptionStatus> = {
-  authorized: 'active',
-  paused: 'paused',
-  cancelled: 'cancelled',
-  pending: 'pending',
-};
 
 export async function POST(req: NextRequest) {
   const user = await requireUser(req);
@@ -25,7 +16,6 @@ export async function POST(req: NextRequest) {
   if (!businessId) {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
   }
-
   if (user.role === 'admin' && user.businessId !== businessId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
@@ -33,18 +23,16 @@ export async function POST(req: NextRequest) {
   const sub = await prisma.subscription.findUnique({ where: { businessId } });
   if (!sub) return NextResponse.json({ error: 'no_subscription' }, { status: 404 });
 
-  if (!sub.mpPreapprovalId) {
-    return NextResponse.json({ status: sub.status, synced: false, reason: 'no_preapproval_id' });
-  }
+  const now = new Date();
+  let newStatus = sub.status;
 
-  let preapproval;
-  try {
-    preapproval = await getPreapproval(sub.mpPreapprovalId);
-  } catch (err) {
-    return NextResponse.json({ error: 'mp_api_error', detail: String(err) }, { status: 502 });
+  // Local period check — no MP API call needed for Checkout Pro
+  if (sub.status === 'active' && sub.currentPeriodEnd && sub.currentPeriodEnd < now) {
+    newStatus = 'past_due';
+  } else if (sub.status === 'past_due' && sub.currentPeriodEnd && sub.currentPeriodEnd >= now) {
+    // Shouldn't happen normally but defensive
+    newStatus = 'active';
   }
-
-  const newStatus = MP_TO_INTERNAL[preapproval.status] ?? 'pending';
 
   if (newStatus === sub.status) {
     return NextResponse.json({ status: newStatus, synced: false, reason: 'already_up_to_date' });
@@ -52,35 +40,24 @@ export async function POST(req: NextRequest) {
 
   await prisma.subscription.update({
     where: { id: sub.id },
-    data: { status: newStatus, mpPayerId: preapproval.payer_id ?? null },
+    data: { status: newStatus },
   });
 
-  if (newStatus === 'active') {
-    const ref = parseExternalReference(preapproval.external_reference);
-    if (ref) {
-      const flags: Record<string, boolean> = {
-        canExportReports: ref.plan !== 'free' && ref.plan !== 'basic',
-      };
-      await prisma.business.update({
-        where: { id: businessId },
-        data: {
-          plan: ref.plan,
-          status: 'active',
-          featureFlags: flags,
-          mpPayerId: preapproval.payer_id ?? null,
-        },
-      });
-    }
+  if (newStatus === 'past_due') {
+    await prisma.business.update({
+      where: { id: businessId },
+      data: { status: 'suspended' },
+    });
   }
 
   await writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,
     businessId,
-    action: 'subscription.update',
+    action: 'subscription.sync',
     targetType: 'subscription',
     targetId: sub.id,
-    metadata: { previousStatus: sub.status, newStatus, mpStatus: preapproval.status },
+    metadata: { previousStatus: sub.status, newStatus },
     ip: req.headers.get('x-forwarded-for') ?? undefined,
   });
 

@@ -6,8 +6,9 @@ import {
   Calendar,
   BarChart3,
   Shield,
-
   ArrowRight,
+  LogIn,
+  UserPlus,
 
   Bell,
   Globe,
@@ -25,12 +26,14 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login">
-              <span className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent">
+              <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent">
+                <LogIn className="h-4 w-4" />
                 Iniciar sesión
               </span>
             </Link>
             <Link href="/register">
-              <span className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                <UserPlus className="h-4 w-4" />
                 Registrarse
               </span>
             </Link>
@@ -245,7 +248,8 @@ export default function HomePage() {
                 </span>
               </Link>
               <Link href="/login">
-                <span className="inline-flex h-12 items-center justify-center rounded-lg border border-primary-foreground/30 px-8 text-base font-medium hover:bg-primary-foreground/10">
+                <span className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-primary-foreground/30 px-8 text-base font-medium hover:bg-primary-foreground/10">
+                  <LogIn className="h-5 w-5" />
                   Iniciar sesión
                 </span>
               </Link>

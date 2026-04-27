@@ -1,10 +1,11 @@
 'use client';
 
-import { MapPin, Edit2, Trash2, MoreVertical } from 'lucide-react';
+import { MapPin, Edit2, Trash2, MoreVertical, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Location } from '@/types/domain/location';
+import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +17,13 @@ interface Props {
   sectors: Location[];
   onEdit: (sector: Location) => void;
   onDelete: (id: string) => void;
+  onSelect: (sector: Location) => void;
   onCreate?: () => void;
   isLoading: boolean;
 }
 
-export function SectorList({ sectors, onEdit, onDelete, onCreate, isLoading }: Props) {
+export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLoading }: Props) {
+  const { data: allMembers = [] } = useMembersQuery();
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,8 +54,14 @@ export function SectorList({ sectors, onEdit, onDelete, onCreate, isLoading }: P
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {sectors.map((sector) => (
-        <Card key={sector.id} className="overflow-hidden border-border/50 bg-card/50 transition-all hover:border-primary/30 hover:bg-card">
+      {sectors.map((sector) => {
+        const memberCount = allMembers.filter((m) => m.locationId === sector.id).length;
+        return (
+        <Card
+          key={sector.id}
+          className="overflow-hidden border-border/50 bg-card/50 transition-all hover:border-primary/30 hover:bg-card cursor-pointer"
+          onClick={() => onSelect(sector)}
+        >
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
@@ -69,18 +78,18 @@ export function SectorList({ sectors, onEdit, onDelete, onCreate, isLoading }: P
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(sector)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(sector); }}>
                     <Edit2 className="mr-2 h-4 w-4" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => onDelete(sector.id)}
+                    onClick={(e) => { e.stopPropagation(); onDelete(sector.id); }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Eliminar
@@ -109,13 +118,15 @@ export function SectorList({ sectors, onEdit, onDelete, onCreate, isLoading }: P
                   </span>
                 )}
               </span>
-              <span className="text-[10px] text-muted-foreground/60 font-mono">
-                {sector.id.slice(0, 8)}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Users className="h-3 w-3" />
+                {memberCount} miembro{memberCount !== 1 ? 's' : ''}
               </span>
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  if (sub.mpPreapprovalId) {
-    try { await cancelPreapproval(sub.mpPreapprovalId); } catch { /* MP error non-fatal — still cancel in DB */ }
+  if (sub.mpPreferenceId) {
+    try { await cancelPreapproval(sub.mpPreferenceId); } catch { /* MP may already be cancelled */ }
   }
 
   await prisma.subscription.update({

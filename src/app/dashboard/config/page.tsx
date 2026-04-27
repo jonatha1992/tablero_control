@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { auth } from '@/lib/firebase/client';
+import { resetPassword } from '@/lib/firebase/auth';
 
 export default function ConfigPage() {
   const { user } = useAuth();
@@ -18,6 +18,38 @@ export default function ConfigPage() {
   const [activeTab, setActiveTab] = useState('perfil');
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
+  const [resetState, setResetState] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [saveState, setSaveState] = useState<'idle' | 'loading' | 'saved' | 'error'>('idle');
+
+  const handleSave = useCallback(async () => {
+    if (saveState === 'loading') return;
+    setSaveState('loading');
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+      });
+      setSaveState(res.ok ? 'saved' : 'error');
+      if (res.ok) setTimeout(() => setSaveState('idle'), 2500);
+    } catch {
+      setSaveState('error');
+    }
+  }, [saveState, name, phone]);
+
+  const handleResetPassword = useCallback(async () => {
+    if (!user?.email || resetState === 'loading' || resetState === 'sent') return;
+    setResetState('loading');
+    try {
+      await resetPassword(user.email);
+      setResetState('sent');
+    } catch {
+      setResetState('error');
+    }
+  }, [user?.email, resetState]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,14 +102,6 @@ export default function ConfigPage() {
           <TabsTrigger value="notificaciones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
             <Bell className="h-4 w-4 mr-2" /> Notificaciones
           </TabsTrigger>
-          {(user?.role === 'admin' || user?.role === 'superadmin') && (
-            <Link
-              href="/dashboard/config/roles"
-              className="flex items-center gap-2 px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ShieldCheck className="h-4 w-4" /> Roles y permisos
-            </Link>
-          )}
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">
@@ -92,8 +116,8 @@ export default function ConfigPage() {
                 <div className="flex items-center gap-6">
                   <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
                     <div className="w-20 h-20 rounded-full bg-primary/10 overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-all relative">
-                      {avatarUrl ? (
-                        <Image src={avatarUrl} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" unoptimized />
+                      {(avatarUrl || user?.avatar) ? (
+                        <Image src={avatarUrl || user!.avatar!} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" unoptimized />
                       ) : (
                         <span className="text-2xl font-bold uppercase">{user?.name?.substring(0, 2) || 'TC'}</span>
                       )}
@@ -121,15 +145,15 @@ export default function ConfigPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Nombre Completo</label>
-                    <input type="text" defaultValue={user?.name || ''} className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Correo Electrónico</label>
-                    <input type="email" disabled defaultValue={user?.email || ''} className="w-full h-9 rounded-md border bg-muted px-3 py-1 text-sm opacity-50 cursor-not-allowed" />
+                    <input type="email" disabled value={user?.email || ''} readOnly className="w-full h-9 rounded-md border bg-muted px-3 py-1 text-sm opacity-50 cursor-not-allowed" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Teléfono</label>
-                    <input type="tel" defaultValue={user?.phone || ''} placeholder="+54 11 1234-5678" className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+54 11 1234-5678" className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Rol Asignado</label>
@@ -137,8 +161,20 @@ export default function ConfigPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="border-t bg-muted/20 py-3">
-                <Button size="sm">Guardar cambios</Button>
+              <CardFooter className="border-t bg-muted/20 py-3 flex items-center gap-3">
+                <Button size="sm" onClick={handleSave} disabled={saveState === 'loading'}>
+                  {saveState === 'loading' ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+                {saveState === 'saved' && (
+                  <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Guardado
+                  </span>
+                )}
+                {saveState === 'error' && (
+                  <span className="flex items-center gap-1 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5" /> Error al guardar
+                  </span>
+                )}
               </CardFooter>
             </Card>
 
@@ -147,10 +183,30 @@ export default function ConfigPage() {
                 <CardTitle className="text-base font-semibold flex items-center text-destructive"><Shield className="h-4 w-4 mr-2" /> Seguridad</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Si deseas cambiar tu contraseña, se te enviará un correo de recuperación.</p>
+                <p className="text-xs text-muted-foreground">
+                  Si deseas cambiar tu contraseña, se te enviará un correo de recuperación a <strong>{user?.email}</strong>.
+                </p>
+                {resetState === 'sent' && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Correo enviado. Revisá tu bandeja de entrada.
+                  </p>
+                )}
+                {resetState === 'error' && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5" /> No se pudo enviar el correo. Intentá de nuevo.
+                  </p>
+                )}
               </CardContent>
               <CardFooter>
-                <Button variant="outline" size="sm" className="text-destructive">Restablecer contraseña</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={handleResetPassword}
+                  disabled={resetState === 'loading' || resetState === 'sent'}
+                >
+                  {resetState === 'loading' ? 'Enviando...' : resetState === 'sent' ? 'Correo enviado' : 'Restablecer contraseña'}
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>

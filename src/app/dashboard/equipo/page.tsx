@@ -108,8 +108,8 @@ export default function EquipoPage() {
             <MemberCard
               key={member.id}
               member={member}
-              onRemove={(id) => removeMember.mutate(id)}
-              canManage
+              onRemove={isAdmin ? (id) => removeMember.mutate(id) : undefined}
+              canManage={isAdmin}
             />
           ))}
         </div>
