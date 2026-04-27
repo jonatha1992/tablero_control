@@ -227,8 +227,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                 micState === 'recording'
                   ? 'bg-red-500 text-white animate-pulse'
                   : micState === 'processing'
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                    : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
               )}
             >
               {micState === 'processing' ? (

@@ -182,140 +182,108 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 w-full">
       {/* Toolbar */}
-<<<<<<< HEAD
-<<<<<<< HEAD
-  <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b">
-    <select
-      value={filters.locationId}
-      onChange={(e) => setFilters({ locationId: e.target.value })}
-      className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <option value="">Todos los locales/sectores</option>
-      {locations.map((loc) => (
-        <option key={loc.id} value={loc.id}>
-          {loc.name} ({loc.type})
-        </option>
-      ))}
-    </select>
-
-    <select
-      value={filters.priority}
-      onChange={(e) => setFilters({ priority: e.target.value as TaskPriority | '' })}
-      className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <option value="">Todas las prioridades</option>
-      <option value="urgent">Urgente</option>
-      <option value="high">Alta</option>
-      <option value="medium">Media</option>
-      <option value="low">Baja</option>
-    </select>
-=======
-=======
->>>>>>> 4a26250ad1adc41a5053b984b9943223fd93bd03
-    <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
-      {/* Location filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background min-w-0 max-w-[200px]">
-            {(() => {
-              const loc = locations.find((l) => l.id === filters.locationId);
-              if (!loc) return <><span className="truncate">Todos los locales/sectores</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+      <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
+        {/* Location filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background min-w-0 max-w-[200px]">
+              {(() => {
+                const loc = locations.find((l) => l.id === filters.locationId);
+                if (!loc) return <><span className="truncate">Todos los locales/sectores</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+                const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
+                const Icon = iconEntry?.icon ?? MapPin;
+                return <><Icon className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="truncate">{loc.name}</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+              })()}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[200px]">
+            <DropdownMenuItem onClick={() => setFilters({ locationId: '' })}>
+              <span className={cn('flex-1', !filters.locationId && 'font-medium')}>Todos los locales/sectores</span>
+            </DropdownMenuItem>
+            {locations.map((loc) => {
               const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
               const Icon = iconEntry?.icon ?? MapPin;
-              return <><Icon className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="truncate">{loc.name}</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
-            })()}
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-[200px]">
-          <DropdownMenuItem onClick={() => setFilters({ locationId: '' })}>
-            <span className={cn('flex-1', !filters.locationId && 'font-medium')}>Todos los locales/sectores</span>
-          </DropdownMenuItem>
-          {locations.map((loc) => {
-            const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
-            const Icon = iconEntry?.icon ?? MapPin;
-            return (
-              <DropdownMenuItem key={loc.id} onClick={() => setFilters({ locationId: loc.id })}>
-                <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
-                <span className={cn('flex-1 truncate', filters.locationId === loc.id && 'font-medium')}>{loc.name}</span>
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+              return (
+                <DropdownMenuItem key={loc.id} onClick={() => setFilters({ locationId: loc.id })}>
+                  <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                  <span className={cn('flex-1 truncate', filters.locationId === loc.id && 'font-medium')}>{loc.name}</span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      {/* Priority filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
-            {filters.priority ? (
-              <>
-                <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
-                <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
-              </>
-            ) : (
-              <span>Todas las prioridades</span>
-            )}
-            <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => setFilters({ priority: '' as TaskPriority | '' })}>
-            <span className={cn('flex-1', !filters.priority && 'font-medium')}>Todas las prioridades</span>
-          </DropdownMenuItem>
-          {PRIORITY_OPTIONS.map((opt) => (
-            <DropdownMenuItem key={opt.value} onClick={() => setFilters({ priority: opt.value })}>
-              <span className={cn('h-2 w-2 rounded-full mr-2 shrink-0', opt.dot)} />
-              <span className={cn('flex-1', filters.priority === opt.value && 'font-medium')}>{opt.label}</span>
+        {/* Priority filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
+              {filters.priority ? (
+                <>
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
+                  <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
+                </>
+              ) : (
+                <span>Todas las prioridades</span>
+              )}
+              <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setFilters({ priority: '' as TaskPriority | '' })}>
+              <span className={cn('flex-1', !filters.priority && 'font-medium')}>Todas las prioridades</span>
             </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
->>>>>>> 4a26250ad1adc41a5053b984b9943223fd93bd03
+            {PRIORITY_OPTIONS.map((opt) => (
+              <DropdownMenuItem key={opt.value} onClick={() => setFilters({ priority: opt.value })}>
+                <span className={cn('h-2 w-2 rounded-full mr-2 shrink-0', opt.dot)} />
+                <span className={cn('flex-1', filters.priority === opt.value && 'font-medium')}>{opt.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent">
-        <Filter className="h-4 w-4" />
-        Más filtros
-      </button>
-
-      <div className="flex-1" />
-
-      {/* Configurar Tablero */}
-      <div className="relative">
-        <button
-          onClick={() => setIsConfigOpen(!isConfigOpen)}
-          className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
-        >
-          <Settings2 className="h-4 w-4" />
-          Configurar Tablero
+        <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent">
+          <Filter className="h-4 w-4" />
+          Más filtros
         </button>
 
-        {isConfigOpen && (
-          <div className="absolute top-full mt-2 right-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
-            <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
-            <div className="space-y-1">
-              {BOARD_COLUMNS.map((col) => {
-                const opt = STATUS_OPTIONS.find((o) => o.value === col);
-                return (
-                  <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={activeColumns.includes(col)}
-                      onChange={() => toggleColumn(col)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
-                    <span>{TASK_STATUS_LABELS[col]}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+        <div className="flex-1" />
 
-      {/* Selección / bulk actions — cambia según el modo */}
-      {
-        isSelectMode ? (
+        {/* Configurar Tablero */}
+        <div className="relative">
+          <button
+            onClick={() => setIsConfigOpen(!isConfigOpen)}
+            className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
+          >
+            <Settings2 className="h-4 w-4" />
+            Configurar Tablero
+          </button>
+
+          {isConfigOpen && (
+            <div className="absolute top-full mt-2 right-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
+              <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
+              <div className="space-y-1">
+                {BOARD_COLUMNS.map((col) => {
+                  const opt = STATUS_OPTIONS.find((o) => o.value === col);
+                  return (
+                    <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={activeColumns.includes(col)}
+                        onChange={() => toggleColumn(col)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
+                      <span>{TASK_STATUS_LABELS[col]}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Selección / bulk actions */}
+        {isSelectMode ? (
           <div className="flex items-center gap-2">
             <div className={cn(
               'flex items-center gap-2 rounded-lg border h-9 px-3 transition-colors',
@@ -397,96 +365,93 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               </button>
             )}
           </div>
-        )
-      }
-    </div >
-
-    {/* Board */}
-    < DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-4 overflow-x-auto pb-2 pt-1 flex-1 min-h-0 min-w-0 w-full overflow-y-hidden">
-        {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
-          <KanbanColumn
-            key={column}
-            status={column}
-            tasks={columns[column]}
-            onCardClick={(task) => {
-              if (isSelectMode) toggleTaskSelection(task.id);
-              else openTaskDetail(task.id);
-            }}
-            onPriorityChange={handlePriorityChange}
-            onAddClick={openCreateModal}
-            selectedTaskIds={selectedTaskIds}
-            isSelectMode={isSelectMode}
-            onSelectAll={selectAllInColumn}
-            onBulkDelete={requestDelete}
-          />
-        ))}
+        )}
       </div>
 
-      <DragOverlay>
-        {activeTask ? (
-          <div className="rotate-3 shadow-xl">
-            <KanbanCard
-              task={activeTask}
-              isOverlay
-              column={activeTask.status}
-              onMove={() => { }}
-              onPriorityChange={() => { }}
-              onClick={() => { }}
-              isSelected={false}
-              isSelectMode={false}
+      {/* Board */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-2 pt-1 flex-1 min-h-0 min-w-0 w-full overflow-y-hidden">
+          {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
+            <KanbanColumn
+              key={column}
+              status={column}
+              tasks={columns[column]}
+              onCardClick={(task) => {
+                if (isSelectMode) toggleTaskSelection(task.id);
+                else openTaskDetail(task.id);
+              }}
+              onPriorityChange={handlePriorityChange}
+              onAddClick={openCreateModal}
+              selectedTaskIds={selectedTaskIds}
+              isSelectMode={isSelectMode}
+              onSelectAll={selectAllInColumn}
+              onBulkDelete={requestDelete}
             />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext >
+          ))}
+        </div>
 
+        <DragOverlay>
+          {activeTask ? (
+            <div className="rotate-3 shadow-xl">
+              <KanbanCard
+                task={activeTask}
+                isOverlay
+                column={activeTask.status}
+                onMove={() => { }}
+                onPriorityChange={() => { }}
+                onClick={() => { }}
+                isSelected={false}
+                isSelectMode={false}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
-    {/* Confirm delete */}
-    < Dialog open={pendingDelete !== null
-    } onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>¿Eliminar {pendingDelete?.length ?? 0} tarea{(pendingDelete?.length ?? 0) !== 1 ? 's' : ''}?</DialogTitle>
-          <DialogDescription>
-            Esta acción no se puede deshacer. Las tareas eliminadas no se pueden recuperar.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <button
-            onClick={() => setPendingDelete(null)}
-            className="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md border border-input hover:bg-accent transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={confirmDelete}
-            disabled={bulkDelete.isPending}
-            className="inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
-          >
-            {bulkDelete.isPending ? 'Eliminando…' : 'Eliminar'}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog >
+      {/* Confirm delete */}
+      <Dialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar {pendingDelete?.length ?? 0} tarea{(pendingDelete?.length ?? 0) !== 1 ? 's' : ''}?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. Las tareas eliminadas no se pueden recuperar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              onClick={() => setPendingDelete(null)}
+              className="inline-flex items-center justify-center h-9 px-4 text-sm rounded-md border border-input hover:bg-accent transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={confirmDelete}
+              disabled={bulkDelete.isPending}
+              className="inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+            >
+              {bulkDelete.isPending ? 'Eliminando…' : 'Eliminar'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-    <TaskDetailModal
-      task={selectedTask}
-      open={isDetailModalOpen}
-      onOpenChange={(open) => { if (!open) closeTaskDetail(); }}
-    />
+      <TaskDetailModal
+        task={selectedTask}
+        open={isDetailModalOpen}
+        onOpenChange={(open) => { if (!open) closeTaskDetail(); }}
+      />
 
-    <CreateTaskModal
-      open={isCreateModalOpen}
-      onOpenChange={(open) => {
-        if (!open) closeCreateModal();
-      }}
-    />
-  </div >
+      <CreateTaskModal
+        open={isCreateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCreateModal();
+        }}
+      />
+    </div>
   );
 }

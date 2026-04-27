@@ -80,27 +80,6 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                       {sector.type}
                     </Badge>
                   </div>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(sector); }}>
-                        <Edit2 className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); onDelete(sector.id); }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Eliminar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
 
                 <DropdownMenu>
