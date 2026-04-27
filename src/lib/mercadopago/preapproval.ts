@@ -6,7 +6,7 @@ export interface MpPreapproval {
   id: string;
   status: 'pending' | 'authorized' | 'paused' | 'cancelled';
   init_point: string;
-  payer_id?: string;
+  payer_id?: number | string | null;
   payer_email?: string;
   auto_recurring?: {
     frequency: number;

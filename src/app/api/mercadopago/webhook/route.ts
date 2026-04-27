@@ -101,9 +101,11 @@ export async function POST(req: NextRequest) {
         nextBillingDate: addDays(now, periodDays),
       } : {};
 
+      const mpPayerIdStr = preapproval.payer_id != null ? String(preapproval.payer_id) : null;
+
       await prisma.subscription.updateMany({
         where: { mpPreferenceId: dataId },
-        data: { status, mpPayerId: preapproval.payer_id ?? null, ...periodData },
+        data: { status, mpPayerId: mpPayerIdStr, ...periodData },
       });
 
       if (status === 'active') {
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
             plan: ref.plan,
             status: 'active',
             featureFlags: flags,
-            mpPayerId: preapproval.payer_id ?? null,
+            mpPayerId: mpPayerIdStr,
           },
         });
 
