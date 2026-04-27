@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'user_email_required' }, { status: 400 });
   }
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get('origin') ?? 'http://localhost:3000';
+  const origin = process.env.MP_CALLBACK_URL
+    ?? (process.env.NEXT_PUBLIC_APP_URL?.startsWith('http://localhost') ? null : process.env.NEXT_PUBLIC_APP_URL)
+    ?? req.headers.get('origin')
+    ?? 'http://localhost:3000';
   const backUrl = `${origin}/dashboard/billing?status=pending`;
 
   // Cancel existing preapproval in MP before creating a new one (best effort)
@@ -34,13 +37,22 @@ export async function POST(req: NextRequest) {
     try { await cancelPreapproval(existing.mpPreferenceId); } catch { /* MP may already be cancelled */ }
   }
 
-  const preapproval = await createPreapproval({
-    plan,
-    frequency,
-    payerEmail: user.email,
-    businessId,
-    backUrl,
-  });
+  const payerEmail = process.env.MP_TEST_PAYER_EMAIL ?? user.email;
+
+  let preapproval;
+  try {
+    preapproval = await createPreapproval({
+      plan,
+      frequency,
+      payerEmail,
+      businessId,
+      backUrl,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[preapproval] MP error:', msg);
+    return NextResponse.json({ error: 'mp_error', detail: msg }, { status: 502 });
+  }
 
   const sub = await prisma.subscription.upsert({
     where: { businessId },
