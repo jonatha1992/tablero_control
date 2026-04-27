@@ -105,6 +105,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [type, setType] = useState<TaskType>('task');
   const [tags, setTags] = useState('');
   const [dueDate, setDueDate] = useState(defaultDueDate ?? today);
+  const [dueTime, setDueTime] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [locationId, setLocationId] = useState<string>('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -127,7 +128,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   const reset = () => {
     setTitle(''); setDescription(''); setTags('');
-    setDueDate(defaultDueDate ?? today); setAssigneeIds([]);
+    setDueDate(defaultDueDate ?? today); setDueTime(''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
     setLocationId('');
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
@@ -200,7 +201,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         assigneeIds,
         locationId: locationId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-        dueDate: dueDate ? new Date(dueDate) : undefined,
+        dueDate: dueDate ? new Date(`${dueDate}T${dueTime || '00:00'}`) : undefined,
         recurrence: isRecurring ? {
           frequency,
           interval,
@@ -347,13 +348,21 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium mb-1 block">Fecha límite</label>
-              <input
-                type="date"
-                value={dueDate}
-                min={today}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={dueDate}
+                  min={today}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                <input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  className="flex h-10 w-24 rounded-md border border-input bg-background px-2 py-2 text-sm"
+                />
+              </div>
             </div>
 
             <div>

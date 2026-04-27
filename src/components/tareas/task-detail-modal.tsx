@@ -35,6 +35,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editDueTime, setEditDueTime] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
   const [interval, setIntervalValue] = useState(1);
@@ -50,18 +52,19 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   const handleSave = () => {
     updateTask.mutate(
-      { 
-        id: task.id, 
-        data: { 
-          title, 
+      {
+        id: task.id,
+        data: {
+          title,
           description,
-          recurrence: isRecurring ? { 
-            frequency, 
+          dueDate: editDueDate ? new Date(`${editDueDate}T${editDueTime || '00:00'}`) : undefined,
+          recurrence: isRecurring ? {
+            frequency,
             interval,
             dayOfWeek: frequency === 'weekly' ? dayOfWeek : undefined,
             dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined
           } : undefined
-        } 
+        }
       },
       { onSuccess: () => setEditing(false) }
     );
@@ -133,6 +136,24 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   className="w-full text-sm bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
                   rows={4}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fecha límite</label>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  />
+                  <input
+                    type="time"
+                    value={editDueTime}
+                    onChange={(e) => setEditDueTime(e.target.value)}
+                    className="flex h-9 w-24 rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 border-t border-border">
@@ -226,15 +247,20 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => { 
-                  setTitle(task.title); 
-                  setDescription(task.description); 
+                onClick={() => {
+                  setTitle(task.title);
+                  setDescription(task.description);
+                  const d = task.dueDate ? new Date(task.dueDate) : null;
+                  setEditDueDate(d ? d.toISOString().split('T')[0] : '');
+                  const h = d ? d.getHours() : 0;
+                  const m = d ? d.getMinutes() : 0;
+                  setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
                   setIsRecurring(!!task.recurrence);
                   setFrequency(task.recurrence?.frequency ?? 'weekly');
                   setIntervalValue(task.recurrence?.interval ?? 1);
                   setDayOfWeek(task.recurrence?.dayOfWeek);
                   setDayOfMonth(task.recurrence?.dayOfMonth);
-                  setEditing(true); 
+                  setEditing(true);
                 }}
               >
                 Editar
@@ -288,6 +314,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
               <p className="text-sm">
                 {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
               </p>
             </div>
           )}

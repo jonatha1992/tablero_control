@@ -16,7 +16,8 @@ export function useCreateLocation() {
         description: `"${variables.name}" fue creado exitosamente.`,
       });
     },
-    onError: () => {
+    onError: (err: Error) => {
+      if (err.message === 'locations_limit_exceeded') return;
       toast.error('Error al crear sector', {
         description: 'Verificá los datos e intentá nuevamente.',
       });

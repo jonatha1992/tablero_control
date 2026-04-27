@@ -262,6 +262,7 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
               <Clock className="h-3 w-3" />
               <span>
                 {new Date(task.dueDate).toLocaleDateString('es', { month: 'short', day: 'numeric' })}
+                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? ` ${d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}` : null; })()}
               </span>
             </div>
           )}

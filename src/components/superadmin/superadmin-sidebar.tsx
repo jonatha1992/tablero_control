@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard, Building2, Users, CreditCard, ScrollText, LogOut,
+  LayoutDashboard, Building2, Users, CreditCard, ScrollText, LogOut, SlidersHorizontal,
 } from 'lucide-react';
 import { logout as signOut } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ const NAV = [
   { href: '/superadmin/users',        label: 'Usuarios',      icon: Users },
   { href: '/superadmin/subscriptions',label: 'Suscripciones', icon: CreditCard },
   { href: '/superadmin/audit',        label: 'Auditoría',     icon: ScrollText },
+  { href: '/superadmin/planes',       label: 'Planes',        icon: SlidersHorizontal },
 ];
 
 export function SuperadminSidebar() {

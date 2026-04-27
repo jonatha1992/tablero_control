@@ -29,9 +29,16 @@ async function createUserViaApi(input: CreateUserInput): Promise<CreateUserResul
   });
 
   if (!res.ok) {
-    const { error } = await res.json().catch(() => ({ error: 'unknown' }));
+    const data = await res.json().catch(() => ({ error: 'unknown' }));
+    const { error } = data as { error: string; limit?: number; current?: number };
     if (error === 'email_already_exists') throw new Error('El email ya está registrado');
     if (error === 'forbidden') throw new Error('Sin permisos para crear este tipo de usuario');
+    if (error === 'members_limit_exceeded') {
+      const err = new Error('members_limit_exceeded') as Error & { limit?: number; current?: number };
+      err.limit = (data as { limit?: number }).limit;
+      err.current = (data as { current?: number }).current;
+      throw err;
+    }
     throw new Error('No se pudo crear el usuario');
   }
 

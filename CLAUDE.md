@@ -74,6 +74,9 @@ API Route (src/app/api/**/route.ts)
 src/app/
 ├── (auth)/           # login, register — sin sidebar
 ├── (superadmin)/     # panel TecnoFusión — layout propio con superadmin-sidebar
+│   └── superadmin/
+│       ├── planes/   # configuración de precios y límites de planes
+│       ├── businesses/, users/, subscriptions/, audit/
 ├── dashboard/        # app principal — layout con Sidebar + Header
 │   ├── tareas/       # Kanban board
 │   ├── equipo/       # gestión de miembros
@@ -81,7 +84,10 @@ src/app/
 │   ├── calendario/
 │   ├── billing/
 │   └── config/
-└── api/              # API routes (business/, locations/, members/, tasks/, superadmin/, etc.)
+└── api/              # API routes
+    ├── planes/        # GET público — lista planes efectivos (desde DB)
+    ├── superadmin/planes/  # GET+PATCH — edición de planes (solo superadmin)
+    ├── business/, locations/, members/, tasks/, superadmin/, etc.
 ```
 
 El layout de `dashboard/` es `'use client'` y usa `ProtectedRoute` + `useAuth()`. Las páginas dentro pueden ser Server Components.
@@ -119,5 +125,8 @@ Nomenclatura: `api-*.test.ts` para API routes, `hooks-*.test.ts` para hooks, `*.
 - Prisma client: singleton en `src/lib/prisma.ts`, importar desde ahí
 - Repositories: siempre importar singletons desde `src/repositories/index.ts`
 - Emails: `src/lib/mail/` (templates) + `src/lib/resend.ts` (cliente Resend)
-- Pagos: `src/lib/mercadopago/` — `plans.ts` (definición de planes) + `preapproval.ts`; API client: `src/lib/api/billing.ts` (`billingApi`)
+- Pagos: `src/lib/mercadopago/` — `plans.ts` (definición estática de planes) + `plan-config.ts` (lee overrides desde DB, fallback a `plans.ts`) + `preapproval.ts`; API client: `src/lib/api/billing.ts` (`billingApi`)
+- Planes DB: modelo `PlanConfig` en Prisma — una fila por plan (`free/basic/pro/enterprise`). Seed: `npx tsx prisma/seed-plan-config.ts`. Superadmin edita desde `/superadmin/planes`. Los componentes de billing (`billing-plan-cards.tsx`) leen precios/límites desde `GET /api/planes` (dinámico). `getEffectivePlanConfig(planId)` y `getAllEffectivePlanConfigs()` son los helpers server-side.
+- Límite de usuarios por plan: enforcement en `src/app/api/users/create/route.ts` — retorna `{ error: 'members_limit_exceeded', limit, current }` con status 429 cuando se supera el límite. El modal `create-user-modal.tsx` muestra un bloque de upgrade con link a `/dashboard/billing`.
+- Tareas con hora: `dueDate` es `DateTime` en Prisma (incluye hora). La UI tiene inputs `date` + `time` separados; se combinan como `new Date(\`YYYY-MM-DDT HH:mm\`)`. La hora se muestra en kanban card y detail modal solo si ≠ medianoche local.
 - Uploads: `src/lib/cloudinary/` — `upload.ts` + `config.ts`

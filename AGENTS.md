@@ -74,6 +74,8 @@ src/
 ├── app/                    # Next.js App Router (page.tsx, layout.tsx, route.ts)
 │   ├── (auth)/             # Login, Register — sin sidebar
 │   ├── (superadmin)/       # Panel TecnoFusión — layout propio
+│   │   └── superadmin/
+│   │       └── planes/     # Edición de precios y límites por plan
 │   ├── dashboard/          # App principal con Sidebar + Header
 │   │   ├── tareas/         # Kanban board
 │   │   ├── equipo/         # Gestión de miembros
@@ -81,6 +83,7 @@ src/
 │   │   ├── calendario/
 │   │   ├── billing/
 │   │   └── config/
+│   ├── planes/             # GET público — planes efectivos desde DB
 │   └── api/                # API routes (auth, tasks, members, locations, superadmin, mercadopago, upload, etc.)
 │
 ├── components/
@@ -128,7 +131,7 @@ src/
 ├── lib/
 │   ├── firebase/           # Drivers de infraestructura (client.ts, admin.ts, auth.ts, firestore.ts, storage.ts)
 │   ├── cloudinary/         # Upload de archivos (server-side)
-│   ├── mercadopago/        # Cliente MP, planes, preapproval
+│   ├── mercadopago/        # Cliente MP — plans.ts (estático), plan-config.ts (DB), preapproval.ts
 │   ├── groq/               # Cliente Groq, transcribe, extract-tasks
 │   ├── mail/               # Templates React Email (welcome, reset-password, team-invite)
 │   ├── resend.ts           # Cliente Resend
@@ -245,9 +248,14 @@ npx playwright test      # Ejecuta tests en tests/
 - Templates en `src/lib/mail/templates/` usando React Email.
 - Cliente Resend en `src/lib/resend.ts`.
 
-### Pagos
-- Configuración de planes en `src/lib/mercadopago/plans.ts`.
-- Preapproval y webhook en `src/lib/mercadopago/preapproval.ts`.
+### Pagos y planes
+- **Definición estática:** `src/lib/mercadopago/plans.ts` — valores base (fallback cuando no hay fila en DB).
+- **Configuración dinámica (DB):** tabla `PlanConfig` en PostgreSQL. Superadmin edita desde `/superadmin/planes`. Usar siempre `getEffectivePlanConfig(planId)` o `getAllEffectivePlanConfigs()` (en `src/lib/mercadopago/plan-config.ts`) en server-side — nunca leer `PLANS` directamente si hay datos de plan.
+- **API pública de planes:** `GET /api/planes` (sin auth) — retorna planes efectivos para componentes de billing.
+- **API superadmin:** `GET+PATCH /api/superadmin/planes` — requiere `role = 'superadmin'`.
+- **Enforcement de límites:** `POST /api/users/create` verifica `PlanConfig.limitUsers` antes de crear. Retorna `429 { error: 'members_limit_exceeded', limit, current }` si se supera. Skip para superadmin.
+- **Preapproval y webhook:** `src/lib/mercadopago/preapproval.ts`.
+- **API client (browser):** `billingApi` en `src/lib/api/billing.ts` — incluye `getPlans()`, `createPreapproval()`, `cancelSubscription()`, `syncSubscription()`, `recoverSubscription()`.
 
 ---
 

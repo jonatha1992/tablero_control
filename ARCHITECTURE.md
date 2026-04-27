@@ -15,9 +15,13 @@ SaaS multi-tenant de gestión de tareas y proyectos. Arquitectura en capas dise�
 | Estilos | Tailwind CSS 4 + Radix UI |
 | Estado UI | Zustand 5 |
 | Estado servidor | React Query 5 |
-| Backend | Firebase (Auth + Firestore + Storage) |
-| Almacenamiento archivos | Cloudinary |
-| Tests | Vitest + Testing Library + Firebase Emulator |
+| Auth | Firebase Auth (Admin SDK en server, client SDK en `'use client'`) |
+| Base de datos principal | PostgreSQL + Prisma ORM (`@prisma/adapter-pg`) |
+| Archivos | Cloudinary |
+| Pagos | MercadoPago Preapproval API |
+| Email | Resend + React Email |
+| IA / Audio | Groq SDK |
+| Tests | Vitest + Testing Library + jsdom |
 
 ---
 
@@ -31,9 +35,20 @@ hooks/stores                        ← Zustand (UI state)
       ↓  (llama a)
 services/                           ← lógica de negocio
       ↓  (llama a)
-repositories/                       ← acceso a datos
+repositories/                       ← acceso a datos (interfaces)
       ↓  (llama a)
-lib/firebase/firestore.ts           ← driver Firebase
+repositories/prisma/                ← implementación principal (PostgreSQL)
+      ↓
+lib/prisma.ts                       ← singleton PrismaClient
+```
+
+**API Routes** (`src/app/api/**/route.ts`) siguen el mismo flujo pero en server:
+```
+requireUser()          → verifica token Firebase + carga User de PostgreSQL
+assertSameTenant()     → guard multi-tenant
+can(user, action)      → RBAC
+Service / Repository   → lógica de negocio
+writeAuditLog()        → obligatorio en mutaciones
 ```
 
 **Regla de oro:** las capas externas importan de las internas, nunca al revés.
@@ -51,96 +66,76 @@ lib/firebase/firestore.ts           ← driver Firebase
 ```
 src/
 ├── types/
-│   ├── domain/          # Entidades de negocio (framework-agnostic)
-│   │   ├── task.ts      # Task, TaskStatus, TaskPriority, TaskFilters
-│   │   ├── user.ts      # User, UserRole, UserPreferences
-│   │   ├── team.ts      # Team, TeamSettings
-│   │   ├── location.ts  # Location, LocationStatus
-│   │   ├── business.ts  # Business, BusinessSettings
-│   │   ├── project.ts   # Project, ProjectStatus
-│   │   ├── sprint.ts    # Sprint, SprintTask, DailyStandup
-│   │   ├── report.ts    # Report, ReportMetrics
-│   │   ├── alert.ts     # Alert, AlertType, AlertSeverity
-│   │   ├── calendar.ts  # CalendarEvent, ReminderConfig
-│   │   ├── agent.ts     # AgentConfig, AgentLog
-│   │   └── widget.ts    # WidgetConfig, WidgetType
-│   ├── dto/             # Contratos de entrada/salida entre capas
-│   │   ├── task.dto.ts  # CreateTaskDTO, UpdateTaskDTO, MoveTaskDTO
-│   │   ├── team.dto.ts  # InviteMemberDTO, UpdateMemberDTO
-│   │   └── auth.dto.ts  # LoginDTO, RegisterDTO
-│   ├── ui/              # Tipos solo relevantes para la interfaz
-│   │   ├── kanban.ui.ts # KanbanDragState, KanbanUIFilters
-│   │   └── forms.ui.ts  # TaskFormValues, UserFormValues
-│   ├── api/
-│   │   └── responses.ts # ApiResponse<T>, PaginatedResponse<T>
-│   └── index.ts         # Re-exporta todo (compatibilidad)
+│   ├── domain/          # Entidades de negocio (task, user, business, location, subscription, etc.)
+│   ├── dto/             # Payloads de entrada (CreateTaskDTO, UpdateTaskDTO, etc.)
+│   ├── ui/              # Tipos de estado UI (KanbanDragState, KanbanUIFilters, forms.ui.ts)
+│   ├── api/             # Tipos de respuesta HTTP (PaginatedResponse, etc.)
+│   └── index.ts         # Re-exporta todo
 │
 ├── lib/
-│   ├── firebase/        # Drivers de infraestructura (no lógica de negocio)
-│   │   ├── client.ts    # Inicialización cliente + emuladores
-│   │   ├── admin.ts     # Admin SDK + verifyToken
-│   │   ├── auth.ts      # login, register, logout, Google OAuth
-│   │   ├── firestore.ts # CRUD genéricos: getById, getAll, create, update, remove
-│   │   └── storage.ts   # uploadUserAvatar, uploadTaskAttachment
+│   ├── firebase/        # Auth (client.ts, admin.ts, auth.ts) — NO Firestore
+│   ├── prisma.ts        # Singleton PrismaClient (importar siempre desde aquí)
+│   ├── mercadopago/
+│   │   ├── plans.ts         # Definición estática de planes (fallback)
+│   │   ├── plan-config.ts   # Lee PlanConfig desde DB + fallback a plans.ts
+│   │   └── preapproval.ts   # Integración con MP Preapproval API
 │   ├── cloudinary/      # Upload de archivos (server-side)
-│   │   ├── config.ts    # Inicialización SDK
-│   │   └── upload.ts    # uploadUserAvatar, uploadTaskAttachment, deleteFile
-│   ├── utils/           # Funciones puras (sin estado, sin efectos)
-│   │   ├── cn.ts        # cn() — Tailwind merge
-│   │   ├── date.ts      # formatDate, formatDateTime, formatRelative
-│   │   ├── format.ts    # formatHours
-│   │   ├── string.ts    # getInitials, stringToColor, debounce
-│   │   └── storage.ts   # setLocalStorage, getLocalStorage
-│   └── constants/       # Mapas de configuración de presentación
-│       ├── task.ts      # TASK_STATUS_LABELS/COLORS, TASK_PRIORITY_LABELS/COLORS
-│       ├── user.ts      # ROLE_LABELS, ROLE_COLORS, ROLE_LEVEL
-│       └── alert.ts     # ALERT_SEVERITY_LABELS/COLORS
+│   ├── groq/            # Cliente Groq, transcripción + extracción de tareas
+│   ├── mail/            # Templates React Email + cliente Resend
+│   ├── api/             # Helpers de API routes
+│   │   ├── auth-helpers.ts  # requireUser(), requireRole()
+│   │   ├── audit.ts         # writeAuditLog()
+│   │   └── billing.ts       # billingApi (browser) — getPlans(), createPreapproval(), etc.
+│   ├── permissions/     # RBAC: matrix.ts, resolve.ts, tenant-guard.ts
+│   ├── constants/       # Labels, colores, ROLE_LEVEL
+│   └── utils/           # cn(), date, format, string
 │
-├── repositories/        # Acceso a datos — implementaciones intercambiables
+├── repositories/
 │   ├── interfaces/      # Contratos TypeScript (ITaskRepository, etc.)
-│   ├── firebase/        # Implementaciones con Firebase Firestore
-│   └── index.ts         # Singletons exportados (punto de cambio para migrar)
+│   ├── prisma/          # Implementaciones Prisma (PostgreSQL) — implementación activa
+│   ├── firebase/        # Implementaciones alternativas (legacy)
+│   └── index.ts         # Singletons exportados — SIEMPRE importar desde aquí
 │
-├── services/            # Lógica de negocio / use cases
-│   ├── task.service.ts  # createTask, moveTask, reorderKanban
-│   ├── team.service.ts  # inviteMember, changeRole, removeMember
-│   ├── auth.service.ts  # login, register, getUserProfile
-│   └── location.service.ts
+├── services/            # Lógica de negocio
+│   ├── task.service.ts
+│   ├── team.service.ts
+│   ├── auth.service.ts
+│   ├── location.service.ts
+│   └── mail.service.ts
 │
 ├── hooks/
-│   ├── auth-context.tsx       # AuthProvider + useAuth
-│   ├── protected-route.tsx    # ProtectedRoute + withAuth HOC
-│   ├── queries/               # React Query — lectura de datos
-│   │   ├── use-tasks-query.ts
-│   │   ├── use-members-query.ts
-│   │   └── use-locations-query.ts
-│   └── mutations/             # React Query — escritura de datos
-│       ├── use-create-task.ts
-│       ├── use-update-task.ts
-│       ├── use-move-task.ts
-│       ├── use-delete-task.ts
-│       ├── use-invite-member.ts
-│       └── use-update-member.ts
+│   ├── auth-context.tsx / protected-route.tsx
+│   ├── queries/         # React Query — lectura (use-tasks-query, use-members-query, etc.)
+│   └── mutations/       # React Query — escritura (use-create-task, use-create-user, etc.)
 │
-├── stores/              # Zustand — SOLO estado de UI efímero
-│   ├── kanban-ui.store.ts  # dragState + modales + filtros de UI
-│   ├── team-ui.store.ts    # searchQuery + roleFilter + modal
-│   └── scrum-ui.store.ts   # selectedSprintId + viewMode
+├── stores/              # Zustand — SOLO estado UI efímero
+│   ├── kanban-ui.store.ts
+│   ├── scrum-ui.store.ts
+│   └── team-ui.store.ts
 │
 ├── components/
-│   ├── providers.tsx    # QueryClientProvider + AuthProvider
-│   ├── ui/              # Componentes base (Avatar, Badge, Button, Card, Dialog, Input, Tabs)
-│   ├── layout/          # Sidebar, Header, Footer
-│   ├── tareas/          # KanbanBoard, KanbanColumn, KanbanCard, modales
-│   ├── equipo/          # MemberCard, InviteMemberModal
-│   └── calendario/      # CalendarView (FullCalendar)
+│   ├── ui/              # Componentes base (Avatar, Badge, Button, Dialog, Input, etc.)
+│   ├── layout/          # Sidebar, Header
+│   ├── tareas/          # KanbanBoard, KanbanCard, modales (create/detail/dictate)
+│   ├── equipo/          # MemberCard, CreateUserModal
+│   ├── billing/         # BillingPlanCards, invoices
+│   ├── roles/           # PermissionGrid, RoleEditorDrawer
+│   ├── superadmin/      # SuperadminSidebar
+│   └── calendario/      # CalendarView
 │
 └── app/
-    ├── layout.tsx           # Root layout con <Providers>
     ├── (auth)/              # Login, Register
-    ├── dashboard/           # Layout protegido + páginas
-    └── api/                 # Endpoints HTTP (usan Admin SDK)
-        └── upload/route.ts  # POST — Cloudinary upload
+    ├── (superadmin)/        # Panel TecnoFusión
+    │   └── superadmin/
+    │       └── planes/      # Edición de precios y límites de planes
+    ├── dashboard/           # App principal (tareas, equipo, sectores, billing, config)
+    └── api/
+        ├── planes/          # GET público — planes efectivos desde DB
+        ├── superadmin/planes/ # GET+PATCH — edición de planes (superadmin only)
+        ├── users/create/    # POST — crea usuario + verifica límite de plan
+        ├── mercadopago/     # preapproval, webhook, cancel, sync, recover
+        ├── business/        # subscription, invoices
+        └── ...              # tasks, members, locations, auth, upload
 ```
 
 ---
@@ -162,8 +157,8 @@ src/
 4. Servicio llama al repositorio
    → taskRepository.create(payload)           [Repository]
 
-5. Repositorio llama al driver
-   → create('tasks', payload)                 [lib/firebase/firestore.ts]
+5. Repositorio persiste en PostgreSQL
+   → prisma.task.create({ data: payload })    [lib/prisma.ts]
 
 6. Éxito → React Query invalida el cache
    → queryClient.invalidateQueries(['tasks'])
@@ -189,9 +184,9 @@ src/
 
 ## Portabilidad
 
-### Cambiar Firebase por PostgreSQL
-1. Crear `src/repositories/postgres/task.repository.ts` implementando `ITaskRepository`
-2. Cambiar `src/repositories/index.ts` para exportar las instancias postgres
+### Cambiar Prisma por otro ORM
+1. Crear `src/repositories/drizzle/task.repository.ts` implementando `ITaskRepository`
+2. Cambiar `src/repositories/index.ts` para exportar las nuevas instancias
 3. **Nada más cambia** — services, hooks, stores, components son idénticos
 
 ### Cambiar Next.js por Remix

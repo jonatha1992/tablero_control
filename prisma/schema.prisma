@@ -339,6 +339,19 @@ model Invoice {
   @@index([status])
 }
 
+model PlanConfig {
+  id               String   @id @default(cuid())
+  planId           PlanId   @unique
+  priceMonthly     Float
+  priceYearly      Float
+  limitUsers       Int
+  limitLocations   Int
+  limitProjects    Int
+  limitAttachments Int
+  updatedAt        DateTime @updatedAt
+  updatedBy        String?
+}
+
 model AuditLog {
   id         String    @id @default(cuid())
   actorId    String

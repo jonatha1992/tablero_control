@@ -6,7 +6,13 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'unknown' }));
+    const err = new Error(data.error ?? 'unknown') as Error & { limit?: number; current?: number };
+    if (data.limit !== undefined) err.limit = data.limit;
+    if (data.current !== undefined) err.current = data.current;
+    throw err;
+  }
   return res.json();
 }
 
