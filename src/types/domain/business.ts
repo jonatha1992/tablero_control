@@ -26,7 +26,6 @@ export interface Business {
   settings: BusinessSettings;
   featureFlags: Record<string, boolean>;
   subscriptionId?: string;
-  mpPayerId?: string;
   trialEndsAt?: Date;
   suspendedAt?: Date;
   suspendedReason?: string;

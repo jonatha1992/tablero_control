@@ -3,6 +3,7 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { mpFetch } from '@/lib/mercadopago/client';
 import { parseExternalReference } from '@/lib/mercadopago/preference';
+import { getPreapproval } from '@/lib/mercadopago/preapproval';
 import { writeAuditLog } from '@/lib/api/audit';
 import type { PlanId, BillingFrequency } from '@/types/domain/subscription';
 
@@ -81,6 +82,58 @@ export async function POST(req: NextRequest) {
   const sub = await prisma.subscription.findUnique({ where: { businessId } });
   if (!sub) return NextResponse.json({ error: 'no_subscription' }, { status: 404 });
 
+  // --- Preapproval status check ---
+  // For brand-new subscriptions the first recurring charge may not have fired yet,
+  // but the preapproval itself becomes "authorized" immediately after the user pays.
+  // Without webhooks (local dev) we poll this here before falling through to the
+  // payment-search logic below.
+  let preapprovalActivated = 0;
+
+  if (sub.mpPreferenceId && sub.status === 'pending') {
+    try {
+      const preapproval = await getPreapproval(sub.mpPreferenceId);
+
+      if (preapproval.status === 'authorized') {
+        const ref = parseExternalReference(preapproval.external_reference);
+        const now = new Date();
+        const periodDays = ref?.frequency === 'yearly' ? 365 : 30;
+        const newEnd = addDays(now, periodDays);
+        const activatedPlan = ref?.plan ?? (sub.plan as PlanId);
+
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: {
+            status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: newEnd,
+            nextBillingDate: newEnd,
+          },
+        });
+
+        await prisma.business.update({
+          where: { id: ref?.businessId ?? businessId },
+          data: { status: 'active', plan: activatedPlan },
+        });
+
+        await writeAuditLog({
+          actorId: 'system',
+          actorRole: 'superadmin',
+          businessId,
+          action: 'subscription.activated',
+          targetType: 'subscription',
+          targetId: sub.id,
+          metadata: { via: 'preapproval_recover', mpPreferenceId: sub.mpPreferenceId },
+          ip: req.headers.get('x-forwarded-for') ?? undefined,
+        });
+
+        preapprovalActivated = 1;
+      }
+    } catch (err) {
+      console.error('[recover] preapproval check failed, continuing to payment search:', err);
+    }
+  }
+  // --- End preapproval status check ---
+
   let payments: MpPayment[] = [];
 
   if (body.paymentId) {
@@ -113,7 +166,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (payments.length === 0) {
-    return NextResponse.json({ recovered: 0, message: 'No approved payments found in MP' });
+    return NextResponse.json({ preapprovalActivated, recovered: 0, message: 'No approved payments found in MP' });
   }
 
   const existingMpIds = await prisma.invoice.findMany({
@@ -160,6 +213,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
+    preapprovalActivated,
     recovered,
     total: payments.length,
     ...(errors.length > 0 ? { errors } : {}),

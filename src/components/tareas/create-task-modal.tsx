@@ -82,94 +82,6 @@ function ColoredSelect<T extends string>({
   );
 }
 
-interface SelectOption<T extends string> {
-  value: T;
-  label: string;
-  dot: string;
-}
-
-const STATUS_OPTIONS: SelectOption<TaskStatus>[] = [
-  { value: 'backlog',     label: 'Backlog',     dot: 'bg-slate-400' },
-  { value: 'todo',        label: 'Por hacer',   dot: 'bg-violet-500' },
-  { value: 'in_progress', label: 'En progreso', dot: 'bg-amber-500' },
-  { value: 'in_review',   label: 'En revisión', dot: 'bg-cyan-500' },
-  { value: 'done',        label: 'Finalizado',  dot: 'bg-green-500' },
-  { value: 'blocked',     label: 'Bloqueada',   dot: 'bg-red-500' },
-];
-
-const PRIORITY_OPTIONS: SelectOption<TaskPriority>[] = [
-  { value: 'urgent', label: 'Urgente', dot: 'bg-red-500' },
-  { value: 'high',   label: 'Alta',    dot: 'bg-orange-500' },
-  { value: 'medium', label: 'Media',   dot: 'bg-blue-500' },
-  { value: 'low',    label: 'Baja',    dot: 'bg-slate-400' },
-];
-
-const TYPE_OPTIONS: SelectOption<TaskType>[] = [
-  { value: 'task',          label: 'Tarea',         dot: 'bg-blue-500' },
-  { value: 'feature',       label: 'Feature',       dot: 'bg-emerald-500' },
-  { value: 'bug',           label: 'Bug',           dot: 'bg-red-500' },
-  { value: 'improvement',   label: 'Mejora',        dot: 'bg-purple-500' },
-  { value: 'documentation', label: 'Documentación', dot: 'bg-slate-400' },
-];
-
-function ColoredSelect<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: SelectOption<T>[];
-  onChange: (v: T) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const selected = options.find((o) => o.value === value) ?? options[0];
-
-  // close on outside click
-  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    if (!ref.current?.contains(e.relatedTarget as Node)) setOpen(false);
-  };
-
-  return (
-    <div className="relative" ref={ref} onBlur={handleBlur}>
-      <label className="text-sm font-medium mb-1 block">{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
-      >
-        <span className="flex items-center gap-2">
-          <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
-          {selected.label}
-        </span>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              tabIndex={0}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
-            >
-              <span className="flex items-center gap-2">
-                <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
-                {opt.label}
-              </span>
-              {opt.value === value && <Check className="h-3.5 w-3.5 text-primary" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -207,7 +119,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
 
-const toggleAssignee = (id: string) => {
+  const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -289,8 +201,8 @@ const toggleAssignee = (id: string) => {
         locationId: locationId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         dueDate: dueDate ? new Date(dueDate) : undefined,
-        recurrence: isRecurring ? { 
-          frequency, 
+        recurrence: isRecurring ? {
+          frequency,
           interval,
           dayOfWeek: frequency === 'weekly' ? dayOfWeek : undefined,
           dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined
@@ -315,8 +227,8 @@ const toggleAssignee = (id: string) => {
                 micState === 'recording'
                   ? 'bg-red-500 text-white animate-pulse'
                   : micState === 'processing'
-                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
               )}
             >
               {micState === 'processing' ? (
@@ -494,7 +406,7 @@ const toggleAssignee = (id: string) => {
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                   />
                 </div>
-                
+
                 {frequency === 'weekly' && (
                   <div className="col-span-2">
                     <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
