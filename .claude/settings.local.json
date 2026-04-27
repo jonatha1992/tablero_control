@@ -77,7 +77,8 @@
       "Bash(node -e \"require\\('dotenv'\\).config\\({path:'.env.local'}\\); const {execSync}=require\\('child_process'\\); execSync\\('npx prisma db push', {stdio:'inherit', env:process.env}\\);\")",
       "Bash(node -e \"require\\('dotenv'\\).config\\({path:'.env.local'}\\); const {execSync}=require\\('child_process'\\); execSync\\('npx prisma db push --accept-data-loss', {stdio:'inherit', env:process.env}\\);\")",
       "Bash(git log *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npx @railway/cli logs --service tablero_control)"
     ]
   }
 }
