@@ -16,6 +16,7 @@ interface CreateArgs {
   successUrl: string;
   failureUrl: string;
   pendingUrl: string;
+  notificationUrl?: string;
 }
 
 export function buildExternalReference(businessId: string, plan: PlanId, frequency: BillingFrequency): string {
@@ -39,7 +40,8 @@ export async function createCheckoutPreference(args: CreateArgs): Promise<MpPref
   if (amount <= 0) throw new Error(`Plan ${args.plan} no es facturable`);
 
   const label = args.frequency === 'monthly' ? 'mensual' : 'anual';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const webhookBase = process.env.MP_WEBHOOK_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const notificationUrl = args.notificationUrl ?? `${webhookBase}/api/mercadopago/webhook`;
 
   return mpFetch<MpPreference>('/checkout/preferences', {
     method: 'POST',
@@ -60,7 +62,7 @@ export async function createCheckoutPreference(args: CreateArgs): Promise<MpPref
         pending: args.pendingUrl,
       },
       auto_return: 'approved',
-      notification_url: `${appUrl}/api/mercadopago/webhook`,
+      notification_url: notificationUrl,
     }),
   });
 }

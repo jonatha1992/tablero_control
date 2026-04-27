@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase/client';
@@ -18,6 +18,22 @@ export default function ConfigPage() {
   const [activeTab, setActiveTab] = useState('perfil');
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
+  const [resetState, setResetState] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
+
+  const handleResetPassword = useCallback(async () => {
+    if (!user?.email || resetState === 'loading' || resetState === 'sent') return;
+    setResetState('loading');
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+      setResetState(res.ok ? 'sent' : 'error');
+    } catch {
+      setResetState('error');
+    }
+  }, [user?.email, resetState]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -147,10 +163,30 @@ export default function ConfigPage() {
                 <CardTitle className="text-base font-semibold flex items-center text-destructive"><Shield className="h-4 w-4 mr-2" /> Seguridad</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Si deseas cambiar tu contraseña, se te enviará un correo de recuperación.</p>
+                <p className="text-xs text-muted-foreground">
+                  Si deseas cambiar tu contraseña, se te enviará un correo de recuperación a <strong>{user?.email}</strong>.
+                </p>
+                {resetState === 'sent' && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Correo enviado. Revisá tu bandeja de entrada.
+                  </p>
+                )}
+                {resetState === 'error' && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5" /> No se pudo enviar el correo. Intentá de nuevo.
+                  </p>
+                )}
               </CardContent>
               <CardFooter>
-                <Button variant="outline" size="sm" className="text-destructive">Restablecer contraseña</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={handleResetPassword}
+                  disabled={resetState === 'loading' || resetState === 'sent'}
+                >
+                  {resetState === 'loading' ? 'Enviando...' : resetState === 'sent' ? 'Correo enviado' : 'Restablecer contraseña'}
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>

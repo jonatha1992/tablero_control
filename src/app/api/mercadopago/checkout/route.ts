@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     successUrl: `${origin}/dashboard/billing?status=success`,
     failureUrl: `${origin}/dashboard/billing?status=failure`,
     pendingUrl: `${origin}/dashboard/billing?status=pending`,
+    notificationUrl: `${origin}/api/mercadopago/webhook`,
   });
 
   const sub = await prisma.subscription.upsert({

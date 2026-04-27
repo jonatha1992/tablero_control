@@ -30,8 +30,8 @@ describe('Badge Component', () => {
     expect(screen.getByText('Custom')).toHaveClass('custom');
   });
 
-  it('renders as a div element', () => {
+  it('renders as a span element', () => {
     render(<Badge data-testid="badge">Badge</Badge>);
-    expect(screen.getByTestId('badge').tagName).toBe('DIV');
+    expect(screen.getByTestId('badge').tagName).toBe('SPAN');
   });
 });

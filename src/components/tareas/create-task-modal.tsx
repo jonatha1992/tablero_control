@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,9 +14,102 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
-import { X, MapPin, Repeat } from 'lucide-react';
+import { useKanbanUIStore } from '@/stores/kanban-ui.store';
+import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check } from 'lucide-react';
+import { tasksApi } from '@/lib/api/tasks';
+import { getToken } from '@/lib/firebase/auth';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '@/types';
+
+interface SelectOption<T extends string> {
+  value: T;
+  label: string;
+  dot: string;
+}
+
+const STATUS_OPTIONS: SelectOption<TaskStatus>[] = [
+  { value: 'backlog',     label: 'Backlog',     dot: 'bg-slate-400' },
+  { value: 'todo',        label: 'Por hacer',   dot: 'bg-violet-500' },
+  { value: 'in_progress', label: 'En progreso', dot: 'bg-amber-500' },
+  { value: 'in_review',   label: 'En revisión', dot: 'bg-cyan-500' },
+  { value: 'done',        label: 'Finalizado',  dot: 'bg-green-500' },
+  { value: 'blocked',     label: 'Bloqueada',   dot: 'bg-red-500' },
+];
+
+const PRIORITY_OPTIONS: SelectOption<TaskPriority>[] = [
+  { value: 'urgent', label: 'Urgente', dot: 'bg-red-500' },
+  { value: 'high',   label: 'Alta',    dot: 'bg-orange-500' },
+  { value: 'medium', label: 'Media',   dot: 'bg-blue-500' },
+  { value: 'low',    label: 'Baja',    dot: 'bg-slate-400' },
+];
+
+const TYPE_OPTIONS: SelectOption<TaskType>[] = [
+  { value: 'task',          label: 'Tarea',         dot: 'bg-blue-500' },
+  { value: 'feature',       label: 'Feature',       dot: 'bg-emerald-500' },
+  { value: 'bug',           label: 'Bug',           dot: 'bg-red-500' },
+  { value: 'improvement',   label: 'Mejora',        dot: 'bg-purple-500' },
+  { value: 'documentation', label: 'Documentación', dot: 'bg-slate-400' },
+];
+
+function ColoredSelect<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: SelectOption<T>[];
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value) ?? options[0];
+
+  // close on outside click
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!ref.current?.contains(e.relatedTarget as Node)) setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref} onBlur={handleBlur}>
+      <label className="text-sm font-medium mb-1 block">{label}</label>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
+          {selected.label}
+        </span>
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              tabIndex={0}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+            >
+              <span className="flex items-center gap-2">
+                <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+                {opt.label}
+              </span>
+              {opt.value === value && <Check className="h-3.5 w-3.5 text-primary" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface CreateTaskModalProps {
   open: boolean;
@@ -27,9 +120,16 @@ interface CreateTaskModalProps {
 
 export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueDate }: CreateTaskModalProps) {
   const today = new Date().toISOString().split('T')[0];
+  const { activeColumns } = useKanbanUIStore();
+  const visibleStatusOptions = STATUS_OPTIONS.filter((o) => activeColumns.includes(o.value));
+  const resolvedDefault: TaskStatus =
+    defaultStatus && activeColumns.includes(defaultStatus)
+      ? defaultStatus
+      : (activeColumns[0] ?? 'todo');
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<TaskStatus>(defaultStatus ?? 'todo');
+  const [status, setStatus] = useState<TaskStatus>(resolvedDefault);
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [type, setType] = useState<TaskType>('task');
   const [tags, setTags] = useState('');
@@ -41,6 +141,9 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [interval, setIntervalValue] = useState(1);
   const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
   const [dayOfMonth, setDayOfMonth] = useState<number | undefined>(undefined);
+  const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
@@ -58,6 +161,64 @@ const toggleAssignee = (id: string) => {
     setLocationId('');
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
+  };
+
+  const handleMicClick = async () => {
+    if (micState === 'recording') {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    if (micState === 'processing') return;
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      toast.error('No se pudo acceder al micrófono');
+      return;
+    }
+
+    chunksRef.current = [];
+    const recorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      setMicState('processing');
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const file = new File([blob], 'dictado.webm', { type: 'audio/webm' });
+      try {
+        const token = await getToken();
+        if (!token) throw new Error('No autenticado');
+        const result = await tasksApi.fromAudio(file, token);
+        const task = result.tasks[0];
+        if (task) {
+          setTitle(task.title);
+          if (task.description) setDescription(task.description);
+          if (task.priority) setPriority(task.priority);
+          if (task.type) setType(task.type);
+          if (task.tags?.length) setTags(task.tags.join(', '));
+          if (task.dueDate) setDueDate(task.dueDate);
+          if (task.assigneeIds?.length) setAssigneeIds(task.assigneeIds);
+          toast.success('Formulario completado por IA');
+        } else {
+          toast.warning('No se detectó ninguna tarea en el audio');
+        }
+      } catch (err) {
+        toast.error('Error al procesar el audio', {
+          description: err instanceof Error ? err.message : undefined,
+        });
+      } finally {
+        setMicState('idle');
+      }
+    };
+
+    recorder.start();
+    setMicState('recording');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -84,9 +245,35 @@ const toggleAssignee = (id: string) => {
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Crear Nueva Tarea</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Crear Nueva Tarea</DialogTitle>
+            <button
+              type="button"
+              onClick={handleMicClick}
+              title={micState === 'recording' ? 'Detener grabación' : 'Dictar tarea por voz'}
+              className={cn(
+                'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all',
+                micState === 'recording'
+                  ? 'bg-red-500 text-white animate-pulse'
+                  : micState === 'processing'
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+              )}
+            >
+              {micState === 'processing' ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : micState === 'recording' ? (
+                <MicOff className="h-3.5 w-3.5" />
+              ) : (
+                <Mic className="h-3.5 w-3.5" />
+              )}
+              {micState === 'recording' ? 'Detener' : micState === 'processing' ? 'Procesando…' : 'Dictar'}
+            </button>
+          </div>
           <DialogDescription>
-            Completa los detalles de la nueva tarea para tu equipo.
+            {micState === 'recording'
+              ? 'Grabando… hablá y describí la tarea.'
+              : 'Completá los detalles o dictá la tarea por voz.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,50 +302,24 @@ const toggleAssignee = (id: string) => {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Estado</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="backlog">Backlog</option>
-                <option value="todo">Por hacer</option>
-                <option value="in_progress">En progreso</option>
-                <option value="in_review">En revisión</option>
-                <option value="done">Finalizado</option>
-                <option value="blocked">Bloqueado</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 block">Prioridad</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="low">Baja</option>
-                <option value="medium">Media</option>
-                <option value="high">Alta</option>
-                <option value="urgent">Urgente</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 block">Tipo</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as TaskType)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="task">Tarea</option>
-                <option value="feature">Feature</option>
-                <option value="bug">Bug</option>
-                <option value="improvement">Mejora</option>
-                <option value="documentation">Documentación</option>
-              </select>
-            </div>
+            <ColoredSelect
+              label="Estado"
+              value={status}
+              options={visibleStatusOptions.length > 0 ? visibleStatusOptions : STATUS_OPTIONS}
+              onChange={setStatus}
+            />
+            <ColoredSelect
+              label="Prioridad"
+              value={priority}
+              options={PRIORITY_OPTIONS}
+              onChange={setPriority}
+            />
+            <ColoredSelect
+              label="Tipo"
+              value={type}
+              options={TYPE_OPTIONS}
+              onChange={setType}
+            />
           </div>
 
           <div>

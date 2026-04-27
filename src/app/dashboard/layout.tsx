@@ -7,10 +7,9 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProtectedRoute } from '@/hooks/protected-route';
 import { useAuth } from '@/hooks/auth-context';
-import { Plus, Mic } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
-import { DictateTasksModal } from '@/components/tareas/dictate-tasks-modal';
 
 export default function DashboardLayout({
   children,
@@ -19,19 +18,28 @@ export default function DashboardLayout({
 }) {
   const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isDictateOpen, setIsDictateOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { isCreateModalOpen, closeCreateModal, openCreateModal } = useKanbanUIStore();
 
   return (
     <ProtectedRoute>
       <div className="flex flex-1 h-full min-h-0 w-full flex-col">
         <div className="flex flex-1 min-h-0 min-w-0">
-          <Sidebar collapsed={sidebarCollapsed} onCollapse={setSidebarCollapsed} />
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onCollapse={setSidebarCollapsed}
+            mobileOpen={mobileSidebarOpen}
+            onMobileOpenChange={setMobileSidebarOpen}
+          />
           <div className={cn(
             "flex flex-1 flex-col transition-all duration-300 ease-in-out min-h-0 min-w-0",
             sidebarCollapsed ? "lg:pl-16" : "lg:pl-56"
           )}>
-            <Header userName={user?.name} notificationCount={0} />
+            <Header
+              userName={user?.name}
+              notificationCount={0}
+              onMobileMenuOpen={() => setMobileSidebarOpen(true)}
+            />
             <main className="flex-1 overflow-auto p-4 flex flex-col relative min-h-0 min-w-0">
               {children}
             </main>
@@ -39,20 +47,11 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* FAB: dictar tareas por audio */}
-        <button
-          onClick={() => setIsDictateOpen(true)}
-          className="fixed bottom-28 right-10 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all z-40"
-          title="Dictar tareas por voz"
-        >
-          <Mic className="h-5 w-5" />
-        </button>
-
-        {/* FAB: crear tarea rápida */}
+        {/* FAB: crear tarea */}
         <button
           onClick={openCreateModal}
           className="fixed bottom-10 right-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all z-40"
-          title="Agregar una tarea rápidamente"
+          title="Crear tarea"
         >
           <Plus className="h-6 w-6" />
         </button>
@@ -61,7 +60,6 @@ export default function DashboardLayout({
           open={isCreateModalOpen}
           onOpenChange={(open) => { if (!open) closeCreateModal(); }}
         />
-        <DictateTasksModal open={isDictateOpen} onOpenChange={setIsDictateOpen} />
       </div>
     </ProtectedRoute>
   );

@@ -9,12 +9,10 @@ import {
   LayoutDashboard,
   CheckSquare,
   Calendar,
-
   Users,
   Settings,
   ChevronLeft,
   ChevronRight,
-  Menu,
   CreditCard,
   ShieldCheck,
   Building2,
@@ -35,10 +33,12 @@ const navItems = [
 interface SidebarProps {
   collapsed: boolean;
   onCollapse: (val: boolean) => void;
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (val: boolean) => void;
 }
 
-export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpenChange }: SidebarProps) {
+  const setMobileOpen = (val: boolean) => onMobileOpenChange?.(val);
   const pathname = usePathname();
   const { isSuperAdmin } = useAuth();
 
@@ -167,16 +167,6 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed left-4 top-4 z-50 lg:hidden"
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
-
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
