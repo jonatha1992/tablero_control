@@ -48,3 +48,4 @@ key.json
 # debug/test output logs
 *.txt
 .claude/settings.local.json
+.playwright-mcp/console-2026-04-27T04-23-08-568Z.log
