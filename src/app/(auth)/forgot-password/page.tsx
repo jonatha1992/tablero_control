@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { resetPassword } from '@/lib/firebase/auth';
 
 type Step = 'form' | 'sent';
 
@@ -20,26 +21,16 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json() as { success?: boolean; error?: string };
-
-      if (!res.ok) {
-        setError(
-          data.error === 'send_failed'
-            ? 'No se pudo enviar el correo. Intentá de nuevo.'
-            : 'Ocurrió un error inesperado.'
-        );
-        return;
-      }
-
+      await resetPassword(email);
       setStep('sent');
-    } catch {
-      setError('Error de conexión. Verificá tu internet e intentá de nuevo.');
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/user-not-found') {
+        // Por seguridad, igual mostramos éxito
+        setStep('sent');
+      } else {
+        setError('No se pudo enviar el correo. Verificá tu conexión e intentá de nuevo.');
+      }
     } finally {
       setLoading(false);
     }

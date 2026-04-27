@@ -7,6 +7,7 @@ import { es } from 'date-fns/locale';
 import { CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 import { useCancelSubscription } from '@/hooks/mutations/use-cancel-subscription';
 import { useSyncSubscription } from '@/hooks/mutations/use-sync-subscription';
+import { useRecoverSubscription } from '@/hooks/mutations/use-recover-subscription';
 import { RefreshCw } from 'lucide-react';
 
 const STATUS_LABEL: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -26,6 +27,7 @@ interface Props {
 export function BillingCurrentPlan({ subscription, isLoading }: Props) {
   const cancel = useCancelSubscription(subscription?.businessId);
   const sync = useSyncSubscription(subscription?.businessId);
+  const recover = useRecoverSubscription(subscription?.businessId);
   if (isLoading) {
     return (
       <div className="border rounded-lg p-6 flex items-center gap-3">
@@ -72,19 +74,22 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
           {subscription.status === 'pending' && (
             <div>
               <button
-                onClick={() => sync.mutate()}
-                disabled={sync.isPending}
+                onClick={() => recover.mutate()}
+                disabled={recover.isPending}
                 className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-60"
               >
-                {sync.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Verificar estado con Mercado Pago
+                {recover.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Verificar pago con Mercado Pago
               </button>
-              {sync.isError && (
-                <p className="text-xs text-red-600 mt-1">{(sync.error as Error).message}</p>
+              {recover.isError && (
+                <p className="text-xs text-red-600 mt-1">{(recover.error as Error).message}</p>
               )}
-              {sync.isSuccess && !sync.data.synced && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {sync.data.reason === 'already_up_to_date' ? 'Estado ya actualizado.' : 'Sin preapproval registrado en MP.'}
+              {recover.isSuccess && (
+                <p className="text-xs mt-1">
+                  {recover.data.recovered > 0
+                    ? <span className="text-green-600">Se recuperaron {recover.data.recovered} pago{recover.data.recovered !== 1 ? 's' : ''}. Recargando…</span>
+                    : <span className="text-muted-foreground">No se encontraron pagos aprobados en Mercado Pago.</span>
+                  }
                 </p>
               )}
             </div>

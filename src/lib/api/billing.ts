@@ -37,4 +37,10 @@ export const billingApi = {
       method: 'POST',
       body: JSON.stringify({ businessId }),
     }),
+
+  recoverSubscription: (businessId: string) =>
+    fetchJsonAuth<{ recovered: number; total: number; errors?: string[] }>('/api/mercadopago/recover', {
+      method: 'POST',
+      body: JSON.stringify({ businessId }),
+    }),
 };
