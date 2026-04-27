@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { can, assertSameTenant } from '@/lib/permissions';
+import { userRepository } from '@/repositories';
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
+  if (!can(user.data, 'business.users.crud')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { id } = await params;
+  const target = await userRepository.findById(id);
+  if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  assertSameTenant(user.data, { businessId: target.businessId });
+
   const data = await request.json();
   const member = await teamService.updateMember(id, data);
 
@@ -28,7 +38,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
+  if (!can(user.data, 'business.users.crud')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { id } = await params;
+  const target = await userRepository.findById(id);
+  if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  assertSameTenant(user.data, { businessId: target.businessId });
+
   await teamService.removeMember(id);
 
   await writeAuditLog({

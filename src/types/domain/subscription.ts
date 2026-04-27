@@ -15,7 +15,7 @@ export interface Subscription {
   businessId: string;
   plan: PlanId;
   status: SubscriptionStatus;
-  mpPreapprovalId?: string;
+  mpPreferenceId?: string;
   mpPayerId?: string;
   amount: number;
   currency: 'ARS';

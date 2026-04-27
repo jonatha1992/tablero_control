@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Plus, Filter, Search, Settings2, CheckSquare, Trash2 } from 'lucide-react';
+import { Plus, Filter, Settings2, CheckSquare, Trash2 } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { TASK_STATUS_LABELS } from '@/lib/constants/task';
 import { cn } from '@/lib/utils';
@@ -181,17 +181,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     <div className="flex flex-col h-full min-h-0 min-w-0 w-full">
       {/* Toolbar */}
       <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar tareas..."
-            value={filters.searchQuery}
-            onChange={(e) => setFilters({ searchQuery: e.target.value })}
-            className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </div>
-
         <select
           value={filters.locationId}
           onChange={(e) => setFilters({ locationId: e.target.value })}
@@ -221,41 +210,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           <Filter className="h-4 w-4" />
           Más filtros
         </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setIsConfigOpen(!isConfigOpen)}
-            className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
-          >
-            <Settings2 className="h-4 w-4" />
-            Configurar Tablero
-          </button>
-
-          {isConfigOpen && (
-            <div className="absolute top-full mt-2 left-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
-              <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
-              <div className="space-y-1">
-                {BOARD_COLUMNS.map((col) => (
-                  <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={activeColumns.includes(col)}
-                      onChange={() => toggleColumn(col)}
-                      className="rounded border-gray-300"
-                    />
-                    <span>
-                      {col === 'backlog' ? 'Backlog' :
-                        col === 'todo' ? 'Por hacer' :
-                          col === 'in_progress' ? 'En progreso' :
-                            col === 'in_review' ? 'En revisión' :
-                              col === 'done' ? 'Completada' : 'Bloqueada'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
 
         <div className="flex-1" />
 

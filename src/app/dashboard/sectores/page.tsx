@@ -8,6 +8,7 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useDeleteLocation } from '@/hooks/mutations/use-locations';
 import { SectorList } from '@/components/sectores/sector-list';
 import { SectorModal } from '@/components/sectores/sector-modal';
+import { SectorDetailModal } from '@/components/sectores/sector-detail-modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Location } from '@/types/domain/location';
 
@@ -21,6 +22,7 @@ export default function SectoresPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<Location | undefined>();
+  const [detailSector, setDetailSector] = useState<Location | null>(null);
   const [sectorToDelete, setSectorToDelete] = useState<Location | null>(null);
 
   const handleEdit = (sector: Location) => {
@@ -59,6 +61,7 @@ export default function SectoresPage() {
         sectors={sectors}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
+        onSelect={(sector) => setDetailSector(sector)}
         onCreate={handleCreate}
         isLoading={isLoading}
       />
@@ -68,6 +71,13 @@ export default function SectoresPage() {
         onClose={() => setIsModalOpen(false)}
         businessId={businessId}
         location={selectedSector}
+      />
+
+      <SectorDetailModal
+        sector={detailSector}
+        open={!!detailSector}
+        onClose={() => setDetailSector(null)}
+        onEdit={(sector) => { setDetailSector(null); handleEdit(sector); }}
       />
 
       <ConfirmDialog

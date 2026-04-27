@@ -301,7 +301,7 @@ model Subscription {
   businessId        String             @unique
   plan              PlanId
   status            SubscriptionStatus @default(pending)
-  mpPreapprovalId   String?
+  mpPreferenceId    String?
   mpPayerId         String?
   amount            Float
   currency          String             @default("ARS")
@@ -318,7 +318,7 @@ model Subscription {
   invoices Invoice[]
 
   @@index([status])
-  @@index([mpPreapprovalId])
+  @@index([mpPreferenceId])
 }
 
 model Invoice {

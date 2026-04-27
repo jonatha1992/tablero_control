@@ -1,6 +1,13 @@
 import type { Task, TaskFilters, TaskStatus } from '@/types/domain/task';
 import type { CreateTaskDTO, UpdateTaskDTO } from '@/types/dto/task.dto';
+import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import { getToken } from '@/lib/firebase/auth';
+
+interface FromAudioResponse {
+  transcription: string;
+  tasks: ExtractedTask[];
+  parseError: boolean;
+}
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -63,4 +70,15 @@ export const tasksApi = {
     if (!r.ok) throw new Error('Error al eliminar tarea');
   },
 
+  fromAudio: async (audioFile: File, token: string): Promise<FromAudioResponse> => {
+    const fd = new FormData();
+    fd.append('audio', audioFile);
+    const res = await fetch('/api/tasks/from-audio', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json() as Promise<FromAudioResponse>;
+  },
 };

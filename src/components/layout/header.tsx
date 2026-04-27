@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Bell, Search, LogOut } from 'lucide-react';
+import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,8 @@ interface HeaderProps {
 export function Header({ userName, notificationCount = 0 }: HeaderProps) {
   const { user, signOut, role } = useAuth();
   const pathname = usePathname();
+  const { filters, setFilters } = useKanbanUIStore();
+  const isTasksPage = pathname?.startsWith('/dashboard/tareas');
   
   const displayName = userName || user?.name || 'Usuario';
   const initials = getInitials(displayName);
@@ -52,16 +55,20 @@ export function Header({ userName, notificationCount = 0 }: HeaderProps) {
       </div>
 
       {/* Center: Search */}
-      <div className="flex flex-1 items-center gap-4 px-4 lg:px-8">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar tareas, proyectos..."
-            className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
+      {isTasksPage && (
+        <div className="flex flex-1 items-center gap-4 px-4 lg:px-8">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar tareas..."
+              value={filters.searchQuery}
+              onChange={(e) => setFilters({ searchQuery: e.target.value })}
+              className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">

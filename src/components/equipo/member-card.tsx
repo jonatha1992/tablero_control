@@ -119,6 +119,7 @@ export function MemberCard({ member, onRemove, canManage }: MemberCardProps) {
         member={member}
         open={editOpen}
         onClose={() => setEditOpen(false)}
+        onRemove={onRemove}
       />
     </>
   );

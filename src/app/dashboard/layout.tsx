@@ -7,9 +7,10 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProtectedRoute } from '@/hooks/protected-route';
 import { useAuth } from '@/hooks/auth-context';
-import { Plus } from 'lucide-react';
+import { Plus, Mic } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
+import { DictateTasksModal } from '@/components/tareas/dictate-tasks-modal';
 
 export default function DashboardLayout({
   children,
@@ -18,6 +19,7 @@ export default function DashboardLayout({
 }) {
   const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isDictateOpen, setIsDictateOpen] = useState(false);
   const { isCreateModalOpen, closeCreateModal, openCreateModal } = useKanbanUIStore();
 
   return (
@@ -37,6 +39,15 @@ export default function DashboardLayout({
           </div>
         </div>
 
+        {/* FAB: dictar tareas por audio */}
+        <button
+          onClick={() => setIsDictateOpen(true)}
+          className="fixed bottom-28 right-10 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all z-40"
+          title="Dictar tareas por voz"
+        >
+          <Mic className="h-5 w-5" />
+        </button>
+
         {/* FAB: crear tarea rápida */}
         <button
           onClick={openCreateModal}
@@ -50,6 +61,7 @@ export default function DashboardLayout({
           open={isCreateModalOpen}
           onOpenChange={(open) => { if (!open) closeCreateModal(); }}
         />
+        <DictateTasksModal open={isDictateOpen} onOpenChange={setIsDictateOpen} />
       </div>
     </ProtectedRoute>
   );

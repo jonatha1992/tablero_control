@@ -92,8 +92,8 @@ export default function ConfigPage() {
                 <div className="flex items-center gap-6">
                   <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
                     <div className="w-20 h-20 rounded-full bg-primary/10 overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-all relative">
-                      {avatarUrl ? (
-                        <Image src={avatarUrl} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" unoptimized />
+                      {(avatarUrl || user?.avatar) ? (
+                        <Image src={avatarUrl || user!.avatar!} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" unoptimized />
                       ) : (
                         <span className="text-2xl font-bold uppercase">{user?.name?.substring(0, 2) || 'TC'}</span>
                       )}
