@@ -48,8 +48,3 @@ key.json
 # debug/test output logs
 *.txt
 .claude/settings.local.json
-<<<<<<< HEAD
-.claude/settings.local.json
-=======
-
->>>>>>> d747ee80fb036fb8fe78b085291cb406d1393fda

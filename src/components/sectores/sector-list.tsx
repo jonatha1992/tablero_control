@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Location } from '@/types/domain/location';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { SECTOR_ICONS } from './sector-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,74 +58,79 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
       {sectors.map((sector) => {
         const memberCount = allMembers.filter((m) => m.locationId === sector.id).length;
         return (
-        <Card
-          key={sector.id}
-          className="overflow-hidden border-border/50 bg-card/50 transition-all hover:border-primary/30 hover:bg-card cursor-pointer"
-          onClick={() => onSelect(sector)}
-        >
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <MapPin className="h-5 w-5" />
+          <Card
+            key={sector.id}
+            className="overflow-hidden border-border/50 bg-card/50 transition-all hover:border-primary/30 hover:bg-card cursor-pointer"
+            onClick={() => onSelect(sector)}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    {(() => {
+                      const iconName = sector.metadata?.icon as string | undefined;
+                      const entry = SECTOR_ICONS.find((i) => i.name === iconName);
+                      const Icon = entry?.icon ?? MapPin;
+                      return <Icon className="h-5 w-5" />;
+                    })()}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold leading-none">{sector.name}</h3>
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                      {sector.type}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="font-semibold leading-none">{sector.name}</h3>
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
-                    {sector.type}
-                  </Badge>
-                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(sector); }}>
+                      <Edit2 className="mr-2 h-4 w-4" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); onDelete(sector.id); }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(sector); }}>
-                    <Edit2 className="mr-2 h-4 w-4" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); onDelete(sector.id); }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+              {sector.description && (
+                <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
+                  {sector.description}
+                </p>
+              )}
 
-            {sector.description && (
-              <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
-                {sector.description}
-              </p>
-            )}
-
-            <div className="mt-4 flex items-center justify-between border-t pt-4">
-              <span className="text-xs text-muted-foreground">
-                {sector.status === 'active' ? (
-                  <span className="flex items-center gap-1 text-green-600 font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
-                    Activo
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                    Inactivo
-                  </span>
-                )}
-              </span>
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Users className="h-3 w-3" />
-                {memberCount} miembro{memberCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="mt-4 flex items-center justify-between border-t pt-4">
+                <span className="text-xs text-muted-foreground">
+                  {sector.status === 'active' ? (
+                    <span className="flex items-center gap-1 text-green-600 font-medium">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                      Activo
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                      Inactivo
+                    </span>
+                  )}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  {memberCount} miembro{memberCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

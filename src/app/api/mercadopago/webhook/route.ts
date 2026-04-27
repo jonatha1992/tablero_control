@@ -86,9 +86,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> d747ee80fb036fb8fe78b085291cb406d1393fda
+=======
+
+>>>>>>> 379f4db4f7ef0c6c5650dcbeedbe82c11810886f
     const ref = parseExternalReference(preapproval.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 
@@ -150,9 +154,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> d747ee80fb036fb8fe78b085291cb406d1393fda
+=======
+
+>>>>>>> 379f4db4f7ef0c6c5650dcbeedbe82c11810886f
     const ref = parseExternalReference(payment.external_reference);
     if (!ref) return NextResponse.json({ ok: true });
 

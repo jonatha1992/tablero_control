@@ -22,6 +22,65 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '@/types';
+import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS, type SelectOption } from '@/lib/constants/task-colors';
+
+function ColoredSelect<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: SelectOption<T>[];
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value) ?? options[0];
+
+  // close on outside click
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!ref.current?.contains(e.relatedTarget as Node)) setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref} onBlur={handleBlur}>
+      <label className="text-sm font-medium mb-1 block">{label}</label>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
+          {selected.label}
+        </span>
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              tabIndex={0}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+            >
+              <span className="flex items-center gap-2">
+                <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+                {opt.label}
+              </span>
+              {opt.value === value && <Check className="h-3.5 w-3.5 text-primary" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface SelectOption<T extends string> {
   value: T;
