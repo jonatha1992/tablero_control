@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       const mpPayerIdStr = preapproval.payer_id != null ? String(preapproval.payer_id) : null;
 
       await prisma.subscription.updateMany({
-        where: { mpPreferenceId: dataId },
+        where: { businessId: ref.businessId },
         data: { status, mpPayerId: mpPayerIdStr, ...periodData },
       });
 
@@ -119,7 +119,6 @@ export async function POST(req: NextRequest) {
             plan: ref.plan,
             status: 'active',
             featureFlags: flags,
-            mpPayerId: mpPayerIdStr,
           },
         });
 

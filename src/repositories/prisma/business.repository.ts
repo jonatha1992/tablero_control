@@ -22,7 +22,6 @@ export class PrismaBusinessRepository {
       settings: row.settings as unknown as Business['settings'], // Json cast to BusinessSettings
       featureFlags: row.featureFlags as Record<string, boolean>,
       subscriptionId: row.subscriptionId ?? undefined,
-      mpPayerId: row.mpPayerId ?? undefined,
       trialEndsAt: row.trialEndsAt ?? undefined,
       suspendedAt: row.suspendedAt ?? undefined,
       suspendedReason: row.suspendedReason ?? undefined,

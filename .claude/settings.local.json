@@ -79,7 +79,8 @@
       "Bash(git log *)",
       "Bash(npm install *)",
       "Bash(npx @railway/cli logs --service tablero_control)",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\" npx prisma *)"
     ]
   }
 }

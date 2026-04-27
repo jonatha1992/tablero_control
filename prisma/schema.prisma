@@ -129,7 +129,6 @@ model Business {
   logo            String?
   adminId         String
   subscriptionId  String?
-  mpPayerId       String?
   featureFlags    Json           @default("{}")
   settings        Json           @default("{\"maxLocations\":1,\"maxUsers\":5,\"features\":[],\"localeTypes\":[]}")
   trialEndsAt     DateTime?
@@ -318,7 +317,6 @@ model Subscription {
   invoices Invoice[]
 
   @@index([status])
-  @@index([mpPreferenceId])
 }
 
 model Invoice {
