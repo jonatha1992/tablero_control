@@ -1,4 +1,5 @@
 import type { Invoice, Subscription, PlanId, BillingFrequency } from '@/types/domain/subscription';
+import type { PlanDefinition } from '@/lib/mercadopago/plans';
 import { getToken } from '@/lib/firebase/auth';
 
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
@@ -12,6 +13,9 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const billingApi = {
+  getPlans: () =>
+    fetch('/api/planes').then((r) => r.json() as Promise<{ plans: PlanDefinition[] }>),
+
   getSubscription: () =>
     fetchJsonAuth<Subscription | null>('/api/business/subscription'),
 

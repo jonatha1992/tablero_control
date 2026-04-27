@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const [locationId, setLocationId] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
 
   const { mutate, isPending } = useCreateUser();
   const { data: locations = [] } = useLocationsQuery();
@@ -73,12 +75,20 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password) return;
     setError('');
+    setLimitInfo(null);
 
     mutate(
       { name: name.trim(), email: email.trim(), password, role, businessId, locationId: locationId || undefined },
       {
         onSuccess: () => setStep('success'),
-        onError: (err) => setError(err.message),
+        onError: (err) => {
+          if (err.message === 'members_limit_exceeded') {
+            const e = err as Error & { limit?: number; current?: number };
+            setLimitInfo({ limit: e.limit ?? 0, current: e.current ?? 0 });
+          } else {
+            setError(err.message);
+          }
+        },
       }
     );
   }
@@ -91,6 +101,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setRole('miembro');
     setLocationId('');
     setError('');
+    setLimitInfo(null);
     setCopied(false);
     onClose();
   }
@@ -203,6 +214,26 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                   ))}
                 </div>
               </div>
+
+              {limitInfo && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <p className="text-sm font-medium">Límite de usuarios alcanzado</p>
+                  </div>
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    Tu plan permite hasta <strong>{limitInfo.limit}</strong> usuarios y ya tenés <strong>{limitInfo.current}</strong> activos.
+                    Actualizá tu plan para agregar más.
+                  </p>
+                  <Link
+                    href="/dashboard/billing"
+                    onClick={handleClose}
+                    className="inline-block text-sm font-medium text-amber-800 dark:text-amber-300 underline underline-offset-2"
+                  >
+                    Ver planes disponibles
+                  </Link>
+                </div>
+              )}
 
               {error && (
                 <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

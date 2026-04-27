@@ -18,7 +18,7 @@ describe('getPlan()', () => {
   it('retorna definición correcta para basic', () => {
     const plan = getPlan('basic');
     expect(plan.id).toBe('basic');
-    expect(plan.priceMonthly).toBe(3999);
+    expect(plan.priceMonthly).toBe(15);
     expect(plan.limits.users).toBe(10);
     expect(plan.limits.locations).toBe(3);
   });
@@ -26,7 +26,7 @@ describe('getPlan()', () => {
   it('retorna definición correcta para pro', () => {
     const plan = getPlan('pro');
     expect(plan.id).toBe('pro');
-    expect(plan.priceMonthly).toBe(9999);
+    expect(plan.priceMonthly).toBe(30);
     expect(plan.highlight).toBe(true);
     expect(plan.limits.users).toBe(50);
     expect(plan.limits.locations).toBe(10);

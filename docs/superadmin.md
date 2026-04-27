@@ -24,6 +24,44 @@ URL: `/superadmin` — solo accesible con `role = 'superadmin'`.
 | `/superadmin/users` | Todos los usuarios (solo lectura) |
 | `/superadmin/subscriptions` | Estado de suscripciones MP |
 | `/superadmin/audit` | Log de auditoría (últimas 200 acciones) |
+| `/superadmin/planes` | Editar precios y límites de cada plan |
+
+## Gestión de planes (`/superadmin/planes`)
+
+Permite editar precios y límites de los 4 planes sin necesidad de deploy.
+
+### Cómo funciona
+
+Los datos se guardan en la tabla `PlanConfig` (PostgreSQL). Si una fila no existe para un `planId`, el sistema usa los valores hardcodeados en `src/lib/mercadopago/plans.ts` como fallback.
+
+**Helper server-side:** `src/lib/mercadopago/plan-config.ts`
+```ts
+getEffectivePlanConfig(planId)       // un plan
+getAllEffectivePlanConfigs()          // los 4 planes
+```
+
+**API:**
+- `GET  /api/superadmin/planes`  → lista planes efectivos (superadmin only)
+- `PATCH /api/superadmin/planes` → body `{ planId, priceMonthly, priceYearly, limitUsers, limitLocations, limitProjects, limitAttachments }` — guarda en DB + escribe AuditLog
+
+### Campos editables
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `priceMonthly` | Float | Precio ARS/mes. `0` = gratis |
+| `priceYearly` | Float | Precio ARS/año |
+| `limitUsers` | Int | `-1` = ilimitado |
+| `limitLocations` | Int | `-1` = ilimitado |
+| `limitProjects` | Int | `-1` = ilimitado |
+| `limitAttachments` | Int | Adjuntos/mes. `-1` = ilimitado |
+
+### Seed inicial
+
+```bash
+npx tsx prisma/seed-plan-config.ts
+```
+
+Crea las 4 filas con los valores base (free=gratis, basic=$15k, pro=$30k, enterprise=$99k ARS/mes).
 
 ## Suspender un negocio
 

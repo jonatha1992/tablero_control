@@ -3,6 +3,7 @@ import { getAdminAuth } from '@/lib/firebase/admin';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
+import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 import type { UserRole } from '@/types/domain/user';
 
 export interface CreateUserBody {
@@ -55,6 +56,29 @@ export async function POST(req: NextRequest) {
 
   if (authed.role === 'admin' && (role === 'admin' || role === 'superadmin')) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // Enforce plan user limit (skip for superadmin)
+  if (authed.role !== 'superadmin' && targetBusinessId) {
+    const business = await prisma.business.findUnique({
+      where: { id: targetBusinessId },
+      select: { plan: true },
+    });
+    if (business) {
+      const planConfig = await getEffectivePlanConfig(business.plan);
+      const limit = planConfig.limits.users;
+      if (limit !== -1) {
+        const current = await prisma.user.count({
+          where: { businessId: targetBusinessId, isActive: true },
+        });
+        if (current >= limit) {
+          return NextResponse.json(
+            { error: 'members_limit_exceeded', limit, current },
+            { status: 429 }
+          );
+        }
+      }
+    }
   }
 
   // Check email in PostgreSQL

@@ -18,16 +18,39 @@ Admin → /dashboard/billing → "Elegir Pro"
   → admin vuelve a /dashboard/billing?status=success
 ```
 
-## Planes
+## Planes y precios (dinámicos)
 
-| Plan       | Precio mensual | Precio anual | Usuarios | Locales |
-|------------|---------------|-------------|---------|---------|
-| free       | $0            | $0          | 3       | 1       |
-| basic      | $3.999 ARS    | $39.990 ARS | 10      | 3       |
-| pro        | $9.999 ARS    | $99.990 ARS | 50      | 10      |
-| enterprise | A convenir    | A convenir  | ∞       | ∞       |
+Los precios y límites se leen desde la tabla `PlanConfig` en PostgreSQL. El superadmin puede modificarlos desde `/superadmin/planes` sin deploy.
 
-Precios definidos en `src/lib/mercadopago/plans.ts`.
+| Plan       | Precio mensual base | Precio anual base | Usuarios | Locales |
+|------------|--------------------|--------------------|---------|---------|
+| free       | $0                 | $0                 | 3       | 1       |
+| basic      | $15.000 ARS        | $15.000 ARS        | 10      | 3       |
+| pro        | $30.000 ARS        | $30.000 ARS        | 50      | 10      |
+| enterprise | $99.000 ARS        | $99.000 ARS        | ∞       | ∞       |
+
+**Nota:** estos valores son los defaults del seed. El superadmin puede cambiarlos en cualquier momento.
+
+### Cómo se leen los precios
+
+- **Componentes de billing** (`billing-plan-cards.tsx`): `GET /api/planes` (público, sin auth) → datos dinámicos desde DB.
+- **API routes / server-side**: `getEffectivePlanConfig(planId)` desde `src/lib/mercadopago/plan-config.ts` — lee DB, fallback a `plans.ts` hardcodeado.
+- **`billingApi.getPlans()`** en `src/lib/api/billing.ts` → llama `/api/planes`.
+
+## Límite de usuarios por plan
+
+Al crear un usuario (`POST /api/users/create`), el backend verifica el límite:
+
+```
+1. Lee business.plan
+2. getEffectivePlanConfig(plan).limits.users
+3. prisma.user.count({ where: { businessId, isActive: true } })
+4. Si count >= limit && limit !== -1 → 429 { error: 'members_limit_exceeded', limit, current }
+```
+
+**Nota:** superadmin no tiene este check (puede crear usuarios en cualquier negocio sin restricción).
+
+El modal `create-user-modal.tsx` muestra un bloque de upgrade con link a `/dashboard/billing` cuando recibe `members_limit_exceeded`.
 
 ## Variables de entorno
 
@@ -62,11 +85,17 @@ POST /api/mercadopago/cancel { subscriptionId }
 Authorization: Bearer <token del admin>
 ```
 
-Esto cancela en MP y actualiza `subscription.status = 'cancelled'` en Firestore.
+## API routes de billing
 
-## Colecciones Firestore
-
-- `subscriptions/{id}` — estado de la suscripción.
-- `subscriptions/{id}/invoices/{id}` — pagos individuales.
-
-Ambas colecciones son **server-write only** (rules bloquean escritura desde cliente).
+| Endpoint | Auth | Descripción |
+|----------|------|-------------|
+| `GET /api/planes` | Pública | Planes efectivos desde DB |
+| `GET /api/superadmin/planes` | superadmin | Planes para panel admin |
+| `PATCH /api/superadmin/planes` | superadmin | Editar precio/límite de un plan |
+| `POST /api/mercadopago/preapproval` | admin | Inicia checkout en MP |
+| `POST /api/mercadopago/webhook` | MP (HMAC) | Recibe notificaciones de MP |
+| `POST /api/mercadopago/cancel` | admin | Cancela suscripción |
+| `POST /api/mercadopago/sync` | admin | Sincroniza estado con MP |
+| `POST /api/mercadopago/recover` | admin | Recupera facturas pendientes |
+| `GET /api/business/subscription` | admin | Estado de suscripción actual |
+| `GET /api/business/invoices` | admin | Historial de facturas |

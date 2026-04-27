@@ -3,6 +3,8 @@ import { locationService } from '@/services/location.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { prisma } from '@/lib/prisma';
+import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 
 export async function GET(request: NextRequest) {
   const user = await requireUser(request);
@@ -33,6 +35,28 @@ export async function POST(request: NextRequest) {
     }
 
     assertSameTenant(user.data, { businessId: body.businessId });
+
+    if (user.role !== 'superadmin') {
+      const business = await prisma.business.findUnique({
+        where: { id: body.businessId },
+        select: { plan: true },
+      });
+      if (business) {
+        const planConfig = await getEffectivePlanConfig(business.plan);
+        const limit = planConfig.limits.locations;
+        if (limit !== -1) {
+          const current = await prisma.location.count({
+            where: { businessId: body.businessId, status: { not: 'closed' } },
+          });
+          if (current >= limit) {
+            return NextResponse.json(
+              { error: 'locations_limit_exceeded', limit, current },
+              { status: 429 }
+            );
+          }
+        }
+      }
+    }
 
     const location = await locationService.create({
       businessId: body.businessId,

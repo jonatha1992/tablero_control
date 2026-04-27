@@ -14,11 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateLocation, useUpdateLocation } from '@/hooks/mutations/use-locations';
 import type { Location } from '@/types/domain/location';
-import { Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 
 export const SECTOR_ICONS: { name: string; icon: LucideIcon }[] = [
   { name: 'MapPin',        icon: LucideIcons.MapPin },
@@ -65,6 +66,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
   const [description, setDescription] = useState('');
   const [type, setType] = useState('department');
   const [icon, setIcon] = useState('MapPin');
+  const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
 
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
@@ -81,6 +83,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
       setType('department');
       setIcon('MapPin');
     }
+    setLimitInfo(null);
   }, [location, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -108,7 +111,15 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
         { onSuccess: onClose }
       );
     } else {
-      createMutation.mutate(data, { onSuccess: onClose });
+      createMutation.mutate(data, {
+        onSuccess: onClose,
+        onError: (err) => {
+          const e = err as Error & { limit?: number; current?: number };
+          if (e.message === 'locations_limit_exceeded') {
+            setLimitInfo({ limit: e.limit ?? 0, current: e.current ?? 0 });
+          }
+        },
+      });
     }
   };
 
@@ -182,6 +193,25 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
               disabled={isLoading}
             />
           </div>
+          {limitInfo && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <p className="text-sm font-medium">Límite de sectores alcanzado</p>
+              </div>
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Tu plan permite hasta <strong>{limitInfo.limit}</strong> sectores y ya tenés <strong>{limitInfo.current}</strong> activos.
+                Actualizá tu plan para agregar más.
+              </p>
+              <Link
+                href="/dashboard/billing"
+                onClick={onClose}
+                className="inline-block text-sm font-medium text-amber-800 dark:text-amber-300 underline underline-offset-2"
+              >
+                Ver planes disponibles
+              </Link>
+            </div>
+          )}
           <DialogFooter className="pt-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
               Cancelar

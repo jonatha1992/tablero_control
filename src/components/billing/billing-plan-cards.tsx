@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PLANS } from '@/lib/mercadopago/plans';
 import { cn } from '@/lib/utils';
 import type { PlanId, BillingFrequency } from '@/types/domain/subscription';
+import type { PlanDefinition } from '@/lib/mercadopago/plans';
 import { CheckCircle, Loader2, Sparkles } from 'lucide-react';
 import { billingApi } from '@/lib/api/billing';
 
@@ -16,6 +18,12 @@ interface Props {
 export function BillingPlanCards({ currentPlan, businessId }: Props) {
   const [frequency, setFrequency] = useState<BillingFrequency>('monthly');
   const [loading, setLoading] = useState<PlanId | null>(null);
+  const { data: plansData } = useQuery({
+    queryKey: ['plans'],
+    queryFn: () => billingApi.getPlans(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const plans: PlanDefinition[] = plansData?.plans ?? (Object.values(PLANS) as PlanDefinition[]);
 
   async function handleUpgrade(plan: PlanId) {
     if (plan === 'free' || plan === currentPlan) return;
@@ -52,7 +60,7 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {(Object.values(PLANS) as typeof PLANS[PlanId][]).map((plan) => {
+        {plans.map((plan) => {
           const isCurrent = plan.id === currentPlan;
           const price = frequency === 'monthly' ? plan.priceMonthly : plan.priceYearly;
           const isLoading = loading === plan.id;

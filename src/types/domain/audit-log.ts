@@ -31,7 +31,8 @@ export type AuditAction =
   | 'task.move'
   | 'task.delete'
   | 'attachment.upload'
-  | 'attachment.delete';
+  | 'attachment.delete'
+  | 'plan_config.update';
 
 export interface AuditLog {
   id: string;

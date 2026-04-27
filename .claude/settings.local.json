@@ -85,7 +85,25 @@
       "Bash(railway whoami *)",
       "Bash(railway list *)",
       "Bash(railway link *)",
+<<<<<<< HEAD
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('MP_ACCESS_TOKEN',''\\)\\)\")"
+=======
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('MP_ACCESS_TOKEN',''\\)\\)\")",
+      "Bash(cd /d D:\\\\Repositorio\\\\tablero_control)",
+      "Bash(grep -r \"users.*limit\\\\|planLimit\\\\|PLANS\\\\|plan.*users\" --include=\"*.ts\" src/app/api/members/ src/services/team)",
+      "Bash(export DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\")",
+      "Bash(npx tsx *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\" npx tsx prisma/seed-plan-config.ts)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway\" npx tsx prisma/fix-superadmin.ts)",
+      "mcp__playwright__browser_console_messages",
+      "Bash(pkill -f \"next\")",
+      "Bash(rm -rf .next/dev)",
+      "Bash(echo \"Started PID $!\")",
+      "Bash(taskkill /PID 11440 /F)",
+      "Bash(taskkill /PID 53 /F)",
+      "PowerShell(Stop-Process *)"
+>>>>>>> 92671418e315722900cbf84342e6593b7d2339bc
     ]
   }
 }
