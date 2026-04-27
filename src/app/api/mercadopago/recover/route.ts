@@ -100,7 +100,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'mp_search_failed' }, { status: 502 });
     }
   } else {
-    return NextResponse.json({ error: 'no_preference_id_on_subscription' }, { status: 400 });
+    // Fallback: search by external_reference when no mpPreferenceId saved
+    try {
+      const extRef = encodeURIComponent(`biz:${businessId}:${sub.plan}:${sub.frequency}`);
+      const result = await mpFetch<MpSearchResult>(
+        `/v1/payments/search?external_reference=${extRef}&status=approved&limit=20`
+      );
+      payments = result.results ?? [];
+    } catch {
+      return NextResponse.json({ error: 'mp_search_failed' }, { status: 502 });
+    }
   }
 
   if (payments.length === 0) {
