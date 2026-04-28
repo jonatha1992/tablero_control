@@ -38,6 +38,12 @@ export function Header({ userName, notificationCount = 0, onMobileMenuOpen }: He
     if (pathname.startsWith('/dashboard/config')) return { title: 'Configuración', description: 'Ajustes de la plataforma' };
     if (pathname === '/dashboard/calendario') return { title: 'Calendario', description: 'Cronograma de tareas' };
     if (pathname === '/dashboard/billing') return { title: 'Facturación', description: 'Suscripción y pagos' };
+    if (pathname === '/superadmin') return { title: 'Plataforma', description: 'Métricas globales de la plataforma.' };
+    if (pathname.startsWith('/superadmin/businesses')) return { title: 'Negocios', description: 'Gestión de negocios registrados.' };
+    if (pathname.startsWith('/superadmin/users')) return { title: 'Usuarios Globales', description: 'Todos los usuarios de la plataforma.' };
+    if (pathname.startsWith('/superadmin/subscriptions')) return { title: 'Suscripciones', description: 'Estado de suscripciones activas.' };
+    if (pathname.startsWith('/superadmin/planes')) return { title: 'Planes', description: 'Configuración de precios y límites.' };
+    if (pathname.startsWith('/superadmin/audit')) return { title: 'Auditoría', description: 'Log de acciones del sistema.' };
     return { title: 'Tablero de Control', description: '' };
   };
 

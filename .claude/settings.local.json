@@ -86,8 +86,11 @@
       "Bash(railway list *)",
       "Bash(railway link *)",
 <<<<<<< HEAD
+<<<<<<< HEAD
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('MP_ACCESS_TOKEN',''\\)\\)\")"
 =======
+=======
+>>>>>>> d5ed7d4e9f24a1ba8f3893df83cf5b940df2af5c
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('MP_ACCESS_TOKEN',''\\)\\)\")",
       "Bash(cd /d D:\\\\Repositorio\\\\tablero_control)",
       "Bash(grep -r \"users.*limit\\\\|planLimit\\\\|PLANS\\\\|plan.*users\" --include=\"*.ts\" src/app/api/members/ src/services/team)",
@@ -103,7 +106,10 @@
       "Bash(taskkill /PID 11440 /F)",
       "Bash(taskkill /PID 53 /F)",
       "PowerShell(Stop-Process *)"
+<<<<<<< HEAD
 >>>>>>> 92671418e315722900cbf84342e6593b7d2339bc
+=======
+>>>>>>> d5ed7d4e9f24a1ba8f3893df83cf5b940df2af5c
     ]
   }
 }

@@ -175,6 +175,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           if (task.type) setType(task.type);
           if (task.tags?.length) setTags(task.tags.join(', '));
           if (task.dueDate) setDueDate(task.dueDate);
+          if (task.dueTime) setDueTime(task.dueTime);
           if (task.assigneeIds?.length) setAssigneeIds(task.assigneeIds);
           toast.success('Formulario completado por IA');
         } else {
@@ -345,7 +346,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm font-medium mb-1 block">Fecha límite</label>
               <div className="flex gap-2">
@@ -363,6 +364,16 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                   className="flex h-10 w-24 rounded-md border border-input bg-background px-2 py-2 text-sm"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Hora</label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+              />
             </div>
 
             <div>

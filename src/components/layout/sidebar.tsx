@@ -16,9 +16,20 @@ import {
   CreditCard,
   ShieldCheck,
   Building2,
+  ScrollText,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
+
+const superAdminItems = [
+  { href: '/superadmin',              label: 'Plataforma',    icon: ShieldCheck,       exact: true },
+  { href: '/superadmin/businesses',   label: 'Negocios',      icon: Building2,         exact: false },
+  { href: '/superadmin/users',        label: 'Usuarios',      icon: Users,             exact: false },
+  { href: '/superadmin/subscriptions',label: 'Suscripciones', icon: CreditCard,        exact: false },
+  { href: '/superadmin/planes',       label: 'Planes',        icon: SlidersHorizontal, exact: false },
+  { href: '/superadmin/audit',        label: 'Auditoría',     icon: ScrollText,        exact: false },
+];
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -109,48 +120,26 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
               {collapsed ? 'SA' : 'Administración'}
             </p>
             <div className="space-y-1">
-              <Link
-                href="/superadmin"
-                className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  pathname === '/superadmin'
-                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  collapsed && 'justify-center'
-                )}
-                title={collapsed ? 'Panel Global' : undefined}
-              >
-                <ShieldCheck className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>Panel Global</span>}
-              </Link>
-              <Link
-                href="/superadmin/businesses"
-                className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  pathname.startsWith('/superadmin/businesses')
-                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  collapsed && 'justify-center'
-                )}
-                title={collapsed ? 'Negocios' : undefined}
-              >
-                <Building2 className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>Negocios</span>}
-              </Link>
-              <Link
-                href="/superadmin/users"
-                className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  pathname === '/superadmin/users'
-                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  collapsed && 'justify-center'
-                )}
-                title={collapsed ? 'Usuarios Globales' : undefined}
-              >
-                <Users className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>Usuarios Globales</span>}
-              </Link>
+              {superAdminItems.map((item) => {
+                const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      collapsed && 'justify-center'
+                    )}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}

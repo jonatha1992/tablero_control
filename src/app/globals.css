@@ -28,7 +28,7 @@
 }
 
 :root {
-  --bg: #ffffff;
+  --bg: #f8f8f9;
   --fg: #0a0a0a;
   --card-bg: #ffffff;
   --card-fg: #0a0a0a;
@@ -40,12 +40,12 @@
   --secondary-fg: #18181b;
   --muted-bg: #f4f4f5;
   --muted-fg: #71717a;
-  --accent-bg: #f4f4f5;
+  --accent-bg: #efefef;
   --accent-fg: #18181b;
   --destructive-bg: #d4145a;
   --destructive-fg: #fafafa;
-  --border-col: #e4e4e7;
-  --input-col: #e4e4e7;
+  --border-col: #d1d1d6;
+  --input-col: #c8c8cd;
   --ring-col: #18181b;
 }
 

@@ -2,13 +2,18 @@
 
 import { useAuth } from '@/hooks/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { SuperadminSidebar } from '@/components/superadmin/superadmin-sidebar';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Sidebar } from '@/components/layout/sidebar';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 
 export default function SuperadminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'superadmin')) {
@@ -27,9 +32,29 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
   if (!user || user.role !== 'superadmin') return null;
 
   return (
-    <div className="flex h-screen">
-      <SuperadminSidebar />
-      <main className="flex-1 overflow-y-auto bg-background">{children}</main>
+    <div className="flex flex-1 h-full min-h-0 w-full flex-col">
+      <div className="flex flex-1 min-h-0 min-w-0">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onCollapse={setSidebarCollapsed}
+          mobileOpen={mobileSidebarOpen}
+          onMobileOpenChange={setMobileSidebarOpen}
+        />
+        <div className={cn(
+          'flex flex-1 flex-col transition-all duration-300 ease-in-out min-h-0 min-w-0',
+          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-56'
+        )}>
+          <Header
+            userName={user?.name}
+            notificationCount={0}
+            onMobileMenuOpen={() => setMobileSidebarOpen(true)}
+          />
+          <main className="flex-1 overflow-auto p-4 flex flex-col relative min-h-0 min-w-0">
+            {children}
+          </main>
+          <Footer />
+        </div>
+      </div>
     </div>
   );
 }

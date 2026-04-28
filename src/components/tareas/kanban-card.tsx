@@ -143,16 +143,14 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
               <MoreVertical className="h-3.5 w-3.5" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="bottom" className="z-[200]">
-            <DropdownMenuLabel className="text-xs">Acciones</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+          <DropdownMenuContent align="end" side="bottom">
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
                 onClick(task);
               }}
             >
-              Ver detalle
+              Ver / Editar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -277,9 +275,11 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
           .filter((a): a is NonNullable<typeof a> => !!a);
         if (validAssignees.length === 0) return null;
 
+        const shown = validAssignees.slice(0, 3);
+        const rest = validAssignees.length - shown.length;
         return (
-          <div className="flex -space-x-2 mt-2 pt-2 border-t border-border/50">
-            {validAssignees.slice(0, 4).map((a) => {
+          <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/50 flex-wrap">
+            {shown.map((a) => {
               const initials = a.name
                 .split(' ')
                 .map((n) => n[0])
@@ -287,16 +287,19 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
                 .slice(0, 2)
                 .toUpperCase();
               return (
-                <Avatar key={a.id} className="h-5 w-5 border-2 border-card" title={a.name}>
-                  {a.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
-                  <AvatarFallback className="text-[8px] bg-primary/10">{initials}</AvatarFallback>
-                </Avatar>
+                <div key={a.id} className="flex items-center gap-1 rounded-full bg-muted/70 px-1.5 py-0.5" title={a.name}>
+                  <Avatar className="h-4 w-4 shrink-0">
+                    {a.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
+                    <AvatarFallback className="text-[7px] bg-primary/15">{initials}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-[10px] font-medium text-foreground/80 leading-none">
+                    {a.name.split(' ')[0]}
+                  </span>
+                </div>
               );
             })}
-            {validAssignees.length > 4 && (
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[8px] font-medium border-2 border-card">
-                +{validAssignees.length - 4}
-              </div>
+            {rest > 0 && (
+              <span className="text-[10px] text-muted-foreground">+{rest}</span>
             )}
           </div>
         );
