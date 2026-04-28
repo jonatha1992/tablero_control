@@ -10,6 +10,7 @@ export interface ExtractedTask {
   assigneeIds: string[];
   tags: string[];
   dueDate?: string; // ISO YYYY-MM-DD
+  dueTime?: string; // HH:mm 24h, e.g. "14:30"
 }
 
 interface Member {
@@ -41,7 +42,8 @@ Devuelve ÚNICAMENTE un JSON válido, sin texto adicional, con este esquema exac
       "type": "task" | "feature" | "bug" | "improvement" | "documentation",
       "assigneeIds": ["userId exacto de la lista arriba, o array vacío si no se menciona nadie"],
       "tags": ["string"],
-      "dueDate": "YYYY-MM-DD o null"
+      "dueDate": "YYYY-MM-DD o null",
+      "dueTime": "HH:MM (24h) o null"
     }
   ]
 }
@@ -52,6 +54,7 @@ Reglas:
 - priority: "urgente" / "para hoy" / "lo antes posible" → "urgent"; "importante" → "high"; sin mención → "medium"; "cuando puedas" / "no es urgente" → "low".
 - assigneeIds: busca coincidencias de nombre (puede ser primer nombre, apodo o similar). Si no hay match claro en la lista, usa [].
 - dueDate: si dice "para el viernes", "para mañana", "en dos días", calcula la fecha ISO desde hoy (${today}). Sin fecha → null.
+- dueTime: si menciona hora ("a las 3", "a las 14:30", "a las 3 de la tarde"), extraé en formato HH:MM de 24 horas. Sin hora → null.
 - Si no hay ninguna tarea reconocible en el texto, devuelve { "tasks": [] }.
 - No devuelvas explicaciones, markdown, ni texto fuera del JSON.
 `.trim();

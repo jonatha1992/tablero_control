@@ -16,8 +16,9 @@ import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
 import type { RecurrenceConfig } from '@/types';
@@ -35,6 +36,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   
+  const [editLocationId, setEditLocationId] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -47,6 +49,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const moveTask = useMoveTask();
   const deleteTask = useDeleteTask();
   const { data: members = [] } = useMembersQuery();
+  const { data: locations = [] } = useLocationsQuery();
 
   if (!task) return null;
 
@@ -57,6 +60,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         data: {
           title,
           description,
+          locationId: editLocationId || undefined,
           dueDate: editDueDate ? new Date(`${editDueDate}T${editDueTime || '00:00'}`) : undefined,
           recurrence: isRecurring ? {
             frequency,
@@ -156,6 +160,22 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" /> Sector / Local
+                </label>
+                <select
+                  value={editLocationId}
+                  onChange={(e) => setEditLocationId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
+                  <option value="">Sin sector</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="pt-2 border-t border-border">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium flex items-center gap-2 cursor-pointer">
@@ -233,8 +253,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSave} disabled={updateTask.isPending}>
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" onClick={handleSave} disabled={updateTask.isPending} className="gap-1.5">
+                  <Save className="h-3.5 w-3.5" />
                   {updateTask.isPending ? 'Guardando...' : 'Guardar'}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
@@ -255,6 +276,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   const h = d ? d.getHours() : 0;
                   const m = d ? d.getMinutes() : 0;
                   setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
+                  setEditLocationId(task.locationId ?? '');
                   setIsRecurring(!!task.recurrence);
                   setFrequency(task.recurrence?.frequency ?? 'weekly');
                   setIntervalValue(task.recurrence?.interval ?? 1);
@@ -272,6 +294,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           )}
         </DialogHeader>
 
+        {!editing && (
+        <>
         {/* Status & Priority */}
         <div className="flex flex-wrap gap-3 py-3 border-y">
           <div>
@@ -324,12 +348,23 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <Repeat className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">
                 Se repite cada {task.recurrence.interval > 1 ? `${task.recurrence.interval} ` : ''}
-                {task.recurrence.frequency === 'daily' ? 'día' : 
+                {task.recurrence.frequency === 'daily' ? 'día' :
                  task.recurrence.frequency === 'weekly' ? 'semana' :
                  task.recurrence.frequency === 'biweekly' ? 'quincena' : 'mes'}
                 {task.recurrence.dayOfWeek !== undefined && ` los ${['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][task.recurrence.dayOfWeek]}`}
                 {task.recurrence.dayOfMonth !== undefined && ` el día ${task.recurrence.dayOfMonth}`}
               </span>
+            </div>
+          )}
+
+          {task.locationId && locations.find((l) => l.id === task.locationId) && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" /> Sector
+              </p>
+              <p className="text-sm">
+                {locations.find((l) => l.id === task.locationId)!.name}
+              </p>
             </div>
           )}
         </div>
@@ -360,10 +395,10 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 const avatar = a?.avatar ?? member?.avatar;
                 const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
                 return (
-                  <div key={id} className="flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs bg-muted/50">
-                    <Avatar className="h-4 w-4">
+                  <div key={id} className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm bg-muted/50">
+                    <Avatar className="h-6 w-6">
                       {avatar && <AvatarImage src={avatar} alt={name} />}
-                      <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                      <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
                     </Avatar>
                     {name.split(' ')[0]}
                     {editingAssignees && (
@@ -430,6 +465,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
+        </>
+        )}
       </DialogContent>
 
       <ConfirmDialog

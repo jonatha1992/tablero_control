@@ -13,6 +13,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
     if (data.current !== undefined) err.current = data.current;
     throw err;
   }
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
