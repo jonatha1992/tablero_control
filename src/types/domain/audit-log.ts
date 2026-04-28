@@ -10,6 +10,8 @@ export type AuditAction =
   | 'user.update'
   | 'user.role_change'
   | 'user.deactivate'
+  | 'user.reactivate'
+  | 'user.delete'
   | 'user.impersonate'
   | 'role.create'
   | 'role.update'

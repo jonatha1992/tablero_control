@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       isActive: true,
       createdAt: true,
       business: {
-        select: { name: true }
+        select: { name: true, plan: true }
       }
     },
   });

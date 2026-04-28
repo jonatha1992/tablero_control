@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading, user } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, notInvited } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -97,6 +97,12 @@ export default function LoginPage() {
           <CardDescription>Inicia sesión para continuar</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {notInvited && (
+            <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-800 dark:text-amber-300">
+              Tu cuenta no está registrada en el sistema. Pedile a tu administrador que te invite.
+            </div>
+          )}
+
           {error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               {error}

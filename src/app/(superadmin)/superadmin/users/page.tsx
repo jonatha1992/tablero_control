@@ -3,12 +3,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { superadminApi } from '@/lib/api/superadmin';
 import type { User } from '@/types/domain/user';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, UserPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { CreateUserModal } from '@/components/equipo/create-user-modal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useAuth } from '@/hooks/auth-context';
 
 const ROLE_COLORS: Record<string, string> = {
   superadmin:  'bg-purple-100 text-purple-700',
@@ -18,21 +20,63 @@ const ROLE_COLORS: Record<string, string> = {
   viewer:      'bg-gray-100 text-gray-600',
 };
 
+type UserWithBusiness = User & { business?: { name: string; plan?: string } | null };
+
+interface DeleteState {
+  user: UserWithBusiness;
+  deleteBusiness: boolean;
+}
+
 export default function UsersPage() {
   const [search, setSearch] = useState('');
+  const [filterPlan, setFilterPlan] = useState<'all' | 'free'>('all');
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteState, setDeleteState] = useState<DeleteState | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
   const { data, isLoading } = useQuery({
     queryKey: ['sa-users'],
     queryFn: () => superadminApi.getUsers(),
   });
 
-  const users = (data?.users ?? []) as User[];
-  const filtered = users.filter(
-    (u) =>
+  const users = (data?.users ?? []) as UserWithBusiness[];
+
+  const filtered = users.filter((u) => {
+    const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  );
+      u.email.toLowerCase().includes(search.toLowerCase());
+    const matchPlan =
+      filterPlan === 'all' ||
+      (filterPlan === 'free' && u.business?.plan === 'free');
+    return matchSearch && matchPlan;
+  });
+
+  async function handleDeleteConfirm() {
+    if (!deleteState) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await superadminApi.deleteUser(deleteState.user.id, deleteState.deleteBusiness);
+      queryClient.invalidateQueries({ queryKey: ['sa-users'] });
+      setDeleteState(null);
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (msg.includes('user_has_tasks')) {
+        setDeleteError('Este usuario tiene tareas creadas. Reasignalas antes de eliminarlo.');
+      } else {
+        setDeleteError(msg);
+      }
+      setDeleting(false);
+    }
+  }
+
+  const deleteDescription = deleteState
+    ? `¿Eliminar a ${deleteState.user.name}? Esto borrará su cuenta de Firebase y PostgreSQL permanentemente. No se puede deshacer.`
+    : '';
 
   return (
     <div className="p-8 space-y-6">
@@ -47,13 +91,29 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      <input
-        type="search"
-        placeholder="Buscar por nombre, email o negocio…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm bg-background"
-      />
+      <div className="flex flex-wrap gap-3">
+        <input
+          type="search"
+          placeholder="Buscar por nombre, email…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm bg-background"
+        />
+        <div className="flex gap-1 rounded-lg border p-1 bg-background">
+          <button
+            onClick={() => setFilterPlan('all')}
+            className={`px-3 py-1 rounded-md text-sm transition-colors ${filterPlan === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setFilterPlan('free')}
+            className={`px-3 py-1 rounded-md text-sm transition-colors ${filterPlan === 'free' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Plan free
+          </button>
+        </div>
+      </div>
 
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -69,9 +129,9 @@ export default function UsersPage() {
                 <th className="text-left px-4 py-3 font-medium">Nombre</th>
                 <th className="text-left px-4 py-3 font-medium">Email</th>
                 <th className="text-left px-4 py-3 font-medium">Rol</th>
-
                 <th className="text-left px-4 py-3 font-medium">Estado</th>
                 <th className="text-left px-4 py-3 font-medium">Creado</th>
+                <th className="text-left px-4 py-3 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -84,24 +144,87 @@ export default function UsersPage() {
                       {u.role}
                     </span>
                   </td>
-
                   <td className="px-4 py-3">
                     {u.isActive ? (
-                      <span className="text-green-600 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Activo</span>
+                      <span className="text-green-600 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" /> Activo
+                      </span>
                     ) : (
-                      <span className="text-red-600 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Inactivo</span>
+                      <span className="text-red-600 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" /> Inactivo
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {u.createdAt ? format(new Date(u.createdAt as unknown as string), 'd MMM yyyy', { locale: es }) : '—'}
                   </td>
+                  <td className="px-4 py-3">
+                    <button
+                      disabled={u.id === currentUser?.id || u.role === 'superadmin'}
+                      onClick={() => setDeleteState({ user: u, deleteBusiness: false })}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Eliminar usuario"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td></tr>
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td>
+                </tr>
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {deleteState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-card border rounded-xl shadow-xl p-6 w-full max-w-md space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold">Eliminar usuario</h2>
+              <p className="text-sm text-muted-foreground">{deleteDescription}</p>
+            </div>
+
+            {deleteState.user.role === 'admin' && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={deleteState.deleteBusiness}
+                  onChange={(e) =>
+                    setDeleteState((s) => s ? { ...s, deleteBusiness: e.target.checked } : s)
+                  }
+                  className="rounded border-border"
+                />
+                También eliminar su negocio (si no tiene otros usuarios)
+              </label>
+            )}
+
+            {deleteError && (
+              <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => { setDeleteState(null); setDeleteError(''); }}
+                disabled={deleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
