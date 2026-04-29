@@ -83,6 +83,14 @@ export class PrismaUserRepository implements IUserRepository {
     await prisma.user.update({ where: { id }, data: { isActive: false } });
   }
 
+  async reactivate(id: string): Promise<void> {
+    await prisma.user.update({ where: { id }, data: { isActive: true } });
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.user.delete({ where: { id } });
+  }
+
   async updateId(oldId: string, newId: string): Promise<User> {
     const u = await prisma.user.update({
       where: { id: oldId },

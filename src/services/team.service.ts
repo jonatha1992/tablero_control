@@ -39,6 +39,10 @@ class TeamService {
   async removeMember(userId: string): Promise<void> {
     return userRepository.deactivate(userId);
   }
+
+  async reactivateMember(userId: string): Promise<void> {
+    return userRepository.reactivate(userId);
+  }
 }
 
 export const teamService = new TeamService();

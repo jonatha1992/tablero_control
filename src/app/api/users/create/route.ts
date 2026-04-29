@@ -84,6 +84,12 @@ export async function POST(req: NextRequest) {
   // Check email in PostgreSQL
   const existing = await prisma.user.findUnique({ where: { email: email.trim() } });
   if (existing) {
+    if (!existing.isActive && existing.businessId === targetBusinessId) {
+      return NextResponse.json(
+        { error: 'email_inactive', userId: existing.id },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
   }
 

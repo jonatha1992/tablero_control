@@ -19,6 +19,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   assertSameTenant(user.data, { businessId: target.businessId });
 
   const data = await request.json();
+
+  if (data.reactivate === true) {
+    await teamService.reactivateMember(id);
+    await writeAuditLog({
+      actorId: user.uid,
+      actorRole: user.role,
+      businessId: user.businessId,
+      action: 'user.reactivate',
+      targetType: 'USER',
+      targetId: id,
+    });
+    const reactivated = await userRepository.findById(id);
+    return NextResponse.json(reactivated);
+  }
+
   const member = await teamService.updateMember(id, data);
 
   await writeAuditLog({

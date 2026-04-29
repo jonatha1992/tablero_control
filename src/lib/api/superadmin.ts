@@ -15,6 +15,16 @@ export const superadminApi = {
   getBusiness: (id: string) => fetchSA<{ business: unknown; users: unknown[]; locations: unknown[]; teams?: unknown[]; projects?: unknown[] }>(`/api/superadmin/businesses/${id}`),
   getSubscriptions: () => fetchSA<{ subscriptions: unknown[] }>('/api/superadmin/subscriptions'),
   getAudit: () => fetchSA<{ logs: unknown[] }>('/api/superadmin/audit'),
+  deleteUser: async (id: string, deleteBusiness = false) => {
+    const token = await auth.currentUser?.getIdToken();
+    const url = `/api/superadmin/users/${id}${deleteBusiness ? '?deleteBusiness=true' : ''}`;
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
   patchBusiness: async (businessId: string, action: 'suspend' | 'reactivate') => {
     const token = await auth.currentUser?.getIdToken();
     const res = await fetch('/api/superadmin/businesses', {

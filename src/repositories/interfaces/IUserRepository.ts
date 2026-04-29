@@ -8,4 +8,6 @@ export interface IUserRepository {
   update(id: string, data: Partial<User>): Promise<User>;
   updateRole(id: string, role: UserRole): Promise<void>;
   deactivate(id: string): Promise<void>;
+  reactivate(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
 }

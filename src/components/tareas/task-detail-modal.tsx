@@ -295,24 +295,24 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         </DialogHeader>
 
         {!editing && (
-          <>
-            {/* Status & Priority */}
-            <div className="flex flex-wrap gap-3 py-3 border-y">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Estado</p>
-                <select
-                  value={task.status}
-                  onChange={(e) => handleStatusChange(e.target.value as TaskStatus)}
-                  className="h-8 rounded border border-input bg-background px-2 text-sm"
-                >
-                  <option value="backlog">Backlog</option>
-                  <option value="todo">Por hacer</option>
-                  <option value="in_progress">En progreso</option>
-                  <option value="in_review">En revisión</option>
-                  <option value="done">Finalizado</option>
-                  <option value="blocked">Bloqueada</option>
-                </select>
-              </div>
+        <>
+        {/* Status & Priority */}
+        <div className="flex flex-wrap gap-3 py-3 border-y">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Estado</p>
+            <select
+              value={task.status}
+              onChange={(e) => handleStatusChange(e.target.value as TaskStatus)}
+              className="h-8 rounded border border-input bg-background px-2 text-sm"
+            >
+              <option value="backlog">Backlog</option>
+              <option value="todo">Por hacer</option>
+              <option value="in_progress">En progreso</option>
+              <option value="in_review">En revisión</option>
+              <option value="done">Finalizado</option>
+              <option value="blocked">Bloqueada</option>
+            </select>
+          </div>
 
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
@@ -333,111 +333,40 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Badge variant="secondary">{task.type}</Badge>
               </div>
 
-              {task.dueDate && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
-                  <p className="text-sm">
-                    {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
-                  </p>
-                </div>
-              )}
-
-              {task.recurrence && (
-                <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md self-center">
-                  <Repeat className="h-3.5 w-3.5" />
-                  <span className="text-xs font-medium">
-                    Se repite cada {task.recurrence.interval > 1 ? `${task.recurrence.interval} ` : ''}
-                    {task.recurrence.frequency === 'daily' ? 'día' :
-                      task.recurrence.frequency === 'weekly' ? 'semana' :
-                        task.recurrence.frequency === 'biweekly' ? 'quincena' : 'mes'}
-                    {task.recurrence.dayOfWeek !== undefined && ` los ${['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][task.recurrence.dayOfWeek]}`}
-                    {task.recurrence.dayOfMonth !== undefined && ` el día ${task.recurrence.dayOfMonth}`}
-                  </span>
-                </div>
-              )}
-
-              {task.locationId && locations.find((l) => l.id === task.locationId) && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" /> Sector
-                  </p>
-                  <p className="text-sm">
-                    {locations.find((l) => l.id === task.locationId)!.name}
-                  </p>
-                </div>
-              )}
+          {task.dueDate && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
+              <p className="text-sm">
+                {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
+              </p>
             </div>
 
-            {/* Asignados */}
-            <div className="py-3 border-b">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5" /> Asignados ({task.assigneeIds?.length ?? 0})
-                </p>
-                {members.length > 0 && (
-                  <button
-                    onClick={() => setEditingAssignees((v) => !v)}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    {editingAssignees ? 'Cerrar' : 'Editar'}
-                  </button>
-                )}
-              </div>
-
-              {/* Current assignees */}
-              {task.assigneeIds?.length > 0 ? (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {task.assigneeIds.map((id) => {
-                    const a = task.assignees?.find((x) => x.id === id);
-                    const member = members.find((m) => m.id === id);
-                    const name = a?.name ?? member?.name ?? id;
-                    const avatar = a?.avatar ?? member?.avatar;
-                    const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-                    return (
-                      <div key={id} className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm bg-muted/50">
-                        <Avatar className="h-6 w-6">
-                          {avatar && <AvatarImage src={avatar} alt={name} />}
-                          <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-                        </Avatar>
-                        {name.split(' ')[0]}
-                        {editingAssignees && (
-                          <button onClick={() => toggleAssignee(id)} className="ml-0.5 text-muted-foreground hover:text-destructive">
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground mb-2">Sin asignados</p>
-              )}
-
-              {/* Add assignees */}
-              {editingAssignees && (
-                <div className="flex flex-wrap gap-1.5 pt-2 border-t">
-                  {members
-                    .filter((m) => !task.assigneeIds?.includes(m.id))
-                    .map((m) => {
-                      const initials = m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-                      return (
-                        <button
-                          key={m.id}
-                          onClick={() => toggleAssignee(m.id)}
-                          className="flex items-center gap-1.5 rounded-full border border-dashed px-2 py-1 text-xs hover:bg-accent hover:border-primary"
-                        >
-                          <Avatar className="h-4 w-4">
-                            {m.avatar && <AvatarImage src={m.avatar} alt={m.name} />}
-                            <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
-                          </Avatar>
-                          + {m.name.split(' ')[0]}
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
+          {task.recurrence && (
+            <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md self-center">
+              <Repeat className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">
+                Se repite cada {task.recurrence.interval > 1 ? `${task.recurrence.interval} ` : ''}
+                {task.recurrence.frequency === 'daily' ? 'día' :
+                 task.recurrence.frequency === 'weekly' ? 'semana' :
+                 task.recurrence.frequency === 'biweekly' ? 'quincena' : 'mes'}
+                {task.recurrence.dayOfWeek !== undefined && ` los ${['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][task.recurrence.dayOfWeek]}`}
+                {task.recurrence.dayOfMonth !== undefined && ` el día ${task.recurrence.dayOfMonth}`}
+              </span>
             </div>
+          )}
+
+          {task.locationId && locations.find((l) => l.id === task.locationId) && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" /> Sector
+              </p>
+              <p className="text-sm">
+                {locations.find((l) => l.id === task.locationId)!.name}
+              </p>
+            </div>
+          )}
+        </div>
 
             {/* Tags */}
             {task.tags?.length > 0 && (
@@ -451,12 +380,30 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </div>
             )}
 
-            {/* Adjuntos */}
-            <div className="py-3 border-b">
-              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                <Paperclip className="h-3.5 w-3.5" /> Adjuntos
-              </p>
-              <TaskAttachments task={task} />
+          {/* Current assignees */}
+          {task.assigneeIds?.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {task.assigneeIds.map((id) => {
+                const a = task.assignees?.find((x) => x.id === id);
+                const member = members.find((m) => m.id === id);
+                const name = a?.name ?? member?.name ?? id;
+                const avatar = a?.avatar ?? member?.avatar;
+                const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+                return (
+                  <div key={id} className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm bg-muted/50">
+                    <Avatar className="h-6 w-6">
+                      {avatar && <AvatarImage src={avatar} alt={name} />}
+                      <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                    </Avatar>
+                    {name.split(' ')[0]}
+                    {editingAssignees && (
+                      <button onClick={() => toggleAssignee(id)} className="ml-0.5 text-muted-foreground hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Meta info */}
@@ -466,6 +413,23 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
             </div>
           </>
+        )}
+
+        {/* Adjuntos */}
+        <div className="py-3 border-b">
+          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+            <Paperclip className="h-3.5 w-3.5" /> Adjuntos
+          </p>
+          <TaskAttachments task={task} />
+        </div>
+
+        {/* Meta info */}
+        <div className="pt-3 text-xs text-muted-foreground space-y-1">
+          <p>Creada: {new Date(task.createdAt).toLocaleString('es')}</p>
+          <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
+          {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
+        </div>
+        </>
         )}
       </DialogContent>
 
@@ -479,6 +443,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         variant="destructive"
         loading={deleteTask.isPending}
       />
-    </Dialog>
+    </Dialog >
   );
 }

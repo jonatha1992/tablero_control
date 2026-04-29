@@ -13,13 +13,11 @@ export async function GET(request: NextRequest) {
     let user = await userRepository.findById(decoded.uid);
 
     if (!user && decoded.email) {
-      // Check if user was invited (exists by email but with a different ID)
+      // Invited user: exists by email but has a different Firebase UID
       const existingByEmail = await userRepository.findByEmail(decoded.email);
       if (existingByEmail) {
         try {
           user = await userRepository.updateId(existingByEmail.id, decoded.uid);
-          
-          // If the invited user doesn't have an avatar but Google provided one, update it
           if (!user.avatar && decoded.picture) {
             user = await userRepository.update(user.id, { avatar: decoded.picture });
           }
@@ -30,63 +28,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (!user) {
-      const email = decoded.email ?? '';
-      const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
-      const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
-      const isSuperadmin = superadminEmails.includes(email);
-      const role = isSuperadmin ? 'superadmin' : 'admin';
-      
-      let businessId = undefined;
-
-      // Create business for the new admin/superadmin
-      const business = await businessRepository.create({
-        name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
-        adminId: decoded.uid,
-        plan: 'free',
-        status: 'active',
-        settings: {
-          maxLocations: 1,
-          maxUsers: 5,
-          theme: 'system',
-          language: 'es',
-          timezone: 'America/Argentina/Buenos_Aires',
-          notifications: {
-            email: true,
-          },
-          features: {
-            customBranding: false,
-            advancedReports: false,
-            apiAccess: false,
-          },
-          localeTypes: [],
-        },
-        featureFlags: {},
-        locationIds: [],
-        teamIds: [],
-      });
-      businessId = business.id;
-
-      user = await userRepository.create({
-        id: decoded.uid,
-        email,
-        name,
-        role,
-        businessId,
-        avatar: decoded.picture ?? undefined,
-        teamIds: [],
-        preferences: {
-          theme: 'system',
-          locale: 'es',
-          timezone: 'America/Argentina/Buenos_Aires',
-          notifications: { email: true, push: true, agentReports: true, agentAlerts: true },
-          dashboardLayout: [],
-        },
-        isActive: true,
-      } as Parameters<typeof userRepository.create>[0]);
+      return NextResponse.json({ error: 'not_invited' }, { status: 404 });
     }
 
-    // Fix for existing users without businessId (like the test superadmin)
-    if (user && !user.businessId) {
+    // Fix for existing users without businessId
+    if (!user.businessId) {
       const email = decoded.email ?? '';
       const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
       const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
@@ -116,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error('Profile fetch/create error:', error);
+    console.error('Profile fetch error:', error);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 }

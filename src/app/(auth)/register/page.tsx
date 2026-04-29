@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { register } from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,11 +12,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading, user } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, refreshProfile } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -41,8 +43,29 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // 1. Create Firebase user
       await register(email, password, name, 'miembro');
-      router.refresh();
+      // onAuthStateChanged fires but won't sign out (we're on /register)
+
+      // 2. Provision user + business in DB
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No se pudo obtener el token de autenticación');
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ businessName: businessName.trim() || undefined }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Error al crear el negocio. Inténtalo de nuevo.');
+      }
+
+      // 3. Load profile into context (triggers redirect via useEffect)
+      await refreshProfile();
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/email-already-in-use') {
@@ -50,7 +73,7 @@ export default function RegisterPage() {
       } else if (code === 'auth/weak-password') {
         setError('La contraseña es demasiado débil');
       } else {
-        setError('Error al crear la cuenta. Inténtalo de nuevo.');
+        setError((err as Error).message || 'Error al crear la cuenta. Inténtalo de nuevo.');
       }
       console.error(err);
     } finally {
@@ -78,7 +101,7 @@ export default function RegisterPage() {
           TC
         </div>
         <CardTitle className="text-2xl">Crear Cuenta</CardTitle>
-        <CardDescription>Regístrate para acceder al tablero</CardDescription>
+        <CardDescription>Registrá tu negocio para acceder al tablero</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -88,14 +111,27 @@ export default function RegisterPage() {
             </div>
           )}
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">Nombre</label>
+            <label htmlFor="name" className="text-sm font-medium">Tu nombre</label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Tu nombre"
+              placeholder="Juan García"
               required
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="businessName" className="text-sm font-medium">
+              Nombre del negocio <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <input
+              id="businessName"
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="Mi Empresa S.A."
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
@@ -141,9 +177,9 @@ export default function RegisterPage() {
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            ¿Ya tienes cuenta?{' '}
+            ¿Ya tenés cuenta?{' '}
             <Link href="/login" className="text-primary underline hover:text-primary/80">
-              Inicia sesión
+              Iniciá sesión
             </Link>
           </p>
         </CardFooter>

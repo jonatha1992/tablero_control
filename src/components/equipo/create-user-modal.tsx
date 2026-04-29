@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -14,8 +14,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useCreateUser } from '@/hooks/mutations/use-create-user';
+import { useCreateUser, EmailInactiveError } from '@/hooks/mutations/use-create-user';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { memberKeys } from '@/hooks/queries/use-members-query';
+import { getToken } from '@/lib/firebase/auth';
 import type { UserRole } from '@/types/domain/user';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
@@ -42,7 +45,7 @@ interface Props {
   businessId?: string;
 }
 
-type Step = 'form' | 'success';
+type Step = 'form' | 'success' | 'reactivate';
 
 export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessId }: Props) {
   const [step, setStep] = useState<Step>('form');
@@ -55,9 +58,12 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
+  const [inactiveUserId, setInactiveUserId] = useState<string | null>(null);
+  const [reactivating, setReactivating] = useState(false);
 
   const { mutate, isPending } = useCreateUser();
   const { data: locations = [] } = useLocationsQuery();
+  const queryClient = useQueryClient();
 
   const roles = isSuperAdmin ? SUPERADMIN_ROLES : ROLES;
 
@@ -82,7 +88,10 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
       {
         onSuccess: () => setStep('success'),
         onError: (err) => {
-          if (err.message === 'members_limit_exceeded') {
+          if (err instanceof EmailInactiveError) {
+            setInactiveUserId(err.userId);
+            setStep('reactivate');
+          } else if (err.message === 'members_limit_exceeded') {
             const e = err as Error & { limit?: number; current?: number };
             setLimitInfo({ limit: e.limit ?? 0, current: e.current ?? 0 });
           } else {
@@ -91,6 +100,27 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
         },
       }
     );
+  }
+
+  async function handleReactivate() {
+    if (!inactiveUserId) return;
+    setReactivating(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/members/${inactiveUserId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reactivate: true }),
+      });
+      if (!res.ok) throw new Error('No se pudo reactivar el usuario');
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      setStep('success');
+    } catch (err) {
+      setError((err as Error).message);
+      setStep('form');
+    } finally {
+      setReactivating(false);
+    }
   }
 
   function handleClose() {
@@ -103,6 +133,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setError('');
     setLimitInfo(null);
     setCopied(false);
+    setInactiveUserId(null);
     onClose();
   }
 
@@ -250,6 +281,36 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 </Button>
               </DialogFooter>
             </form>
+          </>
+        ) : step === 'reactivate' ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <UserCheck className="h-5 w-5" />
+                Usuario desactivado
+              </DialogTitle>
+              <DialogDescription>
+                Este email pertenece a un usuario que fue desactivado anteriormente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-2 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                El email <span className="font-medium text-foreground">{email}</span> ya existe en el sistema pero está inactivo. ¿Querés reactivarlo?
+              </p>
+              {error && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={handleClose} disabled={reactivating}>
+                Cancelar
+              </Button>
+              <Button onClick={handleReactivate} disabled={reactivating}>
+                {reactivating ? 'Reactivando...' : 'Reactivar usuario'}
+              </Button>
+            </DialogFooter>
           </>
         ) : (
           <>

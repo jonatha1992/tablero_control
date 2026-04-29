@@ -377,6 +377,16 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             </div>
 
             <div>
+              <label className="text-sm font-medium mb-1 block">Hora</label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+              />
+            </div>
+
+            <div>
               <label className="text-sm font-medium mb-1 block">Tags (coma)</label>
               <input
                 type="text"
