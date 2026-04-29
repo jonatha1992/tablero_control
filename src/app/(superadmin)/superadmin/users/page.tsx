@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { superadminApi } from '@/lib/api/superadmin';
 import type { User } from '@/types/domain/user';
-import { Loader2, UserPlus, Trash2 } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [deleteState, setDeleteState] = useState<DeleteState | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [changingPlan, setChangingPlan] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -54,6 +55,16 @@ export default function UsersPage() {
       (filterPlan === 'free' && u.business?.plan === 'free');
     return matchSearch && matchPlan;
   });
+
+  async function handlePlanChange(businessId: string, plan: string) {
+    setChangingPlan(businessId);
+    try {
+      await superadminApi.changePlan(businessId, plan);
+      queryClient.invalidateQueries({ queryKey: ['sa-users'] });
+    } finally {
+      setChangingPlan(null);
+    }
+  }
 
   async function handleDeleteConfirm() {
     if (!deleteState) return;
@@ -130,6 +141,7 @@ export default function UsersPage() {
                 <th className="text-left px-4 py-3 font-medium">Email</th>
                 <th className="text-left px-4 py-3 font-medium">Rol</th>
                 <th className="text-left px-4 py-3 font-medium">Estado</th>
+                <th className="text-left px-4 py-3 font-medium">Plan</th>
                 <th className="text-left px-4 py-3 font-medium">Creado</th>
                 <th className="text-left px-4 py-3 font-medium">Acciones</th>
               </tr>
@@ -155,6 +167,30 @@ export default function UsersPage() {
                       </span>
                     )}
                   </td>
+                  <td className="px-4 py-3">
+                    {u.role === 'admin' && u.businessId ? (
+                      <div className="relative">
+                        <select
+                          value={u.business?.plan ?? 'free'}
+                          disabled={changingPlan === u.businessId}
+                          onChange={(e) => handlePlanChange(u.businessId!, e.target.value)}
+                          className="appearance-none h-7 pl-2 pr-7 rounded-md border border-input bg-background text-xs font-medium disabled:opacity-50 cursor-pointer"
+                        >
+                          <option value="free">Free</option>
+                          <option value="basic">Basic</option>
+                          <option value="pro">Pro</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
+                        {changingPlan === u.businessId ? (
+                          <Loader2 className="absolute right-1.5 top-1.5 h-3.5 w-3.5 animate-spin text-muted-foreground pointer-events-none" />
+                        ) : (
+                          <ChevronsUpDown className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {u.createdAt ? format(new Date(u.createdAt as unknown as string), 'd MMM yyyy', { locale: es }) : '—'}
                   </td>
@@ -172,7 +208,7 @@ export default function UsersPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td>
+                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Sin resultados</td>
                 </tr>
               )}
             </tbody>
