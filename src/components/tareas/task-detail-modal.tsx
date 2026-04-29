@@ -35,7 +35,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [description, setDescription] = useState('');
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  
   const [editLocationId, setEditLocationId] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
@@ -83,7 +82,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   };
 
   const handleConfirmDelete = () => {
-    deleteTask.mutate(task.id, { 
+    deleteTask.mutate(task.id, {
       onSuccess: () => {
         setShowConfirmDelete(false);
         onOpenChange(false);
@@ -120,7 +119,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               {task.description || 'Detalles de la tarea seleccionada.'}
             </DialogDescription>
           </div>
-
           {editing ? (
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
@@ -215,40 +213,40 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                       />
                     </div>
 
-                  {frequency === 'weekly' && (
-                    <div className="col-span-2">
-                      <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
-                      <select
-                        value={dayOfWeek ?? ''}
-                        onChange={(e) => setDayOfWeek(e.target.value ? Number(e.target.value) : undefined)}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                      >
-                        <option value="">Cualquier día</option>
-                        <option value="1">Lunes</option>
-                        <option value="2">Martes</option>
-                        <option value="3">Miércoles</option>
-                        <option value="4">Jueves</option>
-                        <option value="5">Viernes</option>
-                        <option value="6">Sábado</option>
-                        <option value="0">Domingo</option>
-                      </select>
-                    </div>
-                  )}
+                    {frequency === 'weekly' && (
+                      <div className="col-span-2">
+                        <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
+                        <select
+                          value={dayOfWeek ?? ''}
+                          onChange={(e) => setDayOfWeek(e.target.value ? Number(e.target.value) : undefined)}
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        >
+                          <option value="">Cualquier día</option>
+                          <option value="1">Lunes</option>
+                          <option value="2">Martes</option>
+                          <option value="3">Miércoles</option>
+                          <option value="4">Jueves</option>
+                          <option value="5">Viernes</option>
+                          <option value="6">Sábado</option>
+                          <option value="0">Domingo</option>
+                        </select>
+                      </div>
+                    )}
 
-                  {frequency === 'monthly' && (
-                    <div className="col-span-2">
-                      <label className="text-xs text-muted-foreground mb-1 block">Día del mes (1-31)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={31}
-                        placeholder="Ej: 1"
-                        value={dayOfMonth ?? ''}
-                        onChange={(e) => setDayOfMonth(e.target.value ? Number(e.target.value) : undefined)}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                      />
-                    </div>
-                  )}
+                    {frequency === 'monthly' && (
+                      <div className="col-span-2">
+                        <label className="text-xs text-muted-foreground mb-1 block">Día del mes (1-31)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={31}
+                          placeholder="Ej: 1"
+                          value={dayOfMonth ?? ''}
+                          onChange={(e) => setDayOfMonth(e.target.value ? Number(e.target.value) : undefined)}
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -314,24 +312,24 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </select>
           </div>
 
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
-            <select
-              value={task.priority}
-              onChange={(e) => handlePriorityChange(e.target.value as TaskPriority)}
-              className="h-8 rounded border border-input bg-background px-2 text-sm"
-            >
-              <option value="low">Baja</option>
-              <option value="medium">Media</option>
-              <option value="high">Alta</option>
-              <option value="urgent">Urgente</option>
-            </select>
-          </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
+                <select
+                  value={task.priority}
+                  onChange={(e) => handlePriorityChange(e.target.value as TaskPriority)}
+                  className="h-8 rounded border border-input bg-background px-2 text-sm"
+                >
+                  <option value="low">Baja</option>
+                  <option value="medium">Media</option>
+                  <option value="high">Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+              </div>
 
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Tipo</p>
-            <Badge variant="secondary">{task.type}</Badge>
-          </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Tipo</p>
+                <Badge variant="secondary">{task.type}</Badge>
+              </div>
 
           {task.dueDate && (
             <div>
@@ -369,24 +367,20 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           )}
         </div>
 
-        {/* Asignados */}
-        <div className="py-3 border-b">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" /> Asignados ({task.assigneeIds?.length ?? 0})
-            </p>
-            {members.length > 0 && (
-              <button
-                onClick={() => setEditingAssignees((v) => !v)}
-                className="text-xs text-primary hover:underline"
-              >
-                {editingAssignees ? 'Cerrar' : 'Editar'}
-              </button>
+            {/* Tags */}
+            {task.tags?.length > 0 && (
+              <div className="py-3 border-b">
+                <p className="text-xs text-muted-foreground mb-2">Tags</p>
+                <div className="flex flex-wrap gap-1">
+                  {task.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
 
           {/* Current assignees */}
-          {task.assigneeIds?.length > 0 ? (
+          {task.assigneeIds?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {task.assigneeIds.map((id) => {
                 const a = task.assignees?.find((x) => x.id === id);
@@ -410,45 +404,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 );
               })}
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mb-2">Sin asignados</p>
           )}
-
-          {/* Add assignees */}
-          {editingAssignees && (
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t">
-              {members
-                .filter((m) => !task.assigneeIds?.includes(m.id))
-                .map((m) => {
-                  const initials = m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => toggleAssignee(m.id)}
-                      className="flex items-center gap-1.5 rounded-full border border-dashed px-2 py-1 text-xs hover:bg-accent hover:border-primary"
-                    >
-                      <Avatar className="h-4 w-4">
-                        {m.avatar && <AvatarImage src={m.avatar} alt={m.name} />}
-                        <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
-                      </Avatar>
-                      + {m.name.split(' ')[0]}
-                    </button>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-
-        {/* Tags */}
-        {task.tags?.length > 0 && (
-          <div className="py-3 border-b">
-            <p className="text-xs text-muted-foreground mb-2">Tags</p>
-            <div className="flex flex-wrap gap-1">
-              {task.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
-              ))}
-            </div>
-          </div>
+        </>
         )}
 
         {/* Adjuntos */}
@@ -479,6 +436,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         variant="destructive"
         loading={deleteTask.isPending}
       />
-    </Dialog>
+    </Dialog >
   );
 }
