@@ -4,6 +4,7 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
+import { MailService } from '@/services/mail.service';
 import type { UserRole } from '@/types/domain/user';
 
 export interface CreateUserBody {
@@ -140,6 +141,16 @@ export async function POST(req: NextRequest) {
     targetId: uid,
     metadata: { email, role, locationId },
   });
+
+  if (targetBusinessId) {
+    prisma.business.findUnique({ where: { id: targetBusinessId }, select: { name: true } })
+      .then((biz) => {
+        const teamName = biz?.name ?? 'el equipo';
+        const inviterName = authed.data.name ?? authed.data.email ?? 'Un administrador';
+        MailService.sendInviteEmail(email.trim(), inviterName, teamName).catch(() => {});
+      })
+      .catch(() => {});
+  }
 
   return NextResponse.json(
     { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },
