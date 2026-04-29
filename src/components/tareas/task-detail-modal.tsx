@@ -341,6 +341,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
               </p>
             </div>
+          )}
 
           {task.recurrence && (
             <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md self-center">
@@ -381,7 +382,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             )}
 
           {/* Current assignees */}
-          {task.assigneeIds?.length > 0 ? (
+          {task.assigneeIds?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {task.assigneeIds.map((id) => {
                 const a = task.assignees?.find((x) => x.id === id);
@@ -405,14 +406,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 );
               })}
             </div>
-
-            {/* Meta info */}
-            <div className="pt-3 text-xs text-muted-foreground space-y-1">
-              <p>Creada: {new Date(task.createdAt).toLocaleString('es')}</p>
-              <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
-              {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
-            </div>
-          </>
+          )}
+        </>
         )}
 
         {/* Adjuntos */}
@@ -429,8 +424,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
-        </>
-        )}
       </DialogContent>
 
       <ConfirmDialog
