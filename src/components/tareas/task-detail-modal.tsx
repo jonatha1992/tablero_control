@@ -35,7 +35,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [description, setDescription] = useState('');
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-
   const [editLocationId, setEditLocationId] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
@@ -120,7 +119,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               {task.description || 'Detalles de la tarea seleccionada.'}
             </DialogDescription>
           </div>
-
           {editing ? (
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
@@ -424,6 +422,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
+        </>
+        )}
       </DialogContent>
 
       <ConfirmDialog
