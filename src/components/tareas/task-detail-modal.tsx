@@ -422,8 +422,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
-        </>
-        )}
       </DialogContent>
 
       <ConfirmDialog
