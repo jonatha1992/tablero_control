@@ -25,6 +25,16 @@ export const superadminApi = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+  changePlan: async (businessId: string, plan: string) => {
+    const token = await auth.currentUser?.getIdToken();
+    const res = await fetch(`/api/superadmin/subscriptions/${businessId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
   patchBusiness: async (businessId: string, action: 'suspend' | 'reactivate') => {
     const token = await auth.currentUser?.getIdToken();
     const res = await fetch('/api/superadmin/businesses', {

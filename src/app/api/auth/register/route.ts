@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
+import { MailService } from '@/services/mail.service';
 
 const DEFAULT_PREFERENCES = {
   theme: 'system' as const,
@@ -83,6 +84,8 @@ export async function POST(request: NextRequest) {
     preferences: DEFAULT_PREFERENCES,
     isActive: true,
   } as Parameters<typeof userRepository.create>[0]);
+
+  MailService.sendWelcomeEmail(email, name).catch(() => {});
 
   return NextResponse.json(user, { status: 201 });
 }
