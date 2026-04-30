@@ -11,7 +11,7 @@ import { logout as signOut } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';
 
 const NAV = [
-  { href: '/superadmin',              label: 'Plataforma',    icon: LayoutDashboard },
+  { href: '/superadmin',              label: '',    icon: LayoutDashboard },
   { href: '/superadmin/businesses',   label: 'Negocios',      icon: Building2 },
   { href: '/superadmin/users',        label: 'Usuarios',      icon: Users },
   { href: '/superadmin/subscriptions',label: 'Suscripciones', icon: CreditCard },

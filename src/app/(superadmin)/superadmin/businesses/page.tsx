@@ -180,10 +180,7 @@ export default function BusinessesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Negocios</h1>
 
-      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <input

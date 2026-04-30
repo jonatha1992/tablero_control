@@ -250,17 +250,6 @@ export default function UsersPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Usuarios</h1>
-
-        </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <UserPlus className="mr-1.5 h-4 w-4" />
-          Crear usuario
-        </Button>
-      </div>
-
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="search"
@@ -280,6 +269,13 @@ export default function UsersPage() {
           value={filterPlan}
           onChange={setFilterPlan}
         />
+
+        {selectedIds.size === 0 && (
+          <Button size="sm" className="ml-auto" onClick={() => setCreateOpen(true)}>
+            <UserPlus className="mr-1.5 h-4 w-4" />
+            Crear usuario
+          </Button>
+        )}
 
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2 ml-auto">

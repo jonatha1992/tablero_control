@@ -190,12 +190,7 @@ export default function PlanesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Planes</h1>
-        <p className="text-muted-foreground text-sm">
-          Configurá precios y límites de cada plan. Usá <strong>-1</strong> para ilimitado.
-        </p>
-      </div>
+
 
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground">

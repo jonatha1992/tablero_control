@@ -151,10 +151,7 @@ export default function AuditPage() {
         />
       )}
 
-      <div>
-        <h1 className="text-2xl font-bold">Auditoría</h1>
-        <p className="text-muted-foreground text-sm">Últimas 200 acciones de la plataforma.</p>
-      </div>
+
 
       <input
         type="search"

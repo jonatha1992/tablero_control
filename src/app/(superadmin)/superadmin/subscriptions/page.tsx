@@ -90,10 +90,7 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Suscripciones</h1>
-        <p className="text-muted-foreground text-sm">Estado de todas las suscripciones de la plataforma.</p>
-      </div>
+
 
       <div className="flex flex-wrap items-center gap-3">
         <FilterPillGroup

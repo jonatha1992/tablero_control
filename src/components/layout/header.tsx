@@ -29,25 +29,26 @@ export function Header({ userName, notificationCount = 0, onMobileMenuOpen }: He
   const roleColors = ROLE_COLORS;
 
   const getPageContext = () => {
-    if (!pathname) return { title: 'Tablero de Control', description: '' };
-    if (pathname === '/dashboard') return { title: 'Dashboard de Negocio', description: 'Resumen global de rendimiento y métricas operativas.' };
-    if (pathname === '/dashboard/sectores') return { title: 'Departamentos y Sectores', description: 'Gestioná la estructura organizativa de tu negocio.' };
-    if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas', description: 'Kanban con drag & drop' };
-    if (pathname === '/dashboard/equipo') return { title: 'Equipo', description: 'Miembros del equipo.' };
-    if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos', description: 'Administración de accesos y permisos del equipo.' };
-    if (pathname.startsWith('/dashboard/config')) return { title: 'Configuración', description: 'Ajustes de la plataforma' };
-    if (pathname === '/dashboard/calendario') return { title: 'Calendario', description: 'Cronograma de tareas' };
-    if (pathname === '/dashboard/billing') return { title: 'Facturación', description: 'Suscripción y pagos' };
-    if (pathname === '/superadmin') return { title: 'Plataforma', description: 'Métricas globales de la plataforma.' };
-    if (pathname.startsWith('/superadmin/businesses')) return { title: 'Negocios', description: 'Gestión de negocios registrados.' };
-    if (pathname.startsWith('/superadmin/users')) return { title: 'Usuarios Globales', description: 'Todos los usuarios de la plataforma.' };
-    if (pathname.startsWith('/superadmin/subscriptions')) return { title: 'Suscripciones', description: 'Estado de suscripciones activas.' };
-    if (pathname.startsWith('/superadmin/planes')) return { title: 'Planes', description: 'Configuración de precios y límites.' };
-    if (pathname.startsWith('/superadmin/audit')) return { title: 'Auditoría', description: 'Log de acciones del sistema.' };
-    return { title: 'Tablero de Control', description: '' };
+    if (!pathname) return { title: 'Tablero de Control' };
+    if (pathname === '/dashboard') return { title: 'Dashboard de Negocio' };
+    if (pathname === '/dashboard/sectores') return { title: 'Departamentos y Sectores' };
+    if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
+    if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
+    if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };
+    if (pathname.startsWith('/dashboard/config')) return { title: 'Configuración' };
+    if (pathname === '/dashboard/calendario') return { title: 'Calendario' };
+    if (pathname === '/dashboard/billing') return { title: 'Facturación' };
+    if (pathname === '/dashboard/reportes') return { title: 'Reportes' };
+    if (pathname === '/superadmin') return { title: 'Plataforma' };
+    if (pathname.startsWith('/superadmin/businesses')) return { title: 'Negocios' };
+    if (pathname.startsWith('/superadmin/users')) return { title: 'Usuarios' };
+    if (pathname.startsWith('/superadmin/subscriptions')) return { title: 'Suscripciones' };
+    if (pathname.startsWith('/superadmin/planes')) return { title: 'Planes' };
+    if (pathname.startsWith('/superadmin/audit')) return { title: 'Auditoría' };
+    return { title: 'Tablero de Control' };
   };
 
-  const { title, description } = getPageContext();
+  const { title } = getPageContext();
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card px-3 lg:px-6">
@@ -66,9 +67,6 @@ export function Header({ userName, notificationCount = 0, onMobileMenuOpen }: He
         {/* Desktop title (sidebar pushes via layout padding) */}
         <div className="hidden flex-col justify-center lg:flex">
           <h1 className="text-base font-semibold leading-none">{title}</h1>
-          {description && (
-            <p className="mt-1 text-xs leading-none text-muted-foreground">{description}</p>
-          )}
         </div>
 
         {/* Mobile title */}

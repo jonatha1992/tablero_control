@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -172,12 +172,7 @@ export default function ReportesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Reportes</h1>
-          <p className="text-muted-foreground mt-1">Métricas y análisis del equipo</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-end flex-wrap gap-3">
           <div className="flex rounded-lg border bg-muted p-1 gap-1">
             {(['week', 'month', 'quarter'] as const).map((p) => (
               <button
@@ -198,7 +193,6 @@ export default function ReportesPage() {
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
-        </div>
       </div>
 
       {/* KPIs */}
