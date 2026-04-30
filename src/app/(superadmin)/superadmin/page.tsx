@@ -54,7 +54,7 @@ export default function SuperadminPage() {
     <div className="p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Plataforma</h1>
-        <p className="text-muted-foreground text-sm">Resumen global del sistema TecnoFusión.</p>
+
       </div>
 
       {isLoading && (

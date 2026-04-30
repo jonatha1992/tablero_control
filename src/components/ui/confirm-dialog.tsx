@@ -24,6 +24,7 @@ interface ConfirmDialogProps {
   variant?: Variant;
   onConfirm: () => void;
   loading?: boolean;
+  children?: React.ReactNode;
 }
 
 const variantConfig: Record<Variant, { icon: React.ElementType; iconColor: string; confirmClass: string }> = {
@@ -54,12 +55,18 @@ export function ConfirmDialog({
   variant = 'default',
   onConfirm,
   loading = false,
+  children,
 }: ConfirmDialogProps) {
   const { icon: Icon, iconColor, confirmClass } = variantConfig[variant];
 
+  function handleOpenChange(next: boolean) {
+    if (loading) return;
+    onOpenChange(next);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (loading) e.preventDefault(); }}>
         <DialogHeader className="flex flex-row items-start gap-4">
           <div className={cn('mt-1 shrink-0', iconColor)}>
             <Icon className="h-6 w-6" />
@@ -69,6 +76,7 @@ export function ConfirmDialog({
             {description && <DialogDescription>{description}</DialogDescription>}
           </div>
         </DialogHeader>
+        {children}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             {cancelLabel}

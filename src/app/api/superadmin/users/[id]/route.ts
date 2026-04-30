@@ -3,6 +3,61 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+
+async function reassignUserTasks(tx: Prisma.TransactionClient, userId: string, fallbackCreatorId: string) {
+  // Find all tasks created by this user with their business context
+  const tasks = await tx.task.findMany({
+    where: { creatorId: userId },
+    select: {
+      id: true,
+      location: { select: { businessId: true } },
+      project: { select: { businessId: true } },
+    },
+  });
+
+  // Group by business
+  const tasksByBusiness = new Map<string, string[]>();
+  const orphanTaskIds: string[] = [];
+
+  for (const task of tasks) {
+    const bizId = task.location?.businessId ?? task.project?.businessId ?? null;
+    if (bizId) {
+      if (!tasksByBusiness.has(bizId)) tasksByBusiness.set(bizId, []);
+      tasksByBusiness.get(bizId)!.push(task.id);
+    } else {
+      orphanTaskIds.push(task.id);
+    }
+  }
+
+  // Reassign grouped tasks to the business admin
+  for (const [bizId, taskIds] of tasksByBusiness) {
+    const business = await tx.business.findUnique({
+      where: { id: bizId },
+      select: { adminId: true },
+    });
+    const adminId = business?.adminId;
+    let newCreatorId = fallbackCreatorId;
+    if (adminId && adminId !== userId) {
+      const adminExists = await tx.user.findUnique({ where: { id: adminId }, select: { id: true } });
+      if (adminExists) newCreatorId = adminId;
+    }
+    await tx.task.updateMany({
+      where: { id: { in: taskIds } },
+      data: { creatorId: newCreatorId },
+    });
+  }
+
+  // Reassign orphan tasks to the fallback creator (superadmin doing the deletion)
+  if (orphanTaskIds.length > 0) {
+    await tx.task.updateMany({
+      where: { id: { in: orphanTaskIds } },
+      data: { creatorId: fallbackCreatorId },
+    });
+  }
+
+  return { reassigned: tasks.length };
+}
 
 export async function DELETE(
   request: NextRequest,
@@ -29,31 +84,63 @@ export async function DELETE(
     return NextResponse.json({ error: 'cannot_delete_superadmin' }, { status: 400 });
   }
 
-  // Block if user has created tasks (FK without onDelete)
-  const taskCount = await prisma.task.count({ where: { creatorId: id } });
-  if (taskCount > 0) {
-    return NextResponse.json({ error: 'user_has_tasks', count: taskCount }, { status: 409 });
+  const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusiness') === 'true';
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Optionally delete businesses where this user is admin
+      if (deleteBusinesses) {
+        const businesses = await tx.business.findMany({
+          where: { adminId: id },
+          select: { id: true },
+        });
+
+        for (const biz of businesses) {
+          // Delete location-only tasks first — Location→Task is SetNull (not Cascade),
+          // so these orphan after business.delete() and block user deletion.
+          const locationIds = (await tx.location.findMany({
+            where: { businessId: biz.id },
+            select: { id: true },
+          })).map((l) => l.id);
+          if (locationIds.length > 0) {
+            await tx.task.deleteMany({
+              where: { locationId: { in: locationIds }, projectId: null },
+            });
+          }
+
+          await tx.invoice.deleteMany({ where: { businessId: biz.id } });
+          await tx.auditLog.deleteMany({ where: { businessId: biz.id } });
+          await tx.subscription.deleteMany({ where: { businessId: biz.id } });
+          await tx.user.updateMany({
+            where: { businessId: biz.id, id: { not: id } },
+            data: { businessId: null },
+          });
+          await tx.business.delete({ where: { id: biz.id } });
+        }
+      }
+
+      // 2. Reassign tasks created by this user to the business admin
+      await reassignUserTasks(tx, id, user.uid);
+
+      // 3. Clean up non-cascading FK references
+      await tx.comment.deleteMany({ where: { authorId: id } });
+      await tx.auditLog.deleteMany({ where: { actorId: id } });
+      // Disconnect from all assigned tasks
+      await tx.user.update({
+        where: { id },
+        data: { assignedTasks: { set: [] } },
+      });
+
+      // 4. Delete user from Prisma
+      await tx.user.delete({ where: { id } });
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: 'delete_failed', message }, { status: 500 });
   }
 
-  // Clean up non-cascading FK references before hard delete
-  await prisma.$transaction([
-    prisma.comment.deleteMany({ where: { authorId: id } }),
-    prisma.auditLog.deleteMany({ where: { actorId: id } }),
-  ]);
-
-  await prisma.user.delete({ where: { id } });
-
-  // Delete from Firebase Auth (ignore if already gone)
+  // 5. Delete from Firebase Auth (ignore if already gone)
   await getAdminAuth().deleteUser(id).catch(() => {});
-
-  // Optionally delete empty business
-  const deleteBusiness = request.nextUrl.searchParams.get('deleteBusiness') === 'true';
-  if (deleteBusiness && target.businessId) {
-    const otherUsers = await prisma.user.count({ where: { businessId: target.businessId } });
-    if (otherUsers === 0) {
-      await prisma.business.delete({ where: { id: target.businessId } });
-    }
-  }
 
   await writeAuditLog({
     actorId: user.uid,
@@ -62,7 +149,7 @@ export async function DELETE(
     action: 'user.delete',
     targetType: 'USER',
     targetId: id,
-    metadata: { deleteBusiness },
+    metadata: { deleteBusinesses },
   });
 
   return NextResponse.json({ ok: true });

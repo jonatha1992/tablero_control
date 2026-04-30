@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Check, X } from 'lucide-react';
+import { Loader2, Pencil, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -89,10 +89,14 @@ function parsePrice(val: string): number {
   return isNaN(n) ? 0 : n;
 }
 
+type SortColumn = 'name' | 'priceMonthly' | 'priceYearly' | 'users' | 'locations' | 'projects' | 'attachments';
+
 export default function PlanesPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<PlanDefinition | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const { data, isLoading } = useQuery({
     queryKey: ['sa-planes'],
@@ -101,9 +105,9 @@ export default function PlanesPage() {
 
   const { mutate, isPending } = useMutation({
     mutationFn: updatePlan,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sa-planes'] });
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['sa-planes'] });
+      await queryClient.refetchQueries({ queryKey: ['plans'] });
       toast.success('Plan actualizado');
       setEditing(null);
     },
@@ -130,6 +134,60 @@ export default function PlanesPage() {
 
   const plans = data?.plans ?? [];
 
+  const sorted = [...plans].sort((a, b) => {
+    let valA: string | number = '';
+    let valB: string | number = '';
+
+    switch (sortColumn) {
+      case 'name':
+        valA = a.name;
+        valB = b.name;
+        break;
+      case 'priceMonthly':
+        valA = a.priceMonthly;
+        valB = b.priceMonthly;
+        break;
+      case 'priceYearly':
+        valA = a.priceYearly;
+        valB = b.priceYearly;
+        break;
+      case 'users':
+        valA = a.limits.users;
+        valB = b.limits.users;
+        break;
+      case 'locations':
+        valA = a.limits.locations;
+        valB = b.limits.locations;
+        break;
+      case 'projects':
+        valA = a.limits.projects;
+        valB = b.limits.projects;
+        break;
+      case 'attachments':
+        valA = a.limits.attachmentsPerMonth;
+        valB = b.limits.attachmentsPerMonth;
+        break;
+    }
+
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  function toggleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }
+
+  const sortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-40" />;
+    return sortDirection === 'asc' ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />;
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div>
@@ -148,20 +206,34 @@ export default function PlanesPage() {
       {!isLoading && (
         <div className="border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
+            <thead className="bg-muted/50 text-muted-foreground text-[11px] uppercase tracking-wider">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Plan</th>
-                <th className="text-left px-4 py-3 font-medium">Precio/mes</th>
-                <th className="text-left px-4 py-3 font-medium">Precio/año</th>
-                <th className="text-left px-4 py-3 font-medium">Usuarios</th>
-                <th className="text-left px-4 py-3 font-medium">Locales</th>
-                <th className="text-left px-4 py-3 font-medium">Proyectos</th>
-                <th className="text-left px-4 py-3 font-medium">Adjuntos/mes</th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('name')}>
+                  <span className="inline-flex items-center">Plan {sortIcon('name')}</span>
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('priceMonthly')}>
+                  <span className="inline-flex items-center">Precio/mes {sortIcon('priceMonthly')}</span>
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('priceYearly')}>
+                  <span className="inline-flex items-center">Precio/año {sortIcon('priceYearly')}</span>
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('users')}>
+                  <span className="inline-flex items-center">Usuarios {sortIcon('users')}</span>
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('locations')}>
+                  <span className="inline-flex items-center">Locales {sortIcon('locations')}</span>
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('projects')}>
+                  <span className="inline-flex items-center">Proyectos {sortIcon('projects')}</span>
+                </th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('attachments')}>
+                  <span className="inline-flex items-center">Adjuntos/mes {sortIcon('attachments')}</span>
+                </th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y">
-              {plans.map((plan) => (
+              {sorted.map((plan) => (
                 <tr key={plan.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3 font-semibold capitalize">{plan.name}</td>
                   <td className="px-4 py-3">{fmtPrice(plan.priceMonthly)}</td>
@@ -182,8 +254,8 @@ export default function PlanesPage() {
         </div>
       )}
 
-      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={!!editing} onOpenChange={(open) => { if (!open && !isPending) setEditing(null); }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (isPending) e.preventDefault(); }}>
           <DialogHeader>
             <DialogTitle>Editar plan {editing?.name}</DialogTitle>
           </DialogHeader>
