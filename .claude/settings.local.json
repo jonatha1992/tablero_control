@@ -99,7 +99,8 @@
       "Bash(echo \"Started PID $!\")",
       "Bash(taskkill /PID 11440 /F)",
       "Bash(taskkill /PID 53 /F)",
-      "PowerShell(Stop-Process *)"
+      "PowerShell(Stop-Process *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

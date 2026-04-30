@@ -5,12 +5,20 @@ import { writeAuditLog } from '@/lib/api/audit';
 import type { TaskFilters, TaskStatus, TaskPriority } from '@/types/domain/task';
 
 export async function GET(request: NextRequest) {
+  const user = await requireUser(request);
+  if (user instanceof NextResponse) return user;
+
   const { searchParams } = request.nextUrl;
   const businessId = searchParams.get('businessId');
   const creatorId = searchParams.get('creatorId');
 
   if (!businessId && !creatorId) {
     return NextResponse.json({ error: 'businessId o creatorId requerido' }, { status: 400 });
+  }
+
+  // Reject 'all' — superadmin must use their own businessId
+  if (businessId === 'all') {
+    return NextResponse.json({ error: 'businessId inválido' }, { status: 400 });
   }
 
   const filters: TaskFilters = {};

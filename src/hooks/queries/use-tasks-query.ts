@@ -15,8 +15,8 @@ export const taskKeys = {
 export function useTasksQuery(filters?: TaskFilters) {
   const { user, isSuperAdmin } = useAuth();
 
-  // superadmin ve todo, admin/miembro filtra por su businessId, si no tiene usa su userId
-  const businessId = isSuperAdmin ? 'all' : (user?.businessId ?? null);
+  // superadmin ve tareas de su propio negocio como cualquier usuario
+  const businessId = user?.businessId ?? null;
   const queryKey = businessId ?? `creator:${user?.id}`;
 
   return useQuery({

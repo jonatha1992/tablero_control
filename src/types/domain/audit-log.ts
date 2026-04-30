@@ -49,3 +49,17 @@ export interface AuditLog {
   userAgent?: string;
   createdAt: Date;
 }
+
+export interface AuditLogEnriched extends AuditLog {
+  actor: {
+    name: string;
+    email: string;
+    role: UserRole;
+    isActive: boolean;
+    avatar: string | null;
+    phone: string | null;
+    lastLogin: Date | null;
+    createdAt: Date;
+  };
+  business: { name: string } | null;
+}

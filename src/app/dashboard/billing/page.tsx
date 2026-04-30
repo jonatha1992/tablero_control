@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { BillingPlanCards } from '@/components/billing/billing-plan-cards';
@@ -18,7 +17,6 @@ export default function BillingPage() {
   if (!user?.businessId) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-1">Facturación</h1>
         <p className="text-muted-foreground text-sm">No tenés un negocio asociado.</p>
       </div>
     );
@@ -26,11 +24,6 @@ export default function BillingPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Facturación y plan</h1>
-        <p className="text-muted-foreground text-sm">Gestioná tu suscripción y revisá el historial de pagos.</p>
-      </div>
-
       {status === 'success' && (
         <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
           <CheckCircle className="h-4 w-4 shrink-0" />

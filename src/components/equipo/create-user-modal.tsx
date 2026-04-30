@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -113,7 +113,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
         body: JSON.stringify({ reactivate: true }),
       });
       if (!res.ok) throw new Error('No se pudo reactivar el usuario');
-      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      await queryClient.refetchQueries({ queryKey: memberKeys.all });
       setStep('success');
     } catch (err) {
       setError((err as Error).message);
@@ -124,6 +124,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   }
 
   function handleClose() {
+    if (isPending || reactivating) return;
     setStep('form');
     setName('');
     setEmail('');
@@ -139,7 +140,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (isPending || reactivating) e.preventDefault(); }}>
         {step === 'form' ? (
           <>
             <DialogHeader>
@@ -277,6 +278,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                   {isPending ? 'Creando...' : 'Crear usuario'}
                 </Button>
               </DialogFooter>
@@ -308,6 +310,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 Cancelar
               </Button>
               <Button onClick={handleReactivate} disabled={reactivating}>
+                {reactivating && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                 {reactivating ? 'Reactivando...' : 'Reactivar usuario'}
               </Button>
             </DialogFooter>

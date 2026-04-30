@@ -31,7 +31,7 @@ export const tasksApi = {
     if (filters) {
       Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
     }
-    return fetchJson<Task[]>(`/api/tasks?${params}`);
+    return fetchJsonAuth<Task[]>(`/api/tasks?${params}`);
   },
 
   getByCreator: (userId: string, filters?: TaskFilters) => {
@@ -39,10 +39,10 @@ export const tasksApi = {
     if (filters) {
       Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
     }
-    return fetchJson<Task[]>(`/api/tasks?${params}`);
+    return fetchJsonAuth<Task[]>(`/api/tasks?${params}`);
   },
 
-  getById: (id: string) => fetchJson<Task>(`/api/tasks/${id}`),
+  getById: (id: string) => fetchJsonAuth<Task>(`/api/tasks/${id}`),
 
   create: (dto: CreateTaskDTO, creatorId: string, businessId: string) =>
     fetchJsonAuth<Task>('/api/tasks', {

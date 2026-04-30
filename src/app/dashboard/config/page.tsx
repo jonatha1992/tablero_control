@@ -86,11 +86,6 @@ export default function ConfigPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden max-w-5xl mx-auto w-full gap-4">
-      <div className="shrink-0">
-        <h1 className="text-xl font-bold">Configuración</h1>
-        <p className="text-muted-foreground text-xs mt-0.5">Administra tus preferencias personales y de la plataforma.</p>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <TabsList className="shrink-0 justify-start w-full bg-transparent border-b rounded-none px-0 gap-4 mb-4">
           <TabsTrigger value="perfil" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">

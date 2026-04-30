@@ -8,8 +8,17 @@ export async function GET(req: NextRequest) {
   const denied = requireRole(user, ['superadmin']);
   if (denied) return denied;
 
+  const { searchParams } = req.nextUrl;
+  const sort = searchParams.get('sort') ?? 'createdAt';
+  const order = searchParams.get('order') === 'asc' ? 'asc' : 'desc';
+
+  const allowedSorts = ['name', 'email', 'role', 'isActive', 'createdAt'];
+  const orderBy = allowedSorts.includes(sort)
+    ? { [sort]: order }
+    : { createdAt: 'desc' as const };
+
   const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy,
     select: {
       id: true,
       email: true,
@@ -19,9 +28,10 @@ export async function GET(req: NextRequest) {
       isActive: true,
       createdAt: true,
       business: {
-        select: { name: true, plan: true }
-      }
+        select: { name: true, plan: true, adminId: true },
+      },
     },
   });
+
   return NextResponse.json({ users });
 }
