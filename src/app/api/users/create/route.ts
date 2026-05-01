@@ -61,29 +61,38 @@ export async function POST(req: NextRequest) {
 
   // Enforce plan user limit (skip for superadmin)
   if (authed.role !== 'superadmin' && targetBusinessId) {
-    const business = await prisma.business.findUnique({
-      where: { id: targetBusinessId },
-      select: { plan: true },
-    });
-    if (business) {
-      const planConfig = await getEffectivePlanConfig(business.plan);
-      const limit = planConfig.limits.users;
-      if (limit !== -1) {
-        const current = await prisma.user.count({
-          where: { businessId: targetBusinessId, isActive: true },
-        });
-        if (current >= limit) {
-          return NextResponse.json(
-            { error: 'members_limit_exceeded', limit, current },
-            { status: 429 }
-          );
+    try {
+      const business = await prisma.business.findUnique({
+        where: { id: targetBusinessId },
+        select: { plan: true },
+      });
+      if (business) {
+        const planConfig = await getEffectivePlanConfig(business.plan);
+        const limit = planConfig.limits.users;
+        if (limit !== -1) {
+          const current = await prisma.user.count({
+            where: { businessId: targetBusinessId, isActive: true },
+          });
+          if (current >= limit) {
+            return NextResponse.json(
+              { error: 'members_limit_exceeded', limit, current },
+              { status: 429 }
+            );
+          }
         }
       }
+    } catch {
+      return NextResponse.json({ error: 'plan_check_failed' }, { status: 500 });
     }
   }
 
   // Check email in PostgreSQL
-  const existing = await prisma.user.findUnique({ where: { email: email.trim() } });
+  let existing;
+  try {
+    existing = await prisma.user.findUnique({ where: { email: email.trim() } });
+  } catch {
+    return NextResponse.json({ error: 'db_error' }, { status: 500 });
+  }
   if (existing) {
     if (!existing.isActive && existing.businessId === targetBusinessId) {
       return NextResponse.json(
@@ -130,7 +139,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });
   }
 
-  await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+  try {
+    await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+  } catch (err) {
+    console.error('[create-user] setCustomUserClaims failed (non-fatal):', err);
+  }
 
   await writeAuditLog({
     actorId: authed.uid,

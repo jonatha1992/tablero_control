@@ -5,6 +5,7 @@ import { mpFetch } from '@/lib/mercadopago/client';
 import { writeAuditLog } from '@/lib/api/audit';
 import { createHmac, timingSafeEqual } from 'crypto';
 import type { SubscriptionStatus } from '@/types/domain/subscription';
+import { handle } from '@/lib/api/route-handler';
 
 function verifySignature(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
@@ -58,7 +59,7 @@ interface MpPayment {
   preapproval_id?: string;
 }
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const rawBody = await req.text();
 
   if (!verifySignature(req, rawBody)) {
@@ -212,4 +213,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
-}
+});

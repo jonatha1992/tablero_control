@@ -4,6 +4,7 @@ import { resend } from '@/lib/resend';
 import { SubscriptionExpiryEmail } from '@/lib/mail/templates/subscription-expiry-email';
 import { PLANS } from '@/lib/mercadopago/plans';
 import * as React from 'react';
+import { handle } from '@/lib/api/route-handler';
 
 const WARN_DAYS = 7;
 
@@ -14,7 +15,7 @@ function verifyCronSecret(req: NextRequest): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
@@ -98,4 +99,4 @@ export async function GET(req: NextRequest) {
     markedPastDue: expired.count,
     emailsSent,
   });
-}
+});

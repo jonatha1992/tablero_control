@@ -3,8 +3,9 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { cancelPreapproval } from '@/lib/mercadopago/preapproval';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
 
@@ -43,4 +44,4 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ ok: true });
-}
+});

@@ -3,8 +3,9 @@ import { uploadUserAvatar, uploadTaskAttachment, type CloudinaryUploadResult } f
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
 
-export async function POST(request: NextRequest) {
+export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -56,4 +57,4 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
-}
+});

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { MailService } from '@/services/mail.service';
+import { handle } from '@/lib/api/route-handler';
 
 const DEFAULT_PREFERENCES = {
   theme: 'system' as const,
@@ -11,7 +12,7 @@ const DEFAULT_PREFERENCES = {
   dashboardLayout: [],
 };
 
-export async function POST(request: NextRequest) {
+export const POST = handle(async (request: NextRequest) => {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -88,4 +89,4 @@ export async function POST(request: NextRequest) {
   MailService.sendWelcomeEmail(email, name).catch(() => {});
 
   return NextResponse.json(user, { status: 201 });
-}
+});

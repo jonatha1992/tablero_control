@@ -4,8 +4,9 @@ import { createCheckoutPreference } from '@/lib/mercadopago/preference';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
+import { handle } from '@/lib/api/route-handler';
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
 
@@ -70,4 +71,4 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ subscriptionId: sub.id, initPoint: preference.init_point });
-}
+});

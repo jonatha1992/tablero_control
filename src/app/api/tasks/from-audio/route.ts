@@ -3,12 +3,13 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { teamService } from '@/services/team.service';
 import { transcribeAudio } from '@/lib/groq/transcribe';
 import { extractTasksFromTranscription } from '@/lib/groq/extract-tasks';
+import { handle } from '@/lib/api/route-handler';
 
 export const maxDuration = 60;
 
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
-export async function POST(request: NextRequest) {
+export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -58,4 +59,4 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ transcription, tasks, parseError });
-}
+});
