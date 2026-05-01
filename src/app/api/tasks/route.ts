@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
+import { prisma } from '@/lib/prisma';
+import { MailService } from '@/services/mail.service';
 import type { TaskFilters, TaskStatus, TaskPriority } from '@/types/domain/task';
 
-export async function GET(request: NextRequest) {
+export const GET = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -27,41 +30,44 @@ export async function GET(request: NextRequest) {
   if (status) filters.status = status.split(',') as TaskStatus[];
   if (priority) filters.priority = priority.split(',') as TaskPriority[];
 
-  try {
-    if (creatorId && !businessId) {
-      const tasks = await taskService.getTasksByCreator(creatorId, filters);
-      return NextResponse.json(tasks);
-    }
-    const tasks = await taskService.getTasksByBusiness(businessId!, filters);
+  if (creatorId && !businessId) {
+    const tasks = await taskService.getTasksByCreator(creatorId, filters);
     return NextResponse.json(tasks);
-  } catch (err) {
-    console.error('[GET /api/tasks]', err);
-    return NextResponse.json({ error: 'Error interno al obtener tareas' }, { status: 500 });
   }
-}
+  const tasks = await taskService.getTasksByBusiness(businessId!, filters);
+  return NextResponse.json(tasks);
+});
 
-export async function POST(request: NextRequest) {
+export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  try {
-    const { dto, creatorId, businessId } = await request.json();
-    const task = await taskService.createTask(dto, creatorId ?? user.uid, businessId ?? user.businessId);
-    
-    await writeAuditLog({
-      actorId: user.uid,
-      actorRole: user.role,
-      businessId: user.businessId,
-      action: 'task.create',
-      targetType: 'TASK',
-      targetId: task.id,
-      metadata: { title: task.title },
-    });
+  const { dto, creatorId, businessId } = await request.json();
+  const task = await taskService.createTask(dto, creatorId ?? user.uid, businessId ?? user.businessId);
 
-    return NextResponse.json(task, { status: 201 });
-  } catch (err) {
-    console.error('[POST /api/tasks]', err);
-    return NextResponse.json({ error: 'Error al crear la tarea' }, { status: 500 });
+  await writeAuditLog({
+    actorId: user.uid,
+    actorRole: user.role,
+    businessId: user.businessId,
+    action: 'task.create',
+    targetType: 'TASK',
+    targetId: task.id,
+    metadata: { title: task.title },
+  });
+
+  if (task.assigneeIds?.length > 0) {
+    prisma.user.findMany({
+      where: { id: { in: task.assigneeIds }, isActive: true },
+      select: { email: true, preferences: true },
+    }).then((assignees) => {
+      const assignerName = user.data.name ?? user.data.email ?? 'Un compañero';
+      for (const assignee of assignees) {
+        const prefs = assignee.preferences as { notifications?: { email?: boolean } } | null;
+        if (prefs?.notifications?.email === false) continue;
+        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => {});
+      }
+    }).catch(() => {});
   }
-}
 
+  return NextResponse.json(task, { status: 201 });
+});

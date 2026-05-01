@@ -14,53 +14,54 @@ import {
 import * as React from 'react';
 
 const LOGO_URL = 'https://res.cloudinary.com/dhhjn1fo8/image/upload/v1777644183/tablero_control/logo.png';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-interface ResetPasswordEmailProps {
-  resetLink: string;
+interface TaskAssignedEmailProps {
+  taskTitle?: string;
+  assignerName?: string;
 }
 
-export const ResetPasswordEmail = ({
-  resetLink = 'https://tablerocontrol.com/auth/reset',
-}: ResetPasswordEmailProps) => (
+export const TaskAssignedEmail = ({
+  taskTitle = 'una tarea',
+  assignerName = 'Un compañero',
+}: TaskAssignedEmailProps) => (
   <Html>
     <Head />
-    <Preview>Recuperación de contraseña - Tablero de Control</Preview>
+    <Preview>{assignerName} te asignó una tarea: {taskTitle}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
           <Img src={LOGO_URL} alt="Tablero de Control" width={160} style={logoImg} />
         </Section>
-        
-        <Heading style={h1}>Recupera tu acceso</Heading>
-        
+
+        <Heading style={h1}>Te asignaron una tarea</Heading>
+
         <Text style={text}>
-          Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>Tablero de Control</strong>. 
-          Si no realizaste esta solicitud, puedes ignorar este correo de forma segura.
+          <strong>{assignerName}</strong> te asignó la siguiente tarea:
         </Text>
 
-        <Section style={buttonContainer}>
-          <Button style={button} href={resetLink}>
-            Restablecer Contraseña
-          </Button>
+        <Section style={taskBox}>
+          <Text style={taskTitle_}>📋 {taskTitle}</Text>
         </Section>
 
-        <Text style={text}>
-          Este enlace expirará en una hora por motivos de seguridad.
-        </Text>
+        <Section style={buttonContainer}>
+          <Button style={button} href={`${APP_URL}/dashboard/tareas`}>
+            Ver mis tareas
+          </Button>
+        </Section>
 
         <Hr style={hr} />
 
         <Text style={footer}>
-          TecnoFusión IT - Seguridad y Gestión.<br />
-          Si tienes problemas con el botón, copia y pega este enlace en tu navegador:<br />
-          <span style={link}>{resetLink}</span>
+          TecnoFusión IT - Soluciones inteligentes de gestión.<br />
+          Este es un correo automático, por favor no respondas directamente.
         </Text>
       </Container>
     </Body>
   </Html>
 );
 
-export default ResetPasswordEmail;
+export default TaskAssignedEmail;
 
 const main = {
   backgroundColor: '#f6f9fc',
@@ -89,7 +90,7 @@ const logoImg = {
 const h1 = {
   color: '#1f2937',
   fontSize: '24px',
-  fontWeight: '600',
+  fontWeight: 'normal',
   textAlign: 'center' as const,
   margin: '30px 0',
 };
@@ -98,8 +99,22 @@ const text = {
   color: '#4b5563',
   fontSize: '16px',
   lineHeight: '24px',
-  textAlign: 'left' as const,
   padding: '0 32px',
+};
+
+const taskBox = {
+  margin: '8px 32px 24px',
+  backgroundColor: '#f1f5f9',
+  borderRadius: '8px',
+  borderLeft: '4px solid #2563eb',
+  padding: '16px',
+};
+
+const taskTitle_ = {
+  color: '#1e40af',
+  fontSize: '16px',
+  fontWeight: 'bold',
+  margin: '0',
 };
 
 const buttonContainer = {
@@ -108,11 +123,10 @@ const buttonContainer = {
 };
 
 const button = {
-  backgroundColor: '#e11d48', // Color de advertencia/seguridad
+  backgroundColor: '#2563eb',
   borderRadius: '6px',
   color: '#fff',
   fontSize: '16px',
-  fontWeight: '600',
   textDecoration: 'none',
   textAlign: 'center' as const,
   display: 'inline-block',
@@ -131,9 +145,4 @@ const footer = {
   lineHeight: '16px',
   textAlign: 'center' as const,
   padding: '0 32px',
-};
-
-const link = {
-  color: '#2563eb',
-  wordBreak: 'break-all' as const,
 };

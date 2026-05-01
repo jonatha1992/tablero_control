@@ -9,6 +9,11 @@ interface FromAudioResponse {
   parseError: boolean;
 }
 
+interface FromTextResponse {
+  tasks: ExtractedTask[];
+  parseError: boolean;
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) throw new Error(await res.text());
@@ -81,4 +86,10 @@ export const tasksApi = {
     if (!res.ok) throw new Error(await res.text());
     return res.json() as Promise<FromAudioResponse>;
   },
+
+  fromText: (text: string) =>
+    fetchJsonAuth<FromTextResponse>('/api/tasks/from-text', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }),
 };

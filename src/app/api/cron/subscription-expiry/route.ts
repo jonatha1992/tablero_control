@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { resend } from '@/lib/resend';
-import { SubscriptionExpiryEmail } from '@/lib/mail/templates/subscription-expiry-email';
 import { PLANS } from '@/lib/mercadopago/plans';
-import * as React from 'react';
+import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
 
 const WARN_DAYS = 7;
@@ -44,7 +42,7 @@ export const GET = handle(async (req: NextRequest) => {
     });
   }
 
-  // Find subscriptions expiring within warn window (not yet notified today)
+  // Find subscriptions expiring within warn window
   const expiring = await prisma.subscription.findMany({
     where: {
       status: 'active',
@@ -78,17 +76,12 @@ export const GET = handle(async (req: NextRequest) => {
       year: 'numeric',
     });
 
-    await resend.emails.send({
-      from: 'Tablero de Control <noreply@tecnofusion.io>',
-      to: admin.email,
-      subject: `Tu suscripción vence en ${daysLeft} días`,
-      react: React.createElement(SubscriptionExpiryEmail, {
-        businessName: sub.business.name,
-        planName: PLANS[sub.plan].name,
-        expiryDate,
-        renewUrl: `${appUrl}/dashboard/billing`,
-        daysLeft,
-      }),
+    await MailService.sendSubscriptionExpiryEmail(admin.email, {
+      businessName: sub.business.name,
+      planName: PLANS[sub.plan].name,
+      expiryDate,
+      renewUrl: `${appUrl}/dashboard/billing`,
+      daysLeft,
     });
 
     emailsSent++;

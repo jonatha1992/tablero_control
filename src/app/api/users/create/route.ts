@@ -5,6 +5,7 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 import { MailService } from '@/services/mail.service';
+import { handle } from '@/lib/api/route-handler';
 import type { UserRole } from '@/types/domain/user';
 
 export interface CreateUserBody {
@@ -32,7 +33,7 @@ const DEFAULT_PREFERENCES = {
   dashboardLayout: [],
 };
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const authed = await requireUser(req);
   if (authed instanceof NextResponse) return authed;
 
@@ -160,7 +161,8 @@ export async function POST(req: NextRequest) {
       .then((biz) => {
         const teamName = biz?.name ?? 'el equipo';
         const inviterName = authed.data.name ?? authed.data.email ?? 'Un administrador';
-        MailService.sendInviteEmail(email.trim(), inviterName, teamName).catch(() => {});
+        const inviterEmail = authed.data.email;
+        MailService.sendInviteEmail(email.trim(), inviterName, teamName, inviterEmail).catch(() => {});
       })
       .catch(() => {});
   }
@@ -169,4 +171,4 @@ export async function POST(req: NextRequest) {
     { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },
     { status: 201 }
   );
-}
+});

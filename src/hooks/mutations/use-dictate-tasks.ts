@@ -15,6 +15,11 @@ export interface FromAudioResult {
   parseError: boolean;
 }
 
+export interface FromTextResult {
+  tasks: ExtractedTask[];
+  parseError: boolean;
+}
+
 export function useDictateTasksUpload() {
   return useMutation({
     mutationFn: async (audioFile: File): Promise<FromAudioResult> => {
@@ -24,6 +29,17 @@ export function useDictateTasksUpload() {
     },
     onError: (err: Error) => {
       toast.error('Error al procesar el audio', { description: err.message });
+    },
+  });
+}
+
+export function useDictateTasksFromText() {
+  return useMutation({
+    mutationFn: async (text: string): Promise<FromTextResult> => {
+      return tasksApi.fromText(text);
+    },
+    onError: (err: Error) => {
+      toast.error('Error al procesar el texto', { description: err.message });
     },
   });
 }
@@ -44,7 +60,10 @@ export function useConfirmDictatedTasks() {
           type: t.type,
           assigneeIds: t.assigneeIds,
           tags: t.tags,
-          dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
+          estimatedHours: t.estimatedHours,
+          dueDate: t.dueDate
+            ? new Date(`${t.dueDate}T${t.dueTime ?? '00:00'}`)
+            : undefined,
         };
         results.push(await tasksApi.create(dto, user!.id, user?.businessId ?? ''));
       }

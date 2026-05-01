@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Plus, Filter, Settings2, CheckSquare, Trash2, ChevronDown, MapPin } from 'lucide-react';
+import { Plus, Filter, Settings2, CheckSquare, Trash2, ChevronDown, MapPin, MessageSquare } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { TASK_STATUS_LABELS } from '@/lib/constants/task';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/lib/constants/task-colors';
@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { TaskDetailModal } from './task-detail-modal';
 import { CreateTaskModal } from './create-task-modal';
+import { DictateTasksModal } from './dictate-tasks-modal';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useBulkMoveTasks } from '@/hooks/mutations/use-bulk-move-tasks';
@@ -58,12 +59,15 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     filters,
     isCreateModalOpen,
     isDetailModalOpen,
+    isDictateModalOpen,
     selectedTaskId,
     setDraggedTask,
     clearDrag,
     setFilters,
     openCreateModal,
     closeCreateModal,
+    openDictateModal,
+    closeDictateModal,
     openTaskDetail,
     closeTaskDetail,
     isSelectMode,
@@ -182,7 +186,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 w-full">
       {/* Toolbar */}
-      <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
+      <div className="shrink-0 sticky top-0 z-30 bg-background/95 backdrop-blur-sm flex items-center gap-3 pb-4 mb-4 border-b overflow-x-auto">
         {/* Location filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -356,13 +360,35 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               Selección
             </button>
             {user?.role !== 'viewer' && (
-              <button
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                Nueva tarea
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Plus className="h-4 w-4" />
+                    Nueva tarea
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={openCreateModal} className="gap-3 cursor-pointer py-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted shrink-0">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Formulario</p>
+                      <p className="text-xs text-muted-foreground">Campo por campo</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={openDictateModal} className="gap-3 cursor-pointer py-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Crear con IA</p>
+                      <p className="text-xs text-muted-foreground">Chat o voz</p>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         )}
@@ -391,6 +417,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               isSelectMode={isSelectMode}
               onSelectAll={selectAllInColumn}
               onBulkDelete={requestDelete}
+              locations={locations}
             />
           ))}
         </div>
@@ -450,6 +477,13 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         open={isCreateModalOpen}
         onOpenChange={(open) => {
           if (!open) closeCreateModal();
+        }}
+      />
+
+      <DictateTasksModal
+        open={isDictateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDictateModal();
         }}
       />
     </div>

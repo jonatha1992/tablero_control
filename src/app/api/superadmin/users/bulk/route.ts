@@ -3,6 +3,7 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
+import { handle } from '@/lib/api/route-handler';
 import type { Prisma } from '@prisma/client';
 
 async function reassignUserTasks(tx: Prisma.TransactionClient, userId: string, fallbackCreatorId: string) {
@@ -55,7 +56,7 @@ async function reassignUserTasks(tx: Prisma.TransactionClient, userId: string, f
   return { reassigned: tasks.length };
 }
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -153,4 +154,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(results);
-}
+});

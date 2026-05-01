@@ -1,91 +1,130 @@
-import { resend } from '@/lib/resend';
+import { render } from '@react-email/render';
+import React from 'react';
 import { WelcomeEmail } from '@/lib/mail/templates/welcome-email';
 import { ResetPasswordEmail } from '@/lib/mail/templates/reset-password-email';
 import { TeamInviteEmail } from '@/lib/mail/templates/team-invite-email';
-import React from 'react';
+import { SubscriptionExpiryEmail } from '@/lib/mail/templates/subscription-expiry-email';
+import { SubscriptionActivatedEmail } from '@/lib/mail/templates/subscription-activated-email';
+import { PaymentSuccessEmail } from '@/lib/mail/templates/payment-success-email';
+import { PaymentFailedEmail } from '@/lib/mail/templates/payment-failed-email';
+import { TaskAssignedEmail } from '@/lib/mail/templates/task-assigned-email';
 
-const FROM_EMAIL = 'onboarding@resend.dev'; // Cambiar por dominio verificado en producción
-const FROM_NAME = 'Tablero de Control';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+// Resend: se usa cuando RESEND_API_KEY está configurada (requiere dominio verificado)
+// Gmail:  se usa como fallback mientras no haya dominio propio
+const useResend = !!(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'no-key');
+
+async function sendMail(to: string, subject: string, html: string) {
+  if (useResend) {
+    const { resend } = await import('@/lib/resend');
+    const FROM = `Tablero de Control <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`;
+    const { error } = await resend.emails.send({ from: FROM, to: [to], subject, html });
+    if (error) throw new Error(error.message);
+  } else {
+    const { mailer } = await import('@/lib/gmail');
+    const FROM = `Tablero de Control <${process.env.GMAIL_USER ?? 'noreply@tablero.app'}>`;
+    await mailer.sendMail({ from: FROM, to, subject, html, textEncoding: 'base64' });
+  }
+}
 
 export class MailService {
-  /**
-   * Envía un correo de bienvenida a un nuevo usuario.
-   */
   static async sendWelcomeEmail(to: string, userName: string) {
     try {
-      const { data, error } = await resend.emails.send({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
-        to: [to],
-        subject: `¡Bienvenido a Tablero de Control, ${userName}!`,
-        react: React.createElement(WelcomeEmail, {
-          userName,
-          loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`,
-        }),
-      });
-
-      if (error) {
-        console.error('Error enviando email de bienvenida:', error);
-        return { success: false, error };
-      }
-
-      return { success: true, data };
+      const html = await render(React.createElement(WelcomeEmail, {
+        userName,
+        loginUrl: `${APP_URL}/login`,
+      }));
+      await sendMail(to, `¡Bienvenido a Tablero de Control, ${userName}!`, html);
+      return { success: true };
     } catch (err) {
-      console.error('Excepción en MailService.sendWelcomeEmail:', err);
-      return { success: false, error: err };
+      console.error('Error enviando email de bienvenida:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
   }
 
-  /**
-   * Envía un correo de recuperación de contraseña.
-   */
   static async sendPasswordResetEmail(to: string, resetLink: string) {
     try {
-      const { data, error } = await resend.emails.send({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
-        to: [to],
-        subject: 'Recupera tu acceso - Tablero de Control',
-        react: React.createElement(ResetPasswordEmail, {
-          resetLink,
-        }),
-      });
-
-      if (error) {
-        console.error('Error enviando email de recuperación:', error);
-        return { success: false, error };
-      }
-
-      return { success: true, data };
+      const html = await render(React.createElement(ResetPasswordEmail, { resetLink }));
+      await sendMail(to, 'Recupera tu acceso - Tablero de Control', html);
+      return { success: true };
     } catch (err) {
-      console.error('Excepción en MailService.sendPasswordResetEmail:', err);
-      return { success: false, error: err };
+      console.error('Error enviando email de recuperación:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
   }
 
-  /**
-   * Envía una invitación para unirse al equipo.
-   */
-  static async sendInviteEmail(to: string, invitedBy: string, teamName: string) {
+  static async sendInviteEmail(to: string, invitedBy: string, teamName: string, inviterEmail?: string) {
     try {
-      const { data, error } = await resend.emails.send({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
-        to: [to],
-        subject: `Te han invitado a unirte a ${teamName}`,
-        react: React.createElement(TeamInviteEmail, {
-          invitedByUsername: invitedBy,
-          teamName: teamName,
-          inviteLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`,
-        }),
-      });
-
-      if (error) {
-        console.error('Error enviando email de invitación:', error);
-        return { success: false, error };
-      }
-
-      return { success: true, data };
+      const html = await render(React.createElement(TeamInviteEmail, {
+        invitedByUsername: invitedBy,
+        invitedByEmail: inviterEmail,
+        teamName,
+        inviteLink: `${APP_URL}/login`,
+      }));
+      await sendMail(to, `Te han invitado a unirte a ${teamName}`, html);
+      return { success: true };
     } catch (err) {
-      console.error('Excepción en MailService.sendInviteEmail:', err);
-      return { success: false, error: err };
+      console.error('Error enviando email de invitación:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  static async sendSubscriptionExpiryEmail(
+    to: string,
+    data: { businessName: string; planName: string; expiryDate: string; renewUrl: string; daysLeft: number }
+  ) {
+    try {
+      const html = await render(React.createElement(SubscriptionExpiryEmail, data));
+      await sendMail(to, `Tu suscripción vence en ${data.daysLeft} días`, html);
+      return { success: true };
+    } catch (err) {
+      console.error('Error enviando email de expiración:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  static async sendSubscriptionActivatedEmail(to: string, businessName: string, planName: string) {
+    try {
+      const html = await render(React.createElement(SubscriptionActivatedEmail, { businessName, planName }));
+      await sendMail(to, `Suscripción activada — ${businessName}`, html);
+      return { success: true };
+    } catch (err) {
+      console.error('Error enviando email de suscripción activada:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  static async sendPaymentSuccessEmail(to: string, businessName: string, amount: number) {
+    try {
+      const html = await render(React.createElement(PaymentSuccessEmail, { businessName, amount }));
+      await sendMail(to, `Pago recibido — ${businessName}`, html);
+      return { success: true };
+    } catch (err) {
+      console.error('Error enviando email de pago exitoso:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  static async sendPaymentFailedEmail(to: string, businessName: string) {
+    try {
+      const html = await render(React.createElement(PaymentFailedEmail, { businessName }));
+      await sendMail(to, `Problema con el pago — ${businessName}`, html);
+      return { success: true };
+    } catch (err) {
+      console.error('Error enviando email de pago fallido:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  static async sendTaskAssignedEmail(to: string, taskTitle: string, assignerName: string) {
+    try {
+      const html = await render(React.createElement(TaskAssignedEmail, { taskTitle, assignerName }));
+      await sendMail(to, `Nueva tarea asignada: ${taskTitle}`, html);
+      return { success: true };
+    } catch (err) {
+      console.error('Error enviando email de tarea asignada:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
   }
 }

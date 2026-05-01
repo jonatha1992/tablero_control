@@ -13,60 +13,60 @@ import {
 } from '@react-email/components';
 import * as React from 'react';
 
-interface TeamInviteEmailProps {
-  invitedByUsername?: string;
-  invitedByEmail?: string;
-  teamName?: string;
-  inviteLink?: string;
-}
-
 const LOGO_URL = 'https://res.cloudinary.com/dhhjn1fo8/image/upload/v1777644183/tablero_control/logo.png';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-export const TeamInviteEmail = ({
-  invitedByUsername = 'Un administrador',
-  invitedByEmail = 'admin@ejemplo.com',
-  teamName = 'Nuestro Equipo',
-  inviteLink = `${APP_URL}/login`,
-}: TeamInviteEmailProps) => (
+interface SubscriptionActivatedEmailProps {
+  businessName?: string;
+  planName?: string;
+}
+
+export const SubscriptionActivatedEmail = ({
+  businessName = 'Tu negocio',
+  planName = 'Pro',
+}: SubscriptionActivatedEmailProps) => (
   <Html>
     <Head />
-    <Preview>Te han invitado a unirte a {teamName} en Tablero de Control</Preview>
+    <Preview>¡Suscripción activada! Ya podés usar todas las funciones de tu plan {planName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section style={logoContainer}>
+        <Section style={header}>
           <Img src={LOGO_URL} alt="Tablero de Control" width={160} style={logoImg} />
         </Section>
-        <Heading style={h1}>¡Únete al equipo!</Heading>
+
+        <Heading style={h1}>¡Suscripción activada!</Heading>
+
         <Text style={text}>
-          Hola,
+          El plan <strong>{planName}</strong> de <strong>{businessName}</strong> ha sido activado exitosamente.
+          Ya podés usar todas las funciones incluidas en tu plan.
         </Text>
-        <Text style={text}>
-          <strong>{invitedByUsername}</strong> ({invitedByEmail}) te ha invitado a formar parte del equipo de <strong>{teamName}</strong> en la plataforma Tablero de Control.
-        </Text>
-        <Section style={btnContainer}>
-          <Button style={button} href={inviteLink}>
-            Aceptar Invitación
+
+        <Section style={buttonContainer}>
+          <Button style={button} href={`${APP_URL}/dashboard`}>
+            Ir al dashboard
           </Button>
         </Section>
+
         <Text style={text}>
-          Si no esperabas esta invitación, puedes ignorar este correo.
+          Gracias por confiar en Tablero de Control para gestionar tu negocio.
         </Text>
+
         <Hr style={hr} />
+
         <Text style={footer}>
-          Tablero de Control — El centro de mando para tu negocio.
+          TecnoFusión IT - Soluciones inteligentes de gestión.<br />
+          Este es un correo automático, por favor no respondas directamente.
         </Text>
       </Container>
     </Body>
   </Html>
 );
 
-export default TeamInviteEmail;
+export default SubscriptionActivatedEmail;
 
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 };
 
 const container = {
@@ -74,10 +74,12 @@ const container = {
   margin: '0 auto',
   padding: '20px 0 48px',
   marginBottom: '64px',
+  borderRadius: '8px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
 };
 
-const logoContainer = {
-  padding: '32px 48px',
+const header = {
+  padding: '32px',
   textAlign: 'center' as const,
 };
 
@@ -87,29 +89,29 @@ const logoImg = {
 };
 
 const h1 = {
-  color: '#333',
+  color: '#16a34a',
   fontSize: '24px',
   fontWeight: 'bold',
-  padding: '0 48px',
   textAlign: 'center' as const,
   margin: '30px 0',
 };
 
 const text = {
-  color: '#333',
+  color: '#4b5563',
   fontSize: '16px',
-  lineHeight: '26px',
-  padding: '0 48px',
+  lineHeight: '24px',
+  textAlign: 'left' as const,
+  padding: '0 32px',
 };
 
-const btnContainer = {
+const buttonContainer = {
   textAlign: 'center' as const,
-  padding: '20px 0',
+  margin: '32px 0',
 };
 
 const button = {
-  backgroundColor: '#000',
-  borderRadius: '4px',
+  backgroundColor: '#16a34a',
+  borderRadius: '6px',
   color: '#fff',
   fontSize: '16px',
   textDecoration: 'none',
@@ -119,14 +121,15 @@ const button = {
 };
 
 const hr = {
-  borderColor: '#e6ebf1',
+  borderColor: '#e5e7eb',
   margin: '20px 0',
+  padding: '0 32px',
 };
 
 const footer = {
-  color: '#8898aa',
+  color: '#9ca3af',
   fontSize: '12px',
   lineHeight: '16px',
-  padding: '0 48px',
   textAlign: 'center' as const,
+  padding: '0 32px',
 };
