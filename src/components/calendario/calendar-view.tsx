@@ -103,9 +103,9 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
     }
   });
 
-  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: any } }) => {
+  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: any }; revert: () => void }) => {
     if (info.event.extendedProps.isGhost) {
-      info.revert?.();
+      info.revert();
       return;
     }
     if (onEventDrop && info.event.start) {
