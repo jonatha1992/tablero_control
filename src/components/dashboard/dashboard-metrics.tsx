@@ -132,7 +132,7 @@ export function DashboardMetrics() {
   return (
     <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
       {/* Burndown Chart */}
-      <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
+      <Card className="shadow-sm border bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Burndown (7d)</CardTitle>
           <CardDescription className="text-xs">Trabajo restante vs ideal</CardDescription>
@@ -171,7 +171,7 @@ export function DashboardMetrics() {
       </Card>
 
       {/* Productividad Trend */}
-      <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
+      <Card className="shadow-sm border bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Tendencia</CardTitle>
           <CardDescription className="text-xs">Resolución semanal</CardDescription>
@@ -206,7 +206,7 @@ export function DashboardMetrics() {
       </Card>
 
       {/* Estado de Tareas (Pie) */}
-      <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
+      <Card className="shadow-sm border bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Distribución</CardTitle>
           <CardDescription className="text-xs">Estado actual global</CardDescription>

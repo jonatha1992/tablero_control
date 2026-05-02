@@ -101,7 +101,7 @@ export default function DashboardPage() {
         {/* Report Summary Section */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Resumen por Local/Sector</h2>
-          <Card className="shadow-sm border-none bg-slate-50/50 dark:bg-slate-900/50">
+          <Card className="shadow-sm border bg-card">
             <CardContent className="p-4">
               <div className="space-y-4">
                 {sortedLocations.map(([name, stats]) => (

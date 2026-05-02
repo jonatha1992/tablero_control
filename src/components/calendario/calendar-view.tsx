@@ -28,27 +28,86 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null);
 
   // Mapeamos las Tareas a Eventos de FullCalendar
-  const events = tasks
-    .filter((task) => task.dueDate) // Solo mostramos las que tienen fecha
-    .map((task) => {
-      const colors = PRIORITY_EVENT_COLORS[task.priority];
+  const events: any[] = [];
 
-      return {
-        id: task.id,
-        title: task.title,
-        start: task.dueDate!, // Podría ser startDate si quisieramos rangos
-        allDay: true,
-        backgroundColor: colors.backgroundColor,
-        textColor: colors.textColor,
-        borderColor: 'transparent',
-        extendedProps: {
-          status: task.status,
-          priority: task.priority,
-        },
-      };
+  tasks.forEach((task) => {
+    if (!task.dueDate) return;
+
+    const colors = PRIORITY_EVENT_COLORS[task.priority];
+    const startDate = new Date(task.dueDate);
+    const isAllDay = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+
+    const baseEvent = {
+      title: task.title,
+      allDay: isAllDay,
+      backgroundColor: colors.backgroundColor,
+      textColor: colors.textColor,
+      borderColor: 'transparent',
+      extendedProps: {
+        status: task.status,
+        priority: task.priority,
+        isGhost: false,
+      },
+    };
+
+    // Tarea original activa
+    events.push({
+      ...baseEvent,
+      id: task.id,
+      start: task.dueDate,
     });
 
-  const handleEventDrop = (info: { event: { id: string; start: Date | null } }) => {
+    // Proyección de tareas fantasmas si hay recurrencia
+    if (task.recurrence && task.status !== 'done') {
+      let currentDate = new Date(startDate);
+      const interval = task.recurrence.interval || 1;
+
+      // Proyectamos 24 repeticiones hacia el futuro
+      for (let i = 1; i <= 24; i++) {
+        const nextDate = new Date(currentDate);
+
+        switch (task.recurrence.frequency) {
+          case 'daily':
+            nextDate.setDate(nextDate.getDate() + interval);
+            break;
+          case 'weekly':
+            nextDate.setDate(nextDate.getDate() + (interval * 7));
+            if (task.recurrence.dayOfWeek !== undefined) {
+              const diff = (task.recurrence.dayOfWeek + 7 - nextDate.getDay()) % 7;
+              nextDate.setDate(nextDate.getDate() + diff);
+            }
+            break;
+          case 'biweekly':
+            nextDate.setDate(nextDate.getDate() + (interval * 14));
+            break;
+          case 'monthly':
+            nextDate.setMonth(nextDate.getMonth() + interval);
+            if (task.recurrence.dayOfMonth !== undefined) {
+              nextDate.setDate(task.recurrence.dayOfMonth);
+            }
+            break;
+        }
+
+        events.push({
+          ...baseEvent,
+          id: `${task.id}-recur-${i}`,
+          start: nextDate.toISOString(),
+          title: `🔁 ${task.title}`,
+          classNames: ['opacity-60'],
+          editable: false,
+          extendedProps: { ...baseEvent.extendedProps, isGhost: true }
+        });
+
+        currentDate = nextDate;
+      }
+    }
+  });
+
+  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: any } }) => {
+    if (info.event.extendedProps.isGhost) {
+      info.revert?.();
+      return;
+    }
     if (onEventDrop && info.event.start) {
       onEventDrop(info.event.id, info.event.start);
     }

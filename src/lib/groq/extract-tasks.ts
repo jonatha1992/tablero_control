@@ -13,6 +13,11 @@ export interface ExtractedTask {
   dueTime?: string;   // HH:mm 24h
   estimatedHours?: number;
   order: number;      // 1 = primera a ejecutar
+  recurrence?: {
+    frequency: 'daily' | 'weekly' | 'monthly';
+    interval: number;
+    dayOfWeek?: number;
+  } | null;
 }
 
 interface Member {
@@ -47,22 +52,31 @@ Devuelve ÚNICAMENTE un JSON válido, sin texto adicional, con este esquema exac
       "order": 1,
       "estimatedHours": 2,
       "dueDate": "YYYY-MM-DD o null",
-      "dueTime": "HH:MM (24h) o null"
+      "dueTime": "HH:MM (24h) o null",
+      "recurrence": {
+        "frequency": "daily" | "weekly" | "monthly",
+        "interval": 1,
+        "dayOfWeek": 0-6 // 0=Domingo, 1=Lunes... 5=Viernes
+      } // o null si no es repetitiva
     }
   ]
 }
 
 Reglas:
 - Extrae CADA tarea o acción mencionada como un ítem separado.
-- order: numerá las tareas por orden lógico de ejecución comenzando en 1. Si B depende de A para poder empezarse, A tiene order menor que B. El order define la secuencia de trabajo.
-- estimatedHours: estimá la duración de cada tarea en horas según su complejidad y naturaleza. Guía general: tarea simple o corta = 0.5-2h, tarea de complejidad media = 2-4h, tarea compleja o que requiere coordinación = 4-8h, proyecto o entregable grande = 8h+. Adaptá la estimación al contexto real de la tarea (puede ser cocina, ventas, atención al cliente, administración, tecnología, logística, etc.). Mínimo 0.5.
-- dueDate: si el usuario menciona una fecha explícita, usala. Si NO menciona fecha, calculá automáticamente en base a la secuencia: la tarea con order=1 vence hoy + sus estimatedHours (considerando 8 horas hábiles por día); la tarea con order=2 vence cuando termina la de order=1 + sus propias horas; y así sucesivamente. Nunca dejes dueDate en null si hay estimatedHours.
+- order: numerá las tareas por orden lógico de ejecución comenzando en 1.
+- estimatedHours: estimá la duración de cada tarea en horas según su complejidad. Mínimo 0.5.
+- dueDate: si el usuario menciona una fecha explícita, usala. Si NO menciona fecha, calculá automáticamente: order=1 vence hoy + horas, etc.
 - dueTime: si menciona hora ("a las 3", "a las 14:30"), extraé en HH:MM 24h. Sin hora → null.
-- status: usa "in_progress" solo si el audio dice explícitamente que ya está en curso. Si no, usa "todo".
-- priority: "urgente"/"para hoy"/"lo antes posible" → "urgent"; "importante" → "high"; sin mención → "medium"; "cuando puedas"/"no es urgente" → "low".
-- assigneeIds: buscá coincidencias de nombre (primer nombre, apodo). Sin match claro → [].
-- Si no hay ninguna tarea reconocible en el texto, devuelve { "tasks": [] }.
-- No devuelvas explicaciones, markdown, ni texto fuera del JSON.
+- recurrence: si dice "todos los viernes", "semanal", "cada mes", "diario", "rutina", genera un objeto recurrence.
+  * Ej: "todos los viernes" -> { "frequency": "weekly", "interval": 1, "dayOfWeek": 5 }
+  * Ej: "cada dos meses" -> { "frequency": "monthly", "interval": 2 }
+  * Si no se menciona repetición, recurrence DEBE ser null.
+- status: usa "in_progress" solo si ya está en curso. Si no, usa "todo".
+- priority: "urgente"/"hoy" → "urgent"; "importante" → "high"; normal → "medium"; "sin apuro" → "low".
+- assigneeIds: buscá coincidencias de nombre. Sin match claro → [].
+- Si no hay ninguna tarea reconocible, devuelve { "tasks": [] }.
+- IMPORTANTE: No devuelvas markdown, solo el JSON raw.
 `.trim();
 }
 

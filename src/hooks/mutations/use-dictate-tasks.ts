@@ -64,6 +64,11 @@ export function useConfirmDictatedTasks() {
           dueDate: t.dueDate
             ? new Date(`${t.dueDate}T${t.dueTime ?? '00:00'}`)
             : undefined,
+          recurrence: t.recurrence ? {
+            frequency: t.recurrence.frequency,
+            interval: t.recurrence.interval,
+            dayOfWeek: t.recurrence.dayOfWeek,
+          } : undefined,
         };
         results.push(await tasksApi.create(dto, user!.id, user?.businessId ?? ''));
       }
