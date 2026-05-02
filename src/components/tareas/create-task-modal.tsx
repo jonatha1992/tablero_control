@@ -46,7 +46,7 @@ function ColoredSelect<T extends string>({
   return (
     <div>
       <label className="text-sm font-medium mb-1 block">{label}</label>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"

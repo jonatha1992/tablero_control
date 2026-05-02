@@ -30,29 +30,29 @@ const PRIORITY_CONFIG: Record<
   { color: string; bg: string; icon: typeof AlertTriangle; order: number; border: string }
 > = {
   urgent: {
-    color: 'text-red-600 dark:text-red-400',
-    bg: 'bg-red-100 dark:bg-red-900/30',
+    color: 'text-red-700 dark:text-red-400',
+    bg: 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50',
     icon: AlertTriangle,
     order: 0,
     border: 'border-l-red-500',
   },
   high: {
-    color: 'text-orange-600 dark:text-orange-400',
-    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    color: 'text-orange-700 dark:text-orange-400',
+    bg: 'bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50',
     icon: ChevronUp,
     order: 1,
     border: 'border-l-orange-500',
   },
   medium: {
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    color: 'text-blue-700 dark:text-blue-400',
+    bg: 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50',
     icon: ChevronUp,
     order: 2,
     border: 'border-l-blue-400',
   },
   low: {
-    color: 'text-slate-500 dark:text-slate-400',
-    bg: 'bg-slate-100 dark:bg-slate-800',
+    color: 'text-slate-700 dark:text-slate-400',
+    bg: 'bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700',
     icon: ChevronUp,
     order: 3,
     border: 'border-l-slate-300',
