@@ -61,13 +61,13 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
         collapsed ? 'justify-center' : 'justify-between'
       )}>
         {!collapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
-            <span className="font-semibold text-lg">Tablero Control</span>
+          <Link href="/" className="flex items-center gap-3 overflow-hidden">
+            <Image src="/icon-cropped.png" alt="Tablero de Control" width={32} height={32} className="rounded-xl object-contain shrink-0" />
+            <span className="font-bold text-lg whitespace-nowrap truncate">Tablero Control</span>
           </Link>
         )}
         {collapsed && (
-          <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
+          <Image src="/icon-cropped.png" alt="Tablero de Control" width={32} height={32} className="rounded-xl object-contain shrink-0" />
         )}
         <Button
           variant="ghost"

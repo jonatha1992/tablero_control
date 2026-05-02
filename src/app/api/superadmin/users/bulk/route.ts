@@ -134,7 +134,7 @@ export const POST = handle(async (req: NextRequest) => {
         await tx.user.delete({ where: { id } });
       });
 
-      await getAdminAuth().deleteUser(id).catch(() => {});
+      await getAdminAuth().deleteUser(id).catch(() => { });
 
       await writeAuditLog({
         actorId: user.uid,

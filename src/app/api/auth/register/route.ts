@@ -86,7 +86,7 @@ export const POST = handle(async (request: NextRequest) => {
     isActive: true,
   } as Parameters<typeof userRepository.create>[0]);
 
-  MailService.sendWelcomeEmail(email, name).catch(() => {});
+  MailService.sendWelcomeEmail(email, name).catch(() => { });
 
   return NextResponse.json(user, { status: 201 });
 });

@@ -141,7 +141,7 @@ export const DELETE = handle(async (
   }
 
   // 5. Delete from Firebase Auth (ignore if already gone)
-  await getAdminAuth().deleteUser(id).catch(() => {});
+  await getAdminAuth().deleteUser(id).catch(() => { });
 
   await writeAuditLog({
     actorId: user.uid,

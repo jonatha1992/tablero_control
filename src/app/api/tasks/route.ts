@@ -64,9 +64,9 @@ export const POST = handle(async (request: NextRequest) => {
       for (const assignee of assignees) {
         const prefs = assignee.preferences as { notifications?: { email?: boolean } } | null;
         if (prefs?.notifications?.email === false) continue;
-        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => {});
+        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => { });
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   return NextResponse.json(task, { status: 201 });

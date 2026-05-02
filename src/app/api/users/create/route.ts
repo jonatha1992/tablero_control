@@ -136,7 +136,7 @@ export const POST = handle(async (req: NextRequest) => {
       },
     });
   } catch {
-    await adminAuth.deleteUser(uid).catch(() => {});
+    await adminAuth.deleteUser(uid).catch(() => { });
     return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });
   }
 
@@ -162,9 +162,9 @@ export const POST = handle(async (req: NextRequest) => {
         const teamName = biz?.name ?? 'el equipo';
         const inviterName = authed.data.name ?? authed.data.email ?? 'Un administrador';
         const inviterEmail = authed.data.email;
-        MailService.sendInviteEmail(email.trim(), inviterName, teamName, inviterEmail).catch(() => {});
+        MailService.sendInviteEmail(email.trim(), inviterName, teamName, inviterEmail).catch(() => { });
       })
-      .catch(() => {});
+      .catch(() => { });
   }
 
   return NextResponse.json(

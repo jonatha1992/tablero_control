@@ -31,7 +31,7 @@ export function SuperadminSidebar() {
   return (
     <aside className="w-56 shrink-0 bg-zinc-950 text-zinc-100 flex flex-col h-full">
       <div className="px-4 py-5 border-b border-zinc-800 flex items-center gap-3">
-        <Image src="/logo.png" alt="TecnoFusión Logo" width={40} height={40} className="object-contain" />
+        <Image src="/logo.png" alt="TecnoFusión Logo" width={48} height={48} className="object-contain shrink-0" />
         <div>
           <p className="text-xs text-zinc-500 uppercase tracking-widest">TecnoFusión</p>
           <p className="font-bold mt-0.5">Panel Superadmin</p>

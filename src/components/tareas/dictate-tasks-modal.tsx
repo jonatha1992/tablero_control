@@ -97,9 +97,15 @@ function TaskPreviewCard({
           ))}
         </select>
         {task.dueDate && (
-          <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-            📅 {task.dueDate}
-          </span>
+          <div className="flex items-center gap-1 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
+            <span>📅 {task.dueDate}</span>
+            <input
+              type="time"
+              value={task.dueTime ?? ''}
+              onChange={(e) => onChange({ ...task, dueTime: e.target.value || undefined })}
+              className="bg-transparent outline-none w-[68px]"
+            />
+          </div>
         )}
         <label className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
           ⏱
@@ -112,6 +118,11 @@ function TaskPreviewCard({
           />
           h
         </label>
+        {task.recurrence && (
+          <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1 py-0.5 text-[10px] text-primary font-medium" title="Tarea repetitiva">
+            🔁 {task.recurrence.frequency === 'daily' ? 'Diario' : task.recurrence.frequency === 'weekly' ? 'Semanal' : 'Mensual'}
+          </span>
+        )}
         {members.length > 0 && members.slice(0, 3).map((m) => {
           const assigned = task.assigneeIds.includes(m.id);
           return (
@@ -259,7 +270,7 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
-        className="max-w-md flex flex-col p-0 gap-0 h-[560px]"
+        className="max-w-2xl flex flex-col p-0 gap-0 h-[560px]"
         onInteractOutside={(e) => { if (isLocked) e.preventDefault(); }}
       >
         <DialogHeader className="flex-row items-center gap-2 px-4 py-3 border-b shrink-0">
