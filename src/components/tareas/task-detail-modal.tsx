@@ -17,11 +17,18 @@ import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
-import type { Task, TaskStatus, TaskPriority } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat, MapPin, Save } from 'lucide-react';
+import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
 import type { RecurrenceConfig } from '@/types';
+import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS } from '@/lib/constants/task-colors';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -36,6 +43,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [editLocationId, setEditLocationId] = useState('');
+  const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -60,6 +68,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           title,
           description,
           locationId: editLocationId || undefined,
+          assigneeIds: editAssigneeIds,
           dueDate: editDueDate ? new Date(`${editDueDate}T${editDueTime || '00:00'}`) : undefined,
           recurrence: isRecurring ? {
             frequency,
@@ -92,6 +101,10 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   const handlePriorityChange = (priority: TaskPriority) => {
     updateTask.mutate({ id: task.id, data: { priority } });
+  };
+
+  const handleTypeChange = (type: TaskType) => {
+    updateTask.mutate({ id: task.id, data: { type } });
   };
 
   const toggleAssignee = (memberId: string) => {
@@ -172,6 +185,36 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" /> Asignados
+                </label>
+                <div className="flex flex-col gap-1 max-h-40 overflow-y-auto border rounded-md p-1">
+                  {members.length === 0 ? (
+                    <p className="text-xs text-muted-foreground px-2 py-1">Sin miembros disponibles</p>
+                  ) : (
+                    members.map((m) => {
+                      const checked = editAssigneeIds.includes(m.id);
+                      return (
+                        <label key={m.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setEditAssigneeIds(checked ? editAssigneeIds.filter((id) => id !== m.id) : [...editAssigneeIds, m.id])}
+                            className="rounded border-input h-4 w-4"
+                          />
+                          <Avatar className="h-5 w-5 shrink-0">
+                            {m.avatar && <AvatarImage src={m.avatar} alt={m.name} />}
+                            <AvatarFallback className="text-[9px]">{m.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span>{m.name}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="pt-2 border-t border-border">
@@ -275,6 +318,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   const m = d ? d.getMinutes() : 0;
                   setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
                   setEditLocationId(task.locationId ?? '');
+                  setEditAssigneeIds(task.assigneeIds ?? []);
                   setIsRecurring(!!task.recurrence);
                   setFrequency(task.recurrence?.frequency ?? 'weekly');
                   setIntervalValue(task.recurrence?.interval ?? 1);
@@ -298,38 +342,66 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         <div className="flex flex-wrap gap-3 py-3 border-y">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Estado</p>
-            <select
-              value={task.status}
-              onChange={(e) => handleStatusChange(e.target.value as TaskStatus)}
-              className="h-8 rounded border border-input bg-background px-2 text-sm"
-            >
-              <option value="backlog">Backlog</option>
-              <option value="todo">Por hacer</option>
-              <option value="in_progress">En progreso</option>
-              <option value="in_review">En revisión</option>
-              <option value="done">Finalizado</option>
-              <option value="blocked">Bloqueada</option>
-            </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="inline-flex items-center gap-2 h-8 px-2.5 text-sm border border-input rounded-md bg-background hover:bg-accent">
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', STATUS_OPTIONS.find(o => o.value === task.status)?.dot)} />
+                  {STATUS_OPTIONS.find(o => o.value === task.status)?.label}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {STATUS_OPTIONS.map(opt => (
+                  <DropdownMenuItem key={opt.value} onClick={() => handleStatusChange(opt.value)} className="gap-2">
+                    <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+                    {opt.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
-                <select
-                  value={task.priority}
-                  onChange={(e) => handlePriorityChange(e.target.value as TaskPriority)}
-                  className="h-8 rounded border border-input bg-background px-2 text-sm"
-                >
-                  <option value="low">Baja</option>
-                  <option value="medium">Media</option>
-                  <option value="high">Alta</option>
-                  <option value="urgent">Urgente</option>
-                </select>
-              </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="inline-flex items-center gap-2 h-8 px-2.5 text-sm border border-input rounded-md bg-background hover:bg-accent">
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find(o => o.value === task.priority)?.dot)} />
+                  {PRIORITY_OPTIONS.find(o => o.value === task.priority)?.label}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {PRIORITY_OPTIONS.map(opt => (
+                  <DropdownMenuItem key={opt.value} onClick={() => handlePriorityChange(opt.value)} className="gap-2">
+                    <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+                    {opt.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Tipo</p>
-                <Badge variant="secondary">{task.type}</Badge>
-              </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Tipo</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="inline-flex items-center gap-2 h-8 px-2.5 text-sm border border-input rounded-md bg-background hover:bg-accent">
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', TYPE_OPTIONS.find(o => o.value === task.type)?.dot)} />
+                  {TYPE_OPTIONS.find(o => o.value === task.type)?.label ?? task.type}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {TYPE_OPTIONS.map(opt => (
+                  <DropdownMenuItem key={opt.value} onClick={() => handleTypeChange(opt.value)} className="gap-2">
+                    <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+                    {opt.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           {task.dueDate && (
             <div>

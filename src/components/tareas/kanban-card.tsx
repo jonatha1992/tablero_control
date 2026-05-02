@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   ChevronUp,
   Check,
+  MapPin,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
@@ -24,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Priority config
 const PRIORITY_CONFIG: Record<
   TaskPriority,
   { color: string; bg: string; icon: typeof AlertTriangle; order: number; border: string }
@@ -70,9 +70,10 @@ interface KanbanCardProps {
   isSelected: boolean;
   isSelectMode: boolean;
   isOverlay?: boolean;
+  locationName?: string;
 }
 
-export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected, isSelectMode, isOverlay }: KanbanCardProps) {
+export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected, isSelectMode, isOverlay, locationName }: KanbanCardProps) {
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
@@ -91,7 +92,7 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
       {...attributes}
       {...listeners}
       className={cn(
-        'group relative rounded-lg border border-l-4 bg-card p-3 shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing select-none',
+        'group relative rounded-lg border border-l-4 bg-card p-2.5 shadow-sm transition-shadow duration-500 hover:shadow-md cursor-grab active:cursor-grabbing select-none',
         priorityConfig.border,
         isSelected
           ? 'border-primary/60 bg-primary/5 ring-1 ring-primary/30'
@@ -101,7 +102,11 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
       )}
       onClick={() => {
         if (transform) return;
-        onClick(task);
+        if (isSelectMode) onClick(task);
+      }}
+      onDoubleClick={() => {
+        if (transform) return;
+        if (!isSelectMode) onClick(task);
       }}
     >
       {/* Urgent indicator */}
@@ -111,33 +116,53 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
         </div>
       )}
 
-      {/* Header: checkbox + title + menu */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        {/* Checkbox (visible in select mode or when selected) */}
+      {/* Header: checkbox + title + avatars + menú */}
+      <div className="flex items-start gap-1.5 mb-1.5">
         {(isSelectMode || isSelected) && (
           <div className="shrink-0 mt-0.5">
             <div
               className={cn(
                 'h-4 w-4 rounded border-2 flex items-center justify-center transition-colors',
-                isSelected
-                  ? 'bg-primary border-primary'
-                  : 'border-muted-foreground/40'
+                isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
               )}
             >
               {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
             </div>
           </div>
         )}
+        <h4 className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{task.title}</h4>
 
-        <div className="flex items-start gap-1 flex-1 min-w-0">
-          <h4 className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{task.title}</h4>
-        </div>
+        {/* Avatares de asignados — junto al título */}
+        {(() => {
+          if (!task.assigneeIds || task.assigneeIds.length === 0) return null;
+          const valid = task.assigneeIds
+            .map((id) => task.assignees?.find((x) => x.id === id))
+            .filter((a): a is NonNullable<typeof a> => !!a);
+          if (valid.length === 0) return null;
+          const shown = valid.slice(0, 2);
+          const rest = valid.length - shown.length;
+          return (
+            <div className="flex items-center -space-x-1 shrink-0 mt-0.5">
+              {shown.map((a) => {
+                const initials = a.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+                return (
+                  <Avatar key={a.id} className="h-4 w-4 border border-background" title={a.name}>
+                    {a.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
+                    <AvatarFallback className="text-[7px] bg-primary/15">{initials}</AvatarFallback>
+                  </Avatar>
+                );
+              })}
+              {rest > 0 && (
+                <span className="text-[9px] text-muted-foreground pl-1.5">+{rest}</span>
+              )}
+            </div>
+          );
+        })()}
 
-        {/* 3-dot menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-muted"
+              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-3.5 w-3.5" />
@@ -156,29 +181,37 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
         </DropdownMenu>
       </div>
 
-      {/* Description preview */}
-      {task.description && (
-        <p className="text-[10px] text-muted-foreground line-clamp-2 mb-2 pl-5">{task.description}</p>
-      )}
-
-      {/* Tags */}
-      {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2 pl-5">
-          {task.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-            >
-              {tag}
-            </span>
-          ))}
-          {task.tags.length > 3 && (
-            <span className="text-[10px] text-muted-foreground">+{task.tags.length - 3}</span>
-          )}
+      {/* Location — debajo del título si existe */}
+      {locationName && (
+        <div className="flex items-center gap-1 mb-1.5">
+          <MapPin className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
+          <span className="text-[9px] text-muted-foreground/60 truncate">{locationName}</span>
         </div>
       )}
 
-      {/* Footer: priority + meta */}
+      {/* Sección expandible al hacer hover */}
+      <div className="overflow-hidden max-h-0 group-hover:max-h-40 transition-[max-height] duration-500 ease-in-out delay-75">
+        {task.description && (
+          <p className="text-[10px] text-muted-foreground line-clamp-3 mb-1.5">{task.description}</p>
+        )}
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {task.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
+            {task.tags.length > 3 && (
+              <span className="text-[10px] text-muted-foreground">+{task.tags.length - 3}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer: prioridad + meta — siempre visible */}
       <div className="flex items-center justify-between mt-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -227,9 +260,9 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Meta: id corto + comentarios + adjuntos + fecha */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <span className="font-mono text-[9px] text-muted-foreground/60">#{shortId}</span>
+        {/* Meta: id, comentarios, adjuntos, fecha */}
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="font-mono text-[9px] text-muted-foreground/50">#{shortId}</span>
           {task.commentCount > 0 && (
             <div className="flex items-center gap-0.5 text-[10px]">
               <MessageSquare className="h-3 w-3" />
@@ -260,50 +293,17 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
               <Clock className="h-3 w-3" />
               <span>
                 {new Date(task.dueDate).toLocaleDateString('es', { month: 'short', day: 'numeric' })}
-                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? ` ${d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}` : null; })()}
+                {(() => {
+                  const d = new Date(task.dueDate);
+                  return (d.getHours() !== 0 || d.getMinutes() !== 0)
+                    ? ` ${d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
+                    : null;
+                })()}
               </span>
             </div>
           )}
         </div>
       </div>
-
-      {/* Assignees */}
-      {(() => {
-        if (!task.assigneeIds || task.assigneeIds.length === 0) return null;
-        const validAssignees = task.assigneeIds
-          .map((id) => task.assignees?.find((x) => x.id === id))
-          .filter((a): a is NonNullable<typeof a> => !!a);
-        if (validAssignees.length === 0) return null;
-
-        const shown = validAssignees.slice(0, 3);
-        const rest = validAssignees.length - shown.length;
-        return (
-          <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/50 flex-wrap">
-            {shown.map((a) => {
-              const initials = a.name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase();
-              return (
-                <div key={a.id} className="flex items-center gap-1 rounded-full bg-muted/70 px-1.5 py-0.5" title={a.name}>
-                  <Avatar className="h-4 w-4 shrink-0">
-                    {a.avatar && <AvatarImage src={a.avatar} alt={a.name} />}
-                    <AvatarFallback className="text-[7px] bg-primary/15">{initials}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-[10px] font-medium text-foreground/80 leading-none">
-                    {a.name.split(' ')[0]}
-                  </span>
-                </div>
-              );
-            })}
-            {rest > 0 && (
-              <span className="text-[10px] text-muted-foreground">+{rest}</span>
-            )}
-          </div>
-        );
-      })()}
     </div>
   );
 }

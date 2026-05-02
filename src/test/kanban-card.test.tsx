@@ -87,12 +87,12 @@ describe('KanbanCard', () => {
     expect(screen.getByTitle(/Prioridad: Urgente/i)).toBeInTheDocument();
   });
 
-  it('llama a onClick al hacer click en la tarjeta', () => {
+  it('llama a onClick al hacer doble clic en la tarjeta', () => {
     const onClick = vi.fn();
     const task = makeTask();
     render(<KanbanCard task={task} {...defaultProps} onClick={onClick} />);
 
-    fireEvent.click(screen.getByText('Tarea de prueba'));
+    fireEvent.dblClick(screen.getByText('Tarea de prueba'));
     expect(onClick).toHaveBeenCalledWith(task);
   });
 

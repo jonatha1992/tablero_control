@@ -46,6 +46,5 @@ next-env.d.ts
 key.json
 
 # debug/test output logs
-*.txt
 .claude/settings.local.json
 

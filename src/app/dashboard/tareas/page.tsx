@@ -33,10 +33,8 @@ export default function TareasPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 min-w-0">
-      <div className="flex-1 min-h-0 min-w-0 flex flex-col">
-        <KanbanBoard tasks={tasks} />
-      </div>
+    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      <KanbanBoard tasks={tasks} />
     </div>
   );
 }

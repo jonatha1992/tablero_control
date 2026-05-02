@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -32,15 +33,15 @@ export async function GET(req: NextRequest) {
     prisma.business.count({ where: { plan: 'basic' } }),
     prisma.business.count({ where: { plan: 'pro' } }),
     prisma.business.count({ where: { plan: 'enterprise' } }),
-    prisma.user.findMany({ 
-      take: 5, 
+    prisma.user.findMany({
+      take: 5,
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, email: true, createdAt: true, business: { select: { name: true } } } 
+      select: { id: true, name: true, email: true, createdAt: true, business: { select: { name: true } } }
     }),
-    prisma.business.findMany({ 
-      take: 5, 
+    prisma.business.findMany({
+      take: 5,
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, plan: true, status: true, createdAt: true } 
+      select: { id: true, name: true, plan: true, status: true, createdAt: true }
     }),
     prisma.auditLog.findMany({
       take: 10,
@@ -53,12 +54,12 @@ export async function GET(req: NextRequest) {
   const planCount = { free: freePlan, basic: basicPlan, pro: proPlan, enterprise: enterprisePlan };
 
   return NextResponse.json({
-    businesses: { 
-      total: totalBusinesses, 
-      active: activeBusinesses, 
-      suspended: suspendedBusinesses, 
+    businesses: {
+      total: totalBusinesses,
+      active: activeBusinesses,
+      suspended: suspendedBusinesses,
       trial: trialBusinesses,
-      recent: recentBusinesses 
+      recent: recentBusinesses
     },
     users: { total: totalUsers, recent: recentUsers },
     tasks: { total: totalTasks },
@@ -66,4 +67,4 @@ export async function GET(req: NextRequest) {
     planBreakdown: planCount,
     activity: recentActivity,
   });
-}
+});

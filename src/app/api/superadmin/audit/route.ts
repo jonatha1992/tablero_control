@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -28,4 +29,4 @@ export async function GET(req: NextRequest) {
     },
   });
   return NextResponse.json({ logs });
-}
+});

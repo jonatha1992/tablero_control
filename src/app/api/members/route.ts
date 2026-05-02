@@ -3,8 +3,9 @@ import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(request: NextRequest) {
+export const GET = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -16,9 +17,9 @@ export async function GET(request: NextRequest) {
 
   const members = await teamService.getMembersByBusiness(businessId);
   return NextResponse.json(members);
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -38,4 +39,4 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(member, { status: 201 });
-}
+});

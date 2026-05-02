@@ -39,6 +39,7 @@ const defaultProps = {
   onAddClick: vi.fn(),
   selectedTaskIds: [],
   isSelectMode: false,
+          locations: [],
   onSelectAll: vi.fn(),
   onBulkDelete: vi.fn(),
 };

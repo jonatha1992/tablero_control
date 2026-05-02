@@ -5,6 +5,9 @@ import { mpFetch } from '@/lib/mercadopago/client';
 import { writeAuditLog } from '@/lib/api/audit';
 import { createHmac, timingSafeEqual } from 'crypto';
 import type { SubscriptionStatus } from '@/types/domain/subscription';
+import { handle } from '@/lib/api/route-handler';
+import { MailService } from '@/services/mail.service';
+import { PLANS } from '@/lib/mercadopago/plans';
 
 function verifySignature(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
@@ -58,7 +61,7 @@ interface MpPayment {
   preapproval_id?: string;
 }
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const rawBody = await req.text();
 
   if (!verifySignature(req, rawBody)) {
@@ -131,6 +134,17 @@ export async function POST(req: NextRequest) {
           targetId: dataId,
           metadata: { status, plan: ref.plan },
         });
+
+        prisma.business.findUnique({
+          where: { id: ref.businessId },
+          select: { name: true, adminId: true, users: { where: { isActive: true }, select: { id: true, email: true } } },
+        }).then((biz) => {
+          if (!biz) return;
+          const admin = biz.users.find((u) => u.id === biz.adminId);
+          if (!admin) return;
+          const planName = PLANS[ref.plan as keyof typeof PLANS]?.name ?? ref.plan;
+          MailService.sendSubscriptionActivatedEmail(admin.email, biz.name, planName).catch(() => {});
+        }).catch(() => {});
       }
     } catch (err) {
       console.error('[webhook] subscription_preapproval db error:', err);
@@ -205,6 +219,22 @@ export async function POST(req: NextRequest) {
           targetId: sub.id,
           metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id },
         });
+
+        if (invoiceStatus === 'paid' || invoiceStatus === 'failed') {
+          prisma.business.findUnique({
+            where: { id: ref.businessId },
+            select: { name: true, adminId: true, users: { where: { isActive: true }, select: { id: true, email: true } } },
+          }).then((biz) => {
+            if (!biz) return;
+            const admin = biz.users.find((u) => u.id === biz.adminId);
+            if (!admin) return;
+            if (invoiceStatus === 'paid') {
+              MailService.sendPaymentSuccessEmail(admin.email, biz.name, payment.transaction_amount).catch(() => {});
+            } else {
+              MailService.sendPaymentFailedEmail(admin.email, biz.name).catch(() => {});
+            }
+          }).catch(() => {});
+        }
       }
     } catch (err) {
       console.error('[webhook] payment db error:', err);
@@ -212,4 +242,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
-}
+});

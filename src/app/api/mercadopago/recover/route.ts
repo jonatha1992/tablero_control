@@ -6,6 +6,7 @@ import { parseExternalReference } from '@/lib/mercadopago/preference';
 import { getPreapproval } from '@/lib/mercadopago/preapproval';
 import { writeAuditLog } from '@/lib/api/audit';
 import type { PlanId, BillingFrequency } from '@/types/domain/subscription';
+import { handle } from '@/lib/api/route-handler';
 
 function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
@@ -62,7 +63,7 @@ async function processApprovedPayment(payment: MpPayment, sub: SubSnapshot, plan
 // POST /api/mercadopago/recover
 // Body: { businessId?: string; paymentId?: string }
 // Superadmin: any businessId. Admin: solo su propio business.
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
 
@@ -218,4 +219,4 @@ export async function POST(req: NextRequest) {
     total: payments.length,
     ...(errors.length > 0 ? { errors } : {}),
   });
-}
+});

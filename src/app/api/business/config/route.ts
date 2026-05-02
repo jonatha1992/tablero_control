@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { businessRepository } from '@/repositories';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   const authed = await requireUser(req);
   if (authed instanceof NextResponse) return authed;
 
@@ -17,9 +18,9 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json(business);
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = handle(async (req: NextRequest) => {
   const authed = await requireUser(req);
   if (authed instanceof NextResponse) return authed;
 
@@ -55,4 +56,4 @@ export async function PATCH(req: NextRequest) {
     const msg = error instanceof Error ? error.message : 'update_failed';
     return NextResponse.json({ error: 'update_failed', details: msg }, { status: 500 });
   }
-}
+});

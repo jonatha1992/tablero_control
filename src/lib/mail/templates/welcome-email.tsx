@@ -6,11 +6,14 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Preview,
   Section,
   Text,
 } from '@react-email/components';
 import * as React from 'react';
+
+const LOGO_URL = 'https://res.cloudinary.com/dhhjn1fo8/image/upload/v1777644183/tablero_control/logo.png';
 
 interface WelcomeEmailProps {
   userName: string;
@@ -27,8 +30,7 @@ export const WelcomeEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
-          {/* Logo Placeholder - Usar URL absoluta en producción */}
-          <Heading style={logo}>TC</Heading>
+          <Img src={LOGO_URL} alt="Tablero de Control" width={160} style={logoImg} />
         </Section>
         
         <Heading style={h1}>¡Hola {userName}!</Heading>
@@ -80,12 +82,9 @@ const header = {
   textAlign: 'center' as const,
 };
 
-const logo = {
-  margin: '0',
-  color: '#3b82f6',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  letterSpacing: '-1px',
+const logoImg = {
+  margin: '0 auto',
+  display: 'block' as const,
 };
 
 const h1 = {

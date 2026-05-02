@@ -3,9 +3,10 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
 import { getAllEffectivePlanConfigs } from '@/lib/mercadopago/plan-config';
+import { handle } from '@/lib/api/route-handler';
 import type { PlanId } from '@/types/domain/subscription';
 
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const plans = await getAllEffectivePlanConfigs();
   return NextResponse.json({ plans });
-}
+});
 
 interface PatchBody {
   planId: PlanId;
@@ -25,7 +26,7 @@ interface PatchBody {
   limitAttachments?: number;
 }
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -75,4 +76,4 @@ export async function PATCH(req: NextRequest) {
   });
 
   return NextResponse.json({ ok: true, updated });
-}
+});

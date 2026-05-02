@@ -3,6 +3,7 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
+import { handle } from '@/lib/api/route-handler';
 import type { Prisma } from '@prisma/client';
 
 async function reassignUserTasks(tx: Prisma.TransactionClient, userId: string, fallbackCreatorId: string) {
@@ -59,10 +60,10 @@ async function reassignUserTasks(tx: Prisma.TransactionClient, userId: string, f
   return { reassigned: tasks.length };
 }
 
-export async function DELETE(
+export const DELETE = handle(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -140,7 +141,7 @@ export async function DELETE(
   }
 
   // 5. Delete from Firebase Auth (ignore if already gone)
-  await getAdminAuth().deleteUser(id).catch(() => {});
+  await getAdminAuth().deleteUser(id).catch(() => { });
 
   await writeAuditLog({
     actorId: user.uid,
@@ -153,4 +154,4 @@ export async function DELETE(
   });
 
   return NextResponse.json({ ok: true });
-}
+});

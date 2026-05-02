@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Plus, Filter, Settings2, CheckSquare, Trash2, ChevronDown, MapPin } from 'lucide-react';
+import { Plus, Filter, Settings2, CheckSquare, Trash2, ChevronDown, MapPin, MessageSquare } from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { TASK_STATUS_LABELS } from '@/lib/constants/task';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/lib/constants/task-colors';
@@ -23,8 +23,10 @@ import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -37,6 +39,7 @@ import {
 } from '@/components/ui/dialog';
 import { TaskDetailModal } from './task-detail-modal';
 import { CreateTaskModal } from './create-task-modal';
+import { DictateTasksModal } from './dictate-tasks-modal';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useBulkMoveTasks } from '@/hooks/mutations/use-bulk-move-tasks';
@@ -58,12 +61,15 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     filters,
     isCreateModalOpen,
     isDetailModalOpen,
+    isDictateModalOpen,
     selectedTaskId,
     setDraggedTask,
     clearDrag,
     setFilters,
     openCreateModal,
     closeCreateModal,
+    openDictateModal,
+    closeDictateModal,
     openTaskDetail,
     closeTaskDetail,
     isSelectMode,
@@ -76,7 +82,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     toggleColumn,
   } = useKanbanUIStore();
 
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
 
   const requestDelete = (taskIds: string[]) => setPendingDelete(taskIds);
@@ -180,9 +185,9 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     : null;
 
   return (
-    <div className="flex flex-col h-full min-h-0 min-w-0 w-full">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden w-full">
       {/* Toolbar */}
-      <div className="shrink-0 sticky top-0 z-10 bg-background flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
+      <div className="shrink-0 flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
         {/* Location filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -249,38 +254,30 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         <div className="flex-1" />
 
         {/* Configurar Tablero */}
-        <div className="relative">
-          <button
-            onClick={() => setIsConfigOpen(!isConfigOpen)}
-            className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
-          >
-            <Settings2 className="h-4 w-4" />
-            Configurar Tablero
-          </button>
-
-          {isConfigOpen && (
-            <div className="absolute top-full mt-2 right-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
-              <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
-              <div className="space-y-1">
-                {BOARD_COLUMNS.map((col) => {
-                  const opt = STATUS_OPTIONS.find((o) => o.value === col);
-                  return (
-                    <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={activeColumns.includes(col)}
-                        onChange={() => toggleColumn(col)}
-                        className="rounded border-gray-300"
-                      />
-                      <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
-                      <span>{TASK_STATUS_LABELS[col]}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent">
+              <Settings2 className="h-4 w-4" />
+              Configurar Tablero
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Columnas Visibles</DropdownMenuLabel>
+            {BOARD_COLUMNS.map((col) => {
+              const opt = STATUS_OPTIONS.find((o) => o.value === col);
+              return (
+                <DropdownMenuCheckboxItem
+                  key={col}
+                  checked={activeColumns.includes(col)}
+                  onCheckedChange={() => toggleColumn(col)}
+                >
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
+                  {TASK_STATUS_LABELS[col]}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Selección / bulk actions */}
         {isSelectMode ? (
@@ -356,13 +353,35 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               Selección
             </button>
             {user?.role !== 'viewer' && (
-              <button
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                Nueva tarea
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Plus className="h-4 w-4" />
+                    Nueva tarea
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={openCreateModal} className="gap-3 cursor-pointer py-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted shrink-0">
+                      <Plus className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Formulario</p>
+                      <p className="text-xs text-muted-foreground">Campo por campo</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={openDictateModal} className="gap-3 cursor-pointer py-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 shrink-0">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Crear con IA</p>
+                      <p className="text-xs text-muted-foreground">Chat o voz</p>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         )}
@@ -391,6 +410,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               isSelectMode={isSelectMode}
               onSelectAll={selectAllInColumn}
               onBulkDelete={requestDelete}
+              locations={locations}
             />
           ))}
         </div>
@@ -450,6 +470,13 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         open={isCreateModalOpen}
         onOpenChange={(open) => {
           if (!open) closeCreateModal();
+        }}
+      />
+
+      <DictateTasksModal
+        open={isDictateModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDictateModal();
         }}
       />
     </div>

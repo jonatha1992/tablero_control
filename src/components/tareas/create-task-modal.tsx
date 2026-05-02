@@ -23,6 +23,12 @@ import { toast } from 'sonner';
 
 import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '@/types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS, type SelectOption } from '@/lib/constants/task-colors';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function ColoredSelect<T extends string>({
   label,
@@ -35,49 +41,38 @@ function ColoredSelect<T extends string>({
   options: SelectOption<T>[];
   onChange: (v: T) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value) ?? options[0];
 
-  // close on outside click
-  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    if (!ref.current?.contains(e.relatedTarget as Node)) setOpen(false);
-  };
-
   return (
-    <div className="relative" ref={ref} onBlur={handleBlur}>
+    <div>
       <label className="text-sm font-medium mb-1 block">{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
-      >
-        <span className="flex items-center gap-2">
-          <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
-          {selected.label}
-        </span>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
+              {selected.label}
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-[var(--radix-dropdown-menu-trigger-width)]">
           {options.map((opt) => (
-            <button
+            <DropdownMenuItem
               key={opt.value}
-              type="button"
-              tabIndex={0}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+              onClick={() => onChange(opt.value)}
+              className="gap-2"
             >
-              <span className="flex items-center gap-2">
-                <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
-                {opt.label}
-              </span>
-              {opt.value === value && <Check className="h-3.5 w-3.5 text-primary" />}
-            </button>
+              <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+              {opt.label}
+              {opt.value === value && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+            </DropdownMenuItem>
           ))}
-        </div>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -113,6 +108,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [interval, setIntervalValue] = useState(1);
   const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
   const [dayOfMonth, setDayOfMonth] = useState<number | undefined>(undefined);
+  const [estimatedHours, setEstimatedHours] = useState<number | undefined>(undefined);
   const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -131,6 +127,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setDueDate(defaultDueDate ?? today); setDueTime(''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
     setLocationId('');
+    setEstimatedHours(undefined);
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
   };
@@ -177,6 +174,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           if (task.dueDate) setDueDate(task.dueDate);
           if (task.dueTime) setDueTime(task.dueTime);
           if (task.assigneeIds?.length) setAssigneeIds(task.assigneeIds);
+          if (task.estimatedHours) setEstimatedHours(task.estimatedHours);
           toast.success('Formulario completado por IA');
         } else {
           toast.warning('No se detectó ninguna tarea en el audio');
@@ -202,6 +200,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         assigneeIds,
         locationId: locationId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+        estimatedHours: estimatedHours || undefined,
         dueDate: dueDate ? new Date(`${dueDate}T${dueTime || '00:00'}`) : undefined,
         recurrence: isRecurring ? {
           frequency,
@@ -229,8 +228,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                 micState === 'recording'
                   ? 'bg-red-500 text-white animate-pulse'
                   : micState === 'processing'
-                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
               )}
             >
               {micState === 'processing' ? (
@@ -349,30 +348,12 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm font-medium mb-1 block">Fecha límite</label>
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={dueDate}
-                  min={today}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-                <input
-                  type="time"
-                  value={dueTime}
-                  onChange={(e) => setDueTime(e.target.value)}
-                  className="flex h-10 w-24 rounded-md border border-input bg-background px-2 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 block">Hora</label>
               <input
-                type="time"
-                value={dueTime}
-                onChange={(e) => setDueTime(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+                type="date"
+                value={dueDate}
+                min={today}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </div>
 
@@ -387,6 +368,20 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             </div>
 
             <div>
+              <label className="text-sm font-medium mb-1 block">Horas est.</label>
+              <input
+                type="number"
+                min={0.5}
+                max={99}
+                step={0.5}
+                value={estimatedHours ?? ''}
+                onChange={(e) => setEstimatedHours(e.target.value ? Number(e.target.value) : undefined)}
+                placeholder="ej: 3"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div className="col-span-3">
               <label className="text-sm font-medium mb-1 block">Tags (coma)</label>
               <input
                 type="text"

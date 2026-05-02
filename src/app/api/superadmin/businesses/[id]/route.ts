@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = handle(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -43,9 +44,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
 
   return NextResponse.json({ business, users, locations, teams, projects });
-}
+});
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = handle(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -98,4 +99,4 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   });
 
   return NextResponse.json({ ok: true });
-}
+});

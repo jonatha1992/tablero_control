@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = handle(async (req: NextRequest) => {
   const authed = await requireUser(req);
   if (authed instanceof NextResponse) return authed;
 
@@ -31,4 +32,4 @@ export async function PATCH(req: NextRequest) {
   });
 
   return NextResponse.json(updated);
-}
+});

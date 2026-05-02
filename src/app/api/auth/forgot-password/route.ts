@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { MailService } from '@/services/mail.service';
+import { handle } from '@/lib/api/route-handler';
 
-export async function POST(req: NextRequest) {
+export const POST = handle(async (req: NextRequest) => {
   try {
     const { email } = await req.json();
 
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const adminAuth = getAdminAuth();
-    
+
     // 1. Generar el link oficial de Firebase
     // Nota: ActionCodeSettings opcional para redirección personalizada
     const resetLink = await adminAuth.generatePasswordResetLink(email, {
@@ -40,4 +41,4 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
-}
+});

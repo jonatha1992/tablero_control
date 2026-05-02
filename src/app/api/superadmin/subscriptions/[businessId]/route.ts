@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
 import type { PlanId } from '@/types/domain/subscription';
 
 const VALID_PLANS: PlanId[] = ['free', 'basic', 'pro', 'enterprise'];
 
-export async function PATCH(
+export const PATCH = handle(async (
   req: NextRequest,
   { params }: { params: Promise<{ businessId: string }> }
-) {
+) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -66,4 +67,4 @@ export async function PATCH(
   });
 
   return NextResponse.json({ ok: true });
-}
+});

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -14,9 +15,9 @@ export async function GET(req: NextRequest) {
     take: 100,
   });
   return NextResponse.json({ businesses });
-}
+});
 
-export async function PATCH(req: NextRequest) {
+export const PATCH = handle(async (req: NextRequest) => {
   const user = await requireUser(req);
   if (user instanceof NextResponse) return user;
   const denied = requireRole(user, ['superadmin']);
@@ -47,4 +48,4 @@ export async function PATCH(req: NextRequest) {
   });
 
   return NextResponse.json({ ok: true });
-}
+});

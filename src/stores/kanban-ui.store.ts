@@ -12,9 +12,12 @@ interface KanbanUIStore {
   // Modales
   isCreateModalOpen: boolean;
   isDetailModalOpen: boolean;
+  isDictateModalOpen: boolean;
   selectedTaskId: string | null;
   openCreateModal: () => void;
   closeCreateModal: () => void;
+  openDictateModal: () => void;
+  closeDictateModal: () => void;
   openTaskDetail: (taskId: string) => void;
   closeTaskDetail: () => void;
 
@@ -58,9 +61,12 @@ export const useKanbanUIStore = create<KanbanUIStore>((set) => ({
 
   isCreateModalOpen: false,
   isDetailModalOpen: false,
+  isDictateModalOpen: false,
   selectedTaskId: null,
   openCreateModal: () => set({ isCreateModalOpen: true }),
   closeCreateModal: () => set({ isCreateModalOpen: false }),
+  openDictateModal: () => set({ isDictateModalOpen: true }),
+  closeDictateModal: () => set({ isDictateModalOpen: false }),
   openTaskDetail: (taskId) => set({ isDetailModalOpen: true, selectedTaskId: taskId }),
   closeTaskDetail: () => set({ isDetailModalOpen: false, selectedTaskId: null }),
 

@@ -7,9 +7,26 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProtectedRoute } from '@/hooks/protected-route';
 import { useAuth } from '@/hooks/auth-context';
-import { Plus } from 'lucide-react';
+import { Plus, MessageSquare, ClipboardList } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
+import { DictateTasksModal } from '@/components/tareas/dictate-tasks-modal';
+
+function FabOption({ label, icon: Icon, onClick }: { label: string; icon: React.ElementType; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 group"
+    >
+      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-popover text-popover-foreground text-xs font-medium px-2 py-1 rounded-md shadow-md whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-card border border-border shadow-md hover:bg-accent transition-colors">
+        <Icon className="h-4 w-4" />
+      </div>
+    </button>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -19,7 +36,12 @@ export default function DashboardLayout({
   const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { isCreateModalOpen, closeCreateModal, openCreateModal } = useKanbanUIStore();
+  const [fabOpen, setFabOpen] = useState(false);
+
+  const {
+    isCreateModalOpen, closeCreateModal, openCreateModal,
+    isDictateModalOpen, closeDictateModal, openDictateModal,
+  } = useKanbanUIStore();
 
   return (
     <ProtectedRoute>
@@ -47,18 +69,39 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* FAB: crear tarea */}
-        <button
-          onClick={openCreateModal}
-          className="fixed bottom-10 right-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all z-40"
-          title="Crear tarea"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
+        {/* FAB speed-dial */}
+        <div className="fixed bottom-10 right-10 flex flex-col items-end gap-2 z-40">
+          {fabOpen && (
+            <>
+              <FabOption
+                label="Crear con IA"
+                icon={MessageSquare}
+                onClick={() => { openDictateModal(); setFabOpen(false); }}
+              />
+              <FabOption
+                label="Formulario"
+                icon={ClipboardList}
+                onClick={() => { openCreateModal(); setFabOpen(false); }}
+              />
+            </>
+          )}
+          <button
+            onClick={() => setFabOpen((v) => !v)}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            title="Crear tarea"
+          >
+            <Plus className={cn('h-6 w-6 transition-transform duration-200', fabOpen && 'rotate-45')} />
+          </button>
+        </div>
 
         <CreateTaskModal
           open={isCreateModalOpen}
           onOpenChange={(open) => { if (!open) closeCreateModal(); }}
+        />
+
+        <DictateTasksModal
+          open={isDictateModalOpen}
+          onOpenChange={(open) => { if (!open) closeDictateModal(); }}
         />
       </div>
     </ProtectedRoute>

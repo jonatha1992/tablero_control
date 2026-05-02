@@ -5,8 +5,9 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(request: NextRequest) {
+export const GET = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -22,9 +23,9 @@ export async function GET(request: NextRequest) {
     : await locationService.getByBusiness(businessId);
 
   return NextResponse.json(locations);
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -85,4 +86,4 @@ export async function POST(request: NextRequest) {
     const msg = error instanceof Error ? error.message : 'Error interno';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
+});

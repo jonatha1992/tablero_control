@@ -100,7 +100,11 @@
       "Bash(taskkill /PID 11440 /F)",
       "Bash(taskkill /PID 53 /F)",
       "PowerShell(Stop-Process *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(ls -la \"E:\\\\\\\\tablero_control\\\\\\\\src\\\\\\\\app\\\\\\\\api\\\\\\\\\")",
+      "Bash(ls *)",
+      "Bash(grep -r \"CreateTaskModal\\\\|DictateTasksModal\" \"E:\\\\\\\\tablero_control\\\\\\\\src\" --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(node --experimental-vm-modules tests/test-email-direct.mjs)"
     ]
   }
 }

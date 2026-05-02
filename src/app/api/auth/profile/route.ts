@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
+import { handle } from '@/lib/api/route-handler';
 
-export async function GET(request: NextRequest) {
+export const GET = handle(async (request: NextRequest) => {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -65,4 +66,4 @@ export async function GET(request: NextRequest) {
     console.error('Profile fetch error:', error);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-}
+});

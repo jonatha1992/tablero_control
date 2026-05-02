@@ -3,12 +3,13 @@ import { locationService } from '@/services/location.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { handle } from '@/lib/api/route-handler';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(request: NextRequest, { params }: Props) {
+export const GET = handle(async (request: NextRequest, { params }: Props) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -19,9 +20,9 @@ export async function GET(request: NextRequest, { params }: Props) {
   }
   assertSameTenant(user.data, { businessId: location.businessId });
   return NextResponse.json(location);
-}
+});
 
-export async function PATCH(request: NextRequest, { params }: Props) {
+export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -51,9 +52,9 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     const msg = error instanceof Error ? error.message : 'Error interno';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(request: NextRequest, { params }: Props) {
+export const DELETE = handle(async (request: NextRequest, { params }: Props) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
@@ -82,4 +83,4 @@ export async function DELETE(request: NextRequest, { params }: Props) {
     const msg = error instanceof Error ? error.message : 'Error interno';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
+});
