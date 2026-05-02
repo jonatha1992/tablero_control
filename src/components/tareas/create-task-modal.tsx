@@ -23,6 +23,12 @@ import { toast } from 'sonner';
 
 import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '@/types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS, type SelectOption } from '@/lib/constants/task-colors';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function ColoredSelect<T extends string>({
   label,
@@ -35,49 +41,38 @@ function ColoredSelect<T extends string>({
   options: SelectOption<T>[];
   onChange: (v: T) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value) ?? options[0];
 
-  // close on outside click
-  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    if (!ref.current?.contains(e.relatedTarget as Node)) setOpen(false);
-  };
-
   return (
-    <div className="relative" ref={ref} onBlur={handleBlur}>
+    <div>
       <label className="text-sm font-medium mb-1 block">{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
-      >
-        <span className="flex items-center gap-2">
-          <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
-          {selected.label}
-        </span>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <span className={cn('h-2 w-2 rounded-full shrink-0', selected.dot)} />
+              {selected.label}
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-[var(--radix-dropdown-menu-trigger-width)]">
           {options.map((opt) => (
-            <button
+            <DropdownMenuItem
               key={opt.value}
-              type="button"
-              tabIndex={0}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+              onClick={() => onChange(opt.value)}
+              className="gap-2"
             >
-              <span className="flex items-center gap-2">
-                <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
-                {opt.label}
-              </span>
-              {opt.value === value && <Check className="h-3.5 w-3.5 text-primary" />}
-            </button>
+              <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+              {opt.label}
+              {opt.value === value && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+            </DropdownMenuItem>
           ))}
-        </div>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

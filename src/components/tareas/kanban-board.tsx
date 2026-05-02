@@ -23,8 +23,10 @@ import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -80,7 +82,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     toggleColumn,
   } = useKanbanUIStore();
 
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
 
   const requestDelete = (taskIds: string[]) => setPendingDelete(taskIds);
@@ -184,9 +185,9 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     : null;
 
   return (
-    <div className="flex flex-col h-full min-h-0 min-w-0 w-full">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden w-full">
       {/* Toolbar */}
-      <div className="shrink-0 sticky top-0 z-30 bg-background/95 backdrop-blur-sm flex items-center gap-3 pb-4 mb-4 border-b overflow-x-auto">
+      <div className="shrink-0 flex items-center gap-3 pb-4 mb-4 border-b flex-wrap">
         {/* Location filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -253,38 +254,30 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         <div className="flex-1" />
 
         {/* Configurar Tablero */}
-        <div className="relative">
-          <button
-            onClick={() => setIsConfigOpen(!isConfigOpen)}
-            className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
-          >
-            <Settings2 className="h-4 w-4" />
-            Configurar Tablero
-          </button>
-
-          {isConfigOpen && (
-            <div className="absolute top-full mt-2 right-0 w-56 rounded-md border bg-popover shadow-md z-50 p-2">
-              <h4 className="text-sm font-semibold mb-2 px-2 text-popover-foreground">Columnas Visibles</h4>
-              <div className="space-y-1">
-                {BOARD_COLUMNS.map((col) => {
-                  const opt = STATUS_OPTIONS.find((o) => o.value === col);
-                  return (
-                    <label key={col} className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-muted rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={activeColumns.includes(col)}
-                        onChange={() => toggleColumn(col)}
-                        className="rounded border-gray-300"
-                      />
-                      <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
-                      <span>{TASK_STATUS_LABELS[col]}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent">
+              <Settings2 className="h-4 w-4" />
+              Configurar Tablero
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Columnas Visibles</DropdownMenuLabel>
+            {BOARD_COLUMNS.map((col) => {
+              const opt = STATUS_OPTIONS.find((o) => o.value === col);
+              return (
+                <DropdownMenuCheckboxItem
+                  key={col}
+                  checked={activeColumns.includes(col)}
+                  onCheckedChange={() => toggleColumn(col)}
+                >
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', opt?.dot ?? 'bg-slate-400')} />
+                  {TASK_STATUS_LABELS[col]}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Selección / bulk actions */}
         {isSelectMode ? (

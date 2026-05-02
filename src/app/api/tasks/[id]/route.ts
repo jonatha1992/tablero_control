@@ -74,9 +74,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       for (const assignee of assignees) {
         const prefs = assignee.preferences as { notifications?: { email?: boolean } } | null;
         if (prefs?.notifications?.email === false) continue;
-        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => {});
+        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName)
+          .catch((err) => console.error('[mail] task-assigned failed:', err?.message ?? err));
       }
-    }).catch(() => {});
+    }).catch((err) => console.error('[mail] findMany failed:', err?.message ?? err));
   }
 
   return NextResponse.json(task);
