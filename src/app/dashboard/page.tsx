@@ -41,7 +41,7 @@ export default function DashboardPage() {
             <Clock className="h-12 w-12 text-blue-600" />
           </div>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Pendientes</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Tareas Activas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600">{isLoading ? '—' : metrics.active}</div>
@@ -56,7 +56,7 @@ export default function DashboardPage() {
             <CheckCircle2 className="h-12 w-12 text-green-600" />
           </div>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Finalizadas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Tareas Completadas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">{isLoading ? '—' : metrics.done}</div>

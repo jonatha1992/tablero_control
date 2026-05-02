@@ -217,19 +217,19 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-8">
             <DialogTitle>Crear Nueva Tarea</DialogTitle>
             <button
               type="button"
               onClick={handleMicClick}
               title={micState === 'recording' ? 'Detener grabación' : 'Dictar tarea por voz'}
               className={cn(
-                'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all',
+                'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all shadow-sm',
                 micState === 'recording'
-                  ? 'bg-red-500 text-white animate-pulse'
+                  ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-500 ring-offset-2 ring-offset-background'
                   : micState === 'processing'
                     ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                    : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                    : 'bg-red-500 text-white hover:bg-red-600'
               )}
             >
               {micState === 'processing' ? (
