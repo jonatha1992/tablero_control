@@ -21,8 +21,8 @@ export default function HomePage() {
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <Image src="/icon-192.png" alt="Tablero de Control" width={36} height={36} className="rounded-xl object-contain" />
-            <span className="text-xl font-bold">Tablero de Control</span>
+            <Image src="/icon-cropped.png" alt="Tablero de Control" width={40} height={40} className="rounded-xl object-contain shrink-0" />
+            <span className="text-xl font-bold whitespace-nowrap">Tablero de Control</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login">
