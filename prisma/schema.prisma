@@ -107,6 +107,7 @@ model User {
   isActive     Boolean   @default(true)
   lastLogin    DateTime?
   preferences  Json      @default("{\"theme\":\"system\",\"locale\":\"es\",\"timezone\":\"America/Argentina/Buenos_Aires\",\"notifications\":{\"email\":true,\"push\":true,\"agentReports\":true,\"agentAlerts\":true},\"dashboardLayout\":[]}")
+  fcmTokens    String[]  @default([])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

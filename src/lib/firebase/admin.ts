@@ -4,6 +4,7 @@
 
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getMessaging } from 'firebase-admin/messaging';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -64,4 +65,8 @@ export function getAdminAuth() {
 export async function verifyToken(token: string) {
   const auth = getAdminAuth();
   return auth.verifyIdToken(token);
+}
+
+export function getAdminMessaging() {
+  return getMessaging(getAdminApp());
 }
