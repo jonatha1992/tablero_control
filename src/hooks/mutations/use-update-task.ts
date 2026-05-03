@@ -24,10 +24,10 @@ export function useUpdateTask() {
         if (!old) return old;
         return old.map((task) => {
           if (task.id === id) {
-            const updated = { ...task, ...data } as any;
+            const updated = { ...task, ...data } as Task;
             if (updated.locationId === null) updated.locationId = undefined;
             if (updated.projectId === null) updated.projectId = undefined;
-            return updated as Task;
+            return updated;
           }
           return task;
         });
@@ -35,10 +35,10 @@ export function useUpdateTask() {
 
       // Actualizar el detalle específico
       if (previousDetail) {
-        const updatedDetail = { ...previousDetail, ...data } as any;
+        const updatedDetail = { ...previousDetail, ...data } as Task;
         if (updatedDetail.locationId === null) updatedDetail.locationId = undefined;
         if (updatedDetail.projectId === null) updatedDetail.projectId = undefined;
-        queryClient.setQueryData<Task>(taskKeys.detail(id), updatedDetail as Task);
+        queryClient.setQueryData<Task>(taskKeys.detail(id), updatedDetail);
       }
 
       return { previousQueries, previousDetail };

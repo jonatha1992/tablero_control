@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { getAdminMessaging } from '@/lib/firebase/admin';
 
-export async function POST(req: Request) {
+export async function POST(req: import('next/server').NextRequest) {
   try {
     const userOrResponse = await requireUser(req);
     if (userOrResponse instanceof NextResponse) {
@@ -45,12 +45,12 @@ export async function POST(req: Request) {
             },
           });
           return { success: true, token };
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error(`[FCM_SEND_ERROR] Token: ${token}`, error);
-          // Si el token es inválido o el usuario lo revocó, deberíamos borrarlo de la BD
+          const code = (error as { code?: string }).code;
           if (
-            error.code === 'messaging/invalid-registration-token' ||
-            error.code === 'messaging/registration-token-not-registered'
+            code === 'messaging/invalid-registration-token' ||
+            code === 'messaging/registration-token-not-registered'
           ) {
             return { success: false, token, remove: true };
           }
@@ -79,8 +79,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, count: successfulCount });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[FCM_TEST_POST]', error);
-    return NextResponse.json({ error: 'internal_error', details: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'internal_error', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

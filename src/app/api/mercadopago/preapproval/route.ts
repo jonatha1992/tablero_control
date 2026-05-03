@@ -22,10 +22,6 @@ export const POST = handle(async (req: NextRequest) => {
   if (user.role === 'admin' && user.businessId !== businessId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
-  if (!user.email) {
-    return NextResponse.json({ error: 'user_email_required' }, { status: 400 });
-  }
-
   const origin = process.env.MP_CALLBACK_URL
     ?? (process.env.NEXT_PUBLIC_APP_URL?.startsWith('http://localhost') ? null : process.env.NEXT_PUBLIC_APP_URL)
     ?? req.headers.get('origin')
@@ -38,14 +34,11 @@ export const POST = handle(async (req: NextRequest) => {
     try { await cancelPreapproval(existing.mpPreferenceId); } catch { /* MP may already be cancelled */ }
   }
 
-  const payerEmail = process.env.MP_TEST_PAYER_EMAIL ?? user.email;
-
   let preapproval;
   try {
     preapproval = await createPreapproval({
       plan,
       frequency,
-      payerEmail,
       businessId,
       backUrl,
     });

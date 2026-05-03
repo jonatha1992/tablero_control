@@ -1,21 +1,21 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Bell, Search, LogOut, Menu } from 'lucide-react';
+import { Search, LogOut, Menu } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getInitials, stringToColor, ROLE_LABELS, ROLE_COLORS } from '@/lib/utils';
 import { useAuth } from '@/hooks/auth-context';
+import { NotificationBell } from '@/components/layout/notification-bell';
 
 interface HeaderProps {
   userName?: string;
-  notificationCount?: number;
   onMobileMenuOpen?: () => void;
 }
 
-export function Header({ userName, notificationCount = 0, onMobileMenuOpen }: HeaderProps) {
+export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const { user, signOut, role } = useAuth();
   const pathname = usePathname();
   const { filters, setFilters } = useKanbanUIStore();
@@ -91,14 +91,7 @@ export function Header({ userName, notificationCount = 0, onMobileMenuOpen }: He
 
       {/* Right: Actions */}
       <div className="flex shrink-0 items-center gap-1">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {notificationCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-              {notificationCount}
-            </span>
-          )}
-        </Button>
+        <NotificationBell />
 
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7 shrink-0">

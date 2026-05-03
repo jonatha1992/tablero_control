@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
-import { MailService } from '@/services/mail.service';
+import { sendNotification } from '@/lib/notifications';
 
 export const GET = handle(async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
@@ -68,14 +68,25 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (newAssigneeIds.length > 0) {
     prisma.user.findMany({
       where: { id: { in: newAssigneeIds }, isActive: true },
-      select: { email: true, preferences: true },
+      select: { id: true, email: true, preferences: true },
     }).then((assignees) => {
       const assignerName = user.data.name ?? user.data.email ?? 'Un compañero';
       for (const assignee of assignees) {
+        if (assignee.id === user.uid) continue;
         const prefs = assignee.preferences as { notifications?: { email?: boolean } } | null;
-        if (prefs?.notifications?.email === false) continue;
-        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName)
-          .catch((err) => console.error('[mail] task-assigned failed:', err?.message ?? err));
+        sendNotification({
+          userId: assignee.id,
+          title: 'Nueva tarea asignada',
+          body: `${assignerName} te asignó la tarea "${task.title}"`,
+          type: 'task_assigned',
+          link: '/dashboard/tareas',
+        }).catch(() => {});
+        if (prefs?.notifications?.email !== false) {
+          import('@/services/mail.service').then(({ MailService }) => {
+            MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName)
+              .catch((err) => console.error('[mail] task-assigned failed:', err?.message ?? err));
+          });
+        }
       }
     }).catch((err) => console.error('[mail] findMany failed:', err?.message ?? err));
   }

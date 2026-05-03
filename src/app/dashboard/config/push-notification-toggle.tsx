@@ -46,8 +46,8 @@ export function PushNotificationToggle() {
         throw new Error(data.details || data.error || 'Error al enviar la prueba');
       }
       toast.success('Notificación de prueba enviada.');
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Error al enviar la prueba');
     } finally {
       setIsTesting(false);
     }

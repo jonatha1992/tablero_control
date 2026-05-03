@@ -4,7 +4,7 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
-import { MailService } from '@/services/mail.service';
+import { sendNotification } from '@/lib/notifications';
 import type { TaskFilters, TaskStatus, TaskPriority } from '@/types/domain/task';
 
 export const GET = handle(async (request: NextRequest) => {
@@ -58,15 +58,28 @@ export const POST = handle(async (request: NextRequest) => {
   if (task.assigneeIds?.length > 0) {
     prisma.user.findMany({
       where: { id: { in: task.assigneeIds }, isActive: true },
-      select: { email: true, preferences: true },
+      select: { id: true, email: true, preferences: true },
     }).then((assignees) => {
       const assignerName = user.data.name ?? user.data.email ?? 'Un compañero';
       for (const assignee of assignees) {
+        if (assignee.id === user.uid) continue; // no notificar al que asigna
         const prefs = assignee.preferences as { notifications?: { email?: boolean } } | null;
-        if (prefs?.notifications?.email === false) continue;
-        MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => { });
+        // Notificación interna + push
+        sendNotification({
+          userId: assignee.id,
+          title: 'Nueva tarea asignada',
+          body: `${assignerName} te asignó la tarea "${task.title}"`,
+          type: 'task_assigned',
+          link: '/dashboard/tareas',
+        }).catch(() => {});
+        // Email solo si tiene preferencia activa
+        if (prefs?.notifications?.email !== false) {
+          import('@/services/mail.service').then(({ MailService }) => {
+            MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => {});
+          });
+        }
       }
-    }).catch(() => { });
+    }).catch(() => {});
   }
 
   return NextResponse.json(task, { status: 201 });

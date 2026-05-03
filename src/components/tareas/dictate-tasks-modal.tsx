@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mic, Loader2, X, ChevronDown, Send, MessageSquare, Check } from 'lucide-react';
+import { Mic, Loader2, X, Send, MessageSquare, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   useDictateTasksUpload,
@@ -18,7 +18,7 @@ import {
 } from '@/hooks/mutations/use-dictate-tasks';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
-import type { TaskPriority, TaskStatus, TaskType } from '@/types/domain/task';
+import type { TaskPriority, TaskStatus } from '@/types/domain/task';
 
 interface DictateTasksModalProps {
   open: boolean;
@@ -41,9 +41,6 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
 };
 const STATUS_LABELS: Record<string, string> = {
   todo: 'Por hacer', in_progress: 'En progreso',
-};
-const TYPE_LABELS: Record<TaskType, string> = {
-  task: 'Tarea', feature: 'Feature', bug: 'Bug', improvement: 'Mejora', documentation: 'Doc.',
 };
 const PRIORITY_BORDER: Record<TaskPriority, string> = {
   low: 'border-l-slate-300', medium: 'border-l-blue-400',
@@ -289,9 +286,9 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
               </div>
               <div className="text-xs bg-muted/50 rounded-lg p-3 text-left space-y-1 max-w-[240px]">
                 <p className="font-medium text-foreground/60 mb-1.5">Ejemplos:</p>
-                <p>"Login de usuarios, después el panel de admin"</p>
-                <p>"Revisar el inventario del local centro"</p>
-                <p>"Limpieza de cocina, salón y baños para mañana"</p>
+                <p>&ldquo;Login de usuarios, después el panel de admin&rdquo;</p>
+                <p>&ldquo;Revisar el inventario del local centro&rdquo;</p>
+                <p>&ldquo;Limpieza de cocina, salón y baños para mañana&rdquo;</p>
               </div>
             </div>
           )}

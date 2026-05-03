@@ -8,7 +8,7 @@ const schema = z.object({
   action: z.enum(['add', 'remove']),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: import('next/server').NextRequest) {
   try {
     const userOrResponse = await requireUser(req);
     if (userOrResponse instanceof NextResponse) {

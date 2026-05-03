@@ -6,6 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
+import type { EventInput } from '@fullcalendar/core';
 import type { Task, TaskPriority } from '@/types';
 
 interface CalendarViewProps {
@@ -29,7 +30,7 @@ export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewP
   const calendarRef = useRef<FullCalendar>(null);
 
   // Mapeamos las Tareas a Eventos de FullCalendar
-  const events: any[] = [];
+  const events: EventInput[] = [];
 
   tasks.forEach((task) => {
     if (!task.dueDate) return;
@@ -105,7 +106,7 @@ export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewP
     }
   });
 
-  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: any }; revert: () => void }) => {
+  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: Record<string, unknown> }; revert: () => void }) => {
     if (info.event.extendedProps.isGhost) {
       info.revert();
       return;
@@ -115,7 +116,7 @@ export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewP
     }
   };
 
-  const handleEventClick = (info: { event: { id: string; extendedProps: any } }) => {
+  const handleEventClick = (info: { event: { id: string; extendedProps: Record<string, unknown> } }) => {
     if (info.event.extendedProps.isGhost) return;
     if (onEventClick) {
       onEventClick(info.event.id);

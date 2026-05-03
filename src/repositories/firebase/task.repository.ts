@@ -51,7 +51,7 @@ export class FirebaseTaskRepository implements ITaskRepository {
     pageSize: number,
     filters?: TaskFilters
   ): Promise<PaginatedResponse<Task>> {
-    const paginationFilters: any = { ...filters };
+    const paginationFilters: TaskFilters & { businessId?: string } = { ...filters };
     if (businessId !== 'all') {
       paginationFilters.businessId = businessId;
     }

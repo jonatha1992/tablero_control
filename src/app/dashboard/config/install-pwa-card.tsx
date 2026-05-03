@@ -83,7 +83,7 @@ export function InstallPwaCard() {
               <Smartphone className="h-4 w-4 text-muted-foreground" /> Usuarios de iOS (iPhone/iPad)
             </h4>
             <p className="text-xs leading-relaxed">
-              En Safari, toca el botón de <strong>Compartir</strong> (el ícono del cuadrado con la flecha hacia arriba) y luego selecciona <strong>"Agregar a Inicio"</strong>.
+              En Safari, toca el botón de <strong>Compartir</strong> (el ícono del cuadrado con la flecha hacia arriba) y luego selecciona <strong>&ldquo;Agregar a Inicio&rdquo;</strong>.
             </p>
           </div>
         </div>
