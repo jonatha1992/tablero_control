@@ -33,10 +33,8 @@ export function useDeleteTask() {
       }
       toast.error('Error al eliminar la tarea', { description: err.message });
     },
-    onSettled: (_data, error) => {
-      if (error) {
-        queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
 }

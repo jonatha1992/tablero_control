@@ -37,11 +37,8 @@ export function useMoveTask() {
         });
       }
     },
-    // Solo refetchear si hubo error — en éxito el optimistic update ya es correcto
-    onSettled: (_data, error) => {
-      if (error) {
-        queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
 }
