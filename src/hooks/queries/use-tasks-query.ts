@@ -13,7 +13,7 @@ export const taskKeys = {
 };
 
 export function useTasksQuery(filters?: TaskFilters) {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
 
   const businessId = isSuperAdmin
     ? (user?.businessId ?? 'all')
