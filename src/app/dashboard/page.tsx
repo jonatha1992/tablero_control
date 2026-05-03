@@ -37,7 +37,7 @@ export default function DashboardPage() {
       {/* KPI Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
+          <div className="absolute top-0 right-0 p-4 opacity-30 dark:opacity-10">
             <Clock className="h-12 w-12 text-blue-600" />
           </div>
           <CardHeader className="pb-2">
@@ -52,7 +52,7 @@ export default function DashboardPage() {
         </Card>
         
         <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
+          <div className="absolute top-0 right-0 p-4 opacity-30 dark:opacity-10">
             <CheckCircle2 className="h-12 w-12 text-green-600" />
           </div>
           <CardHeader className="pb-2">
@@ -65,7 +65,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
+          <div className="absolute top-0 right-0 p-4 opacity-30 dark:opacity-10">
             <AlertCircle className="h-12 w-12 text-red-600" />
           </div>
           <CardHeader className="pb-2">
@@ -78,7 +78,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
+          <div className="absolute top-0 right-0 p-4 opacity-30 dark:opacity-10">
             <Zap className="h-12 w-12 text-orange-600" />
           </div>
           <CardHeader className="pb-2">

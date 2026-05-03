@@ -180,6 +180,10 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     updateTask.mutate({ id: taskId, data: { priority } });
   };
 
+  const handleLocationChange = (taskId: string, locationId: string | null) => {
+    updateTask.mutate({ id: taskId, data: { locationId } });
+  };
+
   const activeTask = dragState.draggedTaskId
     ? tasks.find((t) => t.id === dragState.draggedTaskId) ?? null
     : null;
@@ -405,6 +409,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 else openTaskDetail(task.id);
               }}
               onPriorityChange={handlePriorityChange}
+              onLocationChange={handleLocationChange}
               onAddClick={openCreateModal}
               selectedTaskIds={selectedTaskIds}
               isSelectMode={isSelectMode}

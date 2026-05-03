@@ -23,6 +23,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 
 const PRIORITY_CONFIG: Record<
@@ -30,29 +34,29 @@ const PRIORITY_CONFIG: Record<
   { color: string; bg: string; icon: typeof AlertTriangle; order: number; border: string }
 > = {
   urgent: {
-    color: 'text-red-700 dark:text-red-400',
-    bg: 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50',
+    color: 'text-red-800 dark:text-red-400',
+    bg: 'bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800/50',
     icon: AlertTriangle,
     order: 0,
     border: 'border-l-red-500',
   },
   high: {
-    color: 'text-orange-700 dark:text-orange-400',
-    bg: 'bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50',
+    color: 'text-orange-800 dark:text-orange-400',
+    bg: 'bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-800/50',
     icon: ChevronUp,
     order: 1,
     border: 'border-l-orange-500',
   },
   medium: {
-    color: 'text-blue-700 dark:text-blue-400',
-    bg: 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50',
+    color: 'text-blue-800 dark:text-blue-400',
+    bg: 'bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-800/50',
     icon: ChevronUp,
     order: 2,
     border: 'border-l-blue-400',
   },
   low: {
-    color: 'text-slate-700 dark:text-slate-400',
-    bg: 'bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700',
+    color: 'text-slate-800 dark:text-slate-400',
+    bg: 'bg-slate-100 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700',
     icon: ChevronUp,
     order: 3,
     border: 'border-l-slate-300',
@@ -66,14 +70,16 @@ interface KanbanCardProps {
   column: TaskStatus;
   onMove: (taskId: string, from: TaskStatus, to: TaskStatus) => void;
   onPriorityChange: (taskId: string, newPriority: TaskPriority) => void;
+  onLocationChange?: (taskId: string, locationId: string | null) => void;
   onClick: (task: Task) => void;
   isSelected: boolean;
   isSelectMode: boolean;
   isOverlay?: boolean;
   locationName?: string;
+  locations?: { id: string; name: string }[];
 }
 
-export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected, isSelectMode, isOverlay, locationName }: KanbanCardProps) {
+export function KanbanCard({ task, column, onPriorityChange, onLocationChange, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
@@ -177,6 +183,38 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
             >
               Ver / Editar
             </DropdownMenuItem>
+            {locations && onLocationChange && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
+                  Mover a...
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLocationChange(task.id, null);
+                      }}
+                      className={cn(task.locationId === null && 'bg-muted')}
+                    >
+                      Ninguno
+                    </DropdownMenuItem>
+                    {locations.map((loc) => (
+                      <DropdownMenuItem
+                        key={loc.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLocationChange(task.id, loc.id);
+                        }}
+                        className={cn(task.locationId === loc.id && 'bg-muted')}
+                      >
+                        {loc.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -184,8 +222,8 @@ export function KanbanCard({ task, column, onPriorityChange, onClick, isSelected
       {/* Location — debajo del título si existe */}
       {locationName && (
         <div className="flex items-center gap-1 mb-1.5">
-          <MapPin className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
-          <span className="text-[9px] text-muted-foreground/60 truncate">{locationName}</span>
+          <MapPin className="h-2.5 w-2.5 text-muted-foreground/60 shrink-0" />
+          <span className="text-[9px] text-muted-foreground/80 truncate">{locationName}</span>
         </div>
       )}
 

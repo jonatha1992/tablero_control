@@ -22,17 +22,23 @@ export function useUpdateTask() {
       // Actualizar todas las listas (Kanban, etc)
       queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
         if (!old) return old;
-        return old.map((task) =>
-          task.id === id ? { ...task, ...data } : task
-        );
+        return old.map((task) => {
+          if (task.id === id) {
+            const updated = { ...task, ...data } as any;
+            if (updated.locationId === null) updated.locationId = undefined;
+            if (updated.projectId === null) updated.projectId = undefined;
+            return updated as Task;
+          }
+          return task;
+        });
       });
 
       // Actualizar el detalle específico
       if (previousDetail) {
-        queryClient.setQueryData<Task>(taskKeys.detail(id), {
-          ...previousDetail,
-          ...data,
-        });
+        const updatedDetail = { ...previousDetail, ...data } as any;
+        if (updatedDetail.locationId === null) updatedDetail.locationId = undefined;
+        if (updatedDetail.projectId === null) updatedDetail.projectId = undefined;
+        queryClient.setQueryData<Task>(taskKeys.detail(id), updatedDetail as Task);
       }
 
       return { previousQueries, previousDetail };

@@ -39,13 +39,13 @@
   --secondary-bg: #f4f4f5;
   --secondary-fg: #18181b;
   --muted-bg: #f4f4f5;
-  --muted-fg: #71717a;
+  --muted-fg: #52525b; /* Darkened from #71717a */
   --accent-bg: #efefef;
   --accent-fg: #18181b;
   --destructive-bg: #d4145a;
   --destructive-fg: #fafafa;
-  --border-col: #d1d1d6;
-  --input-col: #c8c8cd;
+  --border-col: #a1a1aa; /* Darkened from #d1d1d6 */
+  --input-col: #d4d4d8; /* Darkened from #c8c8cd (wait, #c8c8cd was already dark. Let's make it #a1a1aa to match border, or #d4d4d8 which is slightly lighter than border) */
   --ring-col: #18181b;
 }
 

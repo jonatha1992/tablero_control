@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   tasks: Task[];
   onCardClick: (task: Task) => void;
   onPriorityChange: (taskId: string, priority: TaskPriority) => void;
+  onLocationChange?: (taskId: string, locationId: string | null) => void;
   onAddClick: () => void;
   selectedTaskIds: string[];
   isSelectMode: boolean;
@@ -19,7 +20,7 @@ interface KanbanColumnProps {
   locations: { id: string; name: string }[];
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete, locations }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete, locations }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
@@ -54,8 +55,8 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
                       allSelected
                         ? 'bg-primary border-primary'
                         : someSelected
-                        ? 'bg-primary/40 border-primary/60'
-                        : 'border-muted-foreground/40 hover:border-primary/60'
+                          ? 'bg-primary/40 border-primary/60'
+                          : 'border-muted-foreground/40 hover:border-primary/60'
                     )}
                     title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
                   >
@@ -109,10 +110,12 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onA
                 column={status}
                 onMove={() => { }}
                 onPriorityChange={onPriorityChange}
+                onLocationChange={onLocationChange}
                 onClick={onCardClick}
                 isSelected={selectedTaskIds.includes(task.id)}
                 isSelectMode={isSelectMode}
                 locationName={getLocationName(task.locationId)}
+                locations={locations}
               />
             ))
           )}
