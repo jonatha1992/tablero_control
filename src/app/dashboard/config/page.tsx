@@ -7,10 +7,12 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Smartphone, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor } from 'lucide-react';
 import Image from 'next/image';
 import { auth } from '@/lib/firebase/client';
 import { resetPassword } from '@/lib/firebase/auth';
+import { InstallPwaCard } from './install-pwa-card';
+import { PushNotificationToggle } from './push-notification-toggle';
 
 export default function ConfigPage() {
   const { user } = useAuth();
@@ -220,19 +222,19 @@ export default function ConfigPage() {
                       "flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md transition-colors flex-1 justify-center",
                       theme === 'light' ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
                     )}>
-                      <input type="radio" name="theme" className="sr-only" checked={theme === 'light'} onChange={() => setTheme('light')} /> Claro
+                      <input type="radio" name="theme" className="sr-only" checked={theme === 'light'} onChange={() => setTheme('light')} /> <Sun className="h-4 w-4" /> Claro
                     </label>
                     <label className={cn(
                       "flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md transition-colors flex-1 justify-center",
                       theme === 'dark' ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
                     )}>
-                      <input type="radio" name="theme" className="sr-only" checked={theme === 'dark'} onChange={() => setTheme('dark')} /> Oscuro
+                      <input type="radio" name="theme" className="sr-only" checked={theme === 'dark'} onChange={() => setTheme('dark')} /> <Moon className="h-4 w-4" /> Oscuro
                     </label>
                     <label className={cn(
                       "flex items-center gap-2 text-sm cursor-pointer border p-3 rounded-md transition-colors flex-1 justify-center",
                       theme === 'system' ? 'bg-primary/10 border-primary' : 'hover:bg-accent'
                     )}>
-                      <input type="radio" name="theme" className="sr-only" checked={theme === 'system'} onChange={() => setTheme('system')} /> Sistema
+                      <input type="radio" name="theme" className="sr-only" checked={theme === 'system'} onChange={() => setTheme('system')} /> <Monitor className="h-4 w-4" /> Sistema
                     </label>
                   </div>
                 </div>
@@ -264,6 +266,8 @@ export default function ConfigPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <InstallPwaCard />
           </TabsContent>
 
           {/* NOTIFICACIONES */}
@@ -281,13 +285,7 @@ export default function ConfigPage() {
                   </div>
                   <input type="checkbox" className="h-4 w-4 accent-primary" defaultChecked />
                 </div>
-                <div className="flex items-center justify-between border-b pb-4">
-                  <div>
-                    <div className="flex items-center gap-2"><Smartphone className="h-4 w-4" /> <p className="text-sm font-medium">Notificaciones Push</p></div>
-                    <p className="text-xs text-muted-foreground">Notificaciones en el navegador y vista móvil al instante.</p>
-                  </div>
-                  <input type="checkbox" className="h-4 w-4 accent-primary" defaultChecked />
-                </div>
+                <PushNotificationToggle />
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Reportes automatizados (Agentes AI)</p>

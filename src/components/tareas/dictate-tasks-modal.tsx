@@ -63,21 +63,21 @@ function TaskPreviewCard({
 }) {
   return (
     <div className={cn('relative rounded-lg border border-border bg-card p-2.5 border-l-4 text-xs', PRIORITY_BORDER[task.priority])}>
-      <div className="flex items-start gap-1.5 mb-1.5">
-        <span className="shrink-0 flex items-center justify-center h-4 w-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold mt-0.5">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="shrink-0 flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
           {task.order}
         </span>
         <Input
           value={task.title}
           onChange={(e) => onChange({ ...task, title: e.target.value })}
-          className="h-6 text-xs font-medium border-0 border-b rounded-none px-0 focus-visible:ring-0 bg-transparent flex-1"
-          placeholder="Título"
+          className="h-8 text-xs font-medium bg-background border-border flex-1"
+          placeholder="Título de la tarea"
         />
-        <button type="button" onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-foreground">
-          <X className="h-3 w-3" />
+        <button type="button" onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1">
+          <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5 pl-7">
         <select
           value={task.priority}
           onChange={(e) => onChange({ ...task, priority: e.target.value as TaskPriority })}
@@ -114,7 +114,7 @@ function TaskPreviewCard({
             value={task.estimatedHours ?? ''}
             onChange={(e) => onChange({ ...task, estimatedHours: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="h"
-            className="w-8 bg-transparent outline-none"
+            className="w-12 bg-transparent outline-none"
           />
           h
         </label>

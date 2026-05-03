@@ -15,13 +15,15 @@ export interface CreateTaskDTO {
   recurrence?: RecurrenceConfig;
 }
 
-export type UpdateTaskDTO = Partial<CreateTaskDTO> & {
+export type UpdateTaskDTO = Partial<Omit<CreateTaskDTO, 'locationId' | 'projectId'>> & {
   completedDate?: Date;
   actualHours?: number;
   position?: number;
   attachmentUrls?: string[];
   title?: string;
   description?: string;
+  locationId?: string | null;
+  projectId?: string | null;
 };
 
 export interface MoveTaskDTO {

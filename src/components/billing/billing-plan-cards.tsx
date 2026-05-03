@@ -71,7 +71,7 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
               className={cn(
                 'border rounded-xl p-5 flex flex-col gap-4 relative',
                 plan.highlight && 'border-primary shadow-md',
-                isCurrent && 'bg-muted/40'
+                isCurrent && 'bg-primary/5 border-primary/20'
               )}
             >
               {plan.highlight && (
