@@ -6,6 +6,7 @@ function getMpAccessToken(): string {
   return token;
 }
 
+
 export async function mpFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${MP_BASE}${path}`, {
     ...init,

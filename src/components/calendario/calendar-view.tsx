@@ -6,11 +6,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
+import type { EventInput } from '@fullcalendar/core';
 import type { Task, TaskPriority } from '@/types';
 
 interface CalendarViewProps {
   tasks: Task[];
   onEventDrop?: (taskId: string, newDate: Date) => void;
+  onEventClick?: (taskId: string) => void;
 }
 
 // Colores de fondo por prioridad (consistentes con el kanban)
@@ -24,11 +26,11 @@ const PRIORITY_EVENT_COLORS: Record<
   low: { backgroundColor: '#64748b', textColor: '#ffffff' },    // slate-500
 };
 
-export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
+export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null);
 
   // Mapeamos las Tareas a Eventos de FullCalendar
-  const events: any[] = [];
+  const events: EventInput[] = [];
 
   tasks.forEach((task) => {
     if (!task.dueDate) return;
@@ -42,10 +44,11 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
       allDay: isAllDay,
       backgroundColor: colors.backgroundColor,
       textColor: colors.textColor,
-      borderColor: 'transparent',
+      borderColor: colors.backgroundColor,
       extendedProps: {
         status: task.status,
         priority: task.priority,
+        priorityColor: colors.backgroundColor,
         isGhost: false,
       },
     };
@@ -103,13 +106,20 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
     }
   });
 
-  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: any }; revert: () => void }) => {
+  const handleEventDrop = (info: { event: { id: string; start: Date | null; extendedProps: Record<string, unknown> }; revert: () => void }) => {
     if (info.event.extendedProps.isGhost) {
       info.revert();
       return;
     }
     if (onEventDrop && info.event.start) {
       onEventDrop(info.event.id, info.event.start);
+    }
+  };
+
+  const handleEventClick = (info: { event: { id: string; extendedProps: Record<string, unknown> } }) => {
+    if (info.event.extendedProps.isGhost) return;
+    if (onEventClick) {
+      onEventClick(info.event.id);
     }
   };
 
@@ -149,10 +159,26 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
           background: var(--color-muted);
         }
         .fc-event {
-          border-radius: var(--radius-sm);
-          padding: 2px 4px;
+          border-radius: 4px;
+          padding: 2px 6px;
           cursor: pointer;
           font-size: 0.75rem;
+          font-weight: 500;
+          border: none !important;
+          border-left-width: 3px !important;
+          border-left-style: solid !important;
+        }
+        .fc-event:hover {
+          filter: brightness(0.88);
+          transition: filter 0.15s ease;
+        }
+        .fc-daygrid-event {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .fc-list-event td {
+          cursor: pointer;
         }
       `}</style>
 
@@ -169,6 +195,15 @@ export function CalendarView({ tasks, onEventDrop }: CalendarViewProps) {
         editable={true}
         droppable={true}
         eventDrop={handleEventDrop}
+        eventClick={handleEventClick}
+        eventDidMount={(info) => {
+          const color = info.event.extendedProps.priorityColor;
+          if (color) {
+            info.el.style.backgroundColor = color;
+            info.el.style.borderLeftColor = color;
+            info.el.style.color = '#ffffff';
+          }
+        }}
         height="100%"
         locale="es"
       />

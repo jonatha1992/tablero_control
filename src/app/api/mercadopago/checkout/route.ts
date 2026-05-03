@@ -22,16 +22,11 @@ export const POST = handle(async (req: NextRequest) => {
   if (user.role === 'admin' && user.businessId !== businessId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
-  if (!user.email) {
-    return NextResponse.json({ error: 'user_email_required' }, { status: 400 });
-  }
-
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get('origin') ?? 'http://localhost:3000';
 
   const preference = await createCheckoutPreference({
     plan,
     frequency,
-    payerEmail: user.email,
     businessId,
     successUrl: `${origin}/dashboard/billing?status=success`,
     failureUrl: `${origin}/dashboard/billing?status=failure`,

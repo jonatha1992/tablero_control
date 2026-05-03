@@ -11,7 +11,6 @@ export interface MpPreference {
 interface CreateArgs {
   plan: PlanId;
   frequency: BillingFrequency;
-  payerEmail: string;
   businessId: string;
   successUrl: string;
   failureUrl: string;
@@ -54,7 +53,6 @@ export async function createCheckoutPreference(args: CreateArgs): Promise<MpPref
           unit_price: amount,
         },
       ],
-      payer: { email: args.payerEmail },
       external_reference: buildExternalReference(args.businessId, args.plan, args.frequency),
       back_urls: {
         success: args.successUrl,

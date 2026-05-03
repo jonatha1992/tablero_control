@@ -59,7 +59,6 @@ export default function DashboardLayout({
           )}>
             <Header
               userName={user?.name}
-              notificationCount={0}
               onMobileMenuOpen={() => setMobileSidebarOpen(true)}
             />
             <main className="flex-1 overflow-auto p-4 flex flex-col relative min-h-0 min-w-0">

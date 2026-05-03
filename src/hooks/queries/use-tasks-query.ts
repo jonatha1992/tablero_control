@@ -13,7 +13,7 @@ export const taskKeys = {
 };
 
 export function useTasksQuery(filters?: TaskFilters) {
-  const { user, isSuperAdmin } = useAuth();
+  const { user } = useAuth();
 
   // superadmin ve tareas de su propio negocio como cualquier usuario
   const businessId = user?.businessId ?? null;

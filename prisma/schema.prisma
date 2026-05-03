@@ -107,18 +107,36 @@ model User {
   isActive     Boolean   @default(true)
   lastLogin    DateTime?
   preferences  Json      @default("{\"theme\":\"system\",\"locale\":\"es\",\"timezone\":\"America/Argentina/Buenos_Aires\",\"notifications\":{\"email\":true,\"push\":true,\"agentReports\":true,\"agentAlerts\":true},\"dashboardLayout\":[]}")
+  fcmTokens    String[]  @default([])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  business      Business?    @relation(fields: [businessId], references: [id])
+  business      Business?      @relation(fields: [businessId], references: [id])
   teams         TeamMember[]
-  assignedTasks Task[]       @relation("TaskAssignees")
-  createdTasks  Task[]       @relation("TaskCreator")
+  assignedTasks Task[]         @relation("TaskAssignees")
+  createdTasks  Task[]         @relation("TaskCreator")
   comments      Comment[]
   auditLogs     AuditLog[]
+  notifications Notification[]
 
   @@index([businessId])
   @@index([role])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String   @default("info")  // info | task_assigned | task_updated | mention
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model Business {

@@ -55,8 +55,8 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
                       allSelected
                         ? 'bg-primary border-primary'
                         : someSelected
-                          ? 'bg-primary/40 border-primary/60'
-                          : 'border-muted-foreground/40 hover:border-primary/60'
+                        ? 'bg-primary/40 border-primary/60'
+                        : 'border-muted-foreground/40 hover:border-primary/60'
                     )}
                     title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
                   >

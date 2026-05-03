@@ -104,7 +104,8 @@
       "Bash(ls -la \"E:\\\\\\\\tablero_control\\\\\\\\src\\\\\\\\app\\\\\\\\api\\\\\\\\\")",
       "Bash(ls *)",
       "Bash(grep -r \"CreateTaskModal\\\\|DictateTasksModal\" \"E:\\\\\\\\tablero_control\\\\\\\\src\" --include=\"*.tsx\" --include=\"*.ts\")",
-      "Bash(node --experimental-vm-modules tests/test-email-direct.mjs)"
+      "Bash(node --experimental-vm-modules tests/test-email-direct.mjs)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

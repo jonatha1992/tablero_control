@@ -26,7 +26,7 @@ interface Props {
 
 export function BillingCurrentPlan({ subscription, isLoading }: Props) {
   const cancel = useCancelSubscription(subscription?.businessId);
-  const sync = useSyncSubscription(subscription?.businessId);
+  const _sync = useSyncSubscription(subscription?.businessId);
   const recover = useRecoverSubscription(subscription?.businessId);
   if (isLoading) {
     return (

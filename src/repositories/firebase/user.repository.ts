@@ -43,7 +43,7 @@ export class FirebaseUserRepository implements IUserRepository {
     await update(COLLECTION, id, { isActive: true });
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(_id: string): Promise<void> {
     // Hard delete handled by Prisma repository; Firebase Realtime DB not primary store
     throw new Error('Hard delete not supported in Firebase repository');
   }

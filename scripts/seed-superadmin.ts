@@ -30,7 +30,7 @@ async function main() {
     uid = existing.uid;
     console.log(`ℹ Usuario ya existe (${uid}), actualizando password y claims.`);
     await auth.updateUser(uid, { password, displayName: name, emailVerified: true });
-  } catch (err: unknown) {
+  } catch {
     const created = await auth.createUser({
       email,
       password,

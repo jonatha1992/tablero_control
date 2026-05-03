@@ -40,7 +40,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [editingAssignees, setEditingAssignees] = useState(false);
+  const [editingAssignees, _setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [editLocationId, setEditLocationId] = useState('');
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
