@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { register } from '@/lib/firebase/auth';
+import { register, login } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
@@ -43,8 +43,17 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Create Firebase user
-      await register(email, password, name, 'miembro');
+      // 1. Create Firebase user (or sign in if already exists)
+      try {
+        await register(email, password, name, 'miembro');
+      } catch (err: unknown) {
+        const code = (err as { code?: string }).code;
+        if (code === 'auth/email-already-in-use') {
+          await login(email, password);
+        } else {
+          throw err;
+        }
+      }
       // onAuthStateChanged fires but won't sign out (we're on /register)
 
       // 2. Provision user + business in DB
@@ -68,8 +77,8 @@ export default function RegisterPage() {
       await refreshProfile();
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
-      if (code === 'auth/email-already-in-use') {
-        setError('Este email ya está registrado');
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setError('Este email ya está registrado. Verificá tu contraseña.');
       } else if (code === 'auth/weak-password') {
         setError('La contraseña es demasiado débil');
       } else {

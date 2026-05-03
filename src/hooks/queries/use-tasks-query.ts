@@ -13,10 +13,11 @@ export const taskKeys = {
 };
 
 export function useTasksQuery(filters?: TaskFilters) {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
 
-  // superadmin ve tareas de su propio negocio como cualquier usuario
-  const businessId = user?.businessId ?? null;
+  const businessId = isSuperAdmin
+    ? (user?.businessId ?? 'all')
+    : (user?.businessId ?? null);
   const queryKey = businessId ?? `creator:${user?.id}`;
 
   return useQuery({
@@ -27,7 +28,6 @@ export function useTasksQuery(filters?: TaskFilters) {
         if (businessId) {
           return await tasksApi.getByBusiness(businessId, filters);
         }
-        // Fallback: el usuario no tiene businessId, mostrar las tareas que creó
         return await tasksApi.getByCreator(user.id, filters);
       } catch (e) {
         console.error('[useTasksQuery] Error al obtener tareas:', e);

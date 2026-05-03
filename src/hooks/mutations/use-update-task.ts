@@ -53,11 +53,9 @@ export function useUpdateTask() {
         queryClient.setQueryData(taskKeys.detail(id), context.previousDetail);
       }
     },
-    onSettled: (_data, error, { id }) => {
-      if (error) {
-        queryClient.invalidateQueries({ queryKey: taskKeys.all });
-        queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) });
-      }
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) });
     },
   });
 }

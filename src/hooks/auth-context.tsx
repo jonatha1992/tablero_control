@@ -27,9 +27,26 @@ async function fetchProfile(fbUser: FirebaseUser): Promise<User | null> {
   const res = await fetch('/api/auth/profile', {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return null;
-  const profile = await res.json();
-  return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
+  if (res.ok) {
+    const profile = await res.json();
+    return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
+  }
+  return null;
+}
+
+async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {
+  try {
+    const token = await fbUser.getIdToken();
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) return null;
+    const profile = await res.json();
+    return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
+  } catch {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -56,11 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const onRegisterPage = typeof window !== 'undefined' &&
             window.location.pathname.startsWith('/register');
 
-          if (!onRegisterPage) {
-            setNotInvited(true);
-            await firebaseSignOut(auth);
+          if (onRegisterPage) {
+            // register page llama refreshProfile() después del POST
+          } else {
+            // Intentar auto-registrar (mismo comportamiento que /register)
+            const registered = await autoRegister(fbUser);
+            if (registered) {
+              setUser(registered);
+              setNotInvited(false);
+            } else {
+              setNotInvited(true);
+              await firebaseSignOut(auth);
+            }
           }
-          // On /register: do nothing — register page calls refreshProfile() after POST /api/auth/register
         }
       } else {
         setUser(null);
