@@ -20,12 +20,13 @@ export const GET = handle(async (request: NextRequest) => {
   try {
     const decoded = await verifyToken(token);
     console.log('[profile] uid:', decoded.uid, '| email:', decoded.email);
+    const decodedEmail = decoded.email?.toLowerCase().trim();
     let user = await userRepository.findById(decoded.uid);
     console.log('[profile] findById:', user ? 'FOUND' : 'NOT FOUND');
 
     if (!user && decoded.email) {
       // Invited user: exists by email but has a different Firebase UID
-      const existingByEmail = await userRepository.findByEmail(decoded.email);
+      const existingByEmail = decodedEmail ? await userRepository.findByEmail(decodedEmail) : null;
       console.log('[profile] findByEmail:', existingByEmail ? `FOUND id=${existingByEmail.id}` : 'NOT FOUND');
       if (existingByEmail) {
         try {
@@ -65,7 +66,7 @@ export const GET = handle(async (request: NextRequest) => {
         });
         user = await userRepository.create({
           id: decoded.uid,
-          email: decoded.email,
+          email: decodedEmail || decoded.email || '',
           name,
           role: 'superadmin',
           businessId: business.id,
@@ -83,7 +84,7 @@ export const GET = handle(async (request: NextRequest) => {
 
     // Fix for existing users without businessId
     if (!user.businessId) {
-      const email = decoded.email ?? '';
+      const email = decodedEmail ?? decoded.email ?? '';
       const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
       const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
       const isSuperadmin = superadminEmails.includes(email);

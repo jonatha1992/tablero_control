@@ -48,7 +48,7 @@ export const POST = handle(async (request: NextRequest) => {
     // body is optional
   }
 
-  const email = decoded.email ?? '';
+  const email = (decoded.email ?? '').toLowerCase().trim();
   const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
   const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
   const isSuperadmin = superadminEmails.includes(email);

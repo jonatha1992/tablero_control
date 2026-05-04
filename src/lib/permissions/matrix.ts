@@ -93,6 +93,7 @@ const MIEMBRO: Action[] = [
 ];
 
 const VIEWER: Action[] = ['task.read', 'business.reports.read'];
+const PENDING: Action[] = [];
 
 const ROLE_MATRIX: RoleMatrix = {
   superadmin: new Set(SUPERADMIN),
@@ -100,6 +101,7 @@ const ROLE_MATRIX: RoleMatrix = {
   responsable: new Set(RESPONSABLE),
   miembro: new Set(MIEMBRO),
   viewer: new Set(VIEWER),
+  pending: new Set(PENDING),
 };
 
 interface ResourceCtx {

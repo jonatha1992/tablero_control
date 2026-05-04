@@ -29,12 +29,15 @@ const storage = getStorage(app);
 
 // Inicializar Messaging solo si es soportado por el navegador
 let messaging: ReturnType<typeof getMessaging> | null = null;
-if (typeof window !== 'undefined') {
-  isSupported().then((supported) => {
-    if (supported) {
-      messaging = getMessaging(app);
-    }
-  });
+
+export async function getMessagingInstance() {
+  if (typeof window === 'undefined') return null;
+  if (messaging) return messaging;
+  const supported = await isSupported();
+  if (supported) {
+    messaging = getMessaging(app);
+  }
+  return messaging;
 }
 
 // Connect to emulators in development (set NEXT_PUBLIC_USE_EMULATOR=true in .env.local)
@@ -47,4 +50,4 @@ if (typeof window !== 'undefined' && useEmulators) {
   connectStorageEmulator(storage, 'localhost', 9199);
 }
 
-export { app, auth, db, functions, storage, messaging };
+export { app, auth, db, functions, storage };

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { register, login } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
@@ -19,10 +19,13 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, refreshProfile } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
-      router.push(user.role === 'superadmin' ? '/superadmin' : '/dashboard');
+      const target = redirect !== '/dashboard' ? redirect : (user.role === 'superadmin' ? '/superadmin' : '/dashboard');
+      router.push(target);
     }
   }, [isAuthenticated, authLoading, user, router]);
 
