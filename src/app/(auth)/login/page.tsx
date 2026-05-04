@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { login, loginWithGoogle } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,13 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
-      router.push(user.role === 'superadmin' ? '/superadmin' : '/dashboard');
+      const target = redirect !== '/dashboard' ? redirect : (user.role === 'superadmin' ? '/superadmin' : '/dashboard');
+      router.push(target);
     }
   }, [isAuthenticated, authLoading, user, router]);
 
@@ -29,7 +32,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      router.refresh();
+      router.push(redirect);
     } catch (err) {
       setError('Email o contraseña incorrectos');
       console.error(err);
@@ -43,7 +46,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle();
-      if (result) router.refresh();
+      if (result) router.push(redirect);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/popup-closed-by-user') {

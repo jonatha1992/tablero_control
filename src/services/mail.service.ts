@@ -54,13 +54,20 @@ export class MailService {
     }
   }
 
-  static async sendInviteEmail(to: string, invitedBy: string, teamName: string, inviterEmail?: string) {
+  static async sendInviteEmail(
+    to: string,
+    invitedBy: string,
+    teamName: string,
+    inviterEmail?: string,
+    resetLink?: string
+  ) {
     try {
       const html = await render(React.createElement(TeamInviteEmail, {
         invitedByUsername: invitedBy,
         invitedByEmail: inviterEmail,
         teamName,
         inviteLink: `${APP_URL}/login`,
+        resetLink,
       }));
       await sendMail(to, `Te han invitado a unirte a ${teamName}`, html);
       return { success: true };

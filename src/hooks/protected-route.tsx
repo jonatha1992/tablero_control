@@ -42,6 +42,7 @@ export function ProtectedRoute({
         responsable: 3,
         miembro: 2,
         viewer: 1,
+        pending: 0,
       };
 
       const userLevel = roleHierarchy[role];
@@ -50,6 +51,11 @@ export function ProtectedRoute({
       if (userLevel < requiredLevel) {
         router.push('/'); // Redirect to dashboard if insufficient permissions
       }
+    }
+
+    // Pending users can't access dashboard — redirect to pending page
+    if (role === 'pending' && pathname !== '/pending') {
+      router.push('/pending');
     }
   }, [isAuthenticated, loading, role, requiredRole, router, redirectTo, pathname]);
 
@@ -78,6 +84,7 @@ export function ProtectedRoute({
       responsable: 3,
       miembro: 2,
       viewer: 1,
+      pending: 0,
     };
 
     const userLevel = role ? roleHierarchy[role] : 0;
@@ -86,6 +93,11 @@ export function ProtectedRoute({
     if (userLevel < requiredLevel) {
       return null;
     }
+  }
+
+  // Pending users can't see dashboard content
+  if (role === 'pending') {
+    return null;
   }
 
   return <>{children}</>;

@@ -47,9 +47,10 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { name, email, password, role, businessId, locationId } = body;
+  const { name, password, role, businessId, locationId } = body;
+  const email = body.email?.toLowerCase().trim() ?? '';
 
-  if (!name?.trim() || !email?.trim() || !password || !role) {
+  if (!name?.trim() || !email || !password || !role) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
@@ -90,7 +91,9 @@ export const POST = handle(async (req: NextRequest) => {
   // Check email in PostgreSQL
   let existing;
   try {
-    existing = await prisma.user.findUnique({ where: { email: email.trim() } });
+    existing = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
   } catch {
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
@@ -108,7 +111,7 @@ export const POST = handle(async (req: NextRequest) => {
   let uid: string;
   try {
     const authUser = await adminAuth.createUser({
-      email: email.trim(),
+      email,
       password,
       displayName: name.trim(),
       emailVerified: true,
@@ -127,7 +130,7 @@ export const POST = handle(async (req: NextRequest) => {
       data: {
         id: uid,
         name: name.trim(),
-        email: email.trim(),
+        email,
         role,
         businessId: targetBusinessId ?? null,
         locationId: locationId ?? null,
@@ -162,13 +165,13 @@ export const POST = handle(async (req: NextRequest) => {
         const teamName = biz?.name ?? 'el equipo';
         const inviterName = authed.data.name ?? authed.data.email ?? 'Un administrador';
         const inviterEmail = authed.data.email;
-        MailService.sendInviteEmail(email.trim(), inviterName, teamName, inviterEmail).catch(() => { });
+        MailService.sendInviteEmail(email, inviterName, teamName, inviterEmail).catch(() => { });
       })
       .catch(() => { });
   }
 
   return NextResponse.json(
-    { uid, name: name.trim(), email: email.trim(), role, businessId: targetBusinessId },
+    { uid, name: name.trim(), email, role, businessId: targetBusinessId },
     { status: 201 }
   );
 });

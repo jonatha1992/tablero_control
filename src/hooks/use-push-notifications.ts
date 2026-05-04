@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
-import { messaging } from '@/lib/firebase/client';
+import { getMessagingInstance } from '@/lib/firebase/client';
 import { getToken as getFirebaseAuthToken } from '@/lib/firebase/auth';
 import { toast } from 'sonner';
 
@@ -10,39 +10,42 @@ export const usePushNotifications = () => {
     typeof window !== 'undefined' ? Notification.permission : 'default'
   );
 
-  // Escuchar notificaciones cuando la app está abierta (foreground)
   useEffect(() => {
-    if (typeof window === 'undefined' || !messaging) return;
+    if (typeof window === 'undefined') return;
+    let cleanup: (() => void) | undefined;
 
-    const unsubscribe = onMessage(messaging, (payload) => {
-      console.log('Mensaje recibido en foreground: ', payload);
-      const title = payload.notification?.title || 'Nueva Notificación';
-      const body = payload.notification?.body || '';
+    getMessagingInstance().then((m) => {
+      if (!m) return;
+      cleanup = onMessage(m, (payload) => {
+        console.log('Mensaje recibido en foreground: ', payload);
+        const title = payload.notification?.title || 'Nueva Notificación';
+        const body = payload.notification?.body || '';
 
-      // 1. Mostrar un toast dentro de la app
-      toast(title, {
-        description: body,
-        icon: '🔔',
-        duration: 8000,
-      });
-
-      // 2. Forzar notificación nativa del SO aunque estemos en la app
-      if (Notification.permission === 'granted') {
-        new Notification(title, {
-          body,
-          icon: '/icon-cropped.png',
+        toast(title, {
+          description: body,
+          icon: '🔔',
+          duration: 8000,
         });
-      }
+
+        if (Notification.permission === 'granted') {
+          new Notification(title, {
+            body,
+            icon: '/icon-cropped.png',
+          });
+        }
+      });
     });
 
     return () => {
-      unsubscribe();
+      cleanup?.();
     };
   }, []);
 
   const subscribeToPushNotifications = useCallback(async () => {
     if (typeof window === 'undefined') return;
-    if (!messaging) {
+
+    const m = await getMessagingInstance();
+    if (!m) {
       toast.error('Las notificaciones push no están soportadas en este navegador.');
       return;
     }
@@ -50,7 +53,6 @@ export const usePushNotifications = () => {
     setIsSubscribing(true);
 
     try {
-      // 1. Pedir permiso al usuario
       const currentPermission = await Notification.requestPermission();
       setPermission(currentPermission);
 
@@ -59,20 +61,16 @@ export const usePushNotifications = () => {
         return;
       }
 
-      // 2. Obtener el Token de FCM
-      // Nota: Reemplaza NEXT_PUBLIC_FIREBASE_VAPID_KEY con tu clave generada en Firebase Console > Configuración del proyecto > Cloud Messaging > Web configuration (Generar par de claves)
       const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-      
-      const currentToken = await getToken(messaging, { vapidKey });
+      const currentToken = await getToken(m, { vapidKey });
 
       if (currentToken) {
-        // 3. Enviar el token al backend
         const authToken = await getFirebaseAuthToken();
         const res = await fetch('/api/users/fcm-token', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({ token: currentToken, action: 'add' }),
         });

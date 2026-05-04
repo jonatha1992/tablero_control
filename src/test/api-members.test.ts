@@ -12,6 +12,20 @@ const mockRequireUser = vi.mocked(requireUser);
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
+vi.mock('@/lib/firebase/admin', () => ({
+  getAdminAuth: vi.fn(() => ({
+    createUser: vi.fn(() => Promise.resolve({ uid: 'firebase-uid-123' })),
+    getUserByEmail: vi.fn(() => Promise.resolve({ uid: 'firebase-uid-123' })),
+    generatePasswordResetLink: vi.fn(() => Promise.resolve('https://example.com/reset')),
+  })),
+}));
+
+vi.mock('@/services/mail.service', () => ({
+  MailService: {
+    sendInviteEmail: vi.fn(() => Promise.resolve({ success: true })),
+  },
+}));
+
 vi.mock('@/services/team.service', () => ({
   teamService: {
     getMembersByBusiness: vi.fn(),
@@ -101,6 +115,6 @@ describe('POST /api/members', () => {
       body: JSON.stringify({ dto, businessId: 'biz-1' }),
     });
     await POST(req);
-    expect(mockInvite).toHaveBeenCalledWith(dto, 'biz-1');
+    expect(mockInvite).toHaveBeenCalledWith(dto, 'biz-1', 'firebase-uid-123');
   });
 });

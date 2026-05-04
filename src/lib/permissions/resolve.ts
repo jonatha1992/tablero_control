@@ -56,6 +56,8 @@ export function basePermissions(role: UserRole): PermissionSet {
       return MIEMBRO_PERMISSIONS;
     case 'viewer':
       return VIEWER_PERMISSIONS;
+    case 'pending':
+      return VIEWER_PERMISSIONS; // pending has same base as viewer (minimal)
   }
 }
 

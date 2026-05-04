@@ -7,15 +7,18 @@ class TeamService {
     return userRepository.findByBusiness(businessId);
   }
 
-  async inviteMember(dto: InviteMemberDTO, businessId: string): Promise<User> {
-    const existing = await userRepository.findByEmail(dto.email);
+  async inviteMember(dto: InviteMemberDTO, businessId: string, id?: string): Promise<User> {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    const existing = await userRepository.findByEmail(normalizedEmail);
     if (existing) throw new Error('Ya existe un usuario con este email');
 
     return userRepository.create({
+      id,
       name: dto.name,
-      email: dto.email,
+      email: normalizedEmail,
       role: dto.role,
       businessId,
+      locationId: dto.locationId,
       teamIds: [],
       isActive: true,
       preferences: {

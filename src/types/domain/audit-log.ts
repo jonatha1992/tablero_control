@@ -34,7 +34,10 @@ export type AuditAction =
   | 'task.delete'
   | 'attachment.upload'
   | 'attachment.delete'
-  | 'plan_config.update';
+  | 'plan_config.update'
+  | 'invite_link.create'
+  | 'invite_link.revoke'
+  | 'user.join_via_invite';
 
 export interface AuditLog {
   id: string;

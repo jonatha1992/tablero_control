@@ -6,6 +6,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   responsable: 'Responsable',
   miembro: 'Miembro',
   viewer: 'Solo lectura',
+  pending: 'Pendiente',
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {
@@ -14,4 +15,5 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   responsable: 'bg-blue-100 text-blue-700 border-blue-200',
   miembro: 'bg-green-100 text-green-700 border-green-200',
   viewer: 'bg-gray-100 text-gray-600 border-gray-200',
+  pending: 'bg-amber-100 text-amber-700 border-amber-200',
 };

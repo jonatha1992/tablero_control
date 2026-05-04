@@ -18,6 +18,7 @@ interface TeamInviteEmailProps {
   invitedByEmail?: string;
   teamName?: string;
   inviteLink?: string;
+  resetLink?: string;
 }
 
 const LOGO_URL = 'https://res.cloudinary.com/dhhjn1fo8/image/upload/v1777644183/tablero_control/logo.png';
@@ -28,6 +29,7 @@ export const TeamInviteEmail = ({
   invitedByEmail = 'admin@ejemplo.com',
   teamName = 'Nuestro Equipo',
   inviteLink = `${APP_URL}/login`,
+  resetLink,
 }: TeamInviteEmailProps) => (
   <Html>
     <Head />
@@ -44,11 +46,30 @@ export const TeamInviteEmail = ({
         <Text style={text}>
           <strong>{invitedByUsername}</strong> ({invitedByEmail}) te ha invitado a formar parte del equipo de <strong>{teamName}</strong> en la plataforma Tablero de Control.
         </Text>
-        <Section style={btnContainer}>
-          <Button style={button} href={inviteLink}>
-            Aceptar Invitación
-          </Button>
-        </Section>
+        {resetLink ? (
+          <>
+            <Text style={text}>
+              Para acceder, primero establecé una contraseña haciendo clic en el siguiente botón:
+            </Text>
+            <Section style={btnContainer}>
+              <Button style={button} href={resetLink}>
+                Establecer contraseña
+              </Button>
+            </Section>
+            <Text style={text}>
+              También podés iniciar sesión con tu cuenta de Google desde{' '}
+              <a href={inviteLink} style={{ color: '#0066cc', textDecoration: 'underline' }}>
+                la página de inicio de sesión
+              </a>.
+            </Text>
+          </>
+        ) : (
+          <Section style={btnContainer}>
+            <Button style={button} href={inviteLink}>
+              Aceptar Invitación
+            </Button>
+          </Section>
+        )}
         <Text style={text}>
           Si no esperabas esta invitación, puedes ignorar este correo.
         </Text>

@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'admin' | 'responsable' | 'miembro' | 'viewer';
+export type UserRole = 'superadmin' | 'admin' | 'responsable' | 'miembro' | 'viewer' | 'pending';
 
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';

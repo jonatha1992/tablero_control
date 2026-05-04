@@ -1,10 +1,12 @@
 'use client';
 
-import { Users, UserPlus } from 'lucide-react';
+import { Users, UserPlus, Link2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MemberCard } from '@/components/equipo/member-card';
 import { CreateUserModal } from '@/components/equipo/create-user-modal';
+import { CreateInviteModal } from '@/components/equipo/create-invite-modal';
+import { InviteLinksSection } from '@/components/equipo/invite-links-section';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useRemoveMember } from '@/hooks/mutations/use-update-member';
@@ -23,8 +25,9 @@ const ROLE_TABS: { value: UserRole | 'all'; label: string }[] = [
 
 export default function EquipoPage() {
   const { 
-    searchQuery, roleFilter, locationFilter, isInviteModalOpen, 
-    setSearchQuery, setRoleFilter, setLocationFilter, openInviteModal, closeInviteModal 
+    searchQuery, roleFilter, locationFilter, isInviteModalOpen, isCreateInviteModalOpen,
+    setSearchQuery, setRoleFilter, setLocationFilter, openInviteModal, closeInviteModal,
+    openCreateInviteModal, closeCreateInviteModal
   } = useTeamUIStore();
 
   const { user, isAdmin } = useAuth();
@@ -46,10 +49,16 @@ export default function EquipoPage() {
     <div className="space-y-4">
       <div className="flex items-start justify-end gap-4">
         {isAdmin && (
-          <Button size="sm" onClick={openInviteModal}>
-            <UserPlus className="mr-1.5 h-4 w-4" />
-            Invitar
-          </Button>
+          <>
+            <Button size="sm" variant="outline" onClick={openCreateInviteModal}>
+              <Link2 className="mr-1.5 h-4 w-4" />
+              Link de invitación
+            </Button>
+            <Button size="sm" onClick={openInviteModal}>
+              <UserPlus className="mr-1.5 h-4 w-4" />
+              Crear usuario
+            </Button>
+          </>
         )}
       </div>
 
@@ -115,9 +124,19 @@ export default function EquipoPage() {
         </div>
       )}
 
+      {isAdmin && (
+        <InviteLinksSection businessId={user?.businessId} />
+      )}
+
       <CreateUserModal
         open={isInviteModalOpen}
         onClose={closeInviteModal}
+        businessId={user?.businessId}
+      />
+
+      <CreateInviteModal
+        open={isCreateInviteModalOpen}
+        onClose={closeCreateInviteModal}
         businessId={user?.businessId}
       />
     </div>
