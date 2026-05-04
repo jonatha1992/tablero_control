@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { register, login } from '@/lib/firebase/auth';
@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -197,5 +197,15 @@ export default function RegisterPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
