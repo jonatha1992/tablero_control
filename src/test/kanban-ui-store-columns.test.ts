@@ -66,7 +66,7 @@ describe('useKanbanUIStore — activeColumns', () => {
 describe('useKanbanUIStore — filtros de UI', () => {
   it('estado inicial de filtros es vacío', () => {
     useKanbanUIStore.setState({
-      filters: { searchQuery: '', priority: '', locationId: '' },
+      filters: { searchQuery: '', priority: '', locationId: '', objectiveId: '', cycleId: '' },
     });
     const { filters } = useKanbanUIStore.getState();
     expect(filters.searchQuery).toBe('');
@@ -76,7 +76,7 @@ describe('useKanbanUIStore — filtros de UI', () => {
 
   it('setFilters actualiza searchQuery sin afectar otros filtros', () => {
     useKanbanUIStore.setState({
-      filters: { searchQuery: '', priority: 'high', locationId: 'loc-1' },
+      filters: { searchQuery: '', priority: 'high', locationId: 'loc-1', objectiveId: '', cycleId: '' },
     });
     useKanbanUIStore.getState().setFilters({ searchQuery: 'test' });
     const { filters } = useKanbanUIStore.getState();

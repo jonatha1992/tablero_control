@@ -11,5 +11,6 @@ export interface UpdateMemberDTO {
   name?: string;
   role?: UserRole;
   locationId?: string;
+  customRoleIds?: string[];
   isActive?: boolean;
 }

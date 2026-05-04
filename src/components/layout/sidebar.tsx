@@ -17,6 +17,9 @@ import {
   Building2,
   ScrollText,
   SlidersHorizontal,
+  Timer,
+  Target,
+  GanttChart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
@@ -34,7 +37,10 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/sectores', label: 'Departamentos', icon: Building2 },
   { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare },
+  { href: '/dashboard/ciclos', label: 'Períodos', icon: Timer },
+  { href: '/dashboard/objetivos', label: 'Objetivos', icon: Target },
   { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar },
+  { href: '/dashboard/cronograma', label: 'Cronograma', icon: GanttChart },
   { href: '/dashboard/equipo', label: 'Equipo', icon: Users },
   { href: '/dashboard/billing', label: 'Facturación', icon: CreditCard },
   { href: '/dashboard/config', label: 'Configuración', icon: Settings },

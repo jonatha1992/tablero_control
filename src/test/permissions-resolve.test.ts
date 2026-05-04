@@ -64,12 +64,16 @@ describe('resolvePermissions() sin customRole', () => {
     expect(resolvePermissions({ role: 'admin' })).toEqual(ADMIN_PERMISSIONS);
   });
 
-  it('retorna basePermissions para miembro cuando customRole=null', () => {
+  it('retorna basePermissions para miembro cuando customRoles=null', () => {
     expect(resolvePermissions({ role: 'miembro' }, null)).toEqual(MIEMBRO_PERMISSIONS);
   });
 
-  it('retorna basePermissions cuando customRole=undefined', () => {
+  it('retorna basePermissions cuando customRoles=undefined', () => {
     expect(resolvePermissions({ role: 'responsable' }, undefined)).toEqual(RESPONSABLE_PERMISSIONS);
+  });
+
+  it('retorna basePermissions cuando customRoles=[]', () => {
+    expect(resolvePermissions({ role: 'miembro' }, [])).toEqual(MIEMBRO_PERMISSIONS);
   });
 });
 
@@ -81,7 +85,7 @@ describe('resolvePermissions() con customRole INACTIVO', () => {
       tasks: { read: false, create: false, update: false, delete: false, assign: false, comment: false },
     }, false); // isActive = false
 
-    const result = resolvePermissions({ role: 'miembro' }, custom);
+    const result = resolvePermissions({ role: 'miembro' }, [custom]);
     expect(result).toEqual(MIEMBRO_PERMISSIONS);
   });
 });
@@ -94,7 +98,7 @@ describe('resolvePermissions() con customRole ACTIVO', () => {
     const custom = makeCustomRole({
       tasks: { read: true, create: false, update: true, delete: false, assign: false, comment: true },
     });
-    const result = resolvePermissions({ role: 'miembro' }, custom);
+    const result = resolvePermissions({ role: 'miembro' }, [custom]);
     expect(result.tasks.read).toBe(true);
     expect(result.tasks.comment).toBe(true);
   });
@@ -104,7 +108,7 @@ describe('resolvePermissions() con customRole ACTIVO', () => {
     const custom = makeCustomRole({
       tasks: { read: false, create: false, update: true, delete: false, assign: false, comment: false },
     });
-    const result = resolvePermissions({ role: 'miembro' }, custom);
+    const result = resolvePermissions({ role: 'miembro' }, [custom]);
     expect(result.tasks.read).toBe(false);
     expect(result.tasks.comment).toBe(false);
   });
@@ -114,7 +118,7 @@ describe('resolvePermissions() con customRole ACTIVO', () => {
     const custom = makeCustomRole({
       tasks: { read: true, create: true, update: true, delete: true, assign: true, comment: true },
     });
-    const result = resolvePermissions({ role: 'miembro' }, custom);
+    const result = resolvePermissions({ role: 'miembro' }, [custom]);
     expect(result.tasks.create).toBe(false); // miembro base = false
     expect(result.tasks.delete).toBe(false);
     expect(result.tasks.assign).toBe(false);
@@ -126,10 +130,26 @@ describe('resolvePermissions() con customRole ACTIVO', () => {
       reports: { read: true, export: true },
       attachments: { upload: true, delete: true },
     });
-    const result = resolvePermissions({ role: 'responsable' }, custom);
+    const result = resolvePermissions({ role: 'responsable' }, [custom]);
     // responsable tiene reports.export=false (base), custom=true → false
     expect(result.reports.export).toBe(false);
     // responsable tiene tasks.read=true, custom=true → true
     expect(result.tasks.read).toBe(true);
+  });
+
+  it('union de dos custom roles — OR antes del AND con base', () => {
+    // rol1 habilita tasks.read; rol2 habilita tasks.comment; miembro base permite ambos
+    const rol1 = makeCustomRole({ tasks: { read: true, create: false, update: false, delete: false, assign: false, comment: false } });
+    const rol2 = makeCustomRole({ tasks: { read: false, create: false, update: false, delete: false, assign: false, comment: true } });
+    const result = resolvePermissions({ role: 'miembro' }, [rol1, rol2]);
+    expect(result.tasks.read).toBe(true);
+    expect(result.tasks.comment).toBe(true);
+  });
+
+  it('union de dos custom roles inactivos retorna basePermissions', () => {
+    const rol1 = makeCustomRole({}, false);
+    const rol2 = makeCustomRole({}, false);
+    const result = resolvePermissions({ role: 'miembro' }, [rol1, rol2]);
+    expect(result).toEqual(MIEMBRO_PERMISSIONS);
   });
 });

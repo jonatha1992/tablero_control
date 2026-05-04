@@ -39,8 +39,8 @@ Activar con `NEXT_PUBLIC_USE_EMULATOR=true` en `.env.local`.
 En desarrollo usar una instancia local o Railway.
 
 ```bash
-# Aplicar migraciones
-npx prisma migrate dev
+# Sincronizar schema con la base de datos (usar db push en Railway)
+npx prisma db push
 
 # Abrir UI visual de la BD
 npx prisma studio
@@ -50,6 +50,7 @@ npx prisma generate
 
 # Poblar con datos de prueba
 npm run seed:pg
+npm run seed:superadmin
 ```
 
 ## Acceso superadmin

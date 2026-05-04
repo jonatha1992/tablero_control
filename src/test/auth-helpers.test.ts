@@ -29,7 +29,7 @@ const dbUser = {
   role: 'admin',
   businessId: 'biz-1',
   locationId: null,
-  customRoleId: null,
+  customRoleIds: [],
   avatar: null,
   phone: null,
   isActive: true,

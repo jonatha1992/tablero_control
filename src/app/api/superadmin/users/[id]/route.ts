@@ -123,6 +123,23 @@ export const DELETE = handle(async (
       // 2. Reassign tasks created by this user to the business admin
       await reassignUserTasks(tx, id, user.uid);
 
+      // 2b. Cascade managed locations when deleting an admin without deleting the business
+      if (target.role === 'admin' && target.businessId && !deleteBusinesses) {
+        const otherAdmin = await tx.user.findFirst({
+          where: { businessId: target.businessId, role: 'admin', isActive: true, id: { not: id } },
+        });
+        if (otherAdmin) {
+          await tx.location.updateMany({ where: { managerId: id }, data: { managerId: otherAdmin.id } });
+        } else {
+          const locs = await tx.location.findMany({ where: { managerId: id }, select: { id: true } });
+          const locIds = locs.map((l) => l.id);
+          if (locIds.length > 0) {
+            await tx.task.deleteMany({ where: { locationId: { in: locIds }, projectId: null } });
+            await tx.location.deleteMany({ where: { id: { in: locIds } } });
+          }
+        }
+      }
+
       // 3. Clean up non-cascading FK references
       await tx.comment.deleteMany({ where: { authorId: id } });
       await tx.auditLog.deleteMany({ where: { actorId: id } });

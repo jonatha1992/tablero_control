@@ -23,6 +23,12 @@ vi.mock('@/hooks/queries/use-locations-query', () => ({
   })),
 }));
 
+vi.mock('@/hooks/queries/use-roles-query', () => ({
+  useRolesQuery: vi.fn(() => ({
+    data: [],
+  })),
+}));
+
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
 const activeMember: User = {

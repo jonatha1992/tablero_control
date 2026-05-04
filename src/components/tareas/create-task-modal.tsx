@@ -14,8 +14,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useAuth } from '@/hooks/auth-context';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
-import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check } from 'lucide-react';
+import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban } from 'lucide-react';
 import { tasksApi } from '@/lib/api/tasks';
 import { getToken } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
@@ -82,10 +84,11 @@ interface CreateTaskModalProps {
   onOpenChange: (open: boolean) => void;
   defaultStatus?: TaskStatus;
   defaultDueDate?: string;
+  initialDate?: Date;
 }
 
-export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueDate }: CreateTaskModalProps) {
-  const today = new Date().toISOString().split('T')[0];
+export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueDate, initialDate }: CreateTaskModalProps) {
+  const today = initialDate?.toISOString().split('T')[0] ?? new Date().toISOString().split('T')[0];
   const { activeColumns } = useKanbanUIStore();
   const visibleStatusOptions = STATUS_OPTIONS.filter((o) => activeColumns.includes(o.value));
   const resolvedDefault: TaskStatus =
@@ -103,6 +106,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [dueTime, setDueTime] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [locationId, setLocationId] = useState<string>('');
+  const [projectId, setProjectId] = useState<string>('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
   const [interval, setIntervalValue] = useState(1);
@@ -115,6 +119,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const createTask = useCreateTask();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
+  const { user } = useAuth();
+  const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -126,7 +132,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setTitle(''); setDescription(''); setTags('');
     setDueDate(defaultDueDate ?? today); setDueTime(''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
-    setLocationId('');
+    setLocationId(''); setProjectId('');
     setEstimatedHours(undefined);
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
@@ -199,6 +205,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         title, description, status, priority, type,
         assigneeIds,
         locationId: locationId || undefined,
+        projectId: projectId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         estimatedHours: estimatedHours || undefined,
         dueDate: dueDate ? new Date(`${dueDate}T${dueTime || '00:00'}`) : undefined,
@@ -307,6 +314,24 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-1 block flex items-center gap-1">
+              <FolderKanban className="h-3.5 w-3.5" /> Tablero (Opcional)
+            </label>
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Sin asignar</option>
+              {projects.map((proj) => (
+                <option key={proj.id} value={proj.id}>
+                  {proj.name}
                 </option>
               ))}
             </select>

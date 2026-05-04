@@ -313,6 +313,12 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
               <span>{task.attachmentUrls.length}</span>
             </div>
           )}
+          {task.checklist && task.checklist.length > 0 && (
+            <div className="flex items-center gap-0.5 text-[10px]">
+              <CheckSquare className="h-3 w-3" />
+              <span>{task.checklist.filter((i) => i.done).length}/{task.checklist.length}</span>
+            </div>
+          )}
           {task.subtaskIds && task.subtaskIds.length > 0 && (
             <div className="flex items-center gap-0.5 text-[10px]">
               <CheckSquare className="h-3 w-3" />

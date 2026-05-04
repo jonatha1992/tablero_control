@@ -13,7 +13,7 @@ function toDomain(u: PrismaUser): User {
     role: u.role as UserRole,
     businessId: u.businessId ?? undefined,
     locationId: u.locationId ?? undefined,
-    customRoleId: u.customRoleId ?? undefined,
+    customRoleIds: u.customRoleIds ?? [],
     avatar: u.avatar ?? undefined,
     phone: u.phone ?? undefined,
     teamIds: u.teams.map((t: { teamId: string }) => t.teamId),
@@ -43,6 +43,14 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findByBusiness(businessId: string): Promise<User[]> {
     const users = await prisma.user.findMany({ where: { businessId, isActive: true }, include });
+    return users.map(toDomain);
+  }
+
+  async findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]> {
+    const users = await prisma.user.findMany({
+      where: { businessId, role: 'admin', isActive: true, id: { not: excludeId } },
+      include,
+    });
     return users.map(toDomain);
   }
 

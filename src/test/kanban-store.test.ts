@@ -9,7 +9,7 @@ describe('KanbanUIStore', () => {
       isCreateModalOpen: false,
       isDetailModalOpen: false,
       selectedTaskId: null,
-      filters: { searchQuery: '', priority: '', locationId: '' },
+      filters: { searchQuery: '', priority: '', locationId: '', objectiveId: '', cycleId: '' },
     });
   });
 

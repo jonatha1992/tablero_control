@@ -109,7 +109,8 @@
       "Bash(dir \"D:\\\\Repositorio\\\\tablero_control\\\\node_modules\\\\.prisma\\\\client\" /b)",
       "Bash(findstr /i \"notification\" \"D:\\\\Repositorio\\\\tablero_control\\\\node_modules\\\\.prisma\\\\client\\\\index.d.ts\")",
       "Bash(findstr /i \"emulator\")",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(findstr /E \"project team\")"
     ]
   }
 }

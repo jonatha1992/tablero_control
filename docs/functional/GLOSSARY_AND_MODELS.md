@@ -9,9 +9,11 @@ Este documento centraliza las definiciones de negocio y los modelos visuales que
 - **Local / Sede (Location)**: Una unidad física o lógica del negocio. Puede ser una sucursal, un depósito o un área operativa.
 - **Equipo / Sector (Team)**: Grupo de usuarios dentro de un Local que comparten tareas y proyectos.
 - **Tarea (Task)**: La unidad mínima de trabajo. Posee estado, prioridad, tipo y responsables.
-- **Proyecto (Project)**: Contenedor que agrupa tareas relacionadas con un objetivo común y fechas definidas.
-- **Sprint**: Período de tiempo fijo (ej. 14 días) donde un equipo se compromete a completar un set de tareas.
+- **Tablero (Project/Board)**: Contenedor visual que agrupa tareas. Cada negocio puede tener múltiples tableros (uno por local, equipo, área, etc.). Reutiliza el modelo `Project` internamente.
+- **Ciclo / Período (Cycle)**: Período de tiempo definido (ej. semana, quincena, mes, temporada) donde un equipo planifica y ejecuta un set de tareas. Reemplaza el concepto de "Sprint" con terminología genérica.
+- **Objetivo / Iniciativa (Objective)**: Agrupador de tareas con meta común. Ejemplos: "Apertura Sucursal Palermo", "Campaña Black Friday", "Renovación Local Centro".
 - **Responsable**: Usuario con autoridad sobre un Local o Equipo.
+- **Registro de tiempo (Time Entry)**: Log de horas trabajadas sobre una tarea por un usuario específico.
 
 ### 1.2 Términos Técnicos
 - **RBAC (Role-Based Access Control)**: Control de acceso basado en roles. El sistema usa 5 niveles de jerarquía.
@@ -63,10 +65,34 @@ Relación simplificada entre las entidades clave.
 classDiagram
     Business "1" -- "*" User
     Business "1" -- "*" Location
+    Business "1" -- "*" Project
+    Business "1" -- "*" Cycle
+    Business "1" -- "*" Objective
     Location "1" -- "*" Team
     Team "1" -- "*" Project
     Project "1" -- "*" Task
+    Cycle "1" -- "*" Task
+    Objective "1" -- "*" Task
     Task "1" -- "*" Comment
     Task "1" -- "*" Attachment
+    Task "1" -- "*" TimeEntry
+    Task "1" -- "*" Task : subtasks
     User "1" -- "*" Task : asignado/creador
+    User "1" -- "*" TimeEntry
+    User "1" -- "*" Comment
 ```
+
+---
+
+## 3. Convenciones de Nomenclatura
+
+Para mantener el sistema genérico y aplicable a cualquier industria, **evitar términos de software**:
+
+| ❌ No usar | ✅ Usar en su lugar |
+|---|---|
+| Sprint | Ciclo / Período |
+| Epic | Objetivo / Iniciativa |
+| Story Point | (no usar) — usar horas estimadas |
+| Bug | Problema / Mejora (según tipo de tarea) |
+| Release | (no aplica en MVP) |
+| Board | Tablero |

@@ -11,6 +11,12 @@ export interface RecurrenceConfig {
   count?: number;
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
 export interface TaskAssignee {
   id: string;
   name: string;
@@ -30,6 +36,8 @@ export interface Task {
   businessId?: string;
   projectId?: string;
   locationId?: string;
+  cycleId?: string;
+  objectiveId?: string;
   parentId?: string;
   tags: string[];
   startDate?: Date;
@@ -38,6 +46,7 @@ export interface Task {
   estimatedHours?: number;
   actualHours?: number;
   recurrence?: RecurrenceConfig;
+  checklist: ChecklistItem[];
   subtaskIds: string[];
   attachmentUrls: string[];
   attachments?: { url: string; name: string }[];
@@ -64,6 +73,7 @@ export interface Comment {
   attachments: string[];
   createdAt: Date;
   updatedAt: Date;
+  author?: { id: string; name: string; avatar?: string };
 }
 
 export interface TaskFilters {

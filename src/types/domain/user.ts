@@ -20,7 +20,7 @@ export interface User {
   role: UserRole;
   businessId?: string;
   locationId?: string;
-  customRoleId?: string;
+  customRoleIds: string[];
   avatar?: string;
   phone?: string;
   teamIds: string[];

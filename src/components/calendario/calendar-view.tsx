@@ -13,6 +13,7 @@ interface CalendarViewProps {
   tasks: Task[];
   onEventDrop?: (taskId: string, newDate: Date) => void;
   onEventClick?: (taskId: string) => void;
+  onDateClick?: (date: Date) => void;
 }
 
 // Colores de fondo por prioridad (consistentes con el kanban)
@@ -26,7 +27,7 @@ const PRIORITY_EVENT_COLORS: Record<
   low: { backgroundColor: '#64748b', textColor: '#ffffff' },    // slate-500
 };
 
-export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewProps) {
+export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null);
 
   // Mapeamos las Tareas a Eventos de FullCalendar
@@ -123,6 +124,12 @@ export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewP
     }
   };
 
+  const handleDateClick = (info: { date: Date }) => {
+    if (onDateClick) {
+      onDateClick(info.date);
+    }
+  };
+
   return (
     <div className="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4 fc-theme-standard">
       <style jsx global>{`
@@ -196,6 +203,7 @@ export function CalendarView({ tasks, onEventDrop, onEventClick }: CalendarViewP
         droppable={true}
         eventDrop={handleEventDrop}
         eventClick={handleEventClick}
+        dateClick={handleDateClick}
         eventDidMount={(info) => {
           const color = info.event.extendedProps.priorityColor;
           if (color) {

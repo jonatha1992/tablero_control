@@ -37,7 +37,15 @@ export type AuditAction =
   | 'plan_config.update'
   | 'invite_link.create'
   | 'invite_link.revoke'
-  | 'user.join_via_invite';
+  | 'user.join_via_invite'
+  | 'comment.create'
+  | 'comment.delete'
+  | 'cycle.create'
+  | 'cycle.update'
+  | 'cycle.delete'
+  | 'objective.create'
+  | 'objective.update'
+  | 'objective.delete';
 
 export interface AuditLog {
   id: string;

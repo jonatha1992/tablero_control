@@ -80,4 +80,20 @@ export class PrismaLocationRepository implements ILocationRepository {
   async delete(id: string): Promise<void> {
     await prisma.location.delete({ where: { id } });
   }
+
+  async findByManagerId(managerId: string): Promise<Location[]> {
+    const locs = await prisma.location.findMany({ where: { managerId }, include });
+    return locs.map(toDomain);
+  }
+
+  async bulkUpdateManagerId(fromManagerId: string, toManagerId: string | null): Promise<void> {
+    await prisma.location.updateMany({
+      where: { managerId: fromManagerId },
+      data: { managerId: toManagerId },
+    });
+  }
+
+  async deleteByManagerId(managerId: string): Promise<void> {
+    await prisma.location.deleteMany({ where: { managerId } });
+  }
 }
