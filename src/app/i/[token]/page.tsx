@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 import { InviteClient } from './invite-client';
 
 interface Props {
@@ -8,42 +9,49 @@ interface Props {
 export default async function InvitePage({ params }: Props) {
   const { token } = await params;
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/invites/${token}`,
-    { cache: 'no-store' }
-  );
+  const invite = await prisma.businessInvite.findUnique({
+    where: { id: token },
+    include: { business: { select: { name: true } } },
+  });
 
-  if (!res.ok) {
-    notFound();
+  if (!invite || !invite.isActive) {
+    return <InvalidInvite reason="revoked" />;
+  }
+  if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+    return <InvalidInvite reason="expired" />;
+  }
+  if (invite.maxUses > 0 && invite.usedCount >= invite.maxUses) {
+    return <InvalidInvite reason="max_uses" />;
   }
 
-  const data = await res.json();
-
-  if (!data.valid) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Link inválido</h1>
-          <p className="text-muted-foreground">
-            {data.reason === 'expired' && 'Este link de invitación expiró.'}
-            {data.reason === 'max_uses' && 'Este link ya alcanzó el límite de usos.'}
-            {data.reason === 'revoked' && 'Este link de invitación fue cancelado.'}
-            {!['expired', 'max_uses', 'revoked'].includes(data.reason) && 'Este link no es válido.'}
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Pedile a tu administrador que genere uno nuevo.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const usesLeft = invite.maxUses > 0 ? invite.maxUses - invite.usedCount : null;
 
   return (
     <InviteClient
       token={token}
-      businessName={data.businessName}
-      expiresAt={data.expiresAt}
-      usesLeft={data.usesLeft}
+      businessName={invite.business.name}
+      expiresAt={invite.expiresAt?.toISOString()}
+      usesLeft={usesLeft}
     />
+  );
+}
+
+function InvalidInvite({ reason }: { reason: 'expired' | 'max_uses' | 'revoked' | 'not_found' }) {
+  const messages: Record<string, string> = {
+    expired: 'Este link de invitación expiró.',
+    max_uses: 'Este link ya alcanzó el límite de usos.',
+    revoked: 'Este link de invitación fue cancelado.',
+    not_found: 'Este link no es válido.',
+  };
+  return (
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg text-center">
+        <h1 className="text-2xl font-bold text-destructive mb-2">Link inválido</h1>
+        <p className="text-muted-foreground">{messages[reason] ?? messages.not_found}</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Pedile a tu administrador que genere uno nuevo.
+        </p>
+      </div>
+    </div>
   );
 }

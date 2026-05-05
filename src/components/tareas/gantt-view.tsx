@@ -132,10 +132,17 @@ export function GanttView({ tasks }: GanttViewProps) {
         <FullCalendar
           plugins={[resourceTimelinePlugin, interactionPlugin]}
           initialView="resourceTimelineMonth"
+          locale="es"
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
             right: 'resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth',
+          }}
+          buttonText={{
+            today: 'Hoy',
+            day: 'Día',
+            week: 'Semana',
+            month: 'Mes',
           }}
           resources={resources}
           events={events}
