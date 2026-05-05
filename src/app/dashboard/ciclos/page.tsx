@@ -34,11 +34,18 @@ export default function CiclosPage() {
   const startCycle = useStartCycle();
   const completeCycle = useCompleteCycle();
 
+  const todayStr = () => new Date().toISOString().split('T')[0];
+  const twoWeeksStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().split('T')[0];
+  };
+
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(todayStr);
+  const [endDate, setEndDate] = useState(twoWeeksStr);
   const [dateError, setDateError] = useState('');
   const [serverError, setServerError] = useState('');
 
@@ -69,8 +76,8 @@ export default function CiclosPage() {
           setShowModal(false);
           setName('');
           setGoal('');
-          setStartDate('');
-          setEndDate('');
+          setStartDate(todayStr());
+          setEndDate(twoWeeksStr());
           setDateError('');
           setServerError('');
         },

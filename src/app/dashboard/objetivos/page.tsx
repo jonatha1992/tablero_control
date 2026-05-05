@@ -26,11 +26,13 @@ export default function ObjetivosPage() {
   const completeObjective = useCompleteObjective();
   const deleteObjective = useDeleteObjective();
 
+  const todayStr = () => new Date().toISOString().split('T')[0];
+
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#3b82f6');
-  const [targetDate, setTargetDate] = useState('');
+  const [targetDate, setTargetDate] = useState(todayStr);
   const [dateError, setDateError] = useState('');
   const [serverError, setServerError] = useState('');
 
@@ -74,7 +76,7 @@ export default function ObjetivosPage() {
           setName('');
           setDescription('');
           setColor('#3b82f6');
-          setTargetDate('');
+          setTargetDate(todayStr());
           setDateError('');
           setServerError('');
         },
