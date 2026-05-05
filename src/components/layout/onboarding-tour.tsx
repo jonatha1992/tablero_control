@@ -41,6 +41,38 @@ const STEPS = [
     },
   },
   {
+    element: '#tour-nav-ciclos',
+    popover: {
+      title: '⏱ Períodos / Ciclos',
+      description: 'Organizá el trabajo en ciclos con fechas de inicio y fin. Cada ciclo pasa por planificación, activo, completado y cerrado.',
+      side: 'right' as const,
+    },
+  },
+  {
+    element: '#tour-nav-objetivos',
+    popover: {
+      title: '🎯 Objetivos',
+      description: 'Definí metas de negocio y vinculalas a tareas. Seguí el progreso hacia cada objetivo de tu equipo.',
+      side: 'right' as const,
+    },
+  },
+  {
+    element: '#tour-nav-calendario',
+    popover: {
+      title: '📅 Calendario',
+      description: 'Visualizá todas las tareas y eventos por fecha. Navegá por semana o mes para planificar el trabajo.',
+      side: 'right' as const,
+    },
+  },
+  {
+    element: '#tour-nav-cronograma',
+    popover: {
+      title: '📋 Cronograma',
+      description: 'Vista Gantt de las tareas con sus fechas de inicio y vencimiento. Ideal para ver dependencias y plazos de un vistazo.',
+      side: 'right' as const,
+    },
+  },
+  {
     element: '#tour-nav-equipo',
     popover: {
       title: '👥 Equipo',
@@ -53,6 +85,14 @@ const STEPS = [
     popover: {
       title: '💳 Facturación',
       description: 'Gestioná tu plan y suscripción. Podés cambiar de plan o ver el historial de facturas aquí.',
+      side: 'right' as const,
+    },
+  },
+  {
+    element: '#tour-nav-config',
+    popover: {
+      title: '⚙️ Configuración',
+      description: 'Ajustes del negocio: nombre, logo, zona horaria y preferencias generales de la cuenta.',
       side: 'right' as const,
     },
   },
@@ -81,13 +121,15 @@ export function OnboardingTour() {
         nextBtnText: 'Siguiente →',
         prevBtnText: '← Anterior',
         doneBtnText: '¡Entendido!',
+        // onDestroyStarted prevents auto-close in driver.js v1.x —
+        // must call destroy() explicitly to actually close the tour.
         onDestroyStarted: () => {
           localStorage.setItem(key, '1');
+          driverObj?.destroy();
         },
         steps: STEPS,
       });
 
-      // Small delay so the DOM is fully painted
       setTimeout(() => driverObj?.drive(), 800);
     });
 
