@@ -110,7 +110,9 @@
       "Bash(findstr /i \"notification\" \"D:\\\\Repositorio\\\\tablero_control\\\\node_modules\\\\.prisma\\\\client\\\\index.d.ts\")",
       "Bash(findstr /i \"emulator\")",
       "Bash(node *)",
-      "Bash(findstr /E \"project team\")"
+      "Bash(findstr /E \"project team\")",
+      "PowerShell(npm list *)",
+      "Bash(Get-ChildItem *)"
     ]
   }
 }

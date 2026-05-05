@@ -15,7 +15,7 @@ type Step = 0 | 1 | 2 | 3;
 const BASE_ROLES: Array<{ value: BaseRoleForCustom; label: string; desc: string }> = [
   { value: 'responsable', label: 'Responsable', desc: 'Jefe de local — puede crear y gestionar tareas.' },
   { value: 'miembro',    label: 'Miembro',      desc: 'Trabajador — opera sus tareas asignadas.' },
-  { value: 'viewer',     label: 'Viewer',       desc: 'Solo lectura dentro del negocio.' },
+  { value: 'viewer',     label: 'Visualizador',       desc: 'Solo lectura dentro del negocio.' },
 ];
 
 const COLORS = [
@@ -86,12 +86,15 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
     setDraft((prev) => ({ ...prev, baseRole: br, permissions: basePermissions(br) }));
   }
 
+  const [saveError, setSaveError] = useState<string>('');
+
   async function handleSave() {
+    setSaveError('');
     try {
       await save.mutateAsync({ ...draft, id: initial?.id });
       onClose();
     } catch (err) {
-      alert((err as Error).message);
+      setSaveError((err as Error).message);
     }
   }
 
@@ -221,6 +224,11 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
             {step === 3 && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Revisá el resumen antes de guardar.</p>
+                {saveError && (
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">
+                    {saveError}
+                  </div>
+                )}
                 <div className="border rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full shrink-0" style={{ backgroundColor: draft.color }} />

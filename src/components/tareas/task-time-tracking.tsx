@@ -29,7 +29,9 @@ export function TaskTimeTracking({ taskId, estimatedHours, actualHours }: {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const h = parseFloat(hours);
-    if (!h || h <= 0) return;
+    if (!h || h <= 0 || h > 24) {
+      return;
+    }
     createEntry.mutate(
       { taskId, data: { hours: h, note: note.trim() || undefined } },
       { onSuccess: () => { setHours(''); setNote(''); } }
@@ -109,6 +111,7 @@ export function TaskTimeTracking({ taskId, estimatedHours, actualHours }: {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Nota (opcional)"
+            maxLength={500}
             className="h-8 text-sm"
           />
         </div>

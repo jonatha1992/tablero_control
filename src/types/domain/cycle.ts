@@ -7,8 +7,8 @@ export interface Cycle {
   teamId?: string;
   businessId: string;
   status: CycleStatus;
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date;
+  endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

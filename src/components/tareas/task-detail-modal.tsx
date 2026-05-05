@@ -70,6 +70,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   if (!task) return null;
 
   const handleSave = () => {
+    if (!title.trim()) return;
     updateTask.mutate(
       {
         id: task.id,
@@ -150,6 +151,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
                   className="w-full text-lg font-medium bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -158,6 +160,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  maxLength={2000}
                   className="w-full text-sm bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
                   rows={4}
                 />

@@ -217,10 +217,10 @@ export default function HomePage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { role: 'Admin', desc: 'Admin de cada negocio', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+                { role: 'Administrador', desc: 'Administrador de cada negocio', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
                 { role: 'Responsable', desc: 'Responsable de cada local', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
                 { role: 'Miembro', desc: 'Persona dentro de un local', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-                { role: 'Viewer', desc: 'Solo lectura', color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400' },
+                { role: 'Visualizador', desc: 'Solo lectura', color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400' },
               ].map((r) => (
                 <div key={r.role} className="rounded-lg border bg-card p-4 text-center shadow-sm">
                   <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold mb-2 ${r.color}`}>

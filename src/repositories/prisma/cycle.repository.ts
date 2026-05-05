@@ -11,8 +11,8 @@ function toDomain(c: Awaited<ReturnType<typeof prisma.cycle.findUnique>>): Cycle
     teamId: c.teamId ?? undefined,
     businessId: c.businessId,
     status: c.status as Cycle['status'],
-    startDate: c.startDate,
-    endDate: c.endDate,
+    startDate: c.startDate ?? undefined,
+    endDate: c.endDate ?? undefined,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };
@@ -27,7 +27,7 @@ export class PrismaCycleRepository implements ICycleRepository {
   async findByBusiness(businessId: string): Promise<Cycle[]> {
     const cycles = await prisma.cycle.findMany({
       where: { businessId },
-      orderBy: { startDate: 'desc' },
+      orderBy: { createdAt: 'desc' }
     });
     return cycles.map((c) => toDomain(c)!).filter(Boolean);
   }
@@ -35,7 +35,7 @@ export class PrismaCycleRepository implements ICycleRepository {
   async findActiveByBusiness(businessId: string): Promise<Cycle[]> {
     const cycles = await prisma.cycle.findMany({
       where: { businessId, status: 'active' },
-      orderBy: { startDate: 'desc' },
+      orderBy: { createdAt: 'desc' }
     });
     return cycles.map((c) => toDomain(c)!).filter(Boolean);
   }

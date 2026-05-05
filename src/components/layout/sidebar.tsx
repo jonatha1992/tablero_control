@@ -34,16 +34,16 @@ const superAdminItems = [
 ];
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/sectores', label: 'Departamentos', icon: Building2 },
-  { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare },
-  { href: '/dashboard/ciclos', label: 'Períodos', icon: Timer },
-  { href: '/dashboard/objetivos', label: 'Objetivos', icon: Target },
-  { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar },
-  { href: '/dashboard/cronograma', label: 'Cronograma', icon: GanttChart },
-  { href: '/dashboard/equipo', label: 'Equipo', icon: Users },
-  { href: '/dashboard/billing', label: 'Facturación', icon: CreditCard },
-  { href: '/dashboard/config', label: 'Configuración', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tourId: 'tour-nav-dashboard' },
+  { href: '/dashboard/sectores', label: 'Departamentos', icon: Building2, tourId: 'tour-nav-sectores' },
+  { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare, tourId: 'tour-nav-tareas' },
+  { href: '/dashboard/ciclos', label: 'Períodos', icon: Timer, tourId: undefined },
+  { href: '/dashboard/objetivos', label: 'Objetivos', icon: Target, tourId: undefined },
+  { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar, tourId: undefined },
+  { href: '/dashboard/cronograma', label: 'Cronograma', icon: GanttChart, tourId: undefined },
+  { href: '/dashboard/equipo', label: 'Equipo', icon: Users, tourId: 'tour-nav-equipo' },
+  { href: '/dashboard/billing', label: 'Facturación', icon: CreditCard, tourId: 'tour-nav-billing' },
+  { href: '/dashboard/config', label: 'Configuración', icon: Settings, tourId: undefined },
 ];
 
 interface SidebarProps {
@@ -104,6 +104,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
             <Link
               key={item.href}
               href={item.href}
+              id={item.tourId}
               className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive

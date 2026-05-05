@@ -9,9 +9,10 @@ interface MentionInputProps {
   onChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   placeholder?: string;
+  maxLength?: number;
 }
 
-export function MentionInput({ value, onChange, onSubmit, placeholder }: MentionInputProps) {
+export function MentionInput({ value, onChange, onSubmit, placeholder, maxLength }: MentionInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [query, setQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
@@ -80,6 +81,7 @@ export function MentionInput({ value, onChange, onSubmit, placeholder }: Mention
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        maxLength={maxLength}
         className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
       />
       {showSuggestions && filteredMembers.length > 0 && (

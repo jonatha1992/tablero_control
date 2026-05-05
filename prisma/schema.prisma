@@ -333,8 +333,8 @@ model Cycle {
   teamId      String?
   businessId  String
   status      String   @default("planning") // planning | active | completed | closed
-  startDate   DateTime
-  endDate     DateTime
+  startDate   DateTime?
+  endDate     DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -94,6 +94,7 @@ export function TaskComments({ task }: TaskCommentsProps) {
           onChange={setContent}
           onSubmit={handleSubmit}
           placeholder="Escribe un comentario... Usa @ para mencionar"
+          maxLength={1000}
         />
         <Button
           type="submit"

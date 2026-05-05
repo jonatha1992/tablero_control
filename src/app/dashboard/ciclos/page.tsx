@@ -39,13 +39,27 @@ export default function CiclosPage() {
   const [goal, setGoal] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [dateError, setDateError] = useState('');
+  const [serverError, setServerError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !startDate || !endDate) return;
+    setDateError('');
+    setServerError('');
+
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    if (startDate && endDate) {
+      if (new Date(endDate) <= new Date(startDate)) {
+        setDateError('La fecha de fin debe ser posterior a la de inicio');
+        return;
+      }
+    }
+
     createCycle.mutate(
       {
-        name: name.trim(),
+        name: trimmedName,
         goal: goal.trim() || undefined,
         startDate,
         endDate,
@@ -57,6 +71,11 @@ export default function CiclosPage() {
           setGoal('');
           setStartDate('');
           setEndDate('');
+          setDateError('');
+          setServerError('');
+        },
+        onError: (err: Error) => {
+          setServerError(err.message || 'Error al crear el período');
         },
       }
     );
@@ -116,6 +135,7 @@ export default function CiclosPage() {
                   placeholder="Ej: Semana del 5 al 11 de mayo"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   required
+                  maxLength={100}
                 />
               </div>
               <div>
@@ -126,6 +146,7 @@ export default function CiclosPage() {
                   onChange={(e) => setGoal(e.target.value)}
                   placeholder="Ej: Completar apertura de sucursal"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  maxLength={300}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -134,9 +155,8 @@ export default function CiclosPage() {
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => { setStartDate(e.target.value); setDateError(''); }}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    required
                   />
                 </div>
                 <div>
@@ -144,12 +164,14 @@ export default function CiclosPage() {
                   <input
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    onChange={(e) => { setEndDate(e.target.value); setDateError(''); }}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    required
                   />
                 </div>
               </div>
+              {(dateError || serverError) && (
+                <p className="text-sm text-destructive">{dateError || serverError}</p>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowModal(false)}>
                   Cancelar
@@ -189,12 +211,14 @@ function CycleCard({
         </span>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Calendar className="h-3.5 w-3.5" />
-        <span>
-          {format(new Date(cycle.startDate), 'd MMM', { locale: es })} — {format(new Date(cycle.endDate), 'd MMM', { locale: es })}
-        </span>
-      </div>
+      {cycle.startDate && cycle.endDate && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>
+            {format(new Date(cycle.startDate), 'd MMM', { locale: es })} — {format(new Date(cycle.endDate), 'd MMM', { locale: es })}
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 pt-2">
         {cycle.status === 'planning' && (

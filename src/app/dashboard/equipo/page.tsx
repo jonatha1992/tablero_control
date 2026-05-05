@@ -17,10 +17,10 @@ import type { UserRole } from '@/types/domain/user';
 
 const ROLE_TABS: { value: UserRole | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
-  { value: 'admin', label: 'Admin' },
+  { value: 'admin', label: 'Administrador' },
   { value: 'responsable', label: 'Responsable' },
   { value: 'miembro', label: 'Miembro' },
-  { value: 'viewer', label: 'Viewer' },
+  { value: 'viewer', label: 'Visualizador' },
 ];
 
 export default function EquipoPage() {
@@ -64,7 +64,7 @@ export default function EquipoPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
-          placeholder="Buscar por nombre o email..."
+          placeholder="Buscar por nombre o correo..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="sm:max-w-xs"

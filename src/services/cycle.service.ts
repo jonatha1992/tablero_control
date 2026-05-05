@@ -19,7 +19,7 @@ class CycleService {
     if (!data.name.trim()) {
       throw new Error('El nombre del período es requerido');
     }
-    if (data.endDate <= data.startDate) {
+    if (data.startDate && data.endDate && data.endDate <= data.startDate) {
       throw new Error('La fecha de fin debe ser posterior a la de inicio');
     }
     return cycleRepository.create(data);

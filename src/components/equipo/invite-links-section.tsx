@@ -9,10 +9,10 @@ import type { UserRole } from '@/types/domain/user';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   superadmin: 'Superadmin',
-  admin: 'Admin',
+  admin: 'Administrador',
   responsable: 'Responsable',
   miembro: 'Miembro',
-  viewer: 'Viewer',
+  viewer: 'Visualizador',
   pending: 'Pendiente',
 };
 

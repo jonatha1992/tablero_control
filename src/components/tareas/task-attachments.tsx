@@ -31,9 +31,17 @@ export function TaskAttachments({ task }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
   const updateTask = useUpdateTask();
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
   async function uploadFile(file: File) {
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError(`El archivo "${file.name}" supera los 10 MB`);
+      return;
+    }
+    setUploadError('');
     setUploading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
@@ -54,7 +62,7 @@ export function TaskAttachments({ task }: Props) {
       const current: string[] = task.attachmentUrls ?? [];
       updateTask.mutate({ id: task.id, data: { attachmentUrls: [...current, data.url] } });
     } catch (err) {
-      alert(`Error: ${(err as Error).message}`);
+      setUploadError(`Error: ${(err as Error).message}`);
     } finally {
       setUploading(false);
     }
@@ -93,6 +101,9 @@ export function TaskAttachments({ task }: Props) {
             <Upload className="h-5 w-5" />
             <p className="text-sm">Arrastrá archivos o hacé click para seleccionar</p>
             <p className="text-xs">Máx 10 MB · JPG, PNG, PDF, DOC, TXT</p>
+            {uploadError && (
+              <p className="text-xs text-destructive mt-1">{uploadError}</p>
+            )}
           </div>
         )}
         <input

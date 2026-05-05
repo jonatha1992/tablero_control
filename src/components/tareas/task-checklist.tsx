@@ -20,7 +20,10 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
   const completedCount = checklist.filter((i) => i.done).length;
   const progress = checklist.length > 0 ? Math.round((completedCount / checklist.length) * 100) : 0;
 
+  const isUpdating = updateTask.isPending;
+
   const handleToggle = (itemId: string) => {
+    if (isUpdating) return;
     const next = checklist.map((item) =>
       item.id === itemId ? { ...item, done: !item.done } : item
     );
@@ -28,7 +31,7 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
   };
 
   const handleAdd = () => {
-    if (!newItemText.trim()) return;
+    if (!newItemText.trim() || isUpdating) return;
     const next: ChecklistItem[] = [
       ...checklist,
       { id: `item-${Date.now()}`, text: newItemText.trim(), done: false },
@@ -39,6 +42,7 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
   };
 
   const handleDelete = (itemId: string) => {
+    if (isUpdating) return;
     const next = checklist.filter((item) => item.id !== itemId);
     updateTask.mutate({ id: task.id, data: { checklist: next } });
   };
@@ -108,9 +112,10 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
             }}
             placeholder="Nuevo ítem..."
             autoFocus
+            maxLength={200}
             className="flex-1 h-8 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
-          <Button size="sm" className="h-8 px-2" onClick={handleAdd} disabled={!newItemText.trim()}>
+          <Button size="sm" className="h-8 px-2" onClick={handleAdd} disabled={!newItemText.trim() || isUpdating}>
             <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>

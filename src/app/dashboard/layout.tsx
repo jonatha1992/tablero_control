@@ -11,6 +11,7 @@ import { Plus, MessageSquare, ClipboardList } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
 import { DictateTasksModal } from '@/components/tareas/dictate-tasks-modal';
+import { OnboardingTour } from '@/components/layout/onboarding-tour';
 
 function FabOption({ label, icon: Icon, onClick }: { label: string; icon: React.ElementType; onClick: () => void }) {
   return (
@@ -85,6 +86,7 @@ export default function DashboardLayout({
             </>
           )}
           <button
+            id="tour-fab"
             onClick={() => setFabOpen((v) => !v)}
             className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all"
             title="Crear tarea"
@@ -102,6 +104,8 @@ export default function DashboardLayout({
           open={isDictateModalOpen}
           onOpenChange={(open) => { if (!open) closeDictateModal(); }}
         />
+
+        <OnboardingTour />
       </div>
     </ProtectedRoute>
   );

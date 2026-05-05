@@ -6,8 +6,8 @@ export interface CreateCycleDTO {
   teamId?: string;
   businessId: string;
   status: CycleStatus;
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface UpdateCycleDTO {

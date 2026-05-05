@@ -69,11 +69,24 @@ function TaskPreviewCard({
           onChange={(e) => onChange({ ...task, title: e.target.value })}
           className="h-8 text-xs font-medium bg-background border-border flex-1"
           placeholder="Título de la tarea"
+          maxLength={200}
         />
         <button type="button" onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1">
           <X className="h-4 w-4" />
         </button>
       </div>
+      {task.description !== undefined && (
+        <div className="pl-7 mt-1.5">
+          <textarea
+            value={task.description ?? ''}
+            onChange={(e) => onChange({ ...task, description: e.target.value || undefined })}
+            placeholder="Descripción (opcional)"
+            maxLength={500}
+            rows={2}
+            className="w-full rounded border border-border bg-background px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary/20 resize-none"
+          />
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5 pl-7">
         <select
           value={task.priority}
@@ -286,7 +299,7 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
               </div>
               <div className="text-xs bg-muted/50 rounded-lg p-3 text-left space-y-1 max-w-[240px]">
                 <p className="font-medium text-foreground/60 mb-1.5">Ejemplos:</p>
-                <p>&ldquo;Login de usuarios, después el panel de admin&rdquo;</p>
+                <p>&ldquo;Inicio de sesión de usuarios, después el panel de administrador&rdquo;</p>
                 <p>&ldquo;Revisar el inventario del local centro&rdquo;</p>
                 <p>&ldquo;Limpieza de cocina, salón y baños para mañana&rdquo;</p>
               </div>

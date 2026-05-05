@@ -98,6 +98,7 @@ export function TaskSubtasks({ task }: TaskSubtasksProps) {
             }}
             placeholder="Nueva subtarea..."
             autoFocus
+            maxLength={200}
             className="flex-1 h-8 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
           <button

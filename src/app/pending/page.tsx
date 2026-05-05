@@ -50,7 +50,7 @@ export default function PendingPage() {
 
         <div className="rounded-lg border bg-muted/40 p-4 text-sm space-y-2">
           <p>
-            <span className="text-muted-foreground">Email:</span>{' '}
+            <span className="text-muted-foreground">Correo:</span>{' '}
             <span className="font-medium">{user?.email}</span>
           </p>
           <p>

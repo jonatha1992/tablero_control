@@ -31,6 +31,8 @@ export default function ObjetivosPage() {
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#3b82f6');
   const [targetDate, setTargetDate] = useState('');
+  const [dateError, setDateError] = useState('');
+  const [serverError, setServerError] = useState('');
 
   const objectivesWithProgress = useMemo(() => {
     return objectives.map((obj) => {
@@ -44,10 +46,24 @@ export default function ObjetivosPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    setDateError('');
+    setServerError('');
+
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    if (targetDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (new Date(targetDate) < today) {
+        setDateError('La fecha objetivo no puede ser anterior a hoy');
+        return;
+      }
+    }
+
     createObjective.mutate(
       {
-        name: name.trim(),
+        name: trimmedName,
         description: description.trim() || undefined,
         color,
         targetDate: targetDate || undefined,
@@ -59,6 +75,11 @@ export default function ObjetivosPage() {
           setDescription('');
           setColor('#3b82f6');
           setTargetDate('');
+          setDateError('');
+          setServerError('');
+        },
+        onError: (err: Error) => {
+          setServerError(err.message || 'Error al crear el objetivo');
         },
       }
     );
@@ -117,6 +138,7 @@ export default function ObjetivosPage() {
                   placeholder="Ej: Apertura Sucursal Palermo"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   required
+                  maxLength={100}
                 />
               </div>
               <div>
@@ -127,6 +149,7 @@ export default function ObjetivosPage() {
                   placeholder="Ej: Completar todos los pasos para abrir la nueva sucursal"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   rows={3}
+                  maxLength={500}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -144,11 +167,14 @@ export default function ObjetivosPage() {
                   <input
                     type="date"
                     value={targetDate}
-                    onChange={(e) => setTargetDate(e.target.value)}
+                    onChange={(e) => { setTargetDate(e.target.value); setDateError(''); }}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
                 </div>
               </div>
+              {(dateError || serverError) && (
+                <p className="text-sm text-destructive">{dateError || serverError}</p>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowModal(false)}>
                   Cancelar

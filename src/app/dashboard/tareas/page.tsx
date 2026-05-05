@@ -140,10 +140,12 @@ export default function TareasPage() {
           </DropdownMenu>
         </div>
 
-        <Button size="sm" onClick={openCreateModal}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Nueva tarea
-        </Button>
+        {viewMode !== 'board' && (
+          <Button size="sm" onClick={openCreateModal}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            Nueva tarea
+          </Button>
+        )}
       </div>
 
       {/* Vista activa */}

@@ -50,12 +50,14 @@ export default function SectoresPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button onClick={handleCreate} className="shadow-sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo Departamento
-        </Button>
-      </div>
+      {sectors.length > 0 && (
+        <div className="flex justify-end">
+          <Button onClick={handleCreate} className="shadow-sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Departamento
+          </Button>
+        </div>
+      )}
 
       <SectorList
         sectors={sectors}

@@ -21,10 +21,10 @@ import { useAuth } from '@/hooks/auth-context';
 import type { User, UserRole } from '@/types/domain/user';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
-  { value: 'admin', label: 'Admin', description: 'Gestión completa del negocio' },
+  { value: 'admin', label: 'Administrador', description: 'Gestión completa del negocio' },
   { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores' },
   { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas' },
-  { value: 'viewer', label: 'Viewer', description: 'Solo lectura' },
+  { value: 'viewer', label: 'Visualizador', description: 'Solo lectura' },
 ];
 
 interface Props {
@@ -61,14 +61,15 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!member) return;
-    if (!name.trim() || !role) return;
+    const trimmedName = name.trim();
+    if (!trimmedName || !role) return;
     setError('');
 
     mutate(
       {
         id: member.id,
         data: {
-          name: name.trim(),
+          name: trimmedName,
           role,
           locationId: locationId || undefined,
           customRoleIds,
@@ -102,11 +103,12 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              maxLength={100}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">Correo electrónico</label>
             <Input
               value={member?.email || ''}
               disabled

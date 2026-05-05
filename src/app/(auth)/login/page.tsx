@@ -12,7 +12,9 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited } = useAuth();
   const router = useRouter();
@@ -29,12 +31,24 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    const trimmedEmail = email.trim();
+    const errors: Record<string, string> = {};
+    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
+    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setLoading(true);
     try {
-      await login(email, password);
+      await login(trimmedEmail, password);
       router.push(redirect);
     } catch (err) {
-      setError('Email o contraseña incorrectos');
+      setError('Correo o contraseña incorrectos');
       console.error(err);
     } finally {
       setLoading(false);
@@ -52,7 +66,7 @@ function LoginForm() {
       if (code === 'auth/popup-closed-by-user') {
         setError('');
       } else if (code === 'auth/unauthorized-domain') {
-        setError('Google Sign-In no está configurado para este dominio. Contacta al administrador.');
+        setError('Inicio de sesión con Google no está configurado para este dominio. Contactá al administrador.');
       } else {
         setError('Error al iniciar sesión con Google');
       }
@@ -142,23 +156,25 @@ function LoginForm() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-3 text-muted-foreground tracking-wider">O continuá con email</span>
+              <span className="bg-card px-3 text-muted-foreground tracking-wider">O continuá con correo</span>
             </div>
           </div>
 
           {/* Formulario email/password */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <label htmlFor="email" className="text-sm font-medium">Correo</label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
+                placeholder="tu@correo.com"
                 required
+                maxLength={150}
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               />
+              {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">

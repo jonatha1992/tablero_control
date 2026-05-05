@@ -35,11 +35,17 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     if (!businessId) return;
     setError('');
 
+    const parsedMaxUses = parseInt(maxUses, 10) || 0;
+    if (parsedMaxUses < 0) {
+      setError('El límite de usos no puede ser negativo');
+      return;
+    }
+
     mutate(
       {
         businessId,
         locationId: locationId || undefined,
-        maxUses: parseInt(maxUses, 10) || 0,
+        maxUses: parsedMaxUses,
         expiresInDays: parseInt(expiresInDays, 10) || 0,
       },
       {
@@ -168,6 +174,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                     value={maxUses}
                     onChange={(e) => setMaxUses(e.target.value)}
                     placeholder="0 = ilimitado"
+                    maxLength={10}
                   />
                   <p className="text-xs text-muted-foreground">0 = ilimitado</p>
                 </div>

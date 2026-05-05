@@ -200,6 +200,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) return;
     createTask.mutate(
       {
         title, description, status, priority, type,
@@ -265,6 +266,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Título de la tarea"
               required
+              maxLength={200}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
@@ -276,6 +278,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe la tarea..."
               rows={2}
+              maxLength={2000}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
@@ -499,7 +502,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!title || createTask.isPending}>
+            <Button type="submit" disabled={!title.trim() || createTask.isPending}>
               {createTask.isPending ? 'Creando...' : 'Crear tarea'}
             </Button>
           </DialogFooter>
