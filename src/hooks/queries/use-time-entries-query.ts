@@ -34,7 +34,7 @@ export function useCreateTimeEntry() {
 export function useDeleteTimeEntry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, taskId }: { id: string; taskId: string }) =>
+    mutationFn: ({ id, taskId: _taskId }: { id: string; taskId: string }) =>
       timeEntriesApi.delete(id),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: timeEntryKeys.byTask(variables.taskId) });

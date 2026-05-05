@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import type { User } from '@/types';
 

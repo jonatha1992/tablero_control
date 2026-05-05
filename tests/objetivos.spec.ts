@@ -66,7 +66,7 @@ test.describe('Objetivos / Iniciativas', () => {
 
     // Verificar que existe algún indicador de progreso
     const progressBar = page.locator('[role="progressbar"], [class*="progress"]');
-    const hasProgress = await progressBar.count() > 0;
+    const _hasProgress = await progressBar.count() > 0;
     // Es informativo — no falla si no existe
     expect(count).toBeGreaterThanOrEqual(0);
   });

@@ -33,7 +33,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'time_entry.create' as any,
+    action: 'time_entry.create',
     targetType: 'TIME_ENTRY',
     targetId: entry.id,
     metadata: { taskId, hours: body.hours },

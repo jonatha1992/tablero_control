@@ -5,7 +5,7 @@ import { useTimeEntriesQuery, useCreateTimeEntry, useDeleteTimeEntry } from '@/h
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Clock, Trash2, User } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 

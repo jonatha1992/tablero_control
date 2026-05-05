@@ -27,7 +27,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'time_entry.delete' as any,
+    action: 'time_entry.delete',
     targetType: 'TIME_ENTRY',
     targetId: id,
     metadata: { taskId: entry.taskId },

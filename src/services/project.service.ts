@@ -1,6 +1,14 @@
 import { prisma } from '@/lib/prisma';
+import { type ProjectStatus } from '@prisma/client';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 import type { PlanId } from '@/types/domain/subscription';
+
+export class ProjectLimitError extends Error {
+  constructor(public readonly limit: number, public readonly current: number) {
+    super('projects_limit_exceeded');
+    this.name = 'ProjectLimitError';
+  }
+}
 
 export interface CreateProjectInput {
   name: string;
@@ -46,10 +54,7 @@ class ProjectService {
           where: { businessId: data.businessId },
         });
         if (current >= limit) {
-          const error = new Error('projects_limit_exceeded');
-          (error as any).limit = limit;
-          (error as any).current = current;
-          throw error;
+          throw new ProjectLimitError(limit, current);
         }
       }
     }
@@ -74,7 +79,7 @@ class ProjectService {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.teamId !== undefined && { teamId: data.teamId }),
-        ...(data.status !== undefined && { status: data.status as any }),
+        ...(data.status !== undefined && { status: data.status as ProjectStatus }),
         ...(data.startDate !== undefined && { startDate: data.startDate }),
         ...(data.endDate !== undefined && { endDate: data.endDate }),
       },

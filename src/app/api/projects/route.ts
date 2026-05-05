@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { projectService } from '@/services/project.service';
+import { projectService, ProjectLimitError } from '@/services/project.service';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
@@ -60,15 +60,15 @@ export const POST = handle(async (request: NextRequest) => {
       actorId: user.uid,
       actorRole: user.role,
       businessId: targetBusinessId,
-      action: 'project.create' as any,
+      action: 'project.create',
       targetType: 'PROJECT',
       targetId: project.id,
       metadata: { name: project.name },
     });
 
     return NextResponse.json(project, { status: 201 });
-  } catch (error: any) {
-    if (error.message === 'projects_limit_exceeded') {
+  } catch (error: unknown) {
+    if (error instanceof ProjectLimitError) {
       return NextResponse.json(
         { error: 'projects_limit_exceeded', limit: error.limit, current: error.current },
         { status: 429 }

@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Objective, ObjectiveStatus } from '@/types/domain/objective';
 
-const STATUS_LABELS: Record<ObjectiveStatus, string> = {
+const _STATUS_LABELS: Record<ObjectiveStatus, string> = {
   active: 'Activo',
   completed: 'Completado',
   archived: 'Archivado',

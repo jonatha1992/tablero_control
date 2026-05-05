@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/projects/route';
-import { projectService } from '@/services/project.service';
+import { projectService, ProjectLimitError } from '@/services/project.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 
@@ -10,12 +10,16 @@ vi.mock('@/lib/api/auth-helpers', () => ({
   requireRole: vi.fn(() => null),
 }));
 vi.mock('@/lib/api/audit', () => ({ writeAuditLog: vi.fn() }));
-vi.mock('@/services/project.service', () => ({
-  projectService: {
-    getByBusiness: vi.fn(),
-    create: vi.fn(),
-  },
-}));
+vi.mock('@/services/project.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/project.service')>();
+  return {
+    ...actual,
+    projectService: {
+      getByBusiness: vi.fn(),
+      create: vi.fn(),
+    },
+  };
+});
 
 const mockRequireUser = vi.mocked(requireUser);
 const mockGetProjects = vi.mocked(projectService.getByBusiness);
@@ -93,9 +97,7 @@ describe('POST /api/projects', () => {
   });
 
   it('retorna 429 si se supera límite de proyectos del plan', async () => {
-    const limitError = new Error('projects_limit_exceeded');
-    (limitError as any).limit = 3;
-    (limitError as any).current = 3;
+    const limitError = new ProjectLimitError(3, 3);
     mockCreate.mockRejectedValueOnce(limitError);
 
     const req = new NextRequest('http://localhost/api/projects', {

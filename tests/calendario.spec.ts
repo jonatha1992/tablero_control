@@ -51,7 +51,7 @@ test.describe('Calendario', () => {
 
     // Verificar si se abre modal (puede abrir modal de crear tarea)
     const modal = page.locator('[role="dialog"]');
-    const modalVisible = await modal.first().isVisible();
+    const _modalVisible = await modal.first().isVisible();
     // Puede que no abra modal si no está implementado — solo verificamos que no crashea
     expect(true).toBe(true);
   });

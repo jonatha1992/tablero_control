@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cyclesApi } from '@/lib/api/cycles';
 import { cycleKeys } from '@/hooks/queries/use-cycles-query';
-import type { Cycle } from '@/types/domain/cycle';
 
 export function useCreateCycle() {
   const queryClient = useQueryClient();

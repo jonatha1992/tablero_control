@@ -10,7 +10,7 @@ export function useDeleteComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ commentId, taskId }: { commentId: string; taskId: string }) =>
+    mutationFn: ({ commentId, taskId: _taskId }: { commentId: string; taskId: string }) =>
       commentsApi.delete(commentId),
     onMutate: async ({ commentId, taskId }) => {
       await queryClient.cancelQueries({ queryKey: commentKeys.byTask(taskId) });

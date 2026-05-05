@@ -45,7 +45,12 @@ export type AuditAction =
   | 'cycle.delete'
   | 'objective.create'
   | 'objective.update'
-  | 'objective.delete';
+  | 'objective.delete'
+  | 'project.create'
+  | 'project.update'
+  | 'project.delete'
+  | 'time_entry.create'
+  | 'time_entry.delete';
 
 export interface AuditLog {
   id: string;

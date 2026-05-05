@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { projectService } from '@/services/project.service';
+import { projectService, ProjectLimitError } from '@/services/project.service';
 import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/mercadopago/plan-config', () => ({
@@ -71,9 +71,9 @@ describe('ProjectService.create — límites de plan', () => {
       .create({ name: 'Nuevo', businessId: 'biz-1' }, 'admin', 'basic')
       .catch((e) => e);
 
-    expect(error.message).toBe('projects_limit_exceeded');
-    expect((error as any).limit).toBe(3);
-    expect((error as any).current).toBe(3);
+    expect(error).toBeInstanceOf(ProjectLimitError);
+    expect((error as ProjectLimitError).limit).toBe(3);
+    expect((error as ProjectLimitError).current).toBe(3);
     expect(prisma.project.create).not.toHaveBeenCalled();
   });
 

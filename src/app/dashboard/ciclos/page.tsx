@@ -6,7 +6,7 @@ import { useCreateCycle } from '@/hooks/mutations/use-create-cycle';
 import { useUpdateCycle, useDeleteCycle, useStartCycle, useCompleteCycle } from '@/hooks/mutations/use-update-cycle';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
-import { Plus, Play, CheckCircle, X, Calendar, Target, Trash2 } from 'lucide-react';
+import { Plus, Play, CheckCircle, X, Calendar, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Cycle, CycleStatus } from '@/types/domain/cycle';
@@ -29,7 +29,7 @@ export default function CiclosPage() {
   const { user } = useAuth();
   const { data: cycles = [], isLoading } = useCyclesQuery(user?.businessId ?? '');
   const createCycle = useCreateCycle();
-  const updateCycle = useUpdateCycle();
+  const _updateCycle = useUpdateCycle();
   const deleteCycle = useDeleteCycle();
   const startCycle = useStartCycle();
   const completeCycle = useCompleteCycle();

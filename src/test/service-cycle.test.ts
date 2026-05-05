@@ -66,6 +66,7 @@ describe('CycleService.createCycle', () => {
     const result = await cycleService.createCycle({
       name: 'Sprint 1',
       businessId: 'biz-1',
+      status: 'planning',
       startDate: new Date('2026-05-01'),
       endDate: new Date('2026-05-15'),
     });
@@ -74,7 +75,7 @@ describe('CycleService.createCycle', () => {
   });
 
   it('lanza error si nombre vacío', async () => {
-    await expect(cycleService.createCycle({ name: '  ', businessId: 'biz-1' })).rejects.toThrow(
+    await expect(cycleService.createCycle({ name: '  ', businessId: 'biz-1', status: 'planning' })).rejects.toThrow(
       'El nombre del período es requerido'
     );
     expect(mockRepo.create).not.toHaveBeenCalled();
@@ -85,6 +86,7 @@ describe('CycleService.createCycle', () => {
       cycleService.createCycle({
         name: 'Sprint',
         businessId: 'biz-1',
+        status: 'planning',
         startDate: new Date('2026-05-10'),
         endDate: new Date('2026-05-01'),
       })
@@ -95,13 +97,13 @@ describe('CycleService.createCycle', () => {
   it('lanza error si endDate === startDate', async () => {
     const same = new Date('2026-05-10');
     await expect(
-      cycleService.createCycle({ name: 'X', businessId: 'biz-1', startDate: same, endDate: same })
+      cycleService.createCycle({ name: 'X', businessId: 'biz-1', status: 'planning', startDate: same, endDate: same })
     ).rejects.toThrow('La fecha de fin debe ser posterior');
   });
 
   it('permite creación sin fechas', async () => {
     mockRepo.create.mockResolvedValueOnce(mockCycle as never);
-    await cycleService.createCycle({ name: 'Sin fecha', businessId: 'biz-1' });
+    await cycleService.createCycle({ name: 'Sin fecha', businessId: 'biz-1', status: 'planning' });
     expect(mockRepo.create).toHaveBeenCalledOnce();
   });
 });

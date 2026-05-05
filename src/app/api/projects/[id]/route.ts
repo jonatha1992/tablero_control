@@ -36,7 +36,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'project.update' as any,
+    action: 'project.update',
     targetType: 'PROJECT',
     targetId: id,
     metadata: { name: project.name },
@@ -59,7 +59,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
-    action: 'project.delete' as any,
+    action: 'project.delete',
     targetType: 'PROJECT',
     targetId: id,
   });

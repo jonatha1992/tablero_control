@@ -38,7 +38,7 @@ export default function TareasPage() {
   const taskFilters = selectedProjectId ? { projectId: [selectedProjectId] as string[] } : undefined;
   const { data: tasks = [], isLoading, isError, error } = useTasksQuery(taskFilters);
   const updateTask = useUpdateTask();
-  const createTask = useCreateTask();
+  const _createTask = useCreateTask();
   const { openCreateModal } = useKanbanUIStore();
 
   const handleEventDrop = (taskId: string, newDate: Date) => {
