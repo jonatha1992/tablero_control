@@ -115,7 +115,9 @@
       "Bash(Get-ChildItem *)",
       "Bash(grep -i \"i\\\\\\\\\\\\\\\\\\\\[token\\\\\\\\\\\\\\\\\\\\]\")",
       "Bash(xargs wc -l)",
-      "Bash(powershell *)"
+      "Bash(powershell *)",
+      "Bash(npm pkg *)",
+      "Bash(Select-String \"zod\")"
     ]
   }
 }

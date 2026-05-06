@@ -115,18 +115,6 @@ class TeamService {
     }
   }
 
-  async handleManagerDeletion(userId: string, businessId: string): Promise<void> {
-    const otherAdmins = await userRepository.findActiveAdminsByBusiness(businessId, userId);
-    if (otherAdmins.length > 0) {
-      await locationRepository.bulkUpdateManagerId(userId, otherAdmins[0].id);
-    } else {
-      const managed = await locationRepository.findByManagerId(userId);
-      for (const loc of managed) {
-        await prisma.task.deleteMany({ where: { locationId: loc.id, projectId: null } });
-      }
-      await locationRepository.deleteByManagerId(userId);
-    }
-  }
 }
 
 export const teamService = new TeamService();
