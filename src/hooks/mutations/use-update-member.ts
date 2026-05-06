@@ -4,6 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { membersApi } from '@/lib/api/members';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UpdateMemberDTO } from '@/types/dto/team.dto';
+import type { User } from '@/types/domain/user';
+import { useAuth } from '@/hooks/auth-context';
 import { toast } from 'sonner';
 
 export function useUpdateMember() {
@@ -24,15 +26,26 @@ export function useUpdateMember() {
 
 export function useRemoveMember() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: (id: string) => membersApi.remove(id),
+    onMutate: async (id: string) => {
+      const key = memberKeys.byBusiness(user?.businessId ?? '');
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<User[]>(key);
+      queryClient.setQueryData<User[]>(key, (old = []) => old.filter((m) => m.id !== id));
+      return { previous, key };
+    },
+    onError: (_err: Error, _id: string, context) => {
+      if (context?.previous) queryClient.setQueryData(context.key, context.previous);
+      toast.error('Error al eliminar miembro');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: memberKeys.all });
       toast.success('Miembro eliminado del equipo');
     },
-    onError: (err: Error) => {
-      toast.error('Error al eliminar miembro', { description: err.message });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
     },
   });
 }

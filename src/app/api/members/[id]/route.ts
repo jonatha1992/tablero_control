@@ -69,7 +69,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     await teamService.handleManagerDeletion(id, target.businessId);
   }
 
-  await writeAuditLog({
+  void writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,
