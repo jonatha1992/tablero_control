@@ -1,82 +1,134 @@
-# 📖 Guía de Usuario - Tablero de Control
+# Guía de Usuario - Tablero de Control
 
 ## Acceso al Sistema
 
 ### Inicio de Sesión
 1. Navega a `http://localhost:3000`
-2. Ingresa tu email y contraseña
-3. Haz clic en "Iniciar sesión"
+2. Ingresa tu email y contraseña, o usa "Continuar con Google"
+3. Los superadmins son redirigidos automáticamente a `/superadmin`; el resto a `/dashboard`
 
-### Registro (solo admin puede crear usuarios)
-1. Haz clic en "Regístrate" en la pantalla de login
-2. Completa el formulario
-3. El rol por defecto es "member" — los admins pueden cambiarlo en configuración
+### Registro
+- Abre solo para emails en la lista `SUPERADMIN_EMAILS` (auto-provisioning) o por invitación de un admin
+- El admin invita miembros desde `/dashboard/equipo` — llega un email con enlace de activación
 
 ## Dashboard Principal
 
-El dashboard es tu centro de control. Aquí encontrarás:
-
-### KPIs (Indicadores Clave)
-- **Tareas Activas**: Número total de tareas en progreso
-- **Completadas Hoy**: Tareas finalizadas hoy
-- **Bloqueadas**: Tareas que necesitan atención
-- **Velocity**: Ritmo de completitud semanal
-
-### Tareas Recientes
-Lista de las últimas tareas creadas o modificadas con:
-- Estado (Backlog, Por hacer, En progreso, En revisión, Completada, Bloqueada)
-- Prioridad (Baja, Media, Alta, Urgente)
-- Persona asignada
-
-### Acciones Rápidas
-Accesos directos a las secciones más usadas.
+Centro de control con KPIs en tiempo real:
+- **Tareas Activas** — tareas en progreso en el negocio
+- **Completadas Hoy** — finalizadas en el día
+- **Bloqueadas** — requieren atención
+- **Velocity** — ritmo de completitud semanal
 
 ## Módulo de Tareas
 
-> ⏳ En desarrollo
+Acceso desde `/dashboard/tareas`. Cuatro vistas disponibles:
 
-Cuando esté disponible podrás:
-- **Vista Lista**: Tabla con sorting, filtros y bulk actions
-- **Vista Kanban**: Columnas con drag & drop entre estados
-- **Detalle**: Información completa de cada tarea, subtareas y comentarios
+### Kanban (`/dashboard/tareas`)
+Vista principal de tablero. Columnas:
+- **Backlog** → **Por hacer** → **En progreso** → **En revisión** → **Completada** → **Bloqueada**
 
-## Calendario
+Funcionalidades:
+- **Drag & drop** entre columnas — arrastra tarjetas para cambiar estado
+- **Selección múltiple** — selecciona varias tareas y mueve/elimina en lote
+- **Filtros** — búsqueda por texto, prioridad, ubicación
+- **Dictado AI** — crea tareas por voz con transcripción Whisper + extracción LLM (detecta asignados, fechas, prioridad, tags, recurrencia)
+- **Subtareas** — tareas anidadas visibles en el modal de detalle
+- **Archivos adjuntos** — sube imágenes/documentos (Cloudinary)
+- **Comentarios** — hilo de discusión por tarea
+- **Registro de tiempo** — carga horas trabajadas por tarea
+- **Recurrencia** — tareas que se repiten (diaria/semanal/mensual/personalizada). Al completar una tarea recurrente se crea automáticamente la siguiente ocurrencia
 
-> ⏳ En desarrollo
+### Agenda (`/dashboard/tareas/agenda`)
+Vista inteligente estilo Toki. Clasifica tareas automáticamente en secciones:
+- **Foco** — las más urgentes del día según scoring
+- **Vencidas** — pasaron su fecha límite sin completar
+- **Hoy con hora** — tienen fecha+hora hoy
+- **Para hoy** — fecha de hoy sin hora específica
+- **Esta semana** — dentro de los próximos 7 días
+- **Próximamente** — más de 7 días
+- **Sin fecha** — tareas sin fecha asignada
+- **Completadas** — finalizadas (colapsadas por defecto)
 
-Funcionalidades planificadas:
-- **Vista Mes**: Calendario mensual con tareas marcadas
-- **Vista Semana**: Time grid semanal
-- **Vista Día**: Agenda detallada
-- **Drag & Drop**: Mover tareas entre fechas
-- **Recurring Tasks**: Tareas recurrentes (diaria, semanal, mensual)
+Cada sección es colapsable. El score se calcula por prioridad + estado + si estás asignado/eres creador + horas vencidas.
 
-## Reportes
+### Calendario (`/dashboard/tareas/calendario`)
+Vista mensual con FullCalendar. Muestra tareas con `dueDate` como eventos. Soporta:
+- Vista mes / semana / lista
+- Clic en tarea abre modal de detalle
+- Tareas con hora muestran el horario exacto
 
-> ⏳ En desarrollo
+### Cronograma (`/dashboard/tareas/cronograma`)
+Vista Gantt para visualizar tareas en el tiempo.
 
-Tipos de reportes disponibles:
-- **Diario**: Resumen de actividad del día
-- **Semanal**: Análisis de la semana
-- **Personalizado**: Reportes bajo demanda
+## Equipo (`/dashboard/equipo`)
 
-## Equipo
+Gestión de miembros del negocio:
+- **Lista de miembros** con rol, ubicación asignada y estado
+- **Invitar miembro** — envía email de invitación con rol preseleccionado
+- **Editar miembro** — cambiar rol, ubicación, activar/desactivar
+- **Eliminar miembro** — con confirmación
 
-> ⏳ En desarrollo
+### Roles personalizados (`/dashboard/equipo/roles`)
+Los admins pueden crear roles custom con permisos granulares por módulo (tareas, ubicaciones, equipos, usuarios, reportes, facturación, adjuntos). Los roles custom heredan de un rol base (`responsable`, `miembro` o `viewer`).
 
-Gestión de miembros del equipo:
-- Ver carga de trabajo por persona
-- Asignar tareas
-- Configurar roles y permisos
+## Sectores (`/dashboard/sectores`)
 
-## Configuración
+Gestión de ubicaciones/locales del negocio:
+- Crear, editar y eliminar sectores
+- Asignar responsable
+- Ver miembros asignados a cada sector
 
-> ⏳ En desarrollo
+## Ciclos y Objetivos
 
-Opciones del sistema:
-- Preferencias de usuario (tema, notificaciones)
-- Configuración de proyecto
-- Integraciones
+### Ciclos (`/dashboard/ciclos`)
+Períodos de trabajo (sprints). Cada ciclo puede contener tareas. Al mover una tarea a un ciclo se valida que pertenezca al mismo negocio.
+
+### Objetivos (`/dashboard/objetivos`)
+Iniciativas de alto nivel. Pueden agrupar tareas y tener progreso calculado.
+
+## Billing (`/dashboard/billing`)
+
+- Ver plan actual y límites (usuarios, ubicaciones, proyectos)
+- Upgrade de plan — checkout MercadoPago
+- Historial de facturas
+- Cancelar suscripción
+
+## Configuración (`/dashboard/config`)
+
+- Datos del negocio (nombre, logo)
+- Preferencias de notificaciones (email / push)
+- Layout del dashboard
+
+## Panel Superadmin (`/superadmin`)
+
+Solo para emails en `SUPERADMIN_EMAILS` (TecnoFusión):
+
+| Sección | Descripción |
+|---------|-------------|
+| `/superadmin/planes` | Editar precios y límites de cada plan (free/basic/pro/enterprise) |
+| `/superadmin/businesses` | Ver y gestionar todos los negocios registrados |
+| `/superadmin/users` | Ver y gestionar todos los usuarios del sistema |
+| `/superadmin/subscriptions` | Estado de suscripciones activas |
+| `/superadmin/audit` | Log de auditoría de todas las acciones |
+
+## Roles y Permisos
+
+| Rol | Capacidades |
+|-----|-------------|
+| `superadmin` | Acceso total al sistema (TecnoFusión) |
+| `admin` | Gestión completa de su negocio — usuarios, tareas, config, billing |
+| `responsable` | Gestiona su local/sector — crea/edita tareas de su área |
+| `miembro` | Crea y gestiona sus propias tareas, ve las del equipo |
+| `viewer` | Solo lectura |
+
+Los custom roles permiten permisos granulares por módulo dentro de estas categorías.
+
+## Notificaciones Push
+
+Si el navegador lo permite, el sistema envía notificaciones push (Firebase FCM) para:
+- Tarea asignada
+- Comentario en tarea donde participas
+- Mención en comentario
 
 ## Atajos de Teclado
 
@@ -85,31 +137,9 @@ Opciones del sistema:
 | `Ctrl+K` | Abrir búsqueda global |
 | `Ctrl+N` | Nueva tarea |
 | `Esc` | Cerrar modal |
-| `?` | Ver atajos |
-
-## Roles y Permisos
-
-### Admin
-- Gestión total del sistema
-- Crear/eliminar usuarios
-- Configurar integraciones
-- Ver todos los datos
-
-### Manager
-- Crear/editar/eliminar tareas
-- Ver reportes y métricas
-- Asignar tareas al equipo
-- Resolver alertas
-
-### Member
-- Ver tareas asignadas
-- Actualizar estado de tareas propias
-- Ver dashboard básico
-- Recibir notificaciones
 
 ## Soporte
 
-Para problemas o preguntas:
-1. Revisa la documentación en `/docs`
-2. Contacta al administrador del sistema
-3. Revisa los logs en Firebase Emulator UI (`http://localhost:4000`)
+1. Revisa los logs en Firebase Emulator UI (`http://localhost:4000`)
+2. Consulta la documentación técnica en `/docs`
+3. Contacta al administrador del sistema

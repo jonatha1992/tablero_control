@@ -44,42 +44,61 @@ npm run test:coverage
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/tasks/route';
+import { requireUser } from '@/lib/api/auth-helpers';
+import { prisma } from '@/lib/prisma';
 
-// Mockear requireUser
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
 }));
 
-// Mockear repositorio
-vi.mock('@/repositories/index', () => ({
-  taskRepository: {
-    findAll: vi.fn(),
-    create: vi.fn(),
-  },
-}));
+// authedUser SIEMPRE necesita el campo `data`
+const authedUser = {
+  uid: 'user-1',
+  role: 'admin',
+  businessId: 'biz-1',
+  email: 'admin@biz.com',
+  name: 'Admin',
+  data: { id: 'user-1', role: 'admin', businessId: 'biz-1' }, // requerido
+};
+
+// Rutas que usan getTaskBusinessId() necesitan mock de prisma.task.findUnique
+beforeEach(() => {
+  vi.mocked(requireUser).mockResolvedValue(authedUser as never);
+  vi.mocked(prisma.task.findUnique).mockResolvedValue({
+    project: { businessId: 'biz-1' },
+    location: null,
+    creator: null,
+  } as never);
+});
 
 describe('GET /api/tasks', () => {
   it('returns tasks for authenticated user', async () => {
-    vi.mocked(requireUser).mockResolvedValue({
-      uid: 'user-1',
-      role: 'admin',
-      businessId: 'biz-1',
-      data: { /* User */ },
-    });
-    vi.mocked(taskRepository.findAll).mockResolvedValue([]);
-
-    const req = new NextRequest('http://localhost/api/tasks');
+    const req = new NextRequest('http://localhost/api/tasks?businessId=biz-1');
     const res = await GET(req);
-
     expect(res.status).toBe(200);
   });
 });
 ```
 
+### Fixtures de usuario con memberships
+
+Los fixtures de usuario deben incluir `memberships` para evitar que la ruta de auto-provisioning entre a crear un nuevo business:
+
+```typescript
+const dbUser = {
+  id: 'uid-real',
+  email: 'user@test.com',
+  role: 'admin',
+  businessId: 'biz-1',
+  isActive: true,
+  memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }], // requerido
+};
+```
+
 ### Componentes
 
 ```typescript
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { KanbanCard } from '@/components/tareas/kanban-card';
 
 describe('KanbanCard', () => {
@@ -95,7 +114,6 @@ describe('KanbanCard', () => {
 ```typescript
 import { renderHook, waitFor } from '@testing-library/react';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
-import { createQueryWrapper } from './test-utils';
 
 vi.mock('@/lib/api/tasks', () => ({
   tasksApi: { getAll: vi.fn().mockResolvedValue([]) },
@@ -106,7 +124,6 @@ describe('useTasksQuery', () => {
     const { result } = renderHook(() => useTasksQuery(), {
       wrapper: createQueryWrapper(),
     });
-
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
   });
@@ -131,21 +148,56 @@ describe('can()', () => {
 
 ## Archivos de test existentes
 
+### API Routes
+
 | Archivo | Qué cubre |
 |---------|-----------|
-| `api-tasks.test.ts` | CRUD de tareas, move, permisos |
-| `api-members.test.ts` | CRUD de miembros |
+| `api-tasks.test.ts` | GET /tasks (filtros, businessId, creatorId), POST /tasks (RBAC creatorId) |
+| `api-task-detail.test.ts` | GET/PATCH/DELETE /tasks/[id], subtareas |
+| `api-comments.test.ts` | GET/POST /tasks/[id]/comments, 404 si tarea no existe |
+| `api-time-entries.test.ts` | GET/POST /tasks/[id]/time-entries, validación hours > 0 |
+| `api-members.test.ts` | CRUD de miembros, límite por plan (429) |
 | `api-locations.test.ts` | CRUD de locales |
-| `api-superadmin.test.ts` | Endpoints superadmin |
-| `audit.test.ts` | writeAuditLog |
-| `auth-helpers.test.ts` | requireUser, manejo de tokens |
-| `permissions-matrix.test.ts` | ROLE_MATRIX, can() |
-| `permissions-resolve.test.ts` | resolvePermissions, custom roles |
-| `permissions-tenant-guard.test.ts` | assertSameTenant, isSameTenant |
+| `api-projects.test.ts` | CRUD de tableros, tenant guard |
+| `api-cycles.test.ts` | CRUD de ciclos, cross-tenant task injection guard |
+| `api-objectives.test.ts` | CRUD de objetivos, cross-tenant task injection guard |
+| `api-business.test.ts` | GET config, subscription |
+| `api-superadmin.test.ts` | Endpoints superadmin (businesses, users, metrics, audit) |
+| `api-auth-profile.test.ts` | GET /auth/profile — find by UID, link by email, superadmin auto-provisioning |
+| `api-auth-register.test.ts` | POST /auth/register |
+| `api-upload.test.ts` | POST /upload — avatar, attachment, tenant guard |
+
+### Auth & Permisos
+
+| Archivo | Qué cubre |
+|---------|-----------|
+| `auth-helpers.test.ts` | requireUser — token válido, 401, carga User desde PG |
+| `permissions-matrix.test.ts` | ROLE_MATRIX, can() por rol |
+| `permissions-resolve.test.ts` | resolvePermissions, custom roles con PermissionSet |
+| `permissions-tenant-guard.test.ts` | assertSameTenant, isSameTenant, assertResourceBelongsToBusiness |
+| `audit.test.ts` | writeAuditLog — todas las acciones auditadas |
+
+### Hooks
+
+| Archivo | Qué cubre |
+|---------|-----------|
 | `hooks-tasks-query.test.ts` | useTasksQuery |
 | `hooks-members-query.test.ts` | useMembersQuery |
-| `hooks-task-mutations.test.ts` | useCreateTask, useUpdateTask, etc. |
-| `kanban-card.test.tsx` | KanbanCard component |
-| `kanban-column.test.tsx` | KanbanColumn component |
-| `member-card.test.tsx` | MemberCard component |
-| `create-task-modal.test.tsx` | CreateTaskModal |
+| `hooks-task-mutations.test.ts` | useCreateTask, useUpdateTask, useMoveTask, useDeleteTask |
+
+### Componentes
+
+| Archivo | Qué cubre |
+|---------|-----------|
+| `kanban-card.test.tsx` | KanbanCard — render, prioridad, fecha, hora |
+| `kanban-column.test.tsx` | KanbanColumn — lista de cards, drop zone |
+| `member-card.test.tsx` | MemberCard |
+| `create-task-modal.test.tsx` | CreateTaskModal — formulario, submit, validación |
+
+### Servicios
+
+| Archivo | Qué cubre |
+|---------|-----------|
+| `task-service.test.ts` | TaskService.createTask, moveTask (recurrencia) |
+| `comment-service.test.ts` | CommentService.addComment |
+| `time-entry-service.test.ts` | TimeEntryService.create, validación |
