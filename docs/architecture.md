@@ -154,6 +154,7 @@ src/
 │   ├── tareas/          # KanbanBoard, KanbanColumn, KanbanCard, modales
 │   │                      # TaskDetailModal, TaskComments, TaskChecklist
 │   │                      # TaskSubtasks, TaskTimeTracking, TaskAttachments
+│   │                      # AgendaView (vista inteligente con scoring automático)
 │   ├── equipo/          # MemberCard, CreateUserModal, InviteMemberModal
 │   ├── sectores/        # SectorModal
 │   ├── ciclos/          # CycleList, CycleCard
@@ -166,6 +167,7 @@ src/
     ├── (auth)/              # Login, Register
     ├── (superadmin)/        # Panel TecnoFusión — layout propio
     ├── dashboard/           # Layout protegido + páginas
+    │   └── tareas/          # 4 tabs: Kanban / Agenda / Calendario / Cronograma
     └── api/                 # Endpoints HTTP (Auth Firebase Admin + Prisma)
         ├── auth/            # profile
         ├── tasks/           # CRUD + move + comments + subtasks + time-entries

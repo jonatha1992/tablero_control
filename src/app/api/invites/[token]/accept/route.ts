@@ -84,31 +84,60 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
   }
 
-  if (user.businessId && user.businessId !== invite.businessId) {
-    return NextResponse.json({ error: 'already_in_other_business' }, { status: 409 });
-  }
+  // Check existing membership
+  const existingMembership = await prisma.userBusiness.findUnique({
+    where: { userId_businessId: { userId: user.id, businessId: invite.businessId } },
+  });
 
-  if (user.businessId === invite.businessId) {
-    return NextResponse.json({ error: 'already_member' }, { status: 409 });
-  }
-
-  // Plan limit check
-  const planConfig = await getEffectivePlanConfig(invite.business.plan);
-  const limit = planConfig.limits.users;
-  if (limit !== -1) {
-    const current = await prisma.user.count({
-      where: { businessId: invite.businessId, isActive: true },
-    });
-    if (current >= limit) {
-      return NextResponse.json(
-        { error: 'members_limit_exceeded', limit, current },
-        { status: 429 }
-      );
+  if (existingMembership) {
+    if (existingMembership.isActive) {
+      // Already an active member → update role/location and cache
+      const updatedMembership = await prisma.userBusiness.update({
+        where: { userId_businessId: { userId: user.id, businessId: invite.businessId } },
+        data: { role: invite.role, locationId: invite.locationId },
+      });
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { businessId: invite.businessId, role: updatedMembership.role, locationId: invite.locationId },
+      });
+      return NextResponse.json(updatedUser);
     }
+    // Reactivate membership
+    await prisma.userBusiness.update({
+      where: { userId_businessId: { userId: user.id, businessId: invite.businessId } },
+      data: { isActive: true, role: invite.role, locationId: invite.locationId },
+    });
+  } else {
+    // Plan limit check (only for new members)
+    const planConfig = await getEffectivePlanConfig(invite.business.plan);
+    const limit = planConfig.limits.users;
+    if (limit !== -1) {
+      const current = await prisma.userBusiness.count({
+        where: { businessId: invite.businessId, isActive: true },
+      });
+      if (current >= limit) {
+        return NextResponse.json(
+          { error: 'members_limit_exceeded', limit, current },
+          { status: 429 }
+        );
+      }
+    }
+
+    // Create membership
+    await prisma.userBusiness.create({
+      data: {
+        userId: user.id,
+        businessId: invite.businessId,
+        role: invite.role,
+        locationId: invite.locationId,
+        isActive: true,
+      },
+    });
   }
 
+  // Update user cache (active business)
   const updatedUser = await prisma.user.update({
-    where: { id: decoded.uid },
+    where: { id: user.id },
     data: {
       businessId: invite.businessId,
       role: invite.role,

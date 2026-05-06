@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Check, Link2, Loader2, Share2 } from 'lucide-react';
+import { Copy, Check, Link2, Loader2, Share2, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -133,7 +133,10 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
               </p>
             </div>
             <DialogFooter>
-              <Button onClick={handleClose}>Listo</Button>
+              <Button onClick={handleClose}>
+                <Check className="mr-1.5 h-4 w-4" />
+                Listo
+              </Button>
             </DialogFooter>
           </>
         ) : (
@@ -199,11 +202,16 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={handleClose} disabled={isPending}>
+                  <X className="mr-1.5 h-4 w-4" />
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
-                  {isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                  Generar link
+                  {isPending ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Link2 className="mr-1.5 h-4 w-4" />
+                  )}
+                  {isPending ? 'Generando...' : 'Generar link'}
                 </Button>
               </DialogFooter>
             </form>

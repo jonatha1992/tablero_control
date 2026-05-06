@@ -23,6 +23,7 @@ const authedUser = {
   businessId: 'biz-1',
   email: 'admin@biz.com',
   name: 'Admin',
+  data: { id: 'user-1', role: 'admin', businessId: 'biz-1' },
 };
 
 const mockObjectives = [
@@ -50,9 +51,10 @@ describe('GET /api/objectives', () => {
 
   it('usa businessId del query param si se proporciona', async () => {
     mockGetObjectives.mockResolvedValueOnce([mockObjectives[0]] as never);
-    const req = new NextRequest('http://localhost/api/objectives?businessId=biz-otro');
-    await GET(req);
-    expect(mockGetObjectives).toHaveBeenCalledWith('biz-otro');
+    const req = new NextRequest('http://localhost/api/objectives?businessId=biz-1');
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    expect(mockGetObjectives).toHaveBeenCalledWith('biz-1');
   });
 
   it('retorna 400 si no hay businessId disponible', async () => {

@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Users, ShieldCheck } from 'lucide-react';
+import { Users, ShieldCheck, Building2 } from 'lucide-react';
 import { useAuth } from '@/hooks/auth-context';
 
 const TABS = [
   { href: '/dashboard/equipo', label: 'Miembros', icon: Users },
+  { href: '/dashboard/equipo/sectores', label: 'Sectores', icon: Building2, adminOnly: true },
   { href: '/dashboard/equipo/roles', label: 'Roles y Permisos', icon: ShieldCheck, adminOnly: true },
 ];
 

@@ -31,6 +31,7 @@ const authedAdmin = {
   businessId: 'biz-1',
   email: 'admin@biz.com',
   name: 'Admin',
+  data: { id: 'user-1', role: 'admin', businessId: 'biz-1' },
 };
 
 const mockProjects = [

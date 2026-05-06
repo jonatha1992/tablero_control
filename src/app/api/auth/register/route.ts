@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
+import type { UserRole } from '@/types/domain/user';
 
 const DEFAULT_PREFERENCES = {
   theme: 'system' as const,
@@ -57,6 +58,7 @@ export const POST = handle(async (request: NextRequest) => {
   const business = await businessRepository.create({
     name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`),
     adminId: decoded.uid,
+    ownerId: decoded.uid,
     plan: 'free',
     status: 'active',
     settings: {
@@ -87,7 +89,17 @@ export const POST = handle(async (request: NextRequest) => {
     isActive: true,
   } as Parameters<typeof userRepository.create>[0]);
 
+  await userRepository.addMembership({
+    userId: user.id,
+    businessId: business.id,
+    role: role as UserRole,
+    isActive: true,
+  });
+
+  // Recargar user con memberships
+  const userWithMemberships = await userRepository.findById(user.id);
+
   MailService.sendWelcomeEmail(email, name).catch(() => { });
 
-  return NextResponse.json(user, { status: 201 });
+  return NextResponse.json(userWithMemberships ?? user, { status: 201 });
 });

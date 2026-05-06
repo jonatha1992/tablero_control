@@ -33,4 +33,11 @@ export const membersApi = {
     fetchJsonAuth<never>(`/api/members/${id}`, {
       method: 'DELETE',
     }),
+
+  bulkAssignLocation: (ids: string[], locationId: string | null) =>
+    fetchJsonAuth<{ updated: number }>('/api/members/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, locationId }),
+    }),
 };

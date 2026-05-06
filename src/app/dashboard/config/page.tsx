@@ -1,23 +1,37 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
+import { can } from '@/lib/permissions';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { auth } from '@/lib/firebase/client';
 import { resetPassword } from '@/lib/firebase/auth';
 import { InstallPwaCard } from './install-pwa-card';
 import { PushNotificationToggle } from './push-notification-toggle';
+import { BillingPlanCards } from '@/components/billing/billing-plan-cards';
+import { BillingCurrentPlan } from '@/components/billing/billing-current-plan';
+import { BillingInvoices } from '@/components/billing/billing-invoices';
+import { useSubscriptionQuery } from '@/hooks/queries/use-subscription-query';
 
 export default function ConfigPage() {
   const { user } = useAuth();
+  const canManageBilling = user ? (user.isOwner || can(user, 'business.subscription.manage')) : false;
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('perfil');
+  const searchParams = useSearchParams();
+  const { data: subscription, isLoading } = useSubscriptionQuery(user?.businessId);
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'perfil');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [resetState, setResetState] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
@@ -108,6 +122,11 @@ export default function ConfigPage() {
           <TabsTrigger value="notificaciones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
             <Bell className="h-4 w-4 mr-2" /> Notificaciones
           </TabsTrigger>
+          {canManageBilling && (
+            <TabsTrigger value="facturacion" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
+              <CreditCard className="h-4 w-4 mr-2" /> Facturación
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">
@@ -310,6 +329,27 @@ export default function ConfigPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* FACTURACIÓN */}
+          {canManageBilling && (
+          <TabsContent value="facturacion" className="mt-0 space-y-8 outline-none">
+            {!user?.businessId ? (
+              <p className="text-muted-foreground text-sm">No tenés un negocio asociado.</p>
+            ) : (
+              <>
+                <BillingCurrentPlan subscription={subscription ?? null} isLoading={isLoading} />
+                <div>
+                  <h2 className="text-lg font-semibold mb-4">Cambiar plan</h2>
+                  <BillingPlanCards currentPlan={subscription?.plan ?? 'free'} businessId={user.businessId} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold mb-4">Historial de pagos</h2>
+                  <BillingInvoices businessId={user.businessId} subscriptionId={subscription?.id} />
+                </div>
+              </>
+            )}
+          </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

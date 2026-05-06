@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/tasks/[id]/time-entries/route';
 import { timeEntryService } from '@/services/time-entry.service';
 import { requireUser } from '@/lib/api/auth-helpers';
+import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/api/auth-helpers', () => ({ requireUser: vi.fn() }));
 vi.mock('@/services/time-entry.service', () => ({
@@ -22,6 +23,7 @@ const authedUser = {
   businessId: 'biz-1',
   email: 'user@biz.com',
   name: 'Usuario',
+  data: { id: 'user-1', role: 'miembro', businessId: 'biz-1' },
 };
 
 const mockEntries = [
@@ -36,6 +38,7 @@ function makeRequest(taskId: string, options?: RequestInit): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks();
   mockRequireUser.mockResolvedValue(authedUser as never);
+  vi.mocked(prisma.task.findUnique).mockResolvedValue({ project: { businessId: 'biz-1' }, location: null, creator: null } as never);
 });
 
 // ─── GET /api/tasks/[id]/time-entries ─────────────────────────────────────────

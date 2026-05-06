@@ -17,9 +17,11 @@ vi.mock('@/repositories', () => ({
     updateId: vi.fn(),
     update: vi.fn(),
     create: vi.fn(),
+    addMembership: vi.fn(),
   },
   businessRepository: {
     create: vi.fn(),
+    findById: vi.fn(),
   },
 }));
 
@@ -30,11 +32,13 @@ const mockUpdateId = vi.mocked(userRepository.updateId);
 const mockUpdate = vi.mocked(userRepository.update);
 const mockUserCreate = vi.mocked(userRepository.create);
 const mockBusinessCreate = vi.mocked(businessRepository.create);
+const mockBusinessFindById = vi.mocked(businessRepository.findById);
 
 const baseDecoded = { uid: 'uid-real', email: 'user@test.com', name: 'Test User', picture: undefined };
 const dbUser = {
   id: 'uid-real', email: 'user@test.com', name: 'Test User',
   role: 'admin', businessId: 'biz-1', isActive: true,
+  memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }],
 };
 
 function makeRequest(token?: string): NextRequest {
@@ -46,6 +50,7 @@ function makeRequest(token?: string): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('SUPERADMIN_EMAILS', 'superadmin@test.com');
+  mockBusinessFindById.mockResolvedValue({ id: 'biz-1', ownerId: 'other-user' } as never);
 });
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -127,6 +132,7 @@ describe('GET /api/auth/profile — auto-provisioning superadmin', () => {
   const mockBusiness = { id: 'biz-sa', name: 'TecnoFusión (Master)' };
   const provisionedUser = {
     id: 'super-uid', email: 'superadmin@test.com', role: 'superadmin', businessId: 'biz-sa', isActive: true,
+    memberships: [{ businessId: 'biz-sa', role: 'superadmin', isActive: true }],
   };
 
   it('crea business + user si email está en SUPERADMIN_EMAILS y no está en DB', async () => {
@@ -190,7 +196,7 @@ describe('GET /api/auth/profile — usuario sin businessId', () => {
     const res = await GET(makeRequest('valid-token'));
     expect(res.status).toBe(200);
     expect(mockBusinessCreate).toHaveBeenCalledOnce();
-    expect(mockUpdate).toHaveBeenCalledWith('uid-real', { businessId: 'biz-new' });
+    expect(mockUpdate).toHaveBeenCalledWith('uid-real', { businessId: 'biz-new', role: 'admin' });
     const body = await res.json();
     expect(body.businessId).toBe('biz-new');
   });

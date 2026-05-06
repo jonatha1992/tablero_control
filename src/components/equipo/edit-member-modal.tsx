@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserCog, Trash2 } from 'lucide-react';
+import { UserCog, Trash2, X, Save, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -201,10 +201,21 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
             )}
             <div className="flex gap-2 sm:ml-auto">
               <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
+                <X className="mr-1.5 h-4 w-4" />
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Guardando...' : 'Guardar cambios'}
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-1.5 h-4 w-4" />
+                    Guardar cambios
+                  </>
+                )}
               </Button>
             </div>
           </DialogFooter>

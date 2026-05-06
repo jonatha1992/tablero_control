@@ -15,9 +15,11 @@ interface AuthContextType {
   isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
+  isOwner: boolean;
   notInvited: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  switchBusiness: (businessId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,9 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (res.status === 404) {
           const onRegisterPage = typeof window !== 'undefined' &&
             window.location.pathname.startsWith('/register');
+          // Invite pages handle user creation themselves via accept-invite API
+          const onInvitePage = typeof window !== 'undefined' &&
+            (window.location.pathname.startsWith('/i/') ||
+              new URLSearchParams(window.location.search).get('redirect')?.startsWith('/i/'));
 
-          if (onRegisterPage) {
+          if (onRegisterPage || onInvitePage) {
             // register page llama refreshProfile() después del POST
+            // invite page crea el user vía /api/invites/[token]/accept
           } else {
             // Intentar auto-registrar (mismo comportamiento que /register)
             const registered = await autoRegister(fbUser);
@@ -107,6 +114,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const switchBusiness = async (businessId: string) => {
+    const fbUser = auth.currentUser;
+    if (!fbUser) return;
+    const token = await fbUser.getIdToken();
+    const res = await fetch('/api/users/switch-business', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId }),
+    });
+    if (res.ok) {
+      await refreshProfile();
+      window.location.reload();
+    } else {
+      console.error('switchBusiness failed');
+    }
+  };
+
   const signOut = async () => {
     await authService.logout();
     setUser(null);
@@ -118,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'superadmin' || role === 'admin';
   const isManager = role === 'superadmin' || role === 'admin' || role === 'responsable';
+  const isOwner = user?.isOwner ?? false;
 
   return (
     <AuthContext.Provider
@@ -130,9 +155,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         isAdmin,
         isManager,
+        isOwner,
         notInvited,
         signOut,
         refreshProfile,
+        switchBusiness,
       }}
     >
       {children}

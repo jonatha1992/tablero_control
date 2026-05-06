@@ -113,7 +113,9 @@
       "Bash(findstr /E \"project team\")",
       "PowerShell(npm list *)",
       "Bash(Get-ChildItem *)",
-      "Bash(grep -i \"i\\\\\\\\\\\\\\\\\\\\[token\\\\\\\\\\\\\\\\\\\\]\")"
+      "Bash(grep -i \"i\\\\\\\\\\\\\\\\\\\\[token\\\\\\\\\\\\\\\\\\\\]\")",
+      "Bash(xargs wc -l)",
+      "Bash(powershell *)"
     ]
   }
 }

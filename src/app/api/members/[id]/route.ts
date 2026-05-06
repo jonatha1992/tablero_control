@@ -3,7 +3,7 @@ import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { can, assertSameTenant } from '@/lib/permissions';
-import { userRepository } from '@/repositories';
+import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 
 export const PATCH = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -22,7 +22,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const data = await request.json();
 
   if (data.reactivate === true) {
-    await teamService.reactivateMember(id);
+    if (!target.businessId) {
+      return NextResponse.json({ error: 'No business' }, { status: 400 });
+    }
+    await teamService.reactivateMember(id, target.businessId);
     await writeAuditLog({
       actorId: user.uid,
       actorRole: user.role,
@@ -33,6 +36,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     });
     const reactivated = await userRepository.findById(id);
     return NextResponse.json(reactivated);
+  }
+
+  if (data.role && target.businessId) {
+    await teamService.changeRole(id, target.businessId, data.role);
   }
 
   const member = await teamService.updateMember(id, data);
@@ -63,7 +70,17 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   assertSameTenant(user.data, { businessId: target.businessId });
 
-  await teamService.removeMember(id);
+  if (!target.businessId) {
+    return NextResponse.json({ error: 'No business' }, { status: 400 });
+  }
+
+  // Prevent removing the owner
+  const business = await businessRepository.findById(target.businessId);
+  if (business?.ownerId === id) {
+    return NextResponse.json({ error: 'cannot_remove_owner' }, { status: 403 });
+  }
+
+  await teamService.removeMember(id, target.businessId);
 
   if (target.role === 'admin' && target.businessId) {
     await teamService.handleManagerDeletion(id, target.businessId);

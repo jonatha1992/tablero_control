@@ -2,14 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { projectService } from '@/services/project.service';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 
-export const GET = handle(async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  const user = await requireUser(request);
+  if (user instanceof NextResponse) return user;
+
   const { id } = await params;
   const project = await projectService.getById(id);
   if (!project) {
     return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
   }
+
+  assertResourceBelongsToBusiness(user.data, project.businessId);
   return NextResponse.json(project);
 });
 
@@ -21,9 +27,16 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (denied) return denied;
 
   const { id } = await params;
+  const project = await projectService.getById(id);
+  if (!project) {
+    return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
+  }
+
+  assertResourceBelongsToBusiness(user.data, project.businessId);
+
   const body = await request.json();
 
-  const project = await projectService.update(id, {
+  const updated = await projectService.update(id, {
     name: body.name,
     description: body.description,
     teamId: body.teamId,
@@ -39,10 +52,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     action: 'project.update',
     targetType: 'PROJECT',
     targetId: id,
-    metadata: { name: project.name },
+    metadata: { name: updated.name },
   });
 
-  return NextResponse.json(project);
+  return NextResponse.json(updated);
 });
 
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -53,6 +66,13 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   if (denied) return denied;
 
   const { id } = await params;
+  const project = await projectService.getById(id);
+  if (!project) {
+    return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
+  }
+
+  assertResourceBelongsToBusiness(user.data, project.businessId);
+
   await projectService.delete(id);
 
   await writeAuditLog({

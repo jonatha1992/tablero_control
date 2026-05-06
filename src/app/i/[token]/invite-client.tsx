@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props) {
-  const { user, isAuthenticated, loading, refreshProfile } = useAuth();
+  const { user, firebaseUser, isAuthenticated, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const accept = useAcceptInvite();
   const [error, setError] = useState('');
@@ -96,7 +96,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
             ) : (
               <>
                 <p className="text-sm text-center text-muted-foreground">
-                  Estás logueado como <strong>{user?.email}</strong>
+                  Estás logueado como <strong>{user?.email ?? firebaseUser?.email}</strong>
                 </p>
                 <Button onClick={handleJoin} disabled={accept.isPending} className="w-full h-11">
                   {accept.isPending ? (

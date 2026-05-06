@@ -17,6 +17,7 @@ vi.mock('@/repositories', () => ({
     updateId: vi.fn(),
     update: vi.fn(),
     create: vi.fn(),
+    addMembership: vi.fn(),
   },
   businessRepository: {
     create: vi.fn(),

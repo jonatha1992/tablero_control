@@ -13,6 +13,18 @@ export interface UserPreferences {
   dashboardLayout: string[];
 }
 
+export interface UserBusiness {
+  id: string;
+  userId: string;
+  businessId: string;
+  role: UserRole;
+  locationId?: string;
+  businessName?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -24,6 +36,8 @@ export interface User {
   avatar?: string;
   phone?: string;
   teamIds: string[];
+  memberships?: UserBusiness[];
+  isOwner?: boolean;
   preferences: UserPreferences;
   isActive: boolean;
   lastLogin?: Date;

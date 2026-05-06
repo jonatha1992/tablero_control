@@ -3,7 +3,20 @@ import { uploadUserAvatar, uploadTaskAttachment, type CloudinaryUploadResult } f
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
+
+async function getTaskBusinessId(taskId: string): Promise<string | null> {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: {
+      project: { select: { businessId: true } },
+      location: { select: { businessId: true } },
+      creator: { select: { businessId: true } },
+    },
+  });
+  return task?.project?.businessId ?? task?.location?.businessId ?? task?.creator?.businessId ?? null;
+}
 
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
@@ -23,9 +36,16 @@ export const POST = handle(async (request: NextRequest) => {
     let url: string;
 
     if (type === 'avatar') {
+      // Users can only upload their own avatar (superadmin can upload any)
+      if (id !== user.uid && user.role !== 'superadmin') {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+      }
       const result = await uploadUserAvatar(id, file);
       url = result;
     } else if (type === 'attachment') {
+      const businessId = await getTaskBusinessId(id);
+      assertResourceBelongsToBusiness(user.data, businessId);
+
       const result: CloudinaryUploadResult = await uploadTaskAttachment(id, fileName ?? file.name, file);
       url = result.secure_url;
 

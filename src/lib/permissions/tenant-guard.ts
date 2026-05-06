@@ -24,3 +24,13 @@ export function isSameTenant(
   if (user.role === 'superadmin') return true;
   return Boolean(user.businessId && resource.businessId && user.businessId === resource.businessId);
 }
+
+export function assertResourceBelongsToBusiness(
+  user: Pick<User, 'role' | 'businessId'>,
+  resourceBusinessId?: string | null
+): void {
+  if (user.role === 'superadmin') return;
+  if (!resourceBusinessId || user.businessId !== resourceBusinessId) {
+    throw new TenantMismatchError(user.businessId, resourceBusinessId ?? undefined);
+  }
+}

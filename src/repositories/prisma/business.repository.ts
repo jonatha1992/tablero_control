@@ -17,6 +17,7 @@ export class PrismaBusinessRepository {
       status: row.status as BusinessStatus,
       logo: row.logo ?? undefined,
       adminId: row.adminId,
+      ownerId: row.ownerId,
       locationIds: [], // Relational fields logic for later
       teamIds: [],
       settings: row.settings as unknown as Business['settings'], // Json cast to BusinessSettings
@@ -35,6 +36,7 @@ export class PrismaBusinessRepository {
       data: {
         name: data.name,
         adminId: data.adminId,
+        ownerId: data.ownerId,
         plan: data.plan,
         status: data.status,
         settings: data.settings as Prisma.InputJsonValue,

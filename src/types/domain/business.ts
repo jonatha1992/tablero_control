@@ -21,6 +21,7 @@ export interface Business {
   status: BusinessStatus;
   logo?: string;
   adminId: string;
+  ownerId: string;
   locationIds: string[];
   teamIds: string[];
   settings: BusinessSettings;

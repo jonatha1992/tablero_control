@@ -72,7 +72,7 @@ export const POST = handle(async (req: NextRequest) => {
         const planConfig = await getEffectivePlanConfig(business.plan);
         const limit = planConfig.limits.users;
         if (limit !== -1) {
-          const current = await prisma.user.count({
+          const current = await prisma.userBusiness.count({
             where: { businessId: targetBusinessId, isActive: true },
           });
           if (current >= limit) {
@@ -138,6 +138,17 @@ export const POST = handle(async (req: NextRequest) => {
         isActive: true,
       },
     });
+    if (targetBusinessId) {
+      await prisma.userBusiness.create({
+        data: {
+          userId: uid,
+          businessId: targetBusinessId,
+          role,
+          locationId: locationId ?? null,
+          isActive: true,
+        },
+      });
+    }
   } catch {
     await adminAuth.deleteUser(uid).catch(() => { });
     return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });

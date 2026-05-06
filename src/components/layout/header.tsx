@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Search, LogOut, Menu } from 'lucide-react';
+import { Search, LogOut, Menu, Download } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { getInitials, stringToColor, ROLE_LABELS, ROLE_COLORS } from '@/lib/utils';
 import { useAuth } from '@/hooks/auth-context';
 import { NotificationBell } from '@/components/layout/notification-bell';
+import { BusinessSwitcher } from '@/components/business-switcher';
+import { usePwaInstall } from '@/hooks/use-pwa-install';
 
 interface HeaderProps {
   userName?: string;
@@ -17,6 +19,7 @@ interface HeaderProps {
 
 export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const { user, signOut, role } = useAuth();
+  const { canInstall, install } = usePwaInstall();
   const pathname = usePathname();
   const { filters, setFilters } = useKanbanUIStore();
   const isTasksPage = pathname?.startsWith('/dashboard/tareas');
@@ -91,7 +94,20 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex shrink-0 items-center gap-1">
+        {canInstall && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex h-8 gap-1.5 text-xs"
+            onClick={install}
+            title="Instalar aplicación"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Instalar app
+          </Button>
+        )}
         <NotificationBell />
+        <BusinessSwitcher />
 
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7 shrink-0">

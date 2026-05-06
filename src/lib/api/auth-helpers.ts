@@ -26,21 +26,65 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
 
   const row = await prisma.user.findUnique({
     where: { id: decoded.uid },
-    include: { teams: true },
+    include: {
+      teams: true,
+      memberships: {
+        include: { business: { select: { name: true } } },
+      },
+    },
   });
   if (!row) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+
+  const memberships = row.memberships ?? [];
+  let effectiveRole = row.role as UserRole;
+  let effectiveBusinessId = row.businessId ?? undefined;
+
+  // Resolve effective role from active membership
+  if (effectiveBusinessId) {
+    const activeMembership = memberships.find(
+      (m) => m.businessId === effectiveBusinessId && m.isActive
+    );
+    if (activeMembership) {
+      effectiveRole = activeMembership.role as UserRole;
+    } else {
+      // No active membership for cached businessId → fallback to another active membership
+      const fallback = memberships.find((m) => m.isActive);
+      if (fallback) {
+        effectiveBusinessId = fallback.businessId;
+        effectiveRole = fallback.role as UserRole;
+        // Update cache asynchronously (fire-and-forget)
+        prisma.user.update({
+          where: { id: row.id },
+          data: { businessId: fallback.businessId, role: fallback.role },
+        }).catch(() => { /* ignore */ });
+      } else {
+        effectiveBusinessId = undefined;
+      }
+    }
+  }
 
   const data: User = {
     id: row.id,
     email: row.email,
     name: row.name,
-    role: row.role as UserRole,
-    businessId: row.businessId ?? undefined,
+    role: effectiveRole,
+    businessId: effectiveBusinessId,
     locationId: row.locationId ?? undefined,
     customRoleIds: row.customRoleIds ?? [],
     avatar: row.avatar ?? undefined,
     phone: row.phone ?? undefined,
     teamIds: row.teams.map((t) => t.teamId),
+    memberships: memberships.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      businessId: m.businessId,
+      role: m.role as UserRole,
+      locationId: m.locationId ?? undefined,
+      businessName: (m as unknown as { business?: { name: string } }).business?.name,
+      isActive: m.isActive,
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+    })),
     preferences: row.preferences as unknown as User['preferences'],
     isActive: row.isActive,
     lastLogin: row.lastLogin ?? undefined,
@@ -50,8 +94,8 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
 
   return {
     uid: decoded.uid,
-    role: ((decoded.role as UserRole) ?? data.role),
-    businessId: ((decoded.businessId as string | undefined) ?? data.businessId),
+    role: effectiveRole,
+    businessId: effectiveBusinessId,
     email: decoded.email,
     data,
   };
