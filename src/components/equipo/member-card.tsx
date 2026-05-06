@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/constants/user';
@@ -17,16 +18,37 @@ interface MemberCardProps {
   onRemove?: (id: string) => void;
   onChangeRole?: (id: string, role: UserRole) => void;
   canManage?: boolean;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
-export function MemberCard({ member, onRemove, canManage }: MemberCardProps) {
+export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelected, onToggleSelect }: MemberCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
   return (
     <>
-      <Card className="group relative">
-        <CardContent className="p-4">
+      <Card
+        className={cn(
+          'group relative',
+          isSelectMode && 'cursor-pointer select-none',
+          isSelected && 'ring-2 ring-primary'
+        )}
+        onClick={isSelectMode ? () => onToggleSelect?.(member.id) : undefined}
+      >
+        {isSelectMode && (
+          <div
+            className="absolute left-2 top-2 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={isSelected}
+              onChange={() => onToggleSelect?.(member.id)}
+            />
+          </div>
+        )}
+        <CardContent className={cn('p-4', isSelectMode && 'pl-8')}>
           <div className="flex items-start gap-3">
             <div className="relative shrink-0">
               <Avatar className="h-10 w-10">
@@ -64,7 +86,7 @@ export function MemberCard({ member, onRemove, canManage }: MemberCardProps) {
               )}
             </div>
 
-            {canManage && (
+            {canManage && !isSelectMode && (
               <div className="flex shrink-0 items-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
                   variant="ghost"

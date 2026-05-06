@@ -17,18 +17,10 @@ const STEPS = [
     },
   },
   {
-    element: '#tour-nav-sectores',
-    popover: {
-      title: '🏢 Departamentos / Sectores',
-      description: 'Organizá tu empresa en locales o sectores. Cada tarea puede asignarse a un sector específico.',
-      side: 'right' as const,
-    },
-  },
-  {
     element: '#tour-nav-tareas',
     popover: {
       title: '✅ Tablero Kanban',
-      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover.',
+      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye vistas de calendario y cronograma.',
       side: 'right' as const,
     },
   },
@@ -41,34 +33,10 @@ const STEPS = [
     },
   },
   {
-    element: '#tour-nav-ciclos',
+    element: '#tour-nav-planificacion',
     popover: {
-      title: '⏱ Períodos / Ciclos',
-      description: 'Organizá el trabajo en ciclos con fechas de inicio y fin. Cada ciclo pasa por planificación, activo, completado y cerrado.',
-      side: 'right' as const,
-    },
-  },
-  {
-    element: '#tour-nav-objetivos',
-    popover: {
-      title: '🎯 Objetivos',
-      description: 'Definí metas de negocio y vinculalas a tareas. Seguí el progreso hacia cada objetivo de tu equipo.',
-      side: 'right' as const,
-    },
-  },
-  {
-    element: '#tour-nav-calendario',
-    popover: {
-      title: '📅 Calendario',
-      description: 'Visualizá todas las tareas y eventos por fecha. Navegá por semana o mes para planificar el trabajo.',
-      side: 'right' as const,
-    },
-  },
-  {
-    element: '#tour-nav-cronograma',
-    popover: {
-      title: '📋 Cronograma',
-      description: 'Vista Gantt de las tareas con sus fechas de inicio y vencimiento. Ideal para ver dependencias y plazos de un vistazo.',
+      title: '📅 Planificación',
+      description: 'Organizá el trabajo en ciclos con fechas de inicio y fin, y definí objetivos de negocio vinculados a tareas. Cada ciclo pasa por planificación, activo, completado y cerrado.',
       side: 'right' as const,
     },
   },
@@ -76,7 +44,15 @@ const STEPS = [
     element: '#tour-nav-equipo',
     popover: {
       title: '👥 Equipo',
-      description: 'Invitá miembros por email o link. Asigná roles (admin, responsable, miembro, viewer) con permisos granulares.',
+      description: 'Invitá miembros por email o link. Asigná roles (admin, responsable, miembro, viewer) con permisos granulares. Gestioná sectores desde aquí.',
+      side: 'right' as const,
+    },
+  },
+  {
+    element: '#tour-nav-reportes',
+    popover: {
+      title: '📊 Reportes',
+      description: 'Visualizá el rendimiento del equipo con gráficos de tareas por estado, prioridad y miembro. Identificá cuellos de botella y tendencias.',
       side: 'right' as const,
     },
   },

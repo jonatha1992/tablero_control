@@ -3,28 +3,24 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Users, ShieldCheck, Building2 } from 'lucide-react';
-import { useAuth } from '@/hooks/auth-context';
+import { Timer, Target } from 'lucide-react';
 
 const TABS = [
-  { href: '/dashboard/equipo', label: 'Miembros', icon: Users },
-  { href: '/dashboard/equipo/sectores', label: 'Sectores', icon: Building2, adminOnly: true },
-  { href: '/dashboard/equipo/roles', label: 'Roles y Permisos', icon: ShieldCheck, adminOnly: true },
+  { href: '/dashboard/planificacion', label: 'Períodos', icon: Timer, exact: true },
+  { href: '/dashboard/planificacion/objetivos', label: 'Objetivos', icon: Target, exact: false },
 ];
 
-export default function EquipoLayout({ children }: { children: React.ReactNode }) {
+export default function PlanificacionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isAdmin } = useAuth();
-
-  const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin);
 
   return (
     <div className="space-y-0">
-      {/* Tabs */}
       <div className="border-b border-border mb-6">
-        <nav className="flex gap-0" aria-label="Secciones del equipo">
-          {visibleTabs.map((tab) => {
-            const isActive = pathname === tab.href;
+        <nav className="flex gap-0" aria-label="Planificación">
+          {TABS.map((tab) => {
+            const isActive = tab.exact
+              ? pathname === tab.href
+              : pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.href}
@@ -43,8 +39,6 @@ export default function EquipoLayout({ children }: { children: React.ReactNode }
           })}
         </nav>
       </div>
-
-      {/* Page content */}
       {children}
     </div>
   );

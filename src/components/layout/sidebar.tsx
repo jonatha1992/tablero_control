@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   CheckSquare,
-  Calendar,
   Users,
   Settings,
   ChevronLeft,
@@ -17,9 +16,8 @@ import {
   Building2,
   ScrollText,
   SlidersHorizontal,
-  Timer,
-  Target,
-  GanttChart,
+  Layers,
+  BarChart2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
@@ -34,16 +32,13 @@ const superAdminItems = [
 ];
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tourId: 'tour-nav-dashboard' },
-  { href: '/dashboard/sectores', label: 'Departamentos', icon: Building2, tourId: 'tour-nav-sectores' },
-  { href: '/dashboard/tareas', label: 'Tareas', icon: CheckSquare, tourId: 'tour-nav-tareas' },
-  { href: '/dashboard/ciclos', label: 'Períodos', icon: Timer, tourId: 'tour-nav-ciclos' },
-  { href: '/dashboard/objetivos', label: 'Objetivos', icon: Target, tourId: 'tour-nav-objetivos' },
-  { href: '/dashboard/calendario', label: 'Calendario', icon: Calendar, tourId: 'tour-nav-calendario' },
-  { href: '/dashboard/cronograma', label: 'Cronograma', icon: GanttChart, tourId: 'tour-nav-cronograma' },
-  { href: '/dashboard/equipo', label: 'Equipo', icon: Users, tourId: 'tour-nav-equipo' },
-  { href: '/dashboard/billing', label: 'Facturación', icon: CreditCard, tourId: 'tour-nav-billing' },
-  { href: '/dashboard/config', label: 'Configuración', icon: Settings, tourId: 'tour-nav-config' },
+  { href: '/dashboard',                label: 'Dashboard',      icon: LayoutDashboard, tourId: 'tour-nav-dashboard' },
+  { href: '/dashboard/tareas',         label: 'Tareas',         icon: CheckSquare,     tourId: 'tour-nav-tareas' },
+  { href: '/dashboard/planificacion',  label: 'Planificación',  icon: Layers,          tourId: 'tour-nav-planificacion' },
+  { href: '/dashboard/equipo',         label: 'Equipo',         icon: Users,           tourId: 'tour-nav-equipo' },
+  { href: '/dashboard/reportes',       label: 'Reportes',       icon: BarChart2,       tourId: 'tour-nav-reportes' },
+  { href: '/dashboard/billing',        label: 'Facturación',    icon: CreditCard,      tourId: 'tour-nav-billing' },
+  { href: '/dashboard/config',         label: 'Configuración',  icon: Settings,        tourId: 'tour-nav-config' },
 ];
 
 interface SidebarProps {

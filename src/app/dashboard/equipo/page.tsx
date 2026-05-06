@@ -1,8 +1,10 @@
 'use client';
 
-import { Users, UserPlus, Link2 } from 'lucide-react';
+import { useState } from 'react';
+import { Users, UserPlus, Link2, CheckSquare, X, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { MemberCard } from '@/components/equipo/member-card';
 import { CreateUserModal } from '@/components/equipo/create-user-modal';
 import { CreateInviteModal } from '@/components/equipo/create-invite-modal';
@@ -10,6 +12,7 @@ import { InviteLinksSection } from '@/components/equipo/invite-links-section';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useRemoveMember } from '@/hooks/mutations/use-update-member';
+import { useBulkAssignLocation } from '@/hooks/mutations/use-bulk-assign-location';
 import { useTeamUIStore } from '@/stores/team-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { cn } from '@/lib/utils';
@@ -24,16 +27,20 @@ const ROLE_TABS: { value: UserRole | 'all'; label: string }[] = [
 ];
 
 export default function EquipoPage() {
-  const { 
+  const {
     searchQuery, roleFilter, locationFilter, isInviteModalOpen, isCreateInviteModalOpen,
     setSearchQuery, setRoleFilter, setLocationFilter, openInviteModal, closeInviteModal,
-    openCreateInviteModal, closeCreateInviteModal
+    openCreateInviteModal, closeCreateInviteModal,
+    isSelectMode, selectedIds, setSelectMode, toggleSelect, selectAll, clearSelection,
   } = useTeamUIStore();
+
+  const [bulkLocationId, setBulkLocationId] = useState('');
 
   const { user, isAdmin } = useAuth();
   const { data: members = [], isLoading } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
   const removeMember = useRemoveMember();
+  const bulkAssign = useBulkAssignLocation();
 
   const filtered = members.filter((m) => {
     const matchesRole = roleFilter === 'all' || m.role === roleFilter;
@@ -43,13 +50,40 @@ export default function EquipoPage() {
     return matchesRole && matchesLocation && matchesSearch;
   });
 
+  const allSelected = filtered.length > 0 && filtered.every((m) => selectedIds.includes(m.id));
+
+  function handleToggleSelectAll() {
+    if (allSelected) {
+      clearSelection();
+    } else {
+      selectAll(filtered.map((m) => m.id));
+    }
+  }
+
+  function handleExitSelectMode() {
+    setSelectMode(false);
+    setBulkLocationId('');
+  }
+
+  function handleBulkAssign() {
+    if (selectedIds.length === 0 || !bulkLocationId) return;
+    bulkAssign.mutate(
+      { ids: selectedIds, locationId: bulkLocationId },
+      { onSuccess: handleExitSelectMode }
+    );
+  }
+
   const _activeCount = members.filter((m) => m.isActive).length;
 
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-end gap-4">
-        {isAdmin && (
+        {isAdmin && !isSelectMode && (
           <>
+            <Button size="sm" variant="outline" onClick={() => setSelectMode(true)}>
+              <CheckSquare className="mr-1.5 h-4 w-4" />
+              Seleccionar
+            </Button>
             <Button size="sm" variant="outline" onClick={openCreateInviteModal}>
               <Link2 className="mr-1.5 h-4 w-4" />
               Link de invitación
@@ -62,6 +96,48 @@ export default function EquipoPage() {
         )}
       </div>
 
+      {isSelectMode && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-4 py-3">
+          <Checkbox
+            checked={allSelected}
+            onChange={handleToggleSelectAll}
+            aria-label="Seleccionar todos"
+          />
+          <span className="text-sm font-medium">
+            {selectedIds.length} seleccionado{selectedIds.length !== 1 ? 's' : ''}
+          </span>
+
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+              <select
+                value={bulkLocationId}
+                onChange={(e) => setBulkLocationId(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Elige un sector...</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <Button
+              size="sm"
+              disabled={selectedIds.length === 0 || !bulkLocationId || bulkAssign.isPending}
+              onClick={handleBulkAssign}
+            >
+              {bulkAssign.isPending ? 'Asignando...' : 'Asignar sector'}
+            </Button>
+
+            <Button size="sm" variant="ghost" onClick={handleExitSelectMode}>
+              <X className="mr-1 h-3.5 w-3.5" />
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
           placeholder="Buscar por nombre o correo..."
@@ -69,20 +145,20 @@ export default function EquipoPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="sm:max-w-xs"
         />
-        
+
         <select
           value={locationFilter}
           onChange={(e) => setLocationFilter(e.target.value)}
           className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 sm:max-w-[200px]"
         >
-          <option value="">Todos los locales</option>
+          <option value="">Todos los sectores</option>
           {locations.map((loc) => (
             <option key={loc.id} value={loc.id}>
               {loc.name}
             </option>
           ))}
         </select>
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex flex-wrap gap-1">
           {ROLE_TABS.map((tab) => (
             <button
               key={tab.value}
@@ -117,8 +193,11 @@ export default function EquipoPage() {
             <MemberCard
               key={member.id}
               member={member}
-              onRemove={isAdmin ? (id) => removeMember.mutate(id) : undefined}
+              onRemove={isAdmin && !isSelectMode ? (id) => removeMember.mutate(id) : undefined}
               canManage={isAdmin}
+              isSelectMode={isSelectMode}
+              isSelected={selectedIds.includes(member.id)}
+              onToggleSelect={toggleSelect}
             />
           ))}
         </div>
