@@ -37,6 +37,7 @@ export interface User {
   phone?: string;
   teamIds: string[];
   memberships?: UserBusiness[];
+  isOwner?: boolean;
   preferences: UserPreferences;
   isActive: boolean;
   lastLogin?: Date;

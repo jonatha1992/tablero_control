@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/tasks/route';
 import { taskService } from '@/services/task.service';
 import { requireUser } from '@/lib/api/auth-helpers';
+import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
@@ -45,6 +46,7 @@ beforeEach(() => {
     businessId: 'biz-1',
     email: 'admin@biz.com',
     name: 'Admin',
+    data: { id: 'user-1', role: 'admin', businessId: 'biz-1' },
   } as never);
 });
 
@@ -71,6 +73,7 @@ describe('GET /api/tasks', () => {
 
   it('lista tareas por creatorId cuando no hay businessId', async () => {
     mockGetByCreator.mockResolvedValueOnce([mockTasks[0]] as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ businessId: 'biz-1' } as never);
     const req = makeRequest('http://localhost/api/tasks?creatorId=user-1');
     const res = await GET(req);
     expect(res.status).toBe(200);

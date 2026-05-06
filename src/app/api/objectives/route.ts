@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { objectiveService } from '@/services/objective.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 
 export const GET = handle(async (request: NextRequest) => {
@@ -14,6 +15,8 @@ export const GET = handle(async (request: NextRequest) => {
   if (!businessId) {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
   }
+
+  assertSameTenant(user.data, { businessId });
 
   const objectives = await objectiveService.getObjectivesByBusiness(businessId);
   return NextResponse.json(objectives);

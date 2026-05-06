@@ -2,8 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timeEntryService } from '@/services/time-entry.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
+
+async function getTimeEntryBusinessId(entryId: string): Promise<string | null> {
+  const entry = await prisma.timeEntry.findUnique({
+    where: { id: entryId },
+    select: {
+      task: {
+        select: {
+          project: { select: { businessId: true } },
+          location: { select: { businessId: true } },
+          creator: { select: { businessId: true } },
+        },
+      },
+    },
+  });
+  return entry?.task?.project?.businessId ?? entry?.task?.location?.businessId ?? entry?.task?.creator?.businessId ?? null;
+}
 
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -15,6 +32,9 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   if (!entry) {
     return NextResponse.json({ error: 'time_entry_not_found' }, { status: 404 });
   }
+
+  const businessId = await getTimeEntryBusinessId(id);
+  assertResourceBelongsToBusiness(user.data, businessId);
 
   // Users can delete their own entries; admins/superadmins can delete any
   if (entry.userId !== user.uid && user.role !== 'admin' && user.role !== 'superadmin') {

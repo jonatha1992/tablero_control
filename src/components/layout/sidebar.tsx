@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
+import { can } from '@/lib/permissions';
 
 const superAdminItems = [
   { href: '/superadmin',              label: 'Plataforma',    icon: ShieldCheck,       exact: true },
@@ -50,7 +51,27 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpenChange }: SidebarProps) {
   const setMobileOpen = (val: boolean) => onMobileOpenChange?.(val);
   const pathname = usePathname();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, user } = useAuth();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!user) return false;
+    switch (item.href) {
+      case '/dashboard':
+        return true;
+      case '/dashboard/tareas':
+        return can(user, 'task.read');
+      case '/dashboard/planificacion':
+        return can(user, 'task.create');
+      case '/dashboard/equipo':
+        return user.role === 'admin' || user.role === 'superadmin' || user.role === 'responsable';
+      case '/dashboard/reportes':
+        return can(user, 'business.reports.read');
+      case '/dashboard/config':
+        return true;
+      default:
+        return true;
+    }
+  });
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
@@ -88,7 +109,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           // Dashboard exact match; all others activate on prefix
           const isActive =
             item.href === '/dashboard'

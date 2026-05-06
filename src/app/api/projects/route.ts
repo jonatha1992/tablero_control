@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { projectService, ProjectLimitError } from '@/services/project.service';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
 
@@ -15,6 +16,8 @@ export const GET = handle(async (request: NextRequest) => {
   if (!businessId) {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
   }
+
+  assertSameTenant(user.data, { businessId });
 
   const projects = await projectService.getByBusiness(businessId);
   return NextResponse.json(projects);

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
+import { can } from '@/lib/permissions';
 import { useTheme } from 'next-themes';
 import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 import Image from 'next/image';
@@ -21,6 +22,7 @@ import { useSubscriptionQuery } from '@/hooks/queries/use-subscription-query';
 
 export default function ConfigPage() {
   const { user } = useAuth();
+  const canManageBilling = user ? (user.isOwner || can(user, 'business.subscription.manage')) : false;
   const { theme, setTheme } = useTheme();
   const searchParams = useSearchParams();
   const { data: subscription, isLoading } = useSubscriptionQuery(user?.businessId);
@@ -120,9 +122,11 @@ export default function ConfigPage() {
           <TabsTrigger value="notificaciones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
             <Bell className="h-4 w-4 mr-2" /> Notificaciones
           </TabsTrigger>
-          <TabsTrigger value="facturacion" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
-            <CreditCard className="h-4 w-4 mr-2" /> Facturación
-          </TabsTrigger>
+          {canManageBilling && (
+            <TabsTrigger value="facturacion" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
+              <CreditCard className="h-4 w-4 mr-2" /> Facturación
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">
@@ -327,6 +331,7 @@ export default function ConfigPage() {
           </TabsContent>
 
           {/* FACTURACIÓN */}
+          {canManageBilling && (
           <TabsContent value="facturacion" className="mt-0 space-y-8 outline-none">
             {!user?.businessId ? (
               <p className="text-muted-foreground text-sm">No tenés un negocio asociado.</p>
@@ -344,6 +349,7 @@ export default function ConfigPage() {
               </>
             )}
           </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

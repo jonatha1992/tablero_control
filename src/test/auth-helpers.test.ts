@@ -38,6 +38,7 @@ const dbUser = {
   createdAt: new Date(),
   updatedAt: new Date(),
   teams: [{ teamId: 'team-1' }],
+  memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }],
 };
 
 beforeEach(() => {

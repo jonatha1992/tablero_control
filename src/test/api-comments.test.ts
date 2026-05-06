@@ -20,11 +20,13 @@ vi.mock('@/services/task.service', () => ({
 }));
 
 import { taskService } from '@/services/task.service';
+import { prisma } from '@/lib/prisma';
 
 const mockRequireUser = vi.mocked(requireUser);
 const mockGetComments = vi.mocked(commentService.getCommentsByTask);
 const mockAdd = vi.mocked(commentService.addComment);
 const mockGetTask = vi.mocked(taskService.getTaskById);
+const mockTaskFindUnique = vi.mocked(prisma.task.findUnique);
 
 const mockTask = { id: 'task-1', title: 'Tarea Test', assigneeIds: [] };
 
@@ -34,7 +36,7 @@ const authedUser = {
   businessId: 'biz-1',
   email: 'user@biz.com',
   name: 'Usuario',
-  data: { name: 'Usuario', email: 'user@biz.com' },
+  data: { id: 'user-1', role: 'miembro', businessId: 'biz-1', name: 'Usuario', email: 'user@biz.com' },
 };
 
 const mockComments = [
@@ -50,6 +52,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockRequireUser.mockResolvedValue(authedUser as never);
   mockGetTask.mockResolvedValue(mockTask as never);
+  mockTaskFindUnique.mockResolvedValue({ project: { businessId: 'biz-1' }, location: null, creator: null } as never);
 });
 
 // ─── GET /api/tasks/[id]/comments ────────────────────────────────────────────

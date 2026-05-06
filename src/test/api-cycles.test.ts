@@ -23,6 +23,7 @@ const authedUser = {
   businessId: 'biz-1',
   email: 'admin@biz.com',
   name: 'Admin',
+  data: { id: 'user-1', role: 'admin', businessId: 'biz-1' },
 };
 
 const mockCycles = [
@@ -50,10 +51,10 @@ describe('GET /api/cycles', () => {
 
   it('usa businessId del query param si se proporciona', async () => {
     mockGetCycles.mockResolvedValueOnce([mockCycles[0]] as never);
-    const req = new NextRequest('http://localhost/api/cycles?businessId=biz-otro');
+    const req = new NextRequest('http://localhost/api/cycles?businessId=biz-1');
     const res = await GET(req);
     expect(res.status).toBe(200);
-    expect(mockGetCycles).toHaveBeenCalledWith('biz-otro');
+    expect(mockGetCycles).toHaveBeenCalledWith('biz-1');
   });
 
   it('retorna 400 si usuario no tiene businessId y no se pasa query param', async () => {

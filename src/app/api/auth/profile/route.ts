@@ -144,7 +144,12 @@ export const GET = handle(async (request: NextRequest) => {
       user = await userRepository.findById(user.id) ?? user;
     }
 
-    return NextResponse.json(user);
+    // Determine if user is owner of active business
+    const isOwner = user.businessId
+      ? (await businessRepository.findById(user.businessId))?.ownerId === user.id
+      : false;
+
+    return NextResponse.json({ ...user, isOwner });
   } catch (error) {
     console.error('Profile fetch error:', error);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

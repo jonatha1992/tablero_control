@@ -3,16 +3,18 @@ import type { IUserRepository } from '../interfaces/IUserRepository';
 import type { User, UserRole, UserBusiness } from '@/types/domain/user';
 import type { Prisma } from '@prisma/client';
 
-type PrismaUser = Prisma.UserGetPayload<{ include: { teams: true; memberships: true } }>;
+type PrismaUser = Prisma.UserGetPayload<{ include: { teams: true; memberships: { include: { business: true } } } }>;
+type PrismaUserBusinessWithBusiness = Prisma.UserBusinessGetPayload<{ include: { business: true } }>;
 type PrismaUserBusiness = Prisma.UserBusinessGetPayload<Record<string, never>>;
 
-function toDomainMembership(ub: PrismaUserBusiness): UserBusiness {
+function toDomainMembership(ub: PrismaUserBusiness | PrismaUserBusinessWithBusiness): UserBusiness {
   return {
     id: ub.id,
     userId: ub.userId,
     businessId: ub.businessId,
     role: ub.role as UserRole,
     locationId: ub.locationId ?? undefined,
+    businessName: (ub as PrismaUserBusinessWithBusiness).business?.name,
     isActive: ub.isActive,
     createdAt: ub.createdAt,
     updatedAt: ub.updatedAt,
@@ -40,7 +42,7 @@ function toDomain(u: PrismaUser): User {
   };
 }
 
-const include = { teams: true, memberships: true } satisfies Prisma.UserInclude;
+const include = { teams: true, memberships: { include: { business: true } } } satisfies Prisma.UserInclude;
 
 export class PrismaUserRepository implements IUserRepository {
   async findById(id: string): Promise<User | null> {
@@ -59,7 +61,7 @@ export class PrismaUserRepository implements IUserRepository {
   async findByBusiness(businessId: string): Promise<User[]> {
     const rows = await prisma.userBusiness.findMany({
       where: { businessId, isActive: true },
-      include: { user: { include: { teams: true, memberships: true } } },
+      include: { user: { include: { teams: true, memberships: { include: { business: true } } } } },
     });
     return rows.map((r) => toDomain(r.user));
   }
@@ -72,7 +74,7 @@ export class PrismaUserRepository implements IUserRepository {
         isActive: true,
         user: { isActive: true, id: { not: excludeId } },
       },
-      include: { user: { include: { teams: true, memberships: true } } },
+      include: { user: { include: { teams: true, memberships: { include: { business: true } } } } },
     });
     return rows.map((r) => toDomain(r.user));
   }

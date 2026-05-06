@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Calendar, GanttChart } from 'lucide-react';
+import { LayoutGrid, Calendar, GanttChart, Zap } from 'lucide-react';
 
 const TABS = [
   { href: '/dashboard/tareas', label: 'Kanban', icon: LayoutGrid, exact: true },
+  { href: '/dashboard/tareas/agenda', label: 'Agenda', icon: Zap, exact: false },
   { href: '/dashboard/tareas/calendario', label: 'Calendario', icon: Calendar, exact: false },
   { href: '/dashboard/tareas/cronograma', label: 'Cronograma', icon: GanttChart, exact: false },
 ];

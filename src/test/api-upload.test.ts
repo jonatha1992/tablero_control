@@ -30,7 +30,7 @@ const authedUser = {
   businessId: 'biz-1',
   email: 'user@biz.com',
   name: 'Usuario',
-  data: {} as never,
+  data: { id: 'user-1', role: 'miembro', businessId: 'biz-1' } as never,
 };
 
 function makeFormDataRequest(fields: Record<string, string | File>): NextRequest {
@@ -94,6 +94,11 @@ describe('POST /api/upload', () => {
     mockUploadAttachment.mockResolvedValueOnce({
       secure_url: 'https://cloudinary.com/file.pdf',
       public_id: 'tasks/task-1/file',
+    } as never);
+    vi.mocked(prisma.task.findUnique).mockResolvedValueOnce({
+      project: { businessId: 'biz-1' },
+      location: null,
+      creator: null,
     } as never);
     vi.mocked(prisma.attachment.create).mockResolvedValueOnce({} as never);
 

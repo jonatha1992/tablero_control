@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
+import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications';
@@ -37,9 +38,17 @@ export const GET = handle(async (request: NextRequest) => {
   if (search) filters.search = search;
 
   if (creatorId && !businessId) {
+    // Verify the creator belongs to the same tenant
+    const creator = await prisma.user.findUnique({ where: { id: creatorId }, select: { businessId: true } });
+    if (!creator?.businessId) {
+      return NextResponse.json({ error: 'creator_not_found' }, { status: 404 });
+    }
+    assertSameTenant(user.data, { businessId: creator.businessId });
     const tasks = await taskService.getTasksByCreator(creatorId, filters);
     return NextResponse.json(tasks);
   }
+  assertSameTenant(user.data, { businessId: businessId! });
+
   const tasks = await taskService.getTasksByBusiness(businessId!, filters);
   return NextResponse.json(tasks);
 });
@@ -49,7 +58,16 @@ export const POST = handle(async (request: NextRequest) => {
   if (user instanceof NextResponse) return user;
 
   const { dto, creatorId, businessId } = await request.json();
-  const task = await taskService.createTask(dto, creatorId ?? user.uid, businessId ?? user.businessId);
+  const effectiveBusinessId = businessId ?? user.businessId;
+  if (!effectiveBusinessId) {
+    return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
+  }
+  assertSameTenant(user.data, { businessId: effectiveBusinessId });
+  const effectiveCreatorId =
+    creatorId && (user.role === 'superadmin' || user.role === 'admin')
+      ? creatorId
+      : user.uid;
+  const task = await taskService.createTask(dto, effectiveCreatorId, effectiveBusinessId);
 
   await writeAuditLog({
     actorId: user.uid,

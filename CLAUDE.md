@@ -13,7 +13,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Tablero de Control — Contexto del Proyecto
 
 ## Qué es
-SaaS multi-tenant de gestión de tareas y proyectos. Cada negocio (Business) tiene sus propios locales, equipos y usuarios. La empresa dueña del sistema es TecnoFusión (superadmin).
+SaaS multi-tenant de gestión de tareas y proyectos. Inspirado en Jira + Trello + Toki: combina kanban de equipo, planificación por ciclos/sprints, objetivos/epics, y agenda personal inteligente. Cada negocio (Business) tiene sus propios locales, equipos y usuarios. La empresa dueña del sistema es TecnoFusión (superadmin).
 
 ## Stack
 - **Next.js 16** App Router + React 19 + TypeScript strict
@@ -64,9 +64,20 @@ API Route (src/app/api/**/route.ts)
 
 **Auth:** `requireUser()` en `src/lib/api/auth-helpers.ts`. Devuelve `AuthedUser | NextResponse` — si es `NextResponse`, retornarlo inmediatamente. `AuthedUser` tiene `uid`, `role`, `businessId`, `data: User`.
 
-**Permisos:** `src/lib/permissions/` — `matrix.ts` (RBAC por rol), `resolve.ts` (resuelve custom roles con `PermissionSet`), `tenant-guard.ts` (`assertSameTenant` / `isSameTenant`). Todo re-exportado desde `src/lib/permissions/index.ts`.
+**Permisos:** `src/lib/permissions/` — `matrix.ts` (RBAC por rol), `resolve.ts` (resuelve custom roles con `PermissionSet`), `tenant-guard.ts` (`assertSameTenant` / `assertResourceBelongsToBusiness`). Todo re-exportado desde `src/lib/permissions/index.ts`.
 
-**Audit log:** `src/lib/api/audit.ts` → `writeAuditLog()`. Llamar después de CREATE/UPDATE/DELETE en API routes. 37 acciones auditadas (`business.*`, `user.*`, `role.*`, `subscription.*`, `invoice.*`, `task.*`, `attachment.*`, `plan_config.*`).
+**Audit log:** `src/lib/api/audit.ts` → `writeAuditLog()`. Llamar después de CREATE/UPDATE/DELETE en API routes. Acciones auditadas: `business.*`, `user.*`, `role.*`, `subscription.*`, `invoice.*`, `task.*`, `attachment.*`, `plan_config.*`, `cycle.*`, `objective.*`, `project.*`, `comment.*`, `time_entry.*`, `invite_link.*`.
+
+## Seguridad multi-tenant — reglas críticas
+
+- `assertSameTenant(user.data, { businessId })` — verifica que el recurso pertenece al mismo negocio del usuario. Usar en GET que filtran por businessId.
+- `assertResourceBelongsToBusiness(user.data, resourceBusinessId)` — verifica que un recurso específico (tarea, ciclo, etc.) pertenece al negocio del usuario. Usar en GET/PATCH/DELETE de recursos individuales.
+- **Cross-tenant task injection**: al asignar `taskIds` a un ciclo u objetivo, siempre validar que todas las tareas pertenecen al mismo `businessId` antes de llamar al service:
+  ```ts
+  const validCount = await prisma.task.count({ where: { id: { in: taskIds }, businessId } });
+  if (validCount !== taskIds.length) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  ```
+- `creatorId` override en POST /tasks: solo `admin` o `superadmin` pueden especificar un `creatorId` distinto al propio. Otros roles siempre usan `user.uid`.
 
 ## Modelos principales (Prisma)
 
@@ -74,6 +85,7 @@ API Route (src/app/api/**/route.ts)
 ```
 id, title, description, status (TaskStatus), priority (TaskPriority), type (TaskType)
 creatorId, projectId?, locationId?, parentId?   ← subtareas via parentId
+cycleId?, objectiveId?                          ← asociación a sprint/objetivo
 assignees (User[]), tags (String[])
 startDate?, dueDate? (DateTime — incluye hora), completedDate?
 estimatedHours?, actualHours?
@@ -85,12 +97,31 @@ Enums: `TaskStatus` (backlog|todo|in_progress|in_review|done|blocked), `TaskPrio
 
 **Lógica de recurrencia** (`TaskService.moveTask`): cuando una tarea con `recurrence` se mueve a `done`, el servicio crea automáticamente la siguiente ocurrencia.
 
+### Cycle (Sprints/Períodos)
+```
+id, name, goal?, businessId
+status (CycleStatus): planning | active | completed | closed
+startDate?, endDate?
+tasks (Task[])
+```
+Ciclos = sprints de trabajo. Se gestionan en `/dashboard/planificacion`. Las tareas se asocian via `cycleId`.
+
+### Objective (Épicas/OKRs)
+```
+id, name, description?, businessId
+status (ObjectiveStatus): active | completed | archived
+progress (0-100), dueDate?
+tasks (Task[])
+```
+Objetivos = epics o metas de alto nivel. Se gestionan en `/dashboard/planificacion/objetivos`.
+
 ### User — campos importantes
 ```
 id (Firebase UID), email, name, role, businessId?, locationId?, customRoleId?
 avatar?, phone?, isActive, lastLogin?
 preferences (JSON): { theme, locale, timezone, notifications{email,push,agentReports,agentAlerts}, dashboardLayout[] }
 fcmTokens (String[])   ← tokens FCM para push notifications
+memberships (Membership[]) ← historial de negocios del usuario
 ```
 
 ### Business
@@ -134,8 +165,31 @@ userId, title, body, type (info|task_assigned|task_updated|mention), link?, read
 /api/tasks/
   GET /, POST /              ← lista/crea
   PATCH /[id], DELETE /[id]
+  GET /[id]/comments, POST /[id]/comments
+  GET /[id]/subtasks, POST /[id]/subtasks
+  GET /[id]/time-entries, POST /[id]/time-entries
   POST /from-audio            ← Groq Whisper → extracción con LLM
   POST /from-text             ← extracción LLM desde texto
+
+/api/comments/
+  PATCH /[id], DELETE /[id]
+
+/api/time-entries/
+  PATCH /[id], DELETE /[id]
+
+/api/cycles/
+  GET /, POST /
+  GET /[id], PATCH /[id], DELETE /[id]
+  POST /[id]/tasks            ← asigna/remueve tareas del ciclo (valida cross-tenant)
+
+/api/objectives/
+  GET /, POST /
+  GET /[id], PATCH /[id], DELETE /[id]
+  POST /[id]/tasks            ← asigna/remueve tareas del objetivo (valida cross-tenant)
+
+/api/projects/
+  GET /, POST /
+  GET /[id], PATCH /[id], DELETE /[id]
 
 /api/locations/
   GET /, POST /
@@ -173,7 +227,7 @@ userId, title, body, type (info|task_assigned|task_updated|mention), link?, read
   POST /cancel, POST /sync, POST /webhook
 
 /api/upload/
-  POST /                      ← sube a Cloudinary
+  POST /                      ← sube a Cloudinary (avatar o attachment de tarea)
 
 /api/cron/
   POST /subscription-expiry   ← verifica suscripciones vencidas + emails
@@ -195,21 +249,47 @@ src/app/
 │       ├── subscriptions/
 │       └── audit/
 ├── dashboard/        # app principal — layout 'use client' con ProtectedRoute + Sidebar + Header
-│   ├── tareas/        # Kanban board (drag-drop, selección múltiple, dictado AI)
+│   ├── tareas/        # 4 tabs: Kanban | Agenda | Calendario | Cronograma
+│   │   ├── (index)    # Kanban board — drag-drop, selección múltiple, dictado AI
+│   │   ├── agenda/    # Agenda inteligente — scoring diario, secciones auto, quick status
+│   │   ├── calendario/# FullCalendar — mes/semana/lista, drag-drop, ghost recurrencias
+│   │   └── cronograma/# Gantt view
+│   ├── planificacion/ # Ciclos (sprints) + Objetivos (epics)
+│   │   ├── (index)    # Períodos de trabajo (Cycles) — planning/active/completed/closed
+│   │   └── objetivos/ # Objetivos con progreso (0-100%)
 │   ├── equipo/        # gestión de miembros
 │   │   └── roles/     # roles personalizados con PermissionSet
 │   ├── sectores/      # gestión de locales/ubicaciones
-│   ├── calendario/    # vista FullCalendar con tareas/eventos
 │   ├── reportes/      # reportes (en desarrollo)
 │   ├── billing/       # facturación y planes
 │   └── config/        # configuración del negocio
 └── api/
 ```
 
+## Agenda Inteligente (`/dashboard/tareas/agenda`)
+
+Vista diaria tipo Toki con scoring automático. Componente: `src/components/tareas/agenda-view.tsx`.
+
+**Secciones (en orden de urgencia):**
+1. ⚡ **Foco del día** — top 3 tareas por score (no muestra si hay 0 activas)
+2. 🔴 **Vencidas** — `dueDate < hoy`, status ≠ done, con label "Xh atrás"
+3. 🕐 **Hoy con hora** — `dueDate = hoy` con hora ≠ 00:00, orden cronológico
+4. 🎯 **Para hoy** — `dueDate = hoy` todo-día, orden por score
+5. 📅 **Esta semana** — próximos 7 días, orden por fecha
+6. ⏱ **Próximamente** — próximos 30 días, colapsable
+7. 📥 **Sin fecha** — sin `dueDate`, colapsable, orden por score
+8. ✅ **Completadas** — colapsadas por defecto, últimas 30
+
+**Scoring:** `PRIORITY_SCORE + STATUS_SCORE + 300 (asignado a mí) + 50 (creador) + min(horasAtraso×10, 500)`
+
+**Quick actions:** click en círculo → dropdown de status (usa `useMoveTask` — activa recurrencia automática).
+
+**`now` reactivo:** se actualiza cada 60s y en `window.focus` — no se congela al medianoche.
+
 ## Tipos
 
 Todos los tipos en `src/types/`, re-exportados desde `src/types/index.ts`:
-- `domain/` — task, user, business, team, location, project, subscription, audit-log, notification, custom-role, alert, calendar, sprint, report, widget, agent
+- `domain/` — task, user, business, team, location, project, subscription, audit-log, notification, custom-role, alert, calendar, sprint, report, widget, agent, cycle, objective
 - `dto/` — task.dto (CreateTaskDTO, UpdateTaskDTO, MoveTaskDTO, ReorderKanbanDTO), auth.dto, team.dto (InviteMemberDTO, UpdateMemberDTO)
 - `ui/` — kanban.ui (KanbanDragState, KanbanUIFilters), forms.ui (TaskFormValues, UserFormValues, InviteMemberFormValues)
 - `api/` — responses (ApiResponse<T>, PaginatedResponse<T>)
@@ -253,6 +333,13 @@ Tests en `src/test/`. Setup en `src/test/setup.ts`. Entorno jsdom.
 
 Nomenclatura: `api-*.test.ts` para API routes, `hooks-*.test.ts` para hooks, `*.test.tsx` para componentes.
 
+**Mocks en tests de API routes:**
+- `authedUser` mock siempre debe incluir `data: { id, role, businessId }` — lo usa `assertSameTenant` y `assertResourceBelongsToBusiness`.
+- `userRepository` mock debe incluir `addMembership: vi.fn()`.
+- `businessRepository` mock debe incluir `findById: vi.fn()` (usado en `/api/auth/profile` para `isOwner`).
+- Routes que llaman `getTaskBusinessId()` (comments, time-entries, upload) requieren `prisma.task.findUnique` mockeado con `{ project: { businessId }, location: null, creator: null }`.
+- `dbUser` fixtures deben incluir `memberships: [{ businessId, role, isActive: true }]` para evitar que el profile route entre en el branch de auto-provisioning.
+
 ## Reglas críticas
 - Server Components por defecto — `'use client'` solo cuando sea necesario
 - Firebase client SDK **solo** en componentes con `'use client'`
@@ -266,7 +353,9 @@ Nomenclatura: `api-*.test.ts` para API routes, `hooks-*.test.ts` para hooks, `*.
 - Pagos: `src/lib/mercadopago/` — `plans.ts` + `plan-config.ts` + `preapproval.ts`; API client: `src/lib/api/billing.ts` (`billingApi`)
 - Planes DB: modelo `PlanConfig` en Prisma — una fila por plan. Seed: `npx tsx prisma/seed-plan-config.ts`. Superadmin edita desde `/superadmin/planes`. Componentes billing leen desde `GET /api/planes` (dinámico).
 - Límite de usuarios por plan: enforcement en `src/app/api/users/create/route.ts` — retorna `{ error: 'members_limit_exceeded', limit, current }` con status 429. El modal `create-user-modal.tsx` muestra bloque de upgrade con link a `/dashboard/billing`.
-- Tareas con hora: `dueDate` es `DateTime` en Prisma (incluye hora). La UI tiene inputs `date` + `time` separados; se combinan como `new Date(\`YYYY-MM-DDT HH:mm\`)`. La hora se muestra en kanban card y detail modal solo si ≠ medianoche local.
+- Tareas con hora: `dueDate` es `DateTime` en Prisma (incluye hora). La UI tiene inputs `date` + `time` separados; se combinan como `new Date(\`YYYY-MM-DDT HH:mm\`)`. La hora se muestra en kanban card y detail modal solo si ≠ medianoche local. En agenda, hora ≠ 00:00 = sección "Hoy con hora".
 - Uploads: `src/lib/cloudinary/` — `upload.ts` + `config.ts`
 - Notificaciones: siempre usar `src/lib/notifications.ts` para crear notificaciones — escribe en DB + envía FCM en una sola llamada.
 - Recurrencia de tareas: no crear la siguiente ocurrencia manualmente — el `TaskService.moveTask()` lo hace automáticamente al completar una tarea recurrente.
+- **Cambios de status de tarea**: siempre usar `useMoveTask` (no `useUpdateTask`) para garantizar que `moveTask()` se ejecute en backend — activa la creación de la siguiente ocurrencia en tareas recurrentes.
+- Ciclos/Objetivos: al asignar tareas vía `POST /api/cycles/[id]/tasks` o `POST /api/objectives/[id]/tasks`, el endpoint valida que todas las `taskIds` pertenezcan al mismo `businessId`. El body debe ser `{ taskIds: string[], action?: 'assign' | 'remove' }`.

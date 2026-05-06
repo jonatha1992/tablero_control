@@ -15,6 +15,7 @@ interface AuthContextType {
   isSuperAdmin: boolean;
   isAdmin: boolean;
   isManager: boolean;
+  isOwner: boolean;
   notInvited: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -141,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'superadmin' || role === 'admin';
   const isManager = role === 'superadmin' || role === 'admin' || role === 'responsable';
+  const isOwner = user?.isOwner ?? false;
 
   return (
     <AuthContext.Provider
@@ -153,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         isAdmin,
         isManager,
+        isOwner,
         notInvited,
         signOut,
         refreshProfile,
