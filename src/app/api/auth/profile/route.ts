@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
+import type { UserRole } from '@/types/domain/user';
 
 const DEFAULT_PREFERENCES = {
   theme: 'system' as const,
@@ -48,6 +49,7 @@ export const GET = handle(async (request: NextRequest) => {
         const business = await businessRepository.create({
           name: 'TecnoFusión (Master)',
           adminId: decoded.uid,
+          ownerId: decoded.uid,
           plan: 'free',
           status: 'active',
           settings: {
@@ -76,6 +78,13 @@ export const GET = handle(async (request: NextRequest) => {
           preferences: DEFAULT_PREFERENCES,
           isActive: true,
         } as Parameters<typeof userRepository.create>[0]);
+        await userRepository.addMembership({
+          userId: user.id,
+          businessId: business.id,
+          role: 'superadmin' as UserRole,
+          isActive: true,
+        });
+        user = await userRepository.findById(user.id) ?? user;
       }
     }
 
@@ -83,8 +92,23 @@ export const GET = handle(async (request: NextRequest) => {
       return NextResponse.json({ error: 'not_invited' }, { status: 404 });
     }
 
-    // Fix for existing users without businessId
-    if (!user.businessId) {
+    // Validate active business membership
+    const memberships = user.memberships ?? [];
+    const activeMembership = memberships.find((m) => m.businessId === user?.businessId && m.isActive);
+
+    if (user.businessId && !activeMembership) {
+      // Try to fallback to another active membership
+      const fallback = memberships.find((m) => m.isActive);
+      if (fallback) {
+        user = await userRepository.update(user.id, {
+          businessId: fallback.businessId,
+          role: fallback.role,
+        });
+      }
+    }
+
+    // Fix for existing users without businessId or without any membership
+    if (!user.businessId || memberships.length === 0) {
       const email = decodedEmail ?? decoded.email ?? '';
       const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
       const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
@@ -93,6 +117,7 @@ export const GET = handle(async (request: NextRequest) => {
       const business = await businessRepository.create({
         name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
         adminId: decoded.uid,
+        ownerId: decoded.uid,
         plan: 'free',
         status: 'active',
         settings: {
@@ -109,7 +134,14 @@ export const GET = handle(async (request: NextRequest) => {
         locationIds: [],
         teamIds: [],
       });
-      user = await userRepository.update(user.id, { businessId: business.id });
+      user = await userRepository.update(user.id, { businessId: business.id, role: isSuperadmin ? 'superadmin' : 'admin' as UserRole });
+      await userRepository.addMembership({
+        userId: user.id,
+        businessId: business.id,
+        role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,
+        isActive: true,
+      });
+      user = await userRepository.findById(user.id) ?? user;
     }
 
     return NextResponse.json(user);

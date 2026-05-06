@@ -25,10 +25,10 @@ test.describe('Acceso a rutas autenticadas', () => {
     await expect(page).toHaveURL('/dashboard/sectores');
   });
 
-  test('puede navegar a /dashboard/billing', async ({ page }) => {
-    await page.goto('/dashboard/billing');
+  test('puede navegar a facturación en config', async ({ page }) => {
+    await page.goto('/dashboard/config?tab=facturacion');
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveURL('/dashboard/billing');
+    await expect(page).toHaveURL('/dashboard/config?tab=facturacion');
     await expect(page.locator('text=500, text=Error del servidor')).toHaveCount(0);
   });
 

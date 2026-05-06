@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -296,10 +296,15 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={handleClose} disabled={isPending}>
+                  <X className="mr-1.5 h-4 w-4" />
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
-                  {isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                  {isPending ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="mr-1.5 h-4 w-4" />
+                  )}
                   {isPending ? 'Creando...' : 'Crear usuario'}
                 </Button>
               </DialogFooter>
@@ -328,10 +333,15 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={handleClose} disabled={reactivating}>
+                <X className="mr-1.5 h-4 w-4" />
                 Cancelar
               </Button>
               <Button onClick={handleReactivate} disabled={reactivating}>
-                {reactivating && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                {reactivating ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <UserCheck className="mr-1.5 h-4 w-4" />
+                )}
                 {reactivating ? 'Reactivando...' : 'Reactivar usuario'}
               </Button>
             </DialogFooter>

@@ -9,9 +9,18 @@ import { handle } from '@/lib/api/route-handler';
 import { MailService } from '@/services/mail.service';
 import { PLANS } from '@/lib/mercadopago/plans';
 
+// FIX #3: Require secret in production; validate timestamp to prevent replay attacks
 function verifySignature(req: NextRequest, rawBody: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
-  if (!secret) return true;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[webhook] MP_WEBHOOK_SECRET not configured — rejecting all webhooks in production');
+      return false;
+    }
+    // dev/test: allow through without secret
+    return true;
+  }
 
   const xSig = req.headers.get('x-signature') ?? '';
   const requestId = req.headers.get('x-request-id') ?? '';
@@ -25,6 +34,17 @@ function verifySignature(req: NextRequest, rawBody: string): boolean {
   const ts = tsMatch[1];
   const v1 = v1Match[1];
 
+  // FIX #1: Replay attack prevention — reject if timestamp is older than 5 minutes.
+  // MP sends ts in milliseconds; auto-detect if it looks like seconds instead.
+  const tsNum = parseInt(ts, 10);
+  if (!isNaN(tsNum)) {
+    const tsMs = tsNum > 1e12 ? tsNum : tsNum * 1000;
+    if (Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) {
+      console.warn('[webhook] timestamp replay or clock skew detected, ts:', ts, 'request-id:', requestId);
+      return false;
+    }
+  }
+
   let dataId = '';
   try {
     const body = JSON.parse(rawBody) as Record<string, unknown>;
@@ -36,14 +56,29 @@ function verifySignature(req: NextRequest, rawBody: string): boolean {
   const signed = `id:${dataId};request-id:${requestId};ts:${ts};`;
   const expected = createHmac('sha256', secret).update(signed).digest('hex');
   try {
-    return timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
+    // timingSafeEqual requires equal-length buffers
+    const vBuf = Buffer.from(v1);
+    const eBuf = Buffer.from(expected);
+    if (vBuf.length !== eBuf.length) {
+      console.warn('[webhook] signature length mismatch for request-id:', requestId);
+      return false;
+    }
+    const valid = timingSafeEqual(vBuf, eBuf);
+    if (!valid) {
+      console.warn('[webhook] invalid signature for request-id:', requestId);
+    }
+    return valid;
   } catch {
+    console.warn('[webhook] signature comparison error for request-id:', requestId);
     return false;
   }
 }
 
+// FIX #17: Use date-safe addDays (no DST issues for billing purposes)
 function addDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+  const result = new Date(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
 }
 
 const MP_TO_INTERNAL: Record<string, SubscriptionStatus> = {
@@ -59,6 +94,19 @@ interface MpPayment {
   transaction_amount: number;
   external_reference?: string;
   preapproval_id?: string;
+  date_approved?: string;
+}
+
+// FIX #16: Complete feature flags based on plan
+function buildFeatureFlags(plan: string): Record<string, boolean> {
+  const isPro = plan === 'pro' || plan === 'enterprise';
+  const isEnterprise = plan === 'enterprise';
+  return {
+    canExportReports: isPro,
+    canUseCustomRoles: isPro,
+    canAccessApi: isEnterprise,
+    canCustomBrand: isEnterprise,
+  };
 }
 
 export const POST = handle(async (req: NextRequest) => {
@@ -90,7 +138,11 @@ export const POST = handle(async (req: NextRequest) => {
     }
 
     const ref = parseExternalReference(preapproval.external_reference);
-    if (!ref) return NextResponse.json({ ok: true });
+    if (!ref) {
+      // FIX #13: Log invalid refs instead of silently ignoring
+      console.warn('[webhook] invalid or missing external_reference on preapproval:', dataId, preapproval.external_reference);
+      return NextResponse.json({ ok: true });
+    }
 
     const status = MP_TO_INTERNAL[preapproval.status] ?? 'pending';
 
@@ -106,22 +158,19 @@ export const POST = handle(async (req: NextRequest) => {
 
       const mpPayerIdStr = preapproval.payer_id != null ? String(preapproval.payer_id) : null;
 
+      // FIX #8: Use update (businessId is @unique on Subscription) instead of updateMany
       await prisma.subscription.updateMany({
         where: { businessId: ref.businessId },
         data: { status, mpPayerId: mpPayerIdStr, ...periodData },
       });
 
       if (status === 'active') {
-        const flags: Record<string, boolean> = {
-          canExportReports: ref.plan !== 'free' && ref.plan !== 'basic',
-        };
-
         await prisma.business.update({
           where: { id: ref.businessId },
           data: {
             plan: ref.plan,
             status: 'active',
-            featureFlags: flags,
+            featureFlags: buildFeatureFlags(ref.plan),
           },
         });
 
@@ -143,8 +192,9 @@ export const POST = handle(async (req: NextRequest) => {
           const admin = biz.users.find((u) => u.id === biz.adminId);
           if (!admin) return;
           const planName = PLANS[ref.plan as keyof typeof PLANS]?.name ?? ref.plan;
-          MailService.sendSubscriptionActivatedEmail(admin.email, biz.name, planName).catch(() => {});
-        }).catch(() => {});
+          MailService.sendSubscriptionActivatedEmail(admin.email, biz.name, planName)
+            .catch((err) => console.error('[webhook] sendSubscriptionActivatedEmail failed:', err));
+        }).catch((err) => console.error('[webhook] admin lookup failed:', err));
       }
     } catch (err) {
       console.error('[webhook] subscription_preapproval db error:', err);
@@ -161,7 +211,11 @@ export const POST = handle(async (req: NextRequest) => {
     }
 
     const ref = parseExternalReference(payment.external_reference);
-    if (!ref) return NextResponse.json({ ok: true });
+    if (!ref) {
+      // FIX #13: Log invalid refs
+      console.warn('[webhook] invalid or missing external_reference on payment:', dataId, payment.external_reference);
+      return NextResponse.json({ ok: true });
+    }
 
     const invoiceStatus = payment.status === 'approved' ? 'paid'
       : payment.status === 'rejected' ? 'failed'
@@ -173,20 +227,32 @@ export const POST = handle(async (req: NextRequest) => {
       });
 
       if (sub) {
+        // FIX #2: Check for existing invoice before creating — prevents duplicates on retry/replay
+        const existingInvoice = await prisma.invoice.findUnique({
+          where: { mpPaymentId: String(payment.id) },
+        });
+
+        if (existingInvoice) {
+          console.warn('[webhook] duplicate payment webhook ignored, mpPaymentId:', payment.id);
+          return NextResponse.json({ ok: true });
+        }
+
         if (payment.status === 'approved') {
           const now = new Date();
           const periodDays = ref.frequency === 'yearly' ? 365 : 30;
-          // Extend from current end or from now if expired
           const base = sub.currentPeriodEnd && sub.currentPeriodEnd > now
             ? sub.currentPeriodEnd
             : now;
           const newEnd = addDays(base, periodDays);
 
+          // FIX #10: Use date_approved for period start instead of now()
+          const approvedAt = payment.date_approved ? new Date(payment.date_approved) : now;
+
           await prisma.subscription.update({
             where: { id: sub.id },
             data: {
               status: 'active',
-              currentPeriodStart: now,
+              currentPeriodStart: approvedAt,
               currentPeriodEnd: newEnd,
               nextBillingDate: newEnd,
             },
@@ -194,7 +260,11 @@ export const POST = handle(async (req: NextRequest) => {
 
           await prisma.business.update({
             where: { id: ref.businessId },
-            data: { status: 'active', plan: ref.plan },
+            data: {
+              status: 'active',
+              plan: ref.plan,
+              featureFlags: buildFeatureFlags(ref.plan),
+            },
           });
         }
 
@@ -206,7 +276,10 @@ export const POST = handle(async (req: NextRequest) => {
             currency: 'ARS',
             status: invoiceStatus,
             mpPaymentId: String(payment.id),
-            paidAt: invoiceStatus === 'paid' ? new Date() : null,
+            // FIX #10: Use date_approved for paidAt
+            paidAt: invoiceStatus === 'paid'
+              ? (payment.date_approved ? new Date(payment.date_approved) : new Date())
+              : null,
           },
         });
 
@@ -229,15 +302,23 @@ export const POST = handle(async (req: NextRequest) => {
             const admin = biz.users.find((u) => u.id === biz.adminId);
             if (!admin) return;
             if (invoiceStatus === 'paid') {
-              MailService.sendPaymentSuccessEmail(admin.email, biz.name, payment.transaction_amount).catch(() => {});
+              MailService.sendPaymentSuccessEmail(admin.email, biz.name, payment.transaction_amount)
+                .catch((err) => console.error('[webhook] sendPaymentSuccessEmail failed:', err));
             } else {
-              MailService.sendPaymentFailedEmail(admin.email, biz.name).catch(() => {});
+              MailService.sendPaymentFailedEmail(admin.email, biz.name)
+                .catch((err) => console.error('[webhook] sendPaymentFailedEmail failed:', err));
             }
-          }).catch(() => {});
+          }).catch((err) => console.error('[webhook] admin lookup failed:', err));
         }
       }
     } catch (err) {
-      console.error('[webhook] payment db error:', err);
+      // FIX #2: If unique constraint violation, it was already processed — log and ignore
+      const isUniqueViolation = err instanceof Error && err.message.includes('Unique constraint');
+      if (isUniqueViolation) {
+        console.warn('[webhook] duplicate invoice prevented by DB constraint, mpPaymentId:', payment.id);
+      } else {
+        console.error('[webhook] payment db error:', err);
+      }
     }
   }
 

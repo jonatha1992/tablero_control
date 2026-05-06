@@ -1,9 +1,23 @@
 import { prisma } from '@/lib/prisma';
 import type { IUserRepository } from '../interfaces/IUserRepository';
-import type { User, UserRole } from '@/types/domain/user';
+import type { User, UserRole, UserBusiness } from '@/types/domain/user';
 import type { Prisma } from '@prisma/client';
 
-type PrismaUser = Prisma.UserGetPayload<{ include: { teams: true } }>;
+type PrismaUser = Prisma.UserGetPayload<{ include: { teams: true; memberships: true } }>;
+type PrismaUserBusiness = Prisma.UserBusinessGetPayload<Record<string, never>>;
+
+function toDomainMembership(ub: PrismaUserBusiness): UserBusiness {
+  return {
+    id: ub.id,
+    userId: ub.userId,
+    businessId: ub.businessId,
+    role: ub.role as UserRole,
+    locationId: ub.locationId ?? undefined,
+    isActive: ub.isActive,
+    createdAt: ub.createdAt,
+    updatedAt: ub.updatedAt,
+  };
+}
 
 function toDomain(u: PrismaUser): User {
   return {
@@ -17,6 +31,7 @@ function toDomain(u: PrismaUser): User {
     avatar: u.avatar ?? undefined,
     phone: u.phone ?? undefined,
     teamIds: u.teams.map((t: { teamId: string }) => t.teamId),
+    memberships: u.memberships?.map(toDomainMembership),
     preferences: u.preferences as unknown as User['preferences'],
     isActive: u.isActive,
     lastLogin: u.lastLogin ?? undefined,
@@ -25,7 +40,7 @@ function toDomain(u: PrismaUser): User {
   };
 }
 
-const include = { teams: true } satisfies Prisma.UserInclude;
+const include = { teams: true, memberships: true } satisfies Prisma.UserInclude;
 
 export class PrismaUserRepository implements IUserRepository {
   async findById(id: string): Promise<User | null> {
@@ -42,20 +57,78 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findByBusiness(businessId: string): Promise<User[]> {
-    const users = await prisma.user.findMany({ where: { businessId, isActive: true }, include });
-    return users.map(toDomain);
+    const rows = await prisma.userBusiness.findMany({
+      where: { businessId, isActive: true },
+      include: { user: { include: { teams: true, memberships: true } } },
+    });
+    return rows.map((r) => toDomain(r.user));
   }
 
   async findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]> {
-    const users = await prisma.user.findMany({
-      where: { businessId, role: 'admin', isActive: true, id: { not: excludeId } },
-      include,
+    const rows = await prisma.userBusiness.findMany({
+      where: {
+        businessId,
+        role: 'admin',
+        isActive: true,
+        user: { isActive: true, id: { not: excludeId } },
+      },
+      include: { user: { include: { teams: true, memberships: true } } },
     });
-    return users.map(toDomain);
+    return rows.map((r) => toDomain(r.user));
+  }
+
+  async findMemberships(userId: string): Promise<UserBusiness[]> {
+    const rows = await prisma.userBusiness.findMany({ where: { userId } });
+    return rows.map(toDomainMembership);
+  }
+
+  async addMembership(data: Omit<UserBusiness, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserBusiness> {
+    const ub = await prisma.userBusiness.create({
+      data: {
+        userId: data.userId,
+        businessId: data.businessId,
+        role: data.role,
+        locationId: data.locationId,
+        isActive: data.isActive ?? true,
+      },
+    });
+    return toDomainMembership(ub);
+  }
+
+  async updateMembership(
+    userId: string,
+    businessId: string,
+    data: Partial<Pick<UserBusiness, 'role' | 'locationId' | 'isActive'>>
+  ): Promise<UserBusiness> {
+    const ub = await prisma.userBusiness.update({
+      where: { userId_businessId: { userId, businessId } },
+      data: {
+        ...(data.role !== undefined && { role: data.role }),
+        ...(data.locationId !== undefined && { locationId: data.locationId }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      },
+    });
+    return toDomainMembership(ub);
+  }
+
+  async removeMembership(userId: string, businessId: string): Promise<void> {
+    await prisma.userBusiness.delete({
+      where: { userId_businessId: { userId, businessId } },
+    });
+  }
+
+  async updateActiveBusiness(userId: string, businessId: string | null, role?: UserRole): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(businessId !== undefined && { businessId }),
+        ...(role !== undefined && { role }),
+      },
+    });
   }
 
   async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<User> {
-    const { teamIds, id, ...rest } = data;
+    const { teamIds, memberships: _memberships, id, ...rest } = data;
     const u = await prisma.user.create({
       data: {
         ...rest,
@@ -72,7 +145,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
-    const { teamIds: _teamIds, ...rest } = data;
+    const { teamIds: _teamIds, memberships: _memberships, ...rest } = data;
     const u = await prisma.user.update({
       where: { id },
       data: {

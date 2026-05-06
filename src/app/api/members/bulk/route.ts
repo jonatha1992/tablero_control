@@ -19,17 +19,17 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'ids required' }, { status: 400 });
   }
 
-  const targets = await prisma.user.findMany({
-    where: { id: { in: ids } },
-    select: { id: true, businessId: true },
+  const targets = await prisma.userBusiness.findMany({
+    where: { userId: { in: ids }, businessId: user.businessId },
+    select: { userId: true },
   });
 
-  if (targets.length !== ids.length || targets.some((t) => t.businessId !== user.businessId)) {
+  if (targets.length !== ids.length) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  await prisma.user.updateMany({
-    where: { id: { in: ids }, businessId: user.businessId },
+  await prisma.userBusiness.updateMany({
+    where: { userId: { in: ids }, businessId: user.businessId },
     data: { locationId: locationId ?? null },
   });
 

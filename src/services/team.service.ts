@@ -11,9 +11,32 @@ class TeamService {
   async inviteMember(dto: InviteMemberDTO, businessId: string, id?: string): Promise<User> {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const existing = await userRepository.findByEmail(normalizedEmail);
-    if (existing) throw new Error('Ya existe un usuario con este email');
+    if (existing) {
+      // User already exists → add or update membership
+      const existingMembership = await prisma.userBusiness.findUnique({
+        where: { userId_businessId: { userId: existing.id, businessId } },
+      });
+      if (existingMembership) {
+        await prisma.userBusiness.update({
+          where: { userId_businessId: { userId: existing.id, businessId } },
+          data: { role: dto.role, locationId: dto.locationId, isActive: true },
+        });
+      } else {
+        await userRepository.addMembership({
+          userId: existing.id,
+          businessId,
+          role: dto.role as UserRole,
+          locationId: dto.locationId,
+          isActive: true,
+        });
+      }
+      // Update active business cache to the invited one
+      await userRepository.updateActiveBusiness(existing.id, businessId, dto.role as UserRole);
+      const refreshed = await userRepository.findById(existing.id);
+      return refreshed ?? existing;
+    }
 
-    return userRepository.create({
+    const user = await userRepository.create({
       id,
       name: dto.name,
       email: normalizedEmail,
@@ -31,22 +54,52 @@ class TeamService {
         dashboardLayout: [],
       },
     });
+
+    await userRepository.addMembership({
+      userId: user.id,
+      businessId,
+      role: dto.role as UserRole,
+      locationId: dto.locationId,
+      isActive: true,
+    });
+
+    const refreshed = await userRepository.findById(user.id);
+    return refreshed ?? user;
   }
 
   async updateMember(id: string, dto: UpdateMemberDTO): Promise<User> {
     return userRepository.update(id, dto);
   }
 
-  async changeRole(userId: string, role: UserRole): Promise<void> {
-    return userRepository.updateRole(userId, role);
+  async changeRole(userId: string, businessId: string, role: UserRole): Promise<void> {
+    await prisma.userBusiness.update({
+      where: { userId_businessId: { userId, businessId } },
+      data: { role },
+    });
+    // Update cache if this is the active business
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { businessId: true } });
+    if (user?.businessId === businessId) {
+      await prisma.user.update({ where: { id: userId }, data: { role } });
+    }
   }
 
-  async removeMember(userId: string): Promise<void> {
-    return userRepository.deactivate(userId);
+  async removeMember(userId: string, businessId: string): Promise<void> {
+    await prisma.userBusiness.update({
+      where: { userId_businessId: { userId, businessId } },
+      data: { isActive: false },
+    });
+    // Clear cache if this was the active business
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { businessId: true } });
+    if (user?.businessId === businessId) {
+      await prisma.user.update({ where: { id: userId }, data: { businessId: null } });
+    }
   }
 
-  async reactivateMember(userId: string): Promise<void> {
-    return userRepository.reactivate(userId);
+  async reactivateMember(userId: string, businessId: string): Promise<void> {
+    await prisma.userBusiness.update({
+      where: { userId_businessId: { userId, businessId } },
+      data: { isActive: true },
+    });
   }
 
   async handleManagerDeletion(userId: string, businessId: string): Promise<void> {

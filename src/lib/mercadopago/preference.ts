@@ -22,14 +22,20 @@ export function buildExternalReference(businessId: string, plan: PlanId, frequen
   return `biz:${businessId}:${plan}:${frequency}`;
 }
 
+const VALID_PLAN_IDS: string[] = ['free', 'basic', 'pro', 'enterprise'];
+const VALID_FREQUENCIES: string[] = ['monthly', 'yearly'];
+
 export function parseExternalReference(ref?: string): { businessId: string; plan: PlanId; frequency: BillingFrequency } | null {
   if (!ref) return null;
   const parts = ref.split(':');
   if (parts.length !== 4 || parts[0] !== 'biz') return null;
+  const plan = parts[2];
+  const frequency = parts[3];
+  if (!VALID_PLAN_IDS.includes(plan) || !VALID_FREQUENCIES.includes(frequency)) return null;
   return {
     businessId: parts[1],
-    plan: parts[2] as PlanId,
-    frequency: parts[3] as BillingFrequency,
+    plan: plan as PlanId,
+    frequency: frequency as BillingFrequency,
   };
 }
 

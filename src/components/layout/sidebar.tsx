@@ -37,7 +37,6 @@ const navItems = [
   { href: '/dashboard/planificacion',  label: 'Planificación',  icon: Layers,          tourId: 'tour-nav-planificacion' },
   { href: '/dashboard/equipo',         label: 'Equipo',         icon: Users,           tourId: 'tour-nav-equipo' },
   { href: '/dashboard/reportes',       label: 'Reportes',       icon: BarChart2,       tourId: 'tour-nav-reportes' },
-  { href: '/dashboard/billing',        label: 'Facturación',    icon: CreditCard,      tourId: 'tour-nav-billing' },
   { href: '/dashboard/config',         label: 'Configuración',  icon: Settings,        tourId: 'tour-nav-config' },
 ];
 

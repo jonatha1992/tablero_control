@@ -23,13 +23,41 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
+  const isNewBusiness = searchParams.get('newBusiness') === 'true';
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user) {
+    if (!authLoading && isAuthenticated && user && !isNewBusiness) {
       const target = redirect !== '/dashboard' ? redirect : (user.role === 'superadmin' ? '/superadmin' : '/dashboard');
       router.push(target);
     }
-  }, [isAuthenticated, authLoading, user, router]);
+  }, [isAuthenticated, authLoading, user, router, isNewBusiness, redirect]);
+
+  const handleCreateBusiness = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const trimmedName = businessName.trim();
+    if (!trimmedName) {
+      setFieldErrors({ businessName: 'El nombre del negocio es obligatorio' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('No se pudo obtener el token');
+      const res = await fetch('/api/businesses', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmedName }),
+      });
+      if (!res.ok) throw new Error('Error al crear el negocio');
+      await refreshProfile();
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Error al crear el negocio');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +139,53 @@ function RegisterForm() {
           <p className="text-muted-foreground">Cargando...</p>
         </div>
       </div>
+    );
+  }
+
+  if (isAuthenticated && isNewBusiness) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
+            TC
+          </div>
+          <CardTitle className="text-2xl">Nuevo Negocio</CardTitle>
+          <CardDescription>Creá un nuevo negocio para gestionar</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleCreateBusiness}>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label htmlFor="businessName" className="text-sm font-medium">Nombre del negocio</label>
+              <input
+                id="businessName"
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Mi nuevo negocio"
+                required
+                maxLength={100}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              {fieldErrors.businessName && <p className="text-xs text-destructive">{fieldErrors.businessName}</p>}
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creando negocio...' : 'Crear negocio'}
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link href="/dashboard" className="text-primary underline hover:text-primary/80">
+                Volver al dashboard
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Card>
     );
   }
 

@@ -21,75 +21,100 @@ export const GET = handle(async (req: NextRequest) => {
   const now = new Date();
   const warnThreshold = new Date(now.getTime() + WARN_DAYS * 24 * 60 * 60 * 1000);
 
-  // Mark expired active subscriptions as past_due
-  const expired = await prisma.subscription.updateMany({
-    where: {
-      status: 'active',
-      currentPeriodEnd: { lt: now },
-    },
-    data: { status: 'past_due' },
-  });
+  let markedPastDue = 0;
+  let emailsSent = 0;
+  const emailErrors: string[] = [];
 
-  // Also update business status for past_due
-  const pastDueSubs = await prisma.subscription.findMany({
-    where: { status: 'past_due' },
-    select: { businessId: true },
-  });
-  if (pastDueSubs.length > 0) {
-    await prisma.business.updateMany({
-      where: { id: { in: pastDueSubs.map((s) => s.businessId) } },
-      data: { status: 'suspended' },
+  try {
+    // FIX #6: Wrap DB operations in try-catch — failure returns 500 instead of silent 200
+    const expired = await prisma.subscription.updateMany({
+      where: {
+        status: 'active',
+        currentPeriodEnd: { lt: now },
+      },
+      data: { status: 'past_due' },
     });
+    markedPastDue = expired.count;
+
+    if (markedPastDue > 0) {
+      const pastDueSubs = await prisma.subscription.findMany({
+        where: { status: 'past_due' },
+        select: { businessId: true },
+      });
+      await prisma.business.updateMany({
+        where: { id: { in: pastDueSubs.map((s) => s.businessId) } },
+        data: { status: 'suspended' },
+      });
+    }
+  } catch (err) {
+    console.error('[cron/subscription-expiry] DB error marking past_due:', err);
+    return NextResponse.json({ error: 'db_error', message: String(err) }, { status: 500 });
   }
 
-  // Find subscriptions expiring within warn window
-  const expiring = await prisma.subscription.findMany({
-    where: {
-      status: 'active',
-      currentPeriodEnd: { gte: now, lte: warnThreshold },
-    },
-    include: {
-      business: {
-        include: {
-          users: {
-            where: { isActive: true },
-            select: { id: true, email: true, name: true },
+  // FIX #6/#7: Expiry warning emails — errors are logged and counted, not silently swallowed
+  try {
+    const expiring = await prisma.subscription.findMany({
+      where: {
+        status: 'active',
+        currentPeriodEnd: { gte: now, lte: warnThreshold },
+      },
+      include: {
+        business: {
+          include: {
+            users: {
+              where: { isActive: true },
+              select: { id: true, email: true, name: true },
+            },
           },
         },
       },
-    },
-  });
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tablerocontrol.com';
-  let emailsSent = 0;
-
-  for (const sub of expiring) {
-    const admin = sub.business.users.find((u) => u.id === sub.business.adminId);
-    if (!admin) continue;
-
-    const daysLeft = Math.ceil(
-      (sub.currentPeriodEnd!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-    );
-    const expiryDate = sub.currentPeriodEnd!.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
     });
 
-    await MailService.sendSubscriptionExpiryEmail(admin.email, {
-      businessName: sub.business.name,
-      planName: PLANS[sub.plan].name,
-      expiryDate,
-      renewUrl: `${appUrl}/dashboard/billing`,
-      daysLeft,
-    });
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tablerocontrol.com';
 
-    emailsSent++;
+    for (const sub of expiring) {
+      const admin = sub.business.users.find((u) => u.id === sub.business.adminId);
+      if (!admin) continue;
+
+      const daysLeft = Math.ceil(
+        (sub.currentPeriodEnd!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const expiryDate = sub.currentPeriodEnd!.toLocaleDateString('es-AR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+
+      // FIX #12: Log email failures instead of silently swallowing them
+      try {
+        await MailService.sendSubscriptionExpiryEmail(admin.email, {
+          businessName: sub.business.name,
+          planName: PLANS[sub.plan].name,
+          expiryDate,
+          renewUrl: `${appUrl}/dashboard/billing`,
+          daysLeft,
+        });
+        emailsSent++;
+      } catch (err) {
+        console.error('[cron/subscription-expiry] email failed for', admin.email, ':', err);
+        emailErrors.push(admin.email);
+      }
+    }
+  } catch (err) {
+    console.error('[cron/subscription-expiry] DB error querying expiring subs:', err);
+    // Non-critical: return partial success since past_due marking already completed
+    return NextResponse.json({
+      ok: true,
+      markedPastDue,
+      emailsSent,
+      warning: 'email query failed',
+    }, { status: 207 });
   }
 
   return NextResponse.json({
     ok: true,
-    markedPastDue: expired.count,
+    markedPastDue,
     emailsSent,
+    ...(emailErrors.length > 0 ? { emailErrors } : {}),
   });
 });
