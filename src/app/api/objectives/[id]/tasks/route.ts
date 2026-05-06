@@ -25,7 +25,14 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
 
   if (taskIds.length > 0 && action !== 'remove') {
     const validCount = await (await import('@/lib/prisma')).prisma.task.count({
-      where: { id: { in: taskIds }, businessId: objective.businessId },
+      where: {
+        id: { in: taskIds },
+        OR: [
+          { project: { businessId: objective.businessId } },
+          { location: { businessId: objective.businessId } },
+          { creator: { businessId: objective.businessId } },
+        ],
+      },
     });
     if (validCount !== taskIds.length) {
       return NextResponse.json({ error: 'Una o más tareas no pertenecen a este negocio' }, { status: 403 });
