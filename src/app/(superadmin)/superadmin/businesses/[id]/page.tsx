@@ -147,7 +147,7 @@ export default function BusinessDetailPage({ params }: Props) {
                   <span className="inline-flex items-center">Nombre {sortIcon('name')}</span>
                 </th>
                 <th className="text-left px-4 py-2.5 font-medium cursor-pointer select-none" onClick={() => toggleSort('email')}>
-                  <span className="inline-flex items-center">Email {sortIcon('email')}</span>
+                  <span className="inline-flex items-center">Correo {sortIcon('email')}</span>
                 </th>
                 <th className="text-left px-4 py-2.5 font-medium cursor-pointer select-none" onClick={() => toggleSort('role')}>
                   <span className="inline-flex items-center">Rol {sortIcon('role')}</span>

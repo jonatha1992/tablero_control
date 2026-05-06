@@ -15,14 +15,16 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useUpdateMember } from '@/hooks/mutations/use-update-member';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useRolesQuery } from '@/hooks/queries/use-roles-query';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useAuth } from '@/hooks/auth-context';
 import type { User, UserRole } from '@/types/domain/user';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
-  { value: 'admin', label: 'Admin', description: 'Gestión completa del negocio' },
+  { value: 'admin', label: 'Administrador', description: 'Gestión completa del negocio' },
   { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores' },
   { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas' },
-  { value: 'viewer', label: 'Viewer', description: 'Solo lectura' },
+  { value: 'viewer', label: 'Visualizador', description: 'Solo lectura' },
 ];
 
 interface Props {
@@ -37,33 +39,41 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
   const [role, setRole] = useState<UserRole>('miembro');
   const [locationId, setLocationId] = useState<string>('');
   const [error, setError] = useState('');
+  const [customRoleIds, setCustomRoleIds] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const { user: authUser } = useAuth();
   const { mutate, isPending } = useUpdateMember();
   const { data: locations = [] } = useLocationsQuery();
+  const { data: allRoles = [] } = useRolesQuery(authUser?.businessId);
+
+  const availableCustomRoles = allRoles.filter((r) => r.isActive && !r.isSystem);
 
   useEffect(() => {
     if (member) {
       setName(member.name);
       setRole(member.role);
       setLocationId(member.locationId || '');
+      setCustomRoleIds(member.customRoleIds ?? []);
     }
   }, [member, open]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!member) return;
-    if (!name.trim() || !role) return;
+    const trimmedName = name.trim();
+    if (!trimmedName || !role) return;
     setError('');
 
     mutate(
-      { 
-        id: member.id, 
-        data: { 
-          name: name.trim(), 
-          role, 
-          locationId: locationId || undefined 
-        } 
+      {
+        id: member.id,
+        data: {
+          name: trimmedName,
+          role,
+          locationId: locationId || undefined,
+          customRoleIds,
+        }
       },
       {
         onSuccess: () => onClose(),
@@ -93,11 +103,12 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              maxLength={100}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">Correo electrónico</label>
             <Input
               value={member?.email || ''}
               disabled
@@ -142,6 +153,33 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               ))}
             </div>
           </div>
+
+          {role !== 'superadmin' && availableCustomRoles.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Roles personalizados</label>
+              <div className="space-y-1.5 rounded-md border border-input p-3">
+                {availableCustomRoles.map((cr) => (
+                  <label key={cr.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={customRoleIds.includes(cr.id)}
+                      onChange={(e) =>
+                        setCustomRoleIds((prev) =>
+                          e.target.checked ? [...prev, cr.id] : prev.filter((x) => x !== cr.id)
+                        )
+                      }
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <span
+                      className="inline-block h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: cr.color }}
+                    />
+                    <span className="text-sm">{cr.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

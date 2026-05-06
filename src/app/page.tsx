@@ -24,17 +24,17 @@ export default function HomePage() {
             <Image src="/icon-cropped.png" alt="Tablero de Control" width={40} height={40} className="rounded-xl object-contain shrink-0" />
             <span className="text-xl font-bold whitespace-nowrap">Tablero de Control</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link href="/login">
-              <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent">
-                <LogIn className="h-4 w-4" />
-                Iniciar sesión
+              <span className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 sm:px-4 text-sm font-medium hover:bg-accent whitespace-nowrap">
+                <LogIn className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Iniciar sesión</span>
               </span>
             </Link>
             <Link href="/register">
-              <span className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                <UserPlus className="h-4 w-4" />
-                Registrarse
+              <span className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 sm:px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 whitespace-nowrap">
+                <UserPlus className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Registrarse</span>
               </span>
             </Link>
           </div>
@@ -55,15 +55,15 @@ export default function HomePage() {
                 Un tablero de control multi-tenant para gestionar locales, sectores y equipos.
                 Kanban con drag & drop, sprints Scrum, calendarios y reportes automáticos.
               </p>
-              <div className="mt-10 flex items-center justify-center gap-4">
-                <Link href="/register">
-                  <span className="inline-flex h-12 items-center gap-2 rounded-lg bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90">
+              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+                <Link href="/register" className="w-full sm:w-auto">
+                  <span className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary px-8 text-base font-medium text-primary-foreground hover:bg-primary/90 sm:w-auto">
                     Empezar gratis
-                    <ArrowRight className="h-5 w-5" />
+                    <ArrowRight className="h-5 w-5 shrink-0" />
                   </span>
                 </Link>
-                <Link href="/login">
-                  <span className="inline-flex h-12 items-center justify-center rounded-lg border border-input bg-background px-8 text-base font-medium hover:bg-accent">
+                <Link href="/login" className="w-full sm:w-auto">
+                  <span className="inline-flex h-12 w-full items-center justify-center rounded-lg border border-input bg-background px-8 text-base font-medium hover:bg-accent sm:w-auto">
                     Ya tengo cuenta
                   </span>
                 </Link>
@@ -217,10 +217,10 @@ export default function HomePage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { role: 'Admin', desc: 'Admin de cada negocio', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+                { role: 'Administrador', desc: 'Administrador de cada negocio', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
                 { role: 'Responsable', desc: 'Responsable de cada local', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
                 { role: 'Miembro', desc: 'Persona dentro de un local', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-                { role: 'Viewer', desc: 'Solo lectura', color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400' },
+                { role: 'Visualizador', desc: 'Solo lectura', color: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400' },
               ].map((r) => (
                 <div key={r.role} className="rounded-lg border bg-card p-4 text-center shadow-sm">
                   <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold mb-2 ${r.color}`}>
@@ -240,16 +240,16 @@ export default function HomePage() {
             <p className="text-lg opacity-90 mb-8">
               Creá tu cuenta y empezá a gestionar tu negocio hoy mismo.
             </p>
-            <div className="flex items-center justify-center gap-4">
-              <Link href="/register">
-                <span className="inline-flex h-12 items-center gap-2 rounded-lg bg-primary-foreground px-8 text-base font-medium text-primary hover:bg-primary-foreground/90">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+              <Link href="/register" className="w-full sm:w-auto">
+                <span className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary-foreground px-8 text-base font-medium text-primary hover:bg-primary-foreground/90 sm:w-auto">
                   Crear cuenta gratis
-                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-5 w-5 shrink-0" />
                 </span>
               </Link>
-              <Link href="/login">
-                <span className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-primary-foreground/30 px-8 text-base font-medium hover:bg-primary-foreground/10">
-                  <LogIn className="h-5 w-5" />
+              <Link href="/login" className="w-full sm:w-auto">
+                <span className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-primary-foreground/30 px-8 text-base font-medium hover:bg-primary-foreground/10 sm:w-auto">
+                  <LogIn className="h-5 w-5 shrink-0" />
                   Iniciar sesión
                 </span>
               </Link>

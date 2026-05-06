@@ -1,4 +1,4 @@
-import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig } from '../domain/task';
+import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig, ChecklistItem } from '../domain/task';
 
 export interface CreateTaskDTO {
   title: string;
@@ -24,6 +24,10 @@ export type UpdateTaskDTO = Partial<Omit<CreateTaskDTO, 'locationId' | 'projectI
   description?: string;
   locationId?: string | null;
   projectId?: string | null;
+  cycleId?: string | null;
+  objectiveId?: string | null;
+  parentId?: string | null;
+  checklist?: ChecklistItem[];
 };
 
 export interface MoveTaskDTO {

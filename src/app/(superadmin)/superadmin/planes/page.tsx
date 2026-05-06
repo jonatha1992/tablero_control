@@ -95,6 +95,7 @@ export default function PlanesPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<PlanDefinition | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -121,14 +122,36 @@ export default function PlanesPage() {
 
   function handleSave() {
     if (!editing || !form) return;
+    const errors: Record<string, string> = {};
+
+    const priceMonthly = parsePrice(form.priceMonthly);
+    const priceYearly = parsePrice(form.priceYearly);
+    const limitUsers = parseLimit(form.limitUsers);
+    const limitLocations = parseLimit(form.limitLocations);
+    const limitProjects = parseLimit(form.limitProjects);
+    const limitAttachments = parseLimit(form.limitAttachments);
+
+    if (priceMonthly < 0) errors.priceMonthly = 'El precio no puede ser negativo';
+    if (priceYearly < 0) errors.priceYearly = 'El precio no puede ser negativo';
+    if (limitUsers < -1) errors.limitUsers = 'Usá -1 para ilimitado o un número mayor o igual a 0';
+    if (limitLocations < -1) errors.limitLocations = 'Usá -1 para ilimitado o un número mayor o igual a 0';
+    if (limitProjects < -1) errors.limitProjects = 'Usá -1 para ilimitado o un número mayor o igual a 0';
+    if (limitAttachments < -1) errors.limitAttachments = 'Usá -1 para ilimitado o un número mayor o igual a 0';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     mutate({
       planId: editing.id,
-      priceMonthly: parsePrice(form.priceMonthly),
-      priceYearly: parsePrice(form.priceYearly),
-      limitUsers: parseLimit(form.limitUsers),
-      limitLocations: parseLimit(form.limitLocations),
-      limitProjects: parseLimit(form.limitProjects),
-      limitAttachments: parseLimit(form.limitAttachments),
+      priceMonthly,
+      priceYearly,
+      limitUsers,
+      limitLocations,
+      limitProjects,
+      limitAttachments,
     });
   }
 
@@ -249,7 +272,7 @@ export default function PlanesPage() {
         </div>
       )}
 
-      <Dialog open={!!editing} onOpenChange={(open) => { if (!open && !isPending) setEditing(null); }}>
+      <Dialog open={!!editing} onOpenChange={(open) => { if (!open && !isPending) { setEditing(null); setFieldErrors({}); } }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (isPending) e.preventDefault(); }}>
           <DialogHeader>
             <DialogTitle>Editar plan {editing?.name}</DialogTitle>
@@ -265,6 +288,7 @@ export default function PlanesPage() {
                     onChange={(e) => setForm((f) => f && { ...f, priceMonthly: e.target.value })}
                     min={0}
                   />
+                  {fieldErrors.priceMonthly && <p className="text-xs text-destructive">{fieldErrors.priceMonthly}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Precio/año (ARS)</label>
@@ -274,6 +298,7 @@ export default function PlanesPage() {
                     onChange={(e) => setForm((f) => f && { ...f, priceYearly: e.target.value })}
                     min={0}
                   />
+                  {fieldErrors.priceYearly && <p className="text-xs text-destructive">{fieldErrors.priceYearly}</p>}
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Límites — usá <code>-1</code> para ilimitado</p>
@@ -285,6 +310,7 @@ export default function PlanesPage() {
                     value={form.limitUsers}
                     onChange={(e) => setForm((f) => f && { ...f, limitUsers: e.target.value })}
                   />
+                  {fieldErrors.limitUsers && <p className="text-xs text-destructive">{fieldErrors.limitUsers}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Máx. locales</label>
@@ -293,6 +319,7 @@ export default function PlanesPage() {
                     value={form.limitLocations}
                     onChange={(e) => setForm((f) => f && { ...f, limitLocations: e.target.value })}
                   />
+                  {fieldErrors.limitLocations && <p className="text-xs text-destructive">{fieldErrors.limitLocations}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Máx. proyectos</label>
@@ -301,6 +328,7 @@ export default function PlanesPage() {
                     value={form.limitProjects}
                     onChange={(e) => setForm((f) => f && { ...f, limitProjects: e.target.value })}
                   />
+                  {fieldErrors.limitProjects && <p className="text-xs text-destructive">{fieldErrors.limitProjects}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Adjuntos/mes</label>
@@ -309,6 +337,7 @@ export default function PlanesPage() {
                     value={form.limitAttachments}
                     onChange={(e) => setForm((f) => f && { ...f, limitAttachments: e.target.value })}
                   />
+                  {fieldErrors.limitAttachments && <p className="text-xs text-destructive">{fieldErrors.limitAttachments}</p>}
                 </div>
               </div>
             </div>

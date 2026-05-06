@@ -10,4 +10,6 @@ export interface KanbanUIFilters {
   searchQuery: string;
   priority: TaskPriority | '';
   locationId: string;
+  objectiveId: string;
+  cycleId: string;
 }

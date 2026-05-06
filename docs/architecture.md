@@ -102,7 +102,8 @@ src/
 │   │   ├── user.repository.ts
 │   │   ├── team.repository.ts
 │   │   ├── location.repository.ts
-│   │   └── business.repository.ts
+│   │   ├── business.repository.ts
+│   │   └── comment.repository.ts
 │   ├── firebase/        # Implementaciones legacy (no usadas en producción)
 │   └── index.ts         # Singletons Prisma exportados
 │
@@ -110,7 +111,12 @@ src/
 │   ├── task.service.ts
 │   ├── team.service.ts
 │   ├── auth.service.ts
-│   └── location.service.ts
+│   ├── location.service.ts
+│   ├── comment.service.ts
+│   ├── cycle.service.ts
+│   ├── objective.service.ts
+│   ├── project.service.ts
+│   └── time-entry.service.ts
 │
 ├── hooks/
 │   ├── auth-context.tsx       # AuthProvider + useAuth
@@ -121,7 +127,11 @@ src/
 │   │   ├── use-locations-query.ts
 │   │   ├── use-business-query.ts
 │   │   ├── use-roles-query.ts
-│   │   └── use-subscription-query.ts
+│   │   ├── use-subscription-query.ts
+│   │   ├── use-projects-query.ts
+│   │   ├── use-cycles-query.ts
+│   │   ├── use-objectives-query.ts
+│   │   └── use-time-entries-query.ts
 │   └── mutations/             # React Query — escritura de datos
 │       ├── use-create-task.ts
 │       ├── use-update-task.ts
@@ -142,8 +152,13 @@ src/
 │   ├── ui/              # Componentes base (shadcn/ui pattern)
 │   ├── layout/          # Sidebar, Header
 │   ├── tareas/          # KanbanBoard, KanbanColumn, KanbanCard, modales
+│   │                      # TaskDetailModal, TaskComments, TaskChecklist
+│   │                      # TaskSubtasks, TaskTimeTracking, TaskAttachments
 │   ├── equipo/          # MemberCard, CreateUserModal, InviteMemberModal
 │   ├── sectores/        # SectorModal
+│   ├── ciclos/          # CycleList, CycleCard
+│   ├── objetivos/       # ObjectiveList, ObjectiveCard
+│   ├── cronograma/      # GanttView
 │   └── dashboard/       # DashboardMetrics
 │
 └── app/
@@ -153,12 +168,17 @@ src/
     ├── dashboard/           # Layout protegido + páginas
     └── api/                 # Endpoints HTTP (Auth Firebase Admin + Prisma)
         ├── auth/            # profile
-        ├── tasks/           # CRUD + move
+        ├── tasks/           # CRUD + move + comments + subtasks + time-entries
         ├── members/         # CRUD miembros
         ├── locations/       # CRUD locales
         ├── users/           # create
         ├── business/        # config, roles
-        ├── superadmin/      # businesses, users, metrics, audit
+        ├── projects/        # CRUD tableros
+        ├── cycles/          # CRUD ciclos/períodos
+        ├── objectives/      # CRUD objetivos/iniciativas
+        ├── comments/        # DELETE comentarios
+        ├── time-entries/    # DELETE registros de tiempo
+        ├── superadmin/      # businesses, users, metrics, audit, planes
         ├── mercadopago/     # webhook, preapproval, cancel
         └── upload/          # Cloudinary upload
 ```

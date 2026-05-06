@@ -37,7 +37,7 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     role: row.role as UserRole,
     businessId: row.businessId ?? undefined,
     locationId: row.locationId ?? undefined,
-    customRoleId: row.customRoleId ?? undefined,
+    customRoleIds: row.customRoleIds ?? [],
     avatar: row.avatar ?? undefined,
     phone: row.phone ?? undefined,
     teamIds: row.teams.map((t) => t.teamId),

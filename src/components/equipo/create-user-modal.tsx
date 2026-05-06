@@ -21,11 +21,13 @@ import { memberKeys } from '@/hooks/queries/use-members-query';
 import { getToken } from '@/lib/firebase/auth';
 import type { UserRole } from '@/types/domain/user';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const ROLES: { value: UserRole; label: string; description: string }[] = [
-  { value: 'admin', label: 'Admin', description: 'Gestión completa del negocio' },
+  { value: 'admin', label: 'Administrador', description: 'Gestión completa del negocio' },
   { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores' },
   { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas' },
-  { value: 'viewer', label: 'Viewer', description: 'Solo lectura' },
+  { value: 'viewer', label: 'Visualizador', description: 'Solo lectura' },
 ];
 
 const SUPERADMIN_ROLES: { value: UserRole; label: string; description: string }[] = [
@@ -60,6 +62,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
   const [inactiveUserId, setInactiveUserId] = useState<string | null>(null);
   const [reactivating, setReactivating] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate, isPending } = useCreateUser();
   const { data: locations = [] } = useLocationsQuery();
@@ -79,12 +82,24 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password) return;
+    const nextErrors: Record<string, string> = {};
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) nextErrors.name = 'El nombre es obligatorio';
+    if (!trimmedEmail) nextErrors.email = 'El correo electrónico es obligatorio';
+    else if (!EMAIL_REGEX.test(trimmedEmail)) nextErrors.email = 'El correo electrónico no es válido';
+    if (!password) nextErrors.password = 'La contraseña es obligatoria';
+    else if (password.length < 6) nextErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     setError('');
     setLimitInfo(null);
 
     mutate(
-      { name: name.trim(), email: email.trim(), password, role, businessId, locationId: locationId || undefined },
+      { name: trimmedName, email: trimmedEmail, password, role, businessId, locationId: locationId || undefined },
       {
         onSuccess: () => setStep('success'),
         onError: (err) => {
@@ -135,6 +150,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setLimitInfo(null);
     setCopied(false);
     setInactiveUserId(null);
+    setErrors({});
     onClose();
   }
 
@@ -160,18 +176,22 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  maxLength={100}
                 />
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">Correo electrónico</label>
                 <Input
                   type="email"
                   placeholder="juan@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  maxLength={150}
                 />
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
               <div className="space-y-1.5">
@@ -184,8 +204,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                       onChange={(e) => setPassword(e.target.value)}
                       className="pr-10 font-mono text-sm"
                       required
-                      minLength={8}
+                      minLength={6}
                     />
+                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
@@ -292,12 +313,12 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 Usuario desactivado
               </DialogTitle>
               <DialogDescription>
-                Este email pertenece a un usuario que fue desactivado anteriormente.
+                Este correo electrónico pertenece a un usuario que fue desactivado anteriormente.
               </DialogDescription>
             </DialogHeader>
             <div className="py-2 space-y-3">
               <p className="text-sm text-muted-foreground">
-                El email <span className="font-medium text-foreground">{email}</span> ya existe en el sistema pero está inactivo. ¿Querés reactivarlo?
+                El correo electrónico <span className="font-medium text-foreground">{email}</span> ya existe en el sistema pero está inactivo. ¿Querés reactivarlo?
               </p>
               {error && (
                 <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -333,7 +354,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
               </p>
               <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email</span>
+                  <span className="text-muted-foreground">Correo electrónico</span>
                   <span className="font-medium">{email}</span>
                 </div>
                 <div className="flex items-center justify-between">

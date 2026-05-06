@@ -72,6 +72,7 @@ export const GET = handle(async (request: NextRequest) => {
           businessId: business.id,
           avatar: decoded.picture ?? undefined,
           teamIds: [],
+          customRoleIds: [],
           preferences: DEFAULT_PREFERENCES,
           isActive: true,
         } as Parameters<typeof userRepository.create>[0]);

@@ -9,10 +9,10 @@ import type { UserRole } from '@/types/domain/user';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   superadmin: 'Superadmin',
-  admin: 'Admin',
+  admin: 'Administrador',
   responsable: 'Responsable',
   miembro: 'Miembro',
-  viewer: 'Viewer',
+  viewer: 'Visualizador',
   pending: 'Pendiente',
 };
 
@@ -25,7 +25,8 @@ export function InviteLinksSection({ businessId }: Props) {
   const revoke = useRevokeInvite(businessId);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  async function handleCopy(link: string, id: string) {
+  async function handleCopy(id: string) {
+    const link = `${window.location.origin}/i/${id}`;
     await navigator.clipboard.writeText(link);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -55,7 +56,6 @@ export function InviteLinksSection({ businessId }: Props) {
       ) : (
         <div className="space-y-2">
           {invites.map((invite) => {
-            const link = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/i/${invite.id}`;
             const usesLeft = invite.maxUses > 0 ? invite.maxUses - invite.usedCount : null;
             const isExpired = invite.expiresAt ? new Date(invite.expiresAt) < new Date() : false;
 
@@ -90,7 +90,7 @@ export function InviteLinksSection({ businessId }: Props) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleCopy(link, invite.id)}
+                    onClick={() => handleCopy(invite.id)}
                     title="Copiar link"
                   >
                     {copiedId === invite.id ? (

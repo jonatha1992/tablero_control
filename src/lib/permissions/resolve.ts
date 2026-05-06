@@ -1,5 +1,6 @@
 import type { User, UserRole } from '@/types/domain/user';
 import type { CustomRole, PermissionSet } from '@/types/domain/custom-role';
+import { EMPTY_PERMISSIONS } from '@/types/domain/custom-role';
 
 const ALL_TRUE: PermissionSet = {
   tasks: { read: true, create: true, update: true, delete: true, assign: true, comment: true },
@@ -61,10 +62,27 @@ export function basePermissions(role: UserRole): PermissionSet {
   }
 }
 
-export function resolvePermissions(user: Pick<User, 'role'>, customRole?: CustomRole | null): PermissionSet {
+export function resolvePermissions(
+  user: Pick<User, 'role'>,
+  customRoles?: CustomRole[] | null
+): PermissionSet {
   const base = basePermissions(user.role);
-  if (!customRole || !customRole.isActive) return base;
-  return intersect(base, customRole.permissions);
+  const active = (customRoles ?? []).filter((r) => r.isActive);
+  if (active.length === 0) return base;
+  const merged = active.reduce((acc, cr) => union(acc, cr.permissions), EMPTY_PERMISSIONS);
+  return intersect(base, merged);
+}
+
+function union(a: PermissionSet, b: PermissionSet): PermissionSet {
+  const out = {} as PermissionSet;
+  for (const key of Object.keys(a) as Array<keyof PermissionSet>) {
+    const result: Record<string, boolean> = {};
+    const aM = a[key] as Record<string, boolean>;
+    const bM = b[key] as Record<string, boolean>;
+    for (const k of Object.keys(aM)) result[k] = Boolean(aM[k] || bM[k]);
+    (out[key] as unknown) = result;
+  }
+  return out;
 }
 
 function intersect(a: PermissionSet, b: PermissionSet): PermissionSet {

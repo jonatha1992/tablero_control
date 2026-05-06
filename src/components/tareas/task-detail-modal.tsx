@@ -17,10 +17,16 @@ import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
+import { TaskComments } from './task-comments';
+import { TaskChecklist } from './task-checklist';
+import { TaskSubtasks } from './task-subtasks';
+import { TaskTimeTracking } from './task-time-tracking';
 import type { RecurrenceConfig } from '@/types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS } from '@/lib/constants/task-colors';
 import {
@@ -43,6 +49,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [editingAssignees, _setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [editLocationId, setEditLocationId] = useState('');
+  const [editProjectId, setEditProjectId] = useState('');
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
@@ -57,10 +64,13 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const deleteTask = useDeleteTask();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
+  const { user } = useAuth();
+  const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
 
   if (!task) return null;
 
   const handleSave = () => {
+    if (!title.trim()) return;
     updateTask.mutate(
       {
         id: task.id,
@@ -68,6 +78,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           title,
           description,
           locationId: editLocationId || undefined,
+          projectId: editProjectId || undefined,
           assigneeIds: editAssigneeIds,
           dueDate: editDueDate ? new Date(`${editDueDate}T${editDueTime || '00:00'}`) : undefined,
           recurrence: isRecurring ? {
@@ -140,6 +151,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
                   className="w-full text-lg font-medium bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -148,6 +160,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  maxLength={2000}
                   className="w-full text-sm bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
                   rows={4}
                 />
@@ -183,6 +196,22 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   <option value="">Sin sector</option>
                   {locations.map((loc) => (
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <FolderKanban className="h-3.5 w-3.5" /> Tablero
+                </label>
+                <select
+                  value={editProjectId}
+                  onChange={(e) => setEditProjectId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
+                  <option value="">Sin tablero</option>
+                  {projects.map((proj) => (
+                    <option key={proj.id} value={proj.id}>{proj.name}</option>
                   ))}
                 </select>
               </div>
@@ -318,6 +347,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   const m = d ? d.getMinutes() : 0;
                   setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
                   setEditLocationId(task.locationId ?? '');
+                  setEditProjectId(task.projectId ?? '');
                   setEditAssigneeIds(task.assigneeIds ?? []);
                   setIsRecurring(!!task.recurrence);
                   setFrequency(task.recurrence?.frequency ?? 'weekly');
@@ -437,6 +467,17 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </p>
             </div>
           )}
+
+          {task.projectId && projects.find((p) => p.id === task.projectId) && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <FolderKanban className="h-3.5 w-3.5" /> Tablero
+              </p>
+              <p className="text-sm">
+                {projects.find((p) => p.id === task.projectId)!.name}
+              </p>
+            </div>
+          )}
         </div>
 
             {/* Tags */}
@@ -450,6 +491,25 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 </div>
               </div>
             )}
+
+            {/* Checklist */}
+            <div className="py-3 border-b">
+              <TaskChecklist task={task} />
+            </div>
+
+            {/* Subtareas */}
+            <div className="py-3 border-b">
+              <TaskSubtasks task={task} />
+            </div>
+
+            {/* Registro de tiempos */}
+            <div className="py-3 border-b">
+              <TaskTimeTracking
+                taskId={task.id}
+                estimatedHours={task.estimatedHours}
+                actualHours={task.actualHours}
+              />
+            </div>
 
           {/* Current assignees */}
           {task.assigneeIds?.length > 0 && (
@@ -486,6 +546,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             <Paperclip className="h-3.5 w-3.5" /> Adjuntos
           </p>
           <TaskAttachments task={task} />
+        </div>
+
+        {/* Comentarios */}
+        <div className="py-3 border-b">
+          <TaskComments task={task} />
         </div>
 
         {/* Meta info */}

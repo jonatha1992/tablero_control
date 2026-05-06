@@ -49,6 +49,8 @@ const defaultFilters: KanbanUIFilters = {
   searchQuery: '',
   priority: '',
   locationId: '',
+  objectiveId: '',
+  cycleId: '',
 };
 
 export const useKanbanUIStore = create<KanbanUIStore>((set) => ({

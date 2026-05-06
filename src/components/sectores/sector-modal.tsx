@@ -67,6 +67,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
   const [type, setType] = useState('department');
   const [icon, setIcon] = useState('MapPin');
   const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
@@ -88,7 +89,13 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !businessId) {
+    const nextErrors: Record<string, string> = {};
+    const trimmedName = name.trim();
+
+    if (!trimmedName) nextErrors.name = 'El nombre es obligatorio';
+    setErrors(nextErrors);
+
+    if (!trimmedName || !businessId) {
       if (!businessId) {
         toast.error('Error de sesión', {
           description: 'No se pudo identificar tu negocio. Por favor, recargá la página.',
@@ -98,7 +105,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
     }
 
     const data = {
-      name: name.trim(),
+      name: trimmedName,
       description: description.trim() || undefined,
       type,
       businessId,
@@ -171,7 +178,9 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
               onChange={(e) => setName(e.target.value)}
               required
               disabled={isLoading}
+              maxLength={100}
             />
+            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Tipo</label>
@@ -191,6 +200,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
               className="resize-none"
               rows={3}
               disabled={isLoading}
+              maxLength={500}
             />
           </div>
           {limitInfo && (

@@ -253,7 +253,7 @@ export default function UsersPage() {
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="search"
-          placeholder="Buscar por nombre, email…"
+          placeholder="Buscar por nombre, correo…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm bg-background"
@@ -338,7 +338,7 @@ export default function UsersPage() {
                   onClick={() => toggleSort('email')}
                 >
                   <span className="inline-flex items-center">
-                    Email {sortIcon('email')}
+                    Correo {sortIcon('email')}
                   </span>
                 </th>
                 <th

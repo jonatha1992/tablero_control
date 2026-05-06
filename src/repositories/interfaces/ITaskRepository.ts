@@ -13,6 +13,7 @@ export interface ITaskRepository {
   ): Promise<PaginatedResponse<Task>>;
   findByLocation(locationId: string): Promise<Task[]>;
   findByCreator(creatorId: string, filters?: TaskFilters): Promise<Task[]>;
+  findSubtasks(parentId: string): Promise<Task[]>;
   create(data: CreateTaskDTO & { creatorId: string; businessId: string }): Promise<Task>;
   update(id: string, data: UpdateTaskDTO): Promise<Task>;
   updateStatus(id: string, status: TaskStatus): Promise<void>;

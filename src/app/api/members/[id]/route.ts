@@ -65,7 +65,11 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   await teamService.removeMember(id);
 
-  await writeAuditLog({
+  if (target.role === 'admin' && target.businessId) {
+    await teamService.handleManagerDeletion(id, target.businessId);
+  }
+
+  void writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,
     businessId: user.businessId,

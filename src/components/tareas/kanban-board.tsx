@@ -45,6 +45,7 @@ import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useBulkMoveTasks } from '@/hooks/mutations/use-bulk-move-tasks';
 import { useBulkDeleteTasks } from '@/hooks/mutations/use-bulk-delete-tasks';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { X } from 'lucide-react';
@@ -93,12 +94,13 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     );
   };
 
+  const { user } = useAuth();
   const moveTask = useMoveTask();
   const updateTask = useUpdateTask();
   const bulkMove = useBulkMoveTasks();
   const bulkDelete = useBulkDeleteTasks();
   const { data: locations = [] } = useLocationsQuery();
-  const { user } = useAuth();
+  const { data: objectives = [] } = useObjectivesQuery(user?.businessId ?? '');
 
   const selectedTask = selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null;
 
@@ -116,8 +118,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
       if (cols[task.status]) cols[task.status].push(task);
     }
 
-    const { searchQuery, priority, locationId } = filters;
-    if (searchQuery || priority || locationId) {
+    const { searchQuery, priority, locationId, objectiveId } = filters;
+    if (searchQuery || priority || locationId || objectiveId) {
       for (const status of BOARD_COLUMNS) {
         cols[status] = cols[status].filter((task) => {
           const matchesSearch =
@@ -126,7 +128,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             task.description?.toLowerCase().includes(searchQuery.toLowerCase());
           const matchesPriority = !priority || task.priority === priority;
           const matchesLocation = !locationId || task.locationId === locationId;
-          return matchesSearch && matchesPriority && matchesLocation;
+          const matchesObjective = !objectiveId || task.objectiveId === objectiveId;
+          return matchesSearch && matchesPriority && matchesLocation && matchesObjective;
         });
       }
     }
@@ -245,6 +248,31 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               <DropdownMenuItem key={opt.value} onClick={() => setFilters({ priority: opt.value })}>
                 <span className={cn('h-2 w-2 rounded-full mr-2 shrink-0', opt.dot)} />
                 <span className={cn('flex-1', filters.priority === opt.value && 'font-medium')}>{opt.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Objective filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[180px]">
+              {filters.objectiveId ? (
+                <span className="truncate">{objectives.find((o) => o.id === filters.objectiveId)?.name ?? 'Objetivo'}</span>
+              ) : (
+                <span>Todos los objetivos</span>
+              )}
+              <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-w-[240px]">
+            <DropdownMenuItem onClick={() => setFilters({ objectiveId: '' })}>
+              <span className={cn('flex-1', !filters.objectiveId && 'font-medium')}>Todos los objetivos</span>
+            </DropdownMenuItem>
+            {objectives.map((obj) => (
+              <DropdownMenuItem key={obj.id} onClick={() => setFilters({ objectiveId: obj.id })}>
+                <span className="h-2 w-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: obj.color }} />
+                <span className={cn('flex-1 truncate', filters.objectiveId === obj.id && 'font-medium')}>{obj.name}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

@@ -102,7 +102,7 @@ model User {
   role         UserRole  @default(miembro)
   businessId   String?
   locationId   String?
-  customRoleId String?
+  customRoleIds String[] @default([])
   avatar       String?
   phone        String?
   isActive     Boolean   @default(true)
@@ -119,6 +119,7 @@ model User {
   comments      Comment[]
   auditLogs     AuditLog[]
   notifications Notification[]
+  timeEntries   TimeEntry[]
 
   @@index([businessId])
   @@index([role])
@@ -160,6 +161,8 @@ model Business {
   locations    Location[]
   teams        Team[]
   projects     Project[]
+  cycles       Cycle[]
+  objectives   Objective[]
   subscription Subscription?
   invoices     Invoice[]
   auditLogs    AuditLog[]
@@ -228,7 +231,7 @@ model Project {
   id          String        @id @default(cuid())
   name        String
   description String?
-  teamId      String
+  teamId      String?
   businessId  String?
   status      ProjectStatus @default(active)
   startDate   DateTime?
@@ -236,7 +239,7 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team     Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   business Business? @relation(fields: [businessId], references: [id])
   tasks    Task[]
 
@@ -263,6 +266,9 @@ model Task {
   estimatedHours Float?
   actualHours    Float?
   recurrence     Json?
+  checklist      Json         @default("[]")
+  cycleId        String?
+  objectiveId    String?
   position       Int          @default(0)
   commentCount   Int          @default(0)
   createdAt      DateTime     @default(now())
@@ -274,14 +280,35 @@ model Task {
   location    Location?    @relation(fields: [locationId], references: [id])
   parent      Task?        @relation("Subtasks", fields: [parentId], references: [id])
   subtasks    Task[]       @relation("Subtasks")
+  cycle       Cycle?       @relation(fields: [cycleId], references: [id])
+  objective   Objective?   @relation(fields: [objectiveId], references: [id])
   attachments Attachment[]
   comments    Comment[]
+  timeEntries TimeEntry[]
 
   @@index([projectId])
   @@index([locationId])
   @@index([creatorId])
   @@index([status])
   @@index([dueDate])
+}
+
+model TimeEntry {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  hours     Float
+  date      DateTime @default(now())
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([date])
 }
 
 model Attachment {
@@ -297,6 +324,45 @@ model Attachment {
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+}
+
+model Cycle {
+  id          String   @id @default(cuid())
+  name        String
+  goal        String?
+  teamId      String?
+  businessId  String
+  status      String   @default("planning") // planning | active | completed | closed
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks    Task[]
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model Objective {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String   @default("#3b82f6")
+  businessId  String
+  projectId   String?
+  targetDate  DateTime?
+  status      String   @default("active") // active | completed | archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks    Task[]
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status])
 }
 
 model Comment {

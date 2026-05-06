@@ -1,4 +1,5 @@
-import { userRepository } from '@/repositories';
+import { userRepository, locationRepository } from '@/repositories';
+import { prisma } from '@/lib/prisma';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
 
@@ -20,6 +21,7 @@ class TeamService {
       businessId,
       locationId: dto.locationId,
       teamIds: [],
+      customRoleIds: [],
       isActive: true,
       preferences: {
         theme: 'system',
@@ -45,6 +47,19 @@ class TeamService {
 
   async reactivateMember(userId: string): Promise<void> {
     return userRepository.reactivate(userId);
+  }
+
+  async handleManagerDeletion(userId: string, businessId: string): Promise<void> {
+    const otherAdmins = await userRepository.findActiveAdminsByBusiness(businessId, userId);
+    if (otherAdmins.length > 0) {
+      await locationRepository.bulkUpdateManagerId(userId, otherAdmins[0].id);
+    } else {
+      const managed = await locationRepository.findByManagerId(userId);
+      for (const loc of managed) {
+        await prisma.task.deleteMany({ where: { locationId: loc.id, projectId: null } });
+      }
+      await locationRepository.deleteByManagerId(userId);
+    }
   }
 }
 

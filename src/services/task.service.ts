@@ -21,6 +21,9 @@ class TaskService {
     return taskRepository.findByCreator(creatorId, filters);
   }
 
+  async getSubtasks(parentId: string): Promise<Task[]> {
+    return taskRepository.findSubtasks(parentId);
+  }
 
   async getTasksPaginated(
     businessId: string,

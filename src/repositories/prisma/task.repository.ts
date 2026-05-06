@@ -26,6 +26,8 @@ function toDomain(t: PrismaTask): Task {
     creatorId: t.creatorId,
     projectId: t.projectId ?? undefined,
     locationId: t.locationId ?? undefined,
+    cycleId: t.cycleId ?? undefined,
+    objectiveId: t.objectiveId ?? undefined,
     parentId: t.parentId ?? undefined,
     tags: t.tags,
     startDate: t.startDate ?? undefined,
@@ -34,6 +36,7 @@ function toDomain(t: PrismaTask): Task {
     estimatedHours: t.estimatedHours ?? undefined,
     actualHours: t.actualHours ?? undefined,
     recurrence: t.recurrence as unknown as Task['recurrence'],
+    checklist: (t.checklist as unknown as Task['checklist']) ?? [],
     subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
     attachmentUrls: t.attachments.map((a: { url: string }) => a.url),
     attachments: t.attachments.map((a) => ({ url: a.url, name: a.filename })),
@@ -141,6 +144,15 @@ export class PrismaTaskRepository implements ITaskRepository {
     return tasks.map(toDomain);
   }
 
+  async findSubtasks(parentId: string): Promise<Task[]> {
+    const tasks = await prisma.task.findMany({
+      where: { parentId },
+      orderBy: { position: 'asc' },
+      include,
+    });
+    return tasks.map(toDomain);
+  }
+
   async findByCreator(creatorId: string, filters?: TaskFilters): Promise<Task[]> {
     const where: Prisma.TaskWhereInput = { creatorId };
     if (filters?.status?.length) where.status = { in: filters.status };
@@ -181,16 +193,20 @@ export class PrismaTaskRepository implements ITaskRepository {
   }
 
   async update(id: string, data: UpdateTaskDTO): Promise<Task> {
-    const { assigneeIds, attachmentUrls, locationId, projectId, ...rest } = data;
+    const { assigneeIds, attachmentUrls, locationId, projectId, cycleId, objectiveId, parentId, ...rest } = data;
     const t = await prisma.task.update({
       where: { id },
       data: {
         ...rest,
         locationId: locationId === undefined ? undefined : (locationId ?? null),
         projectId: projectId === undefined ? undefined : (projectId ?? null),
+        cycleId: cycleId === undefined ? undefined : (cycleId ?? null),
+        objectiveId: objectiveId === undefined ? undefined : (objectiveId ?? null),
+        parentId: parentId === undefined ? undefined : (parentId ?? null),
         assignees: assigneeIds
           ? { set: assigneeIds.map((uid) => ({ id: uid })) }
           : undefined,
+        checklist: rest.checklist as Prisma.InputJsonValue | undefined,
         attachments: attachmentUrls
           ? {
             deleteMany: {

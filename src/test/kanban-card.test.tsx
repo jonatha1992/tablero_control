@@ -42,6 +42,7 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   creatorId: 'user-1',
   tags: [],
   subtaskIds: [],
+  checklist: [],
   attachmentUrls: [],
   commentCount: 0,
   position: 0,

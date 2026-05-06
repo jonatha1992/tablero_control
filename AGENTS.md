@@ -12,7 +12,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 **Tablero de Control** es un SaaS multi-tenant de gestión de tareas y proyectos. Cada negocio (Business) tiene sus propios locales (Location), equipos (Team), proyectos y usuarios. La empresa dueña del sistema es **TecnoFusión**, que accede con rol `superadmin`.
 
-El sistema soporta kanban con drag & drop, calendario (FullCalendar), gestión de suscripciones con MercadoPago, roles custom por negocio, y transcripción de audio a tareas mediante IA (Groq).
+El sistema soporta kanban con drag & drop, calendario (FullCalendar), cronograma/timeline (Gantt), gestión de suscripciones con MercadoPago, roles custom por negocio, transcripción de audio a tareas mediante IA (Groq), comentarios con menciones, checklists, subtareas, ciclos/períodos de trabajo, objetivos/iniciativas, múltiples tableros, y registro de tiempos por tarea.
 
 ---
 
@@ -32,6 +32,7 @@ El sistema soporta kanban con drag & drop, calendario (FullCalendar), gestión d
 | Email | Resend + React Email | — |
 | IA / Audio | Groq SDK | Transcripción + extracción de tareas |
 | Calendario | FullCalendar | 6.1.20 |
+| Timeline / Gantt | FullCalendar Timeline + Resource Timeline | 6.1.20 |
 | Gráficos | Recharts | 3.8.1 |
 | Drag & Drop | @dnd-kit + react-dnd | — |
 | Tablas | @tanstack/react-table | 8.21.3 |
@@ -77,10 +78,13 @@ src/
 │   │   └── superadmin/
 │   │       └── planes/     # Edición de precios y límites por plan
 │   ├── dashboard/          # App principal con Sidebar + Header
-│   │   ├── tareas/         # Kanban board
+│   │   ├── tareas/         # Kanban board + Calendar + Cronograma toggle
 │   │   ├── equipo/         # Gestión de miembros
 │   │   ├── sectores/       # Locales
-│   │   ├── calendario/
+│   │   ├── calendario/     # Vista calendario standalone
+│   │   ├── ciclos/         # Períodos de trabajo (planning/active/completed/closed)
+│   │   ├── objetivos/      # Iniciativas/campañas con progreso
+│   │   ├── cronograma/     # Vista Gantt/Timeline con FullCalendar
 │   │   ├── billing/
 │   │   └── config/
 │   ├── planes/             # GET público — planes efectivos desde DB
@@ -90,9 +94,15 @@ src/
 │   ├── ui/                 # Componentes base reutilizables (Avatar, Badge, Button, Card, Dialog, Input, Tabs, etc.)
 │   ├── layout/             # Sidebar, Header, Footer
 │   ├── tareas/             # KanbanBoard, KanbanColumn, KanbanCard, modales
+│   │                         # TaskDetailModal, CreateTaskModal, DictateTasksModal
+│   │                         # TaskComments, TaskChecklist, TaskSubtasks, TaskAttachments
+│   │                         # TaskTimeTracking (registro de horas)
 │   ├── equipo/             # MemberCard, InviteMemberModal, CreateUserModal
 │   ├── sectores/           # SectorList, SectorModal
 │   ├── calendario/         # CalendarView, FullCalendarWrapper
+│   ├── ciclos/             # CycleList, CycleCard, CycleModal
+│   ├── objetivos/          # ObjectiveList, ObjectiveCard, ObjectiveModal
+│   ├── cronograma/         # GanttView (FullCalendar resource-timeline)
 │   ├── billing/            # Plan cards, invoices
 │   ├── roles/              # PermissionGrid, RoleCard, RoleEditorDrawer
 │   └── superadmin/         # SuperadminSidebar
@@ -113,11 +123,17 @@ src/
 │   ├── team.service.ts
 │   ├── auth.service.ts
 │   ├── location.service.ts
+│   ├── comment.service.ts
+│   ├── cycle.service.ts
+│   ├── objective.service.ts
+│   ├── project.service.ts        # Tableros (reutiliza modelo Project)
+│   ├── time-entry.service.ts     # Registro de tiempos
 │   └── mail.service.ts
 │
 ├── repositories/           # Acceso a datos — implementaciones intercambiables
-│   ├── interfaces/         # Contratos TypeScript (ITaskRepository, IUserRepository, etc.)
+│   ├── interfaces/         # Contratos TypeScript (ITaskRepository, IUserRepository, ICommentRepository, etc.)
 │   ├── prisma/             # Implementaciones con Prisma (PostgreSQL)
+│   │                         # Task, User, Location, Business, Comment repositories
 │   ├── firebase/           # Implementaciones alternativas (legacy)
 │   └── index.ts            # Singletons exportados — SIEMPRE importar desde aquí
 │
@@ -137,6 +153,8 @@ src/
 │   ├── resend.ts           # Cliente Resend
 │   ├── prisma.ts           # Singleton PrismaClient con adapter pg
 │   ├── api/                # Helpers de API routes (auth-helpers.ts, audit.ts, tasks.ts, members.ts, etc.)
+│   │                         # tasksApi, membersApi, locationsApi, projectsApi, cyclesApi, objectivesApi
+│   │                         # timeEntriesApi, billingApi, commentsApi
 │   ├── permissions/        # Matriz RBAC, resolución de custom roles, tenant-guard
 │   ├── constants/          # Labels, colores, niveles de roles y estados de tarea
 │   └── utils/              # Funciones puras (cn, date, format, string, storage)
@@ -253,7 +271,10 @@ npx playwright test      # Ejecuta tests en tests/
 - **Configuración dinámica (DB):** tabla `PlanConfig` en PostgreSQL. Superadmin edita desde `/superadmin/planes`. Usar siempre `getEffectivePlanConfig(planId)` o `getAllEffectivePlanConfigs()` (en `src/lib/mercadopago/plan-config.ts`) en server-side — nunca leer `PLANS` directamente si hay datos de plan.
 - **API pública de planes:** `GET /api/planes` (sin auth) — retorna planes efectivos para componentes de billing.
 - **API superadmin:** `GET+PATCH /api/superadmin/planes` — requiere `role = 'superadmin'`.
-- **Enforcement de límites:** `POST /api/users/create` verifica `PlanConfig.limitUsers` antes de crear. Retorna `429 { error: 'members_limit_exceeded', limit, current }` si se supera. Skip para superadmin.
+- **Enforcement de límites:**
+  - `POST /api/users/create` verifica `PlanConfig.limitUsers`. Retorna `429 { error: 'members_limit_exceeded', limit, current }`.
+  - `POST /api/projects` verifica `PlanConfig.limitProjects` (tableros). Retorna `429 { error: 'projects_limit_exceeded', limit, current }`.
+  - Skip para superadmin en ambos casos.
 - **Preapproval y webhook:** `src/lib/mercadopago/preapproval.ts`.
 - **API client (browser):** `billingApi` en `src/lib/api/billing.ts` — incluye `getPlans()`, `createPreapproval()`, `cancelSubscription()`, `syncSubscription()`, `recoverSubscription()`.
 
@@ -332,6 +353,29 @@ Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 - Rules e índices de Firestore se despliegan con `npm run deploy:rules`.
 
 ---
+
+## Nuevos endpoints (post-FASE 1-5)
+
+### Tareas
+- `GET/POST /api/tasks/[id]/comments` — comentarios en tarea
+- `DELETE /api/comments/[id]` — eliminar comentario
+- `GET/POST /api/tasks/[id]/subtasks` — subtareas jerárquicas
+- `GET/POST /api/tasks/[id]/time-entries` — registro de tiempos
+- `DELETE /api/time-entries/[id]` — eliminar registro de tiempo
+
+### Ciclos (Períodos de trabajo)
+- `GET/POST /api/cycles`
+- `GET/PATCH/DELETE /api/cycles/[id]`
+- `GET /api/cycles/[id]/tasks`
+
+### Objetivos (Iniciativas/Campañas)
+- `GET/POST /api/objectives`
+- `GET/PATCH/DELETE /api/objectives/[id]`
+- `GET /api/objectives/[id]/tasks`
+
+### Tableros (Projects)
+- `GET/POST /api/projects`
+- `GET/PATCH/DELETE /api/projects/[id]`
 
 ## Flujo típico: crear una tarea
 

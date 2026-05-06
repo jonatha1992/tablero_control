@@ -14,14 +14,25 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('El correo es obligatorio');
+      return;
+    }
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError('Ingresá un correo válido');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await resetPassword(email);
+      await resetPassword(trimmedEmail);
       setStep('sent');
     } catch (err) {
       const code = (err as { code?: string }).code;
@@ -53,7 +64,7 @@ export default function ForgotPasswordPage() {
           <CardTitle className="text-2xl">Recuperar contraseña</CardTitle>
           <CardDescription>
             {step === 'form'
-              ? 'Ingresá tu email y te enviamos un link para restablecer tu contraseña.'
+              ? 'Ingresá tu correo y te enviamos un link para restablecer tu contraseña.'
               : 'Revisá tu bandeja de entrada.'}
           </CardDescription>
         </CardHeader>
@@ -68,14 +79,15 @@ export default function ForgotPasswordPage() {
               )}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">Email</label>
+                  <label htmlFor="email" className="text-sm font-medium">Correo</label>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
+                    placeholder="tu@correo.com"
                     required
+                    maxLength={150}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>

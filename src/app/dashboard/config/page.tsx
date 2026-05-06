@@ -24,16 +24,25 @@ export default function ConfigPage() {
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [saveState, setSaveState] = useState<'idle' | 'loading' | 'saved' | 'error'>('idle');
+  const [fieldError, setFieldError] = useState('');
 
   const handleSave = useCallback(async () => {
     if (saveState === 'loading') return;
+    setFieldError('');
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setFieldError('El nombre no puede estar vacío');
+      return;
+    }
+
     setSaveState('loading');
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+        body: JSON.stringify({ name: trimmedName, phone: phone.trim() }),
       });
       setSaveState(res.ok ? 'saved' : 'error');
       if (res.ok) setTimeout(() => setSaveState('idle'), 2500);
@@ -142,7 +151,7 @@ export default function ConfigPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Nombre Completo</label>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Correo Electrónico</label>
@@ -150,7 +159,7 @@ export default function ConfigPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Teléfono</label>
-                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+54 11 1234-5678" className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+54 11 1234-5678" maxLength={50} className="w-full h-9 rounded-md border bg-background px-3 py-1 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">Rol Asignado</label>
@@ -162,6 +171,11 @@ export default function ConfigPage() {
                 <Button size="sm" onClick={handleSave} disabled={saveState === 'loading'}>
                   {saveState === 'loading' ? 'Guardando...' : 'Guardar cambios'}
                 </Button>
+                {fieldError && (
+                  <span className="flex items-center gap-1 text-xs text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5" /> {fieldError}
+                  </span>
+                )}
                 {saveState === 'saved' && (
                   <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Guardado
@@ -261,7 +275,7 @@ export default function ConfigPage() {
                   <label className="text-xs font-medium text-muted-foreground block">Idioma</label>
                   <select className="flex h-9 w-full rounded-md border bg-background px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                     <option value="es">Español</option>
-                    <option value="en">English</option>
+                    <option value="en">Inglés</option>
                   </select>
                 </div>
               </CardContent>

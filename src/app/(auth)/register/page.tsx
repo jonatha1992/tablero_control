@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { register, login } from '@/lib/firebase/auth';
@@ -9,14 +9,16 @@ import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const { isAuthenticated, loading: authLoading, user, refreshProfile } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,14 +34,22 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
 
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
+    const errors: Record<string, string> = {};
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedBusinessName = businessName.trim();
 
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (!trimmedName) errors.name = 'El nombre es obligatorio';
+    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
+    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
+    if (!trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
+    if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
+    if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -48,7 +58,7 @@ export default function RegisterPage() {
     try {
       // 1. Create Firebase user (or sign in if already exists)
       try {
-        await register(email, password, name, 'miembro');
+        await register(trimmedEmail, password, trimmedName, 'miembro');
       } catch (err: unknown) {
         const code = (err as { code?: string }).code;
         if (code === 'auth/email-already-in-use') {
@@ -69,7 +79,7 @@ export default function RegisterPage() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ businessName: businessName.trim() || undefined }),
+        body: JSON.stringify({ businessName: trimmedBusinessName || undefined }),
       });
 
       if (!res.ok) {
@@ -81,7 +91,7 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setError('Este email ya está registrado. Verificá tu contraseña.');
+        setError('Este correo ya está registrado. Verificá tu contraseña.');
       } else if (code === 'auth/weak-password') {
         setError('La contraseña es demasiado débil');
       } else {
@@ -131,8 +141,10 @@ export default function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Juan García"
               required
+              maxLength={100}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="businessName" className="text-sm font-medium">
@@ -144,20 +156,24 @@ export default function RegisterPage() {
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="Mi Empresa S.A."
+              maxLength={100}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            {fieldErrors.businessName && <p className="text-xs text-destructive">{fieldErrors.businessName}</p>}
           </div>
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Email</label>
+            <label htmlFor="email" className="text-sm font-medium">Correo</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
+              placeholder="tu@correo.com"
               required
+              maxLength={150}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
@@ -170,6 +186,7 @@ export default function RegisterPage() {
               required
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Contraseña</label>
@@ -182,6 +199,7 @@ export default function RegisterPage() {
               required
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
@@ -197,5 +215,15 @@ export default function RegisterPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
