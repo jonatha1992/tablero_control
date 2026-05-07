@@ -237,8 +237,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg flex flex-col max-h-[90vh]">
+        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between pr-8">
             <DialogTitle>Crear Nueva Tarea</DialogTitle>
             <button
@@ -271,7 +271,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="overflow-y-auto flex-1 space-y-4 pr-1">
           <div>
             <label className="text-sm font-medium mb-1 block">Título *</label>
             <input
@@ -532,7 +533,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             )}
           </div>
 
-          <DialogFooter>
+          </div>
+          <DialogFooter className="shrink-0 pt-4">
             <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
               Cancelar
             </Button>
