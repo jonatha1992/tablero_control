@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { KanbanBoard } from '@/components/tareas/kanban-board';
 import { CalendarView } from '@/components/calendario/calendar-view';
 import { TaskDetailModal } from '@/components/tareas/task-detail-modal';
@@ -9,9 +9,11 @@ import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useAuth } from '@/hooks/auth-context';
-import type { Task } from '@/types';
-import { LayoutGrid, Calendar, Plus, ChevronDown, FolderKanban } from 'lucide-react';
+import { useScrumUIStore } from '@/stores/scrum-ui.store';
+import type { Task, TaskFilters } from '@/types';
+import { LayoutGrid, Calendar, Plus, ChevronDown, FolderKanban, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import {
@@ -22,10 +24,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'board' | 'calendar';
+type ActiveView = 'board' | 'calendar';
 
 export default function TareasPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [activeView, setActiveView] = useState<ActiveView>('board');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createInitialDate, setCreateInitialDate] = useState<Date | undefined>();
@@ -34,8 +36,20 @@ export default function TareasPage() {
   const { user } = useAuth();
   const businessId = user?.businessId ?? '';
   const { data: projects = [] } = useProjectsQuery(businessId);
+  const { data: cycles = [] } = useCyclesQuery(businessId);
+  const { selectedSprintId, viewMode: sprintMode, setSelectedSprint, setViewMode: setSprintMode } = useScrumUIStore();
 
-  const taskFilters = selectedProjectId ? { projectId: [selectedProjectId] as string[] } : undefined;
+  const activeCycle = cycles.find((c) => c.status === 'active');
+  const otherCycles = cycles.filter((c) => c.status !== 'active');
+
+  const taskFilters = useMemo((): TaskFilters | undefined => {
+    const f: TaskFilters = {};
+    if (selectedProjectId) f.projectId = [selectedProjectId];
+    if (sprintMode === 'backlog') f.noCycle = true;
+    else if (sprintMode === 'board' && selectedSprintId) f.cycleId = [selectedSprintId];
+    return Object.keys(f).length > 0 ? f : undefined;
+  }, [selectedProjectId, sprintMode, selectedSprintId]);
+
   const { data: tasks = [], isLoading, isError, error } = useTasksQuery(taskFilters);
   const updateTask = useUpdateTask();
   const _createTask = useCreateTask();
@@ -88,9 +102,9 @@ export default function TareasPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 rounded-lg border bg-muted p-1">
             <button
-              onClick={() => setViewMode('board')}
+              onClick={() => setActiveView('board')}
               className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-md transition-colors ${
-                viewMode === 'board'
+                activeView === 'board'
                   ? 'bg-background shadow-sm font-medium text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -99,9 +113,9 @@ export default function TareasPage() {
               Tablero
             </button>
             <button
-              onClick={() => setViewMode('calendar')}
+              onClick={() => setActiveView('calendar')}
               className={`inline-flex items-center gap-1.5 h-8 px-3 text-sm rounded-md transition-colors ${
-                viewMode === 'calendar'
+                activeView === 'calendar'
                   ? 'bg-background shadow-sm font-medium text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -140,7 +154,7 @@ export default function TareasPage() {
           </DropdownMenu>
         </div>
 
-        {viewMode !== 'board' && (
+        {activeView !== 'board' && (
           <Button size="sm" onClick={openCreateModal}>
             <Plus className="h-4 w-4 mr-1.5" />
             Nueva tarea
@@ -148,9 +162,92 @@ export default function TareasPage() {
         )}
       </div>
 
+      {/* Tabs de sprint (solo en vista Tablero) */}
+      {activeView === 'board' && (
+        <div className="shrink-0 flex items-center gap-1 px-4 py-1.5 border-b bg-muted/20">
+          <Timer className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
+
+          {/* Todas */}
+          <button
+            onClick={() => { setSprintMode('board'); setSelectedSprint(null); }}
+            className={cn(
+              'inline-flex items-center h-7 px-3 text-xs rounded-md transition-colors',
+              sprintMode === 'board' && !selectedSprintId
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}
+          >
+            Todas
+          </button>
+
+          {/* Backlog */}
+          <button
+            onClick={() => { setSprintMode('backlog'); setSelectedSprint(null); }}
+            className={cn(
+              'inline-flex items-center h-7 px-3 text-xs rounded-md transition-colors',
+              sprintMode === 'backlog'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}
+          >
+            Backlog
+          </button>
+
+          {/* Sprint activo */}
+          {activeCycle && (
+            <button
+              onClick={() => { setSprintMode('board'); setSelectedSprint(activeCycle.id); }}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-7 px-3 text-xs rounded-md transition-colors',
+                sprintMode === 'board' && selectedSprintId === activeCycle.id
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+              {activeCycle.name}
+            </button>
+          )}
+
+          {/* Otros ciclos */}
+          {otherCycles.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    'inline-flex items-center gap-1 h-7 px-2 text-xs rounded-md transition-colors',
+                    sprintMode === 'board' && selectedSprintId && selectedSprintId !== activeCycle?.id
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  {sprintMode === 'board' && selectedSprintId && selectedSprintId !== activeCycle?.id
+                    ? (otherCycles.find((c) => c.id === selectedSprintId)?.name ?? 'Período')
+                    : 'Otros'}
+                  <ChevronDown className="h-3 w-3 opacity-70" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-w-[220px]">
+                {otherCycles.map((cycle) => (
+                  <DropdownMenuItem
+                    key={cycle.id}
+                    onClick={() => { setSprintMode('board'); setSelectedSprint(cycle.id); }}
+                  >
+                    <span className={cn('flex-1 truncate', selectedSprintId === cycle.id && 'font-medium')}>
+                      {cycle.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2 capitalize shrink-0">{cycle.status}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      )}
+
       {/* Vista activa */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {viewMode === 'board' ? (
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {activeView === 'board' ? (
           <KanbanBoard tasks={tasks} />
         ) : (
           <div className="h-full p-4">

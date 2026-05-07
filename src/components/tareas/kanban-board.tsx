@@ -191,6 +191,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     ? tasks.find((t) => t.id === dragState.draggedTaskId) ?? null
     : null;
 
+
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden w-full">
       {/* Toolbar */}
@@ -426,26 +428,29 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-2 pt-1 flex-1 min-h-0 min-w-0 w-full overflow-y-hidden">
-          {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
-            <KanbanColumn
-              key={column}
-              status={column}
-              tasks={columns[column]}
-              onCardClick={(task) => {
-                if (isSelectMode) toggleTaskSelection(task.id);
-                else openTaskDetail(task.id);
-              }}
-              onPriorityChange={handlePriorityChange}
-              onLocationChange={handleLocationChange}
-              onAddClick={openCreateModal}
-              selectedTaskIds={selectedTaskIds}
-              isSelectMode={isSelectMode}
-              onSelectAll={selectAllInColumn}
-              onBulkDelete={requestDelete}
-              locations={locations}
-            />
-          ))}
+        <div className="flex-1 min-h-0 w-full overflow-hidden">
+          <div className="flex gap-4 h-full overflow-x-auto pb-2 pt-1">
+            {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
+              <KanbanColumn
+                key={column}
+                status={column}
+                tasks={columns[column]}
+                onCardClick={(task) => {
+                  if (isSelectMode) toggleTaskSelection(task.id);
+                  else openTaskDetail(task.id);
+                }}
+                onPriorityChange={handlePriorityChange}
+                onLocationChange={handleLocationChange}
+                onAddClick={openCreateModal}
+                selectedTaskIds={selectedTaskIds}
+                isSelectMode={isSelectMode}
+                onSelectAll={selectAllInColumn}
+                onBulkDelete={requestDelete}
+                locations={locations}
+
+              />
+            ))}
+          </div>
         </div>
 
         <DragOverlay>

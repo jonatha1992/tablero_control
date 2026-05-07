@@ -13,6 +13,7 @@ export interface ExtractedTask {
   dueTime?: string;   // HH:mm 24h
   estimatedHours?: number;
   order: number;      // 1 = primera a ejecutar
+  locationId?: string;
   recurrence?: {
     frequency: 'daily' | 'weekly' | 'monthly';
     interval: number;

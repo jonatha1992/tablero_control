@@ -323,15 +323,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 )}
               </div>
 
-              <div className="flex gap-2 pt-1">
-                <Button size="sm" onClick={handleSave} disabled={updateTask.isPending} className="gap-1.5">
-                  <Save className="h-3.5 w-3.5" />
-                  {updateTask.isPending ? 'Guardando...' : 'Guardar'}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-                  Cancelar
-                </Button>
-              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2 mt-4">
@@ -559,6 +550,19 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
+
+        {/* Save/Cancel — always at bottom when editing */}
+        {editing && (
+          <div className="flex gap-2 pt-3 border-t sticky bottom-0 bg-background pb-1">
+            <Button size="sm" onClick={handleSave} disabled={updateTask.isPending} className="gap-1.5">
+              <Save className="h-3.5 w-3.5" />
+              {updateTask.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+              Cancelar
+            </Button>
+          </div>
+        )}
       </DialogContent>
 
       <ConfirmDialog

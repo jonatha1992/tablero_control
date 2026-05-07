@@ -94,3 +94,39 @@
 .animate-pulse-slow {
   animation: pulse-slow 3s ease-in-out infinite;
 }
+
+/* FullCalendar resource-timeline dark mode fixes */
+.dark .fc .fc-timeline-lane-frame {
+  background: transparent;
+}
+.dark .fc .fc-timeline-slot-frame,
+.dark .fc .fc-datagrid-cell {
+  border-color: #333333;
+}
+.dark .fc .fc-col-header-cell,
+.dark .fc .fc-timeline-header-row {
+  background: #171717;
+}
+.dark .fc .fc-resource-area,
+.dark .fc .fc-datagrid-body {
+  background: #171717;
+}
+.dark .fc .fc-datagrid-cell-cushion {
+  color: #fafafa;
+}
+.dark .fc .fc-timeline-now-indicator-line {
+  border-color: #ef4444;
+}
+.dark .fc .fc-button-primary {
+  background-color: #27272a;
+  border-color: #3f3f46;
+  color: #fafafa;
+}
+.dark .fc .fc-button-primary:hover {
+  background-color: #3f3f46;
+}
+.dark .fc .fc-button-primary:not(:disabled).fc-button-active,
+.dark .fc .fc-button-primary:not(:disabled):active {
+  background-color: #52525b;
+  border-color: #52525b;
+}

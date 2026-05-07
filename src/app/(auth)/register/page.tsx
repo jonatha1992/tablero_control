@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { register, login } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/client';
@@ -146,8 +147,8 @@ function RegisterForm() {
     return (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-            TC
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center">
+            <Image src="/icon-192.png" alt="Tablero de Control" width={48} height={48} className="rounded-xl object-contain" priority />
           </div>
           <CardTitle className="text-2xl">Nuevo Negocio</CardTitle>
           <CardDescription>Creá un nuevo negocio para gestionar</CardDescription>
@@ -194,8 +195,8 @@ function RegisterForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-          TC
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center">
+          <Image src="/icon-192.png" alt="Tablero de Control" width={48} height={48} className="rounded-xl object-contain" priority />
         </div>
         <CardTitle className="text-2xl">Crear Cuenta</CardTitle>
         <CardDescription>Registrá tu negocio para acceder al tablero</CardDescription>

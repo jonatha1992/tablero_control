@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Search, LogOut, Menu, Download } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const { user, signOut, role } = useAuth();
   const { canInstall, install } = usePwaInstall();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { filters, setFilters } = useKanbanUIStore();
   const isTasksPage = pathname?.startsWith('/dashboard/tareas');
   
@@ -34,14 +35,25 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const getPageContext = () => {
     if (!pathname) return { title: 'Tablero de Control' };
     if (pathname === '/dashboard') return { title: 'Dashboard de Negocio' };
-    if (pathname === '/dashboard/sectores') return { title: 'Departamentos y Sectores' };
     if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
     if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
     if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };
-    if (pathname.startsWith('/dashboard/config')) return { title: 'Configuración' };
+    if (pathname === '/dashboard/equipo/sectores') return { title: 'Departamentos y Sectores' };
+    if (pathname === '/dashboard/sectores') return { title: 'Departamentos y Sectores' };
     if (pathname === '/dashboard/calendario') return { title: 'Calendario' };
+    if (pathname === '/dashboard/ciclos') return { title: 'Ciclos' };
+    if (pathname === '/dashboard/objetivos') return { title: 'Objetivos' };
+    if (pathname === '/dashboard/planificacion') return { title: 'Planificación' };
+    if (pathname === '/dashboard/planificacion/objetivos') return { title: 'Objetivos' };
+    if (pathname === '/dashboard/cronograma') return { title: 'Cronograma' };
     if (pathname === '/dashboard/billing') return { title: 'Facturación' };
     if (pathname === '/dashboard/reportes') return { title: 'Reportes' };
+    if (pathname === '/dashboard/config/roles') return { title: 'Roles y Permisos' };
+    if (pathname.startsWith('/dashboard/config')) {
+      const tab = searchParams.get('tab');
+      if (tab === 'facturacion') return { title: 'Facturación' };
+      return { title: 'Configuración' };
+    }
     if (pathname === '/superadmin') return { title: 'Plataforma' };
     if (pathname.startsWith('/superadmin/businesses')) return { title: 'Negocios' };
     if (pathname.startsWith('/superadmin/users')) return { title: 'Usuarios' };

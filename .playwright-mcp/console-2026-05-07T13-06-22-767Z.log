@@ -1,0 +1,8 @@
+[      93ms] [ERROR] [useObjectivesQuery] Error: TypeError: Failed to fetch
+    at fetchJsonAuth (http://localhost:3000/_next/static/chunks/src_0vpswnh._.js:6027:23)
+    at async useObjectivesQuery.useQuery (http://localhost:3000/_next/static/chunks/src_0vpswnh._.js:6118:28) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[     171ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     193ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     412ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     420ms] [LOG] [Fast Refresh] done in 111ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1449ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:3000/superadmin:0

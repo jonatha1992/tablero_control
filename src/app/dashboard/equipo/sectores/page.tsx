@@ -49,7 +49,7 @@ export default function SectoresPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-auto">
       {sectors.length > 0 && (
         <div className="flex justify-end">
           <Button onClick={handleCreate} className="shadow-sm">

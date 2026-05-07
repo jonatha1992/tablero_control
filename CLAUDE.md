@@ -251,6 +251,7 @@ src/app/
 ├── dashboard/        # app principal — layout 'use client' con ProtectedRoute + Sidebar + Header
 │   ├── tareas/        # 4 tabs: Kanban | Agenda | Calendario | Cronograma
 │   │   ├── (index)    # Kanban board — drag-drop, selección múltiple, dictado AI
+│   │   │              # Sprint tabs: Todas | Backlog | [Sprint activo] | Otros ▾
 │   │   ├── agenda/    # Agenda inteligente — scoring diario, secciones auto, quick status
 │   │   ├── calendario/# FullCalendar — mes/semana/lista, drag-drop, ghost recurrencias
 │   │   └── cronograma/# Gantt view
@@ -265,6 +266,22 @@ src/app/
 │   └── config/        # configuración del negocio
 └── api/
 ```
+
+## Sprint Tabs en Kanban (`/dashboard/tareas`)
+
+Barra secundaria debajo del toolbar principal. Usa `useScrumUIStore` (`src/stores/scrum-ui.store.ts`): `selectedSprintId` + `viewMode: 'board' | 'backlog'`.
+
+**Tabs:**
+- **Todas** — sin filtro de ciclo (`viewMode: 'board'`, `selectedSprintId: null`)
+- **Backlog** — tareas sin ciclo (`viewMode: 'backlog'` → filter `noCycle: true`)
+- **[Nombre del ciclo activo]** — tab dinámico con punto verde, solo si hay un ciclo con `status: 'active'`
+- **Otros ▾** — dropdown con ciclos planning/completed/closed
+
+**Filtros server-side:** `TaskFilters` acepta `cycleId?: string[]` y `noCycle?: boolean`. Fluyen por `tasksApi` → `GET /api/tasks` → `taskRepository.buildWhere()`.
+
+**CreateTaskModal:** si el tab activo es un sprint (`viewMode: 'board'` + `selectedSprintId`), el campo "Período/Sprint" se pre-selecciona automáticamente al abrir el modal. El field solo aparece si el negocio tiene al menos un ciclo.
+
+**`CreateTaskDTO`** incluye `cycleId?: string` — el repositorio lo pasa a Prisma por spread (`...rest`).
 
 ## Agenda Inteligente (`/dashboard/tareas/agenda`)
 
@@ -359,3 +376,5 @@ Nomenclatura: `api-*.test.ts` para API routes, `hooks-*.test.ts` para hooks, `*.
 - Recurrencia de tareas: no crear la siguiente ocurrencia manualmente — el `TaskService.moveTask()` lo hace automáticamente al completar una tarea recurrente.
 - **Cambios de status de tarea**: siempre usar `useMoveTask` (no `useUpdateTask`) para garantizar que `moveTask()` se ejecute en backend — activa la creación de la siguiente ocurrencia en tareas recurrentes.
 - Ciclos/Objetivos: al asignar tareas vía `POST /api/cycles/[id]/tasks` o `POST /api/objectives/[id]/tasks`, el endpoint valida que todas las `taskIds` pertenezcan al mismo `businessId`. El body debe ser `{ taskIds: string[], action?: 'assign' | 'remove' }`.
+- Sprint tabs en Kanban: usar `useScrumUIStore` para leer/setear `selectedSprintId` y `viewMode`. NO crear estado local para el filtro de sprint — el store es la fuente de verdad compartida entre `page.tsx` y `CreateTaskModal`.
+- `TaskFilters` soporta `cycleId?: string[]` (filtrar por ciclos) y `noCycle?: boolean` (solo tareas sin ciclo). El API route `/api/tasks` deserializa ambos desde query params.

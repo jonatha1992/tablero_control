@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mic, Loader2, X, Send, MessageSquare, Check } from 'lucide-react';
+import { Mic, Loader2, X, Send, MessageSquare, Check, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   useDictateTasksUpload,
@@ -17,6 +17,7 @@ import {
   useConfirmDictatedTasks,
 } from '@/hooks/mutations/use-dictate-tasks';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { TaskPriority, TaskStatus } from '@/types/domain/task';
 
@@ -50,11 +51,13 @@ const PRIORITY_BORDER: Record<TaskPriority, string> = {
 function TaskPreviewCard({
   task,
   members,
+  locations,
   onChange,
   onRemove,
 }: {
   task: ExtractedTask;
   members: { id: string; name: string }[];
+  locations: { id: string; name: string }[];
   onChange: (t: ExtractedTask) => void;
   onRemove: () => void;
 }) {
@@ -106,6 +109,21 @@ function TaskPreviewCard({
             <option key={v} value={v}>{label}</option>
           ))}
         </select>
+        {locations.length > 0 && (
+          <div className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
+            <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+            <select
+              value={task.locationId ?? ''}
+              onChange={(e) => onChange({ ...task, locationId: e.target.value || undefined })}
+              className="bg-transparent outline-none max-w-[90px]"
+            >
+              <option value="">Sin sector</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         {task.dueDate && (
           <div className="flex items-center gap-1 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
             <span>📅 {task.dueDate}</span>
@@ -164,6 +182,8 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
 
   const { data: membersData } = useMembersQuery();
   const members = (membersData ?? []).map((m) => ({ id: m.id, name: m.name }));
+  const { data: locationsData = [] } = useLocationsQuery();
+  const locations = locationsData.map((l) => ({ id: l.id, name: l.name }));
 
   const fromTextMutation = useDictateTasksFromText();
   const uploadMutation = useDictateTasksUpload();
@@ -336,6 +356,7 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
                           key={ti}
                           task={task}
                           members={members}
+                          locations={locations}
                           onChange={(updated) => updateTask(msgIdx, ti, updated)}
                           onRemove={() => removeTask(msgIdx, ti)}
                         />

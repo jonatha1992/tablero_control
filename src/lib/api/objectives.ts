@@ -43,13 +43,8 @@ export const objectivesApi = {
       body: JSON.stringify({ _action: 'archive' }),
     }),
 
-  delete: async (id: string) => {
-    const token = await getToken();
-    const headers: HeadersInit = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`/api/objectives/${id}`, { method: 'DELETE', headers });
-    if (!res.ok) throw new Error('Error al eliminar objetivo');
-  },
+  delete: (id: string) =>
+    fetchJsonAuth<{ ok: boolean }>(`/api/objectives/${id}`, { method: 'DELETE' }),
 
   assignTasks: (objectiveId: string, taskIds: string[]) =>
     fetchJsonAuth<void>(`/api/objectives/${objectiveId}/tasks`, {

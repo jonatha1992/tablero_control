@@ -30,11 +30,15 @@ export const GET = handle(async (request: NextRequest) => {
   const priority = searchParams.get('priority');
   const projectId = searchParams.get('projectId');
   const locationId = searchParams.get('locationId');
+  const cycleId = searchParams.get('cycleId');
+  const noCycle = searchParams.get('noCycle');
   const search = searchParams.get('search');
   if (status) filters.status = status.split(',') as TaskStatus[];
   if (priority) filters.priority = priority.split(',') as TaskPriority[];
   if (projectId) filters.projectId = projectId.split(',');
   if (locationId) filters.locationId = locationId.split(',');
+  if (cycleId) { const ids = cycleId.split(',').filter(Boolean); if (ids.length) filters.cycleId = ids; }
+  if (noCycle === 'true') filters.noCycle = true;
   if (search) filters.search = search;
 
   if (creatorId && !businessId) {

@@ -3,6 +3,7 @@ import { objectiveService } from '@/services/objective.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { can } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
 
 export const GET = handle(async (request: NextRequest) => {
@@ -26,10 +27,24 @@ export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
+  if (!user.businessId) {
+    return NextResponse.json({ error: 'Sin negocio asociado' }, { status: 400 });
+  }
+
+  if (!can(user.data, 'task.create')) {
+    return NextResponse.json({ error: 'Sin permisos para crear objetivos' }, { status: 403 });
+  }
+
   const body = await request.json();
+
+  if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
+    return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
+  }
+
   const objective = await objectiveService.createObjective({
     ...body,
-    businessId: user.businessId ?? '',
+    name: body.name.trim(),
+    businessId: user.businessId,
   });
 
   await writeAuditLog({

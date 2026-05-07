@@ -16,8 +16,8 @@ export default function TareasLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   return (
-    <div className="space-y-0">
-      <div className="border-b border-border mb-6">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="shrink-0 border-b border-border mb-6">
         <nav className="flex gap-0" aria-label="Vistas de tareas">
           {TABS.map((tab) => {
             const isActive = tab.exact
@@ -41,7 +41,9 @@ export default function TareasLayout({ children }: { children: React.ReactNode }
           })}
         </nav>
       </div>
-      {children}
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {children}
+      </div>
     </div>
   );
 }

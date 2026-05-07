@@ -170,7 +170,7 @@ export default function ReportesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-auto">
       {/* Header */}
       <div className="flex items-center justify-end flex-wrap gap-3">
           <div className="flex rounded-lg border bg-muted p-1 gap-1">

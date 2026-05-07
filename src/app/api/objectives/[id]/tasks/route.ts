@@ -23,6 +23,10 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     return NextResponse.json({ error: 'taskIds debe ser un arreglo de strings' }, { status: 400 });
   }
 
+  if (action !== undefined && action !== 'assign' && action !== 'remove') {
+    return NextResponse.json({ error: "action debe ser 'assign' o 'remove'" }, { status: 400 });
+  }
+
   if (taskIds.length > 0 && action !== 'remove') {
     const validCount = await (await import('@/lib/prisma')).prisma.task.count({
       where: {
