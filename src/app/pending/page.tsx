@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
-import { Clock, LogOut } from 'lucide-react';
+import { Clock, LogOut, RefreshCw, Loader2 } from 'lucide-react';
 
 export default function PendingPage() {
-  const { user, role, isAuthenticated, loading, signOut } = useAuth();
+  const { user, role, isAuthenticated, loading, signOut, refreshProfile } = useAuth();
   const router = useRouter();
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -63,6 +64,18 @@ export default function PendingPage() {
           <p className="text-sm text-muted-foreground">
             Contactá al administrador de tu equipo para que te asigne un rol y puedas empezar a usar el sistema.
           </p>
+          <Button
+            className="w-full gap-2"
+            disabled={checking}
+            onClick={async () => {
+              setChecking(true);
+              await refreshProfile();
+              setChecking(false);
+            }}
+          >
+            {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Verificar estado
+          </Button>
           <Button variant="outline" className="w-full gap-2" onClick={signOut}>
             <LogOut className="h-4 w-4" />
             Cerrar sesión
