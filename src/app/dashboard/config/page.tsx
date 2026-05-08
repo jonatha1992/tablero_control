@@ -334,7 +334,7 @@ export default function ConfigPage() {
           {canManageBilling && (
           <TabsContent value="facturacion" className="mt-0 space-y-8 outline-none">
             {!user?.businessId ? (
-              <p className="text-muted-foreground text-sm">No tenés un negocio asociado.</p>
+              <p className="text-muted-foreground text-sm">No tenés una suscripción activa.</p>
             ) : (
               <>
                 <BillingCurrentPlan subscription={subscription ?? null} isLoading={isLoading} />

@@ -35,7 +35,7 @@ export const GET = handle(async (request: NextRequest) => {
           }
         } catch (e) {
           console.error('[profile] updateId failed:', e);
-          user = existingByEmail; // Fallback: allow login without UID update
+          return NextResponse.json({ error: 'uid_sync_failed' }, { status: 500 });
         }
       }
     }
@@ -113,7 +113,7 @@ export const GET = handle(async (request: NextRequest) => {
       const isSuperadmin = superadminEmails.includes(email);
 
       const business = await businessRepository.create({
-        name: isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`,
+        name: isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`,
         adminId: decoded.uid,
         ownerId: decoded.uid,
         plan: 'free',

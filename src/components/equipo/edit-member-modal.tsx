@@ -31,7 +31,7 @@ const ROLES: {
   icon: React.ElementType;
   color: string;
 }[] = [
-  { value: 'admin', label: 'Administrador', description: 'Gestión completa del negocio', icon: Crown, color: 'text-amber-500' },
+  { value: 'admin', label: 'Administrador', description: 'Gestión completa de la empresa', icon: Crown, color: 'text-amber-500' },
   { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores', icon: Star, color: 'text-blue-500' },
   { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas', icon: Users, color: 'text-green-500' },
   { value: 'viewer', label: 'Visualizador', description: 'Solo lectura', icon: Eye, color: 'text-muted-foreground' },

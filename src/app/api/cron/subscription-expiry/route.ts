@@ -22,8 +22,20 @@ export const GET = handle(async (req: NextRequest) => {
   const warnThreshold = new Date(now.getTime() + WARN_DAYS * 24 * 60 * 60 * 1000);
 
   let markedPastDue = 0;
+  let trialExpired = 0;
   let emailsSent = 0;
   const emailErrors: string[] = [];
+
+  // Trials vencidos → suspender
+  try {
+    const expiredTrials = await prisma.business.updateMany({
+      where: { status: 'trial', trialEndsAt: { lt: now } },
+      data: { status: 'suspended' },
+    });
+    trialExpired = expiredTrials.count;
+  } catch (err) {
+    console.error('[cron/subscription-expiry] error handling expired trials:', err);
+  }
 
   try {
     // FIX #6: Wrap DB operations in try-catch — failure returns 500 instead of silent 200
@@ -114,6 +126,7 @@ export const GET = handle(async (req: NextRequest) => {
   return NextResponse.json({
     ok: true,
     markedPastDue,
+    trialExpired,
     emailsSent,
     ...(emailErrors.length > 0 ? { emailErrors } : {}),
   });

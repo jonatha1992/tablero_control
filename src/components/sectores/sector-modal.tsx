@@ -144,7 +144,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
           <DialogDescription>
             {location
               ? 'Modificá la información del sector seleccionado.'
-              : 'Completá los datos para crear un nuevo sector en tu negocio.'}
+              : 'Completá los datos para crear un nuevo sector de tu empresa.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">

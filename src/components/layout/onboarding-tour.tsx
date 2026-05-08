@@ -68,7 +68,7 @@ const STEPS = [
     element: '#tour-nav-config',
     popover: {
       title: '⚙️ Configuración',
-      description: 'Ajustes del negocio: nombre, logo, zona horaria y preferencias generales de la cuenta.',
+      description: 'Ajustes de la empresa: nombre, logo, zona horaria y preferencias generales de la cuenta.',
       side: 'right' as const,
     },
   },

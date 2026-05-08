@@ -25,8 +25,14 @@ function verifySignature(req: NextRequest, rawBody: string): boolean {
   const xSig = req.headers.get('x-signature') ?? '';
   const requestId = req.headers.get('x-request-id') ?? '';
 
-  // MP test notifications from dashboard may omit signature headers — allow through
-  if (!xSig) return true;
+  // MP test notifications from dashboard may omit signature headers — allow in dev only
+  if (!xSig) {
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('[webhook] Missing x-signature — rejecting, request-id:', requestId);
+      return false;
+    }
+    return true;
+  }
 
   const tsMatch = xSig.match(/ts=([^,]+)/);
   const v1Match = xSig.match(/v1=([^,]+)/);

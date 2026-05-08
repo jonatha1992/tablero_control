@@ -38,8 +38,13 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     return NextResponse.json(reactivated);
   }
 
-  if (data.role && target.businessId) {
-    await teamService.changeRole(id, target.businessId, data.role);
+  if (data.role) {
+    if (user.role !== 'superadmin' && data.role === 'superadmin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (target.businessId) {
+      await teamService.changeRole(id, target.businessId, data.role);
+    }
   }
 
   const member = await teamService.updateMember(id, data);

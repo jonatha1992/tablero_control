@@ -85,11 +85,11 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Miembros',
-        description: 'Lista de todos los usuarios del negocio. Podés invitar nuevos miembros por email o generar un link de invitación reutilizable con fecha de vencimiento.',
+        description: 'Lista de todos los usuarios de la empresa. Podés invitar nuevos miembros por email o generar un link de invitación reutilizable con fecha de vencimiento.',
       },
       {
         title: 'Sectores',
-        description: 'Locales, sucursales o áreas del negocio. Cada tarea puede pertenecer a un sector. Los responsables de sector tienen permisos especiales en sus tareas.',
+        description: 'Locales, sucursales o áreas de la empresa. Cada tarea puede pertenecer a un sector. Los responsables de sector tienen permisos especiales en sus tareas.',
       },
       {
         title: 'Roles',
@@ -133,7 +133,7 @@ const SECTIONS: Section[] = [
     emoji: '⚙️',
     subsections: [
       {
-        title: 'Datos del negocio',
+        title: 'Datos de la empresa',
         description: 'Nombre, logo, zona horaria y configuración general de la cuenta.',
       },
       {

@@ -21,6 +21,10 @@ export function useSaveRole() {
     mutationFn: async (role: SaveRoleArgs) => {
       if (!user?.businessId) throw new Error('Sin business');
       const plan = business?.plan ?? 'free';
+      const canUseCustomRoles = plan === 'pro' || plan === 'enterprise';
+      if (!canUseCustomRoles && !role.id) {
+        throw new Error('Tu plan no incluye roles personalizados. Actualizá a Pro o Enterprise.');
+      }
       const errors = validateCustomRole(role, plan);
       if (errors.length > 0) throw new Error(errors.map((e) => e.message).join(', '));
 
