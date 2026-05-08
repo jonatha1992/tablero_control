@@ -263,9 +263,34 @@ src/app/
 │   ├── sectores/      # gestión de locales/ubicaciones
 │   ├── reportes/      # reportes (en desarrollo)
 │   ├── billing/       # facturación y planes
-│   └── config/        # configuración del negocio
+│   ├── config/        # configuración del negocio
+│   └── ayuda/         # centro de ayuda — acordeón por sección + botón "Ver tour"
 └── api/
 ```
+
+## Layout del dashboard (`src/app/dashboard/layout.tsx`)
+
+Layout principal `'use client'`. Contiene:
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable con `tourId` en cada item para el onboarding. Items: Dashboard, Tareas, Planificación, Equipo, Reportes, Facturación, Configuración, Ayuda.
+- **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón `?` (→ `/dashboard/ayuda`), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout.
+- **FAB IA** (`id="tour-fab"`) — botón flotante (bottom-right) que abre `AiAssistantPanel`. Punto de entrada al asistente IA y al dictado de tareas.
+- **OnboardingTour** — componente invisible que gestiona el tour interactivo con driver.js.
+
+## Onboarding Tour (`src/components/layout/onboarding-tour.tsx`)
+
+Tour interactivo con driver.js que guía al usuario por la interfaz.
+
+**Auto-inicio:** se dispara automáticamente la primera vez que el usuario visita `/dashboard` (persiste en `localStorage` con key `tour_completed_{userId}`).
+
+**Trigger manual:** el componente exporta `startOnboardingTour()` — llama a `window.dispatchEvent(new CustomEvent('start-onboarding-tour'))`. El componente escucha este evento y lanza el tour ignorando el estado de localStorage. Usar desde cualquier lugar de la app:
+```ts
+import { startOnboardingTour } from '@/components/layout/onboarding-tour';
+startOnboardingTour();
+```
+
+**Pasos del tour** (por orden): Dashboard → Tareas (Kanban) → FAB IA → Planificación → Equipo → Reportes → Facturación → Configuración → Ayuda.
+
+Cada paso usa `element: '#tour-nav-xxx'` para apuntar al item del sidebar. Si el elemento no existe en el DOM en ese momento, el paso se omite automáticamente.
 
 ## Sprint Tabs en Kanban (`/dashboard/tareas`)
 
@@ -378,3 +403,5 @@ Nomenclatura: `api-*.test.ts` para API routes, `hooks-*.test.ts` para hooks, `*.
 - Ciclos/Objetivos: al asignar tareas vía `POST /api/cycles/[id]/tasks` o `POST /api/objectives/[id]/tasks`, el endpoint valida que todas las `taskIds` pertenezcan al mismo `businessId`. El body debe ser `{ taskIds: string[], action?: 'assign' | 'remove' }`.
 - Sprint tabs en Kanban: usar `useScrumUIStore` para leer/setear `selectedSprintId` y `viewMode`. NO crear estado local para el filtro de sprint — el store es la fuente de verdad compartida entre `page.tsx` y `CreateTaskModal`.
 - `TaskFilters` soporta `cycleId?: string[]` (filtrar por ciclos) y `noCycle?: boolean` (solo tareas sin ciclo). El API route `/api/tasks` deserializa ambos desde query params.
+- **Flujo de invitación** (`src/app/i/[token]/invite-client.tsx`): después de `accept.mutateAsync()` + `refreshProfile()`, NO redirigir automáticamente — dejar que `accept.isSuccess` muestre el estado de confirmación (CheckCircle + botón "Ir al dashboard") y que el usuario navegue manualmente.
+- **Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático sin dependencias externas (no usa @radix-ui/react-accordion — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()` importado desde `onboarding-tour.tsx`.

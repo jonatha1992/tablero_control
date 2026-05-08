@@ -25,6 +25,7 @@ import {
   GanttChart,
   Timer,
   Target,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
@@ -86,6 +87,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/reportes',  label: 'Reportes',      icon: BarChart2,  tourId: 'tour-nav-reportes' },
   { href: '/dashboard/billing',   label: 'Facturación',   icon: CreditCard, tourId: 'tour-nav-billing' },
   { href: '/dashboard/config',    label: 'Configuración', icon: Settings,   tourId: 'tour-nav-config' },
+  { href: '/dashboard/ayuda',     label: 'Ayuda',         icon: HelpCircle, tourId: 'tour-nav-ayuda' },
 ];
 
 const superAdminItems = [

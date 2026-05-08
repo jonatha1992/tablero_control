@@ -25,7 +25,6 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
     try {
       await accept.mutateAsync(token);
       await refreshProfile();
-      router.push('/dashboard');
     } catch (err: unknown) {
       const message = (err as Error).message || '';
       if (message.includes('already_member')) {

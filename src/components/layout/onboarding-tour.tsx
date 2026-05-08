@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import { usePathname } from 'next/navigation';
 import 'driver.js/dist/driver.css';
@@ -20,15 +20,15 @@ const STEPS = [
     element: '#tour-nav-tareas',
     popover: {
       title: '✅ Tablero Kanban',
-      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye vistas de calendario y cronograma.',
+      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye vistas de Agenda, Calendario y Cronograma.',
       side: 'right' as const,
     },
   },
   {
     element: '#tour-fab',
     popover: {
-      title: '➕ Crear tarea',
-      description: 'Creá tareas con formulario o dictándolas por voz. La IA transcribe y extrae título, prioridad, fecha y asignados automáticamente.',
+      title: '✨ Asistente IA',
+      description: 'Abrí el asistente para crear tareas por voz o texto. La IA transcribe y extrae título, prioridad, fecha y asignados automáticamente.',
       side: 'left' as const,
     },
   },
@@ -36,7 +36,7 @@ const STEPS = [
     element: '#tour-nav-planificacion',
     popover: {
       title: '📅 Planificación',
-      description: 'Organizá el trabajo en ciclos con fechas de inicio y fin, y definí objetivos de negocio vinculados a tareas. Cada ciclo pasa por planificación, activo, completado y cerrado.',
+      description: 'Organizá el trabajo en ciclos (sprints) con fechas de inicio y fin, y definí objetivos de negocio vinculados a tareas.',
       side: 'right' as const,
     },
   },
@@ -44,7 +44,7 @@ const STEPS = [
     element: '#tour-nav-equipo',
     popover: {
       title: '👥 Equipo',
-      description: 'Invitá miembros por email o link. Asigná roles (admin, responsable, miembro, viewer) con permisos granulares. Gestioná sectores desde aquí.',
+      description: 'Invitá miembros por email o link. Asigná roles (admin, responsable, miembro, viewer) con permisos granulares. Gestioná sectores y roles personalizados.',
       side: 'right' as const,
     },
   },
@@ -52,7 +52,7 @@ const STEPS = [
     element: '#tour-nav-reportes',
     popover: {
       title: '📊 Reportes',
-      description: 'Visualizá el rendimiento del equipo con gráficos de tareas por estado, prioridad y miembro. Identificá cuellos de botella y tendencias.',
+      description: 'Visualizá el rendimiento del equipo con gráficos de tareas por estado, prioridad y miembro.',
       side: 'right' as const,
     },
   },
@@ -60,7 +60,7 @@ const STEPS = [
     element: '#tour-nav-billing',
     popover: {
       title: '💳 Facturación',
-      description: 'Gestioná tu plan y suscripción. Podés cambiar de plan o ver el historial de facturas aquí.',
+      description: 'Gestioná tu plan y suscripción. Podés cambiar de plan o ver el historial de facturas.',
       side: 'right' as const,
     },
   },
@@ -72,23 +72,29 @@ const STEPS = [
       side: 'right' as const,
     },
   },
+  {
+    element: '#tour-nav-ayuda',
+    popover: {
+      title: '❓ Ayuda',
+      description: 'Documentación de cada sección, preguntas frecuentes y acceso al tour en cualquier momento.',
+      side: 'right' as const,
+    },
+  },
 ];
+
+export function startOnboardingTour() {
+  window.dispatchEvent(new CustomEvent('start-onboarding-tour'));
+}
 
 export function OnboardingTour() {
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const started = useRef(false);
 
-  useEffect(() => {
-    if (loading || !user || started.current) return;
-    if (pathname !== '/dashboard') return;
-
-    const key = TOUR_KEY(user.id);
-    if (localStorage.getItem(key)) return;
-
-    started.current = true;
-
+  const runTour = useCallback(() => {
+    if (!user) return;
     let driverObj: ReturnType<typeof import('driver.js')['driver']> | null = null;
+    const key = TOUR_KEY(user.id);
 
     import('driver.js').then(({ driver }) => {
       const availableSteps = STEPS.filter(
@@ -100,8 +106,6 @@ export function OnboardingTour() {
         nextBtnText: 'Siguiente →',
         prevBtnText: '← Anterior',
         doneBtnText: '¡Entendido!',
-        // onDestroyStarted prevents auto-close in driver.js v1.x —
-        // must call destroy() explicitly to actually close the tour.
         onDestroyStarted: () => {
           localStorage.setItem(key, '1');
           driverObj?.destroy();
@@ -109,13 +113,30 @@ export function OnboardingTour() {
         steps: availableSteps,
       });
 
-      setTimeout(() => driverObj?.drive(), 800);
+      setTimeout(() => driverObj?.drive(), 300);
     });
+  }, [user]);
 
-    return () => {
-      driverObj?.destroy();
-    };
-  }, [user, loading, pathname]);
+  // Auto-start on first visit to /dashboard
+  useEffect(() => {
+    if (loading || !user || started.current) return;
+    if (pathname !== '/dashboard') return;
+
+    const key = TOUR_KEY(user.id);
+    if (localStorage.getItem(key)) return;
+
+    started.current = true;
+    setTimeout(() => runTour(), 800);
+  }, [user, loading, pathname, runTour]);
+
+  // Manual trigger via custom event
+  useEffect(() => {
+    function handleStartTour() {
+      runTour();
+    }
+    window.addEventListener('start-onboarding-tour', handleStartTour);
+    return () => window.removeEventListener('start-onboarding-tour', handleStartTour);
+  }, [runTour]);
 
   return null;
 }

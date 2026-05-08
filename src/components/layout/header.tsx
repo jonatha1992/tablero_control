@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Search, LogOut, Menu, Download } from 'lucide-react';
+import { Search, LogOut, Menu, Download, HelpCircle } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,6 +49,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
     if (pathname === '/dashboard/cronograma') return { title: 'Cronograma' };
     if (pathname === '/dashboard/billing') return { title: 'Facturación' };
     if (pathname === '/dashboard/reportes') return { title: 'Reportes' };
+    if (pathname === '/dashboard/ayuda') return { title: 'Ayuda' };
     if (pathname === '/dashboard/config/roles') return { title: 'Roles y Permisos' };
     if (pathname.startsWith('/dashboard/config')) {
       const tab = searchParams.get('tab');
@@ -118,6 +120,11 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
             Instalar app
           </Button>
         )}
+        <Link href="/dashboard/ayuda">
+          <Button variant="ghost" size="icon" title="Ayuda">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
+        </Link>
         <NotificationBell />
         <BusinessSwitcher />
 
