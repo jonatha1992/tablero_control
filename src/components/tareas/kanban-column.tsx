@@ -64,11 +64,19 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
                 </button>
                 {selectedCount > 0 && (
                   <button
-                    onClick={() => onBulkDelete(taskIds.filter((id) => selectedTaskIds.includes(id)))}
-                    className="h-5 w-5 flex items-center justify-center rounded hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
-                    title={`Eliminar ${selectedCount} tarea${selectedCount > 1 ? 's' : ''}`}
+                    onClick={() => onSelectAll(taskIds)}
+                    className={cn(
+                      'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                      allSelected
+                        ? 'bg-primary border-primary'
+                        : someSelected
+                        ? 'bg-primary/40 border-primary/60'
+                        : 'border-muted-foreground/40 hover:border-primary/60'
+                    )}
+                    title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    {allSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                    {someSelected && <Minus className="h-2.5 w-2.5 text-primary-foreground" />}
                   </button>
                 )}
               </>

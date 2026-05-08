@@ -27,7 +27,19 @@
 
 ---
 
-## Inicio rápido
+---
+
+## 🎯 Visión del Producto
+
+**Tablero de Control** nace de la unión de dos paradigmas:
+- **La simplicidad de Trello**: tableros visuales, drag & drop intuitivo, y flujos ágiles.
+- **La estructura de Jira**: jerarquía organizacional, tipos de tarea, prioridades, estados de workflow, y trazabilidad completa.
+
+El resultado es una plataforma donde un negocio puede gestionar desde tareas operativas del día a día hasta proyectos estructurados con múltiples equipos, locales y responsables — todo con control de acceso granular y facturación integrada.
+
+---
+
+## 🚀 Inicio Rápido
 
 ### Prerrequisitos
 
@@ -349,7 +361,14 @@ npx prisma generate && npx prisma migrate deploy && npm run build
 
 ---
 
-## Documentación
+- [docs/architecture.md](docs/architecture.md) — Arquitectura y stack
+- [docs/development.md](docs/development.md) — Setup y comandos
+- [docs/billing.md](docs/billing.md) — Facturación y planes
+- [docs/permissions.md](docs/permissions.md) — Roles y permisos
+- [docs/user-guide.md](docs/user-guide.md) — Guía para usuarios finales
+- [docs/functional/SCOPE_AND_REQUIREMENTS.md](docs/functional/SCOPE_AND_REQUIREMENTS.md) — Requerimientos funcionales
+- [docs/functional/GLOSSARY_AND_MODELS.md](docs/functional/GLOSSARY_AND_MODELS.md) — Glosario y modelos
+- [docs/functional/TRACEABILITY_MATRIX.md](docs/functional/TRACEABILITY_MATRIX.md) — Trazabilidad RF → código
 
 | Documento | Descripción |
 |---|---|

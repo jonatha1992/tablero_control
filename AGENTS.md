@@ -149,7 +149,7 @@ src/
 │   └── mail.service.ts
 │
 ├── repositories/           # Acceso a datos — implementaciones intercambiables
-│   ├── interfaces/         # Contratos TypeScript (ITaskRepository, IUserRepository, etc.)
+│   ├── interfaces/         # Contratos TypeScript (ITaskRepository, IUserRepository, ICommentRepository, etc.)
 │   ├── prisma/             # Implementaciones con Prisma (PostgreSQL)
 │   ├── firebase/           # Implementaciones alternativas (legacy, excluidas de tsconfig)
 │   └── index.ts            # Singletons exportados — SIEMPRE importar desde aquí

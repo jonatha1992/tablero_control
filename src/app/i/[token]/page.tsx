@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { InviteClient } from './invite-client';
 
@@ -50,6 +51,12 @@ function InvalidInvite({ reason }: { reason: 'expired' | 'max_uses' | 'revoked' 
         <p className="mt-4 text-sm text-muted-foreground">
           Pedile a tu administrador que genere uno nuevo.
         </p>
+        <Link
+          href="/login"
+          className="mt-6 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          Ir al inicio de sesión
+        </Link>
       </div>
     </div>
   );
