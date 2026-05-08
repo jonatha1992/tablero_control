@@ -7,15 +7,29 @@ export interface ReminderConfig {
 
 export interface CalendarEvent {
   id: string;
+  businessId: string;
+  creatorId: string;
   title: string;
   description?: string;
   start: Date;
   end: Date;
   allDay: boolean;
-  taskId?: string;
-  projectId?: string;
   assigneeIds: string[];
   color?: string;
   recurrence?: RecurrenceConfig;
   reminders: ReminderConfig[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateCalendarEventDTO {
+  title: string;
+  description?: string;
+  start: Date;
+  end: Date;
+  allDay?: boolean;
+  assigneeIds?: string[];
+  color?: string;
+  recurrence?: RecurrenceConfig;
+  reminders?: ReminderConfig[];
 }

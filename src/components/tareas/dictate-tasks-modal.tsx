@@ -94,7 +94,7 @@ function TaskPreviewCard({
         <select
           value={task.priority}
           onChange={(e) => onChange({ ...task, priority: e.target.value as TaskPriority })}
-          className="rounded border border-border bg-background px-1 py-0.5 text-[10px]"
+          className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]"
         >
           {(Object.keys(PRIORITY_LABELS) as TaskPriority[]).map((p) => (
             <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
@@ -103,7 +103,7 @@ function TaskPreviewCard({
         <select
           value={task.status}
           onChange={(e) => onChange({ ...task, status: e.target.value as Extract<TaskStatus, 'todo' | 'in_progress'> })}
-          className="rounded border border-border bg-background px-1 py-0.5 text-[10px]"
+          className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]"
         >
           {Object.entries(STATUS_LABELS).map(([v, label]) => (
             <option key={v} value={v}>{label}</option>
@@ -115,7 +115,7 @@ function TaskPreviewCard({
             <select
               value={task.locationId ?? ''}
               onChange={(e) => onChange({ ...task, locationId: e.target.value || undefined })}
-              className="bg-transparent outline-none max-w-[90px]"
+              className="bg-background text-foreground outline-none max-w-[90px]"
             >
               <option value="">Sin sector</option>
               {locations.map((loc) => (
@@ -168,9 +168,9 @@ function TaskPreviewCard({
   );
 }
 
-/* ─── Main modal ─── */
+/* ─── Shared inner logic ─── */
 
-export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps) {
+function DictateTasksInner({ onClose }: { onClose?: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -288,153 +288,163 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
     );
   };
 
-  const handleClose = () => {
-    if (isProcessing || micState !== 'idle') return;
-    setMessages([]);
-    setInput('');
-    onOpenChange(false);
-  };
-
   const isLocked = isProcessing || micState !== 'idle';
 
   return (
+    <>
+      {/* Chat messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3 min-h-0">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-3 text-center h-full text-muted-foreground">
+            <MessageSquare className="h-10 w-10 opacity-15" />
+            <div>
+              <p className="text-sm font-medium text-foreground/70">Contame qué necesitás hacer</p>
+              <p className="text-xs mt-0.5">La IA detecta tareas, orden y horas estimadas</p>
+            </div>
+            <div className="text-xs bg-muted/50 rounded-lg p-3 text-left space-y-1 max-w-[240px]">
+              <p className="font-medium text-foreground/60 mb-1.5">Ejemplos:</p>
+              <p>&ldquo;Inicio de sesión de usuarios, después el panel de administrador&rdquo;</p>
+              <p>&ldquo;Revisar el inventario del local centro&rdquo;</p>
+              <p>&ldquo;Limpieza de cocina, salón y baños para mañana&rdquo;</p>
+            </div>
+          </div>
+        )}
+
+        {messages.map((msg, msgIdx) => {
+          if (msg.role === 'user') {
+            return (
+              <div key={msgIdx} className="flex justify-end">
+                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary text-primary-foreground px-3 py-2 text-sm">
+                  {msg.text}
+                </div>
+              </div>
+            );
+          }
+
+          const sorted = [...msg.tasks].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+
+          return (
+            <div key={msgIdx} className="flex flex-col gap-2">
+              <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm self-start max-w-[85%]">
+                {msg.parseError || msg.tasks.length === 0
+                  ? 'No detecté tareas en el texto. ¿Podés ser más específico?'
+                  : `Encontré ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
+              </div>
+
+              {msg.tasks.length > 0 && (
+                <div className="flex flex-col gap-1.5 pl-1">
+                  {sorted.map((task) => {
+                    const ti = msg.tasks.indexOf(task);
+                    return (
+                      <TaskPreviewCard
+                        key={ti}
+                        task={task}
+                        members={members}
+                        locations={locations}
+                        onChange={(updated) => updateTask(msgIdx, ti, updated)}
+                        onRemove={() => removeTask(msgIdx, ti)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {msg.tasks.length > 0 && (
+                msg.confirmed ? (
+                  <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 pl-1">
+                    <Check className="h-3.5 w-3.5" />
+                    {msg.tasks.length} tarea{msg.tasks.length !== 1 ? 's' : ''} creada{msg.tasks.length !== 1 ? 's' : ''}
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="self-start ml-1"
+                    onClick={() => handleConfirm(msg.tasks, msgIdx)}
+                    disabled={creatingIdx === msgIdx}
+                  >
+                    {creatingIdx === msgIdx ? (
+                      <><Loader2 className="h-3 w-3 animate-spin mr-1.5" />Creando…</>
+                    ) : (
+                      `Crear ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}`
+                    )}
+                  </Button>
+                )
+              )}
+            </div>
+          );
+        })}
+
+        {/* Typing indicator */}
+        {isProcessing && (
+          <div className="flex gap-1 items-center bg-muted rounded-2xl rounded-tl-sm px-3 py-2.5 self-start">
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+          </div>
+        )}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input bar */}
+      <div className="border-t px-3 py-2.5 flex items-center gap-2 shrink-0">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+          placeholder={micState === 'recording' ? 'Grabando…' : 'Describí las tareas…'}
+          disabled={isProcessing || micState !== 'idle'}
+          className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+        />
+        <button
+          onClick={handleMic}
+          disabled={isProcessing || micState === 'processing'}
+          className={cn(
+            'h-9 w-9 rounded-full flex items-center justify-center transition-colors shrink-0',
+            micState === 'recording'
+              ? 'bg-red-500 text-white animate-pulse'
+              : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
+          )}
+          title={micState === 'recording' ? 'Detener grabación' : 'Grabar audio'}
+        >
+          {micState === 'processing'
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <Mic className="h-4 w-4" />}
+        </button>
+        <button
+          onClick={handleSend}
+          disabled={!input.trim() || isProcessing || micState !== 'idle'}
+          className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
+        >
+          <Send className="h-4 w-4" />
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ─── Standalone content (sin Dialog wrapper) ─── */
+
+export function DictateTasksContent({ onClose }: { onClose?: () => void }) {
+  void onClose;
+  return <DictateTasksInner />;
+}
+
+/* ─── Main modal ─── */
+
+export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps) {
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
+  return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent
-        className="max-w-2xl flex flex-col p-0 gap-0 h-[560px]"
-        onInteractOutside={(e) => { if (isLocked) e.preventDefault(); }}
-      >
+      <DialogContent className="max-w-2xl flex flex-col p-0 gap-0 h-[560px]">
         <DialogHeader className="flex-row items-center gap-2 px-4 py-3 border-b shrink-0">
           <MessageSquare className="h-4 w-4 text-primary shrink-0" />
           <DialogTitle className="text-base">Crear con IA</DialogTitle>
         </DialogHeader>
-
-        {/* Chat messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3 min-h-0">
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-3 text-center h-full text-muted-foreground">
-              <MessageSquare className="h-10 w-10 opacity-15" />
-              <div>
-                <p className="text-sm font-medium text-foreground/70">Contame qué necesitás hacer</p>
-                <p className="text-xs mt-0.5">La IA detecta tareas, orden y horas estimadas</p>
-              </div>
-              <div className="text-xs bg-muted/50 rounded-lg p-3 text-left space-y-1 max-w-[240px]">
-                <p className="font-medium text-foreground/60 mb-1.5">Ejemplos:</p>
-                <p>&ldquo;Inicio de sesión de usuarios, después el panel de administrador&rdquo;</p>
-                <p>&ldquo;Revisar el inventario del local centro&rdquo;</p>
-                <p>&ldquo;Limpieza de cocina, salón y baños para mañana&rdquo;</p>
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg, msgIdx) => {
-            if (msg.role === 'user') {
-              return (
-                <div key={msgIdx} className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary text-primary-foreground px-3 py-2 text-sm">
-                    {msg.text}
-                  </div>
-                </div>
-              );
-            }
-
-            const sorted = [...msg.tasks].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-
-            return (
-              <div key={msgIdx} className="flex flex-col gap-2">
-                <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm self-start max-w-[85%]">
-                  {msg.parseError || msg.tasks.length === 0
-                    ? 'No detecté tareas en el texto. ¿Podés ser más específico?'
-                    : `Encontré ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
-                </div>
-
-                {msg.tasks.length > 0 && (
-                  <div className="flex flex-col gap-1.5 pl-1">
-                    {sorted.map((task) => {
-                      const ti = msg.tasks.indexOf(task);
-                      return (
-                        <TaskPreviewCard
-                          key={ti}
-                          task={task}
-                          members={members}
-                          locations={locations}
-                          onChange={(updated) => updateTask(msgIdx, ti, updated)}
-                          onRemove={() => removeTask(msgIdx, ti)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                {msg.tasks.length > 0 && (
-                  msg.confirmed ? (
-                    <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 pl-1">
-                      <Check className="h-3.5 w-3.5" />
-                      {msg.tasks.length} tarea{msg.tasks.length !== 1 ? 's' : ''} creada{msg.tasks.length !== 1 ? 's' : ''}
-                    </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="self-start ml-1"
-                      onClick={() => handleConfirm(msg.tasks, msgIdx)}
-                      disabled={creatingIdx === msgIdx}
-                    >
-                      {creatingIdx === msgIdx ? (
-                        <><Loader2 className="h-3 w-3 animate-spin mr-1.5" />Creando…</>
-                      ) : (
-                        `Crear ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}`
-                      )}
-                    </Button>
-                  )
-                )}
-              </div>
-            );
-          })}
-
-          {/* Typing indicator */}
-          {isProcessing && (
-            <div className="flex gap-1 items-center bg-muted rounded-2xl rounded-tl-sm px-3 py-2.5 self-start">
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
-            </div>
-          )}
-
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Input bar */}
-        <div className="border-t px-3 py-2.5 flex items-center gap-2 shrink-0">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={micState === 'recording' ? 'Grabando…' : 'Describí las tareas…'}
-            disabled={isProcessing || micState !== 'idle'}
-            className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-          />
-          <button
-            onClick={handleMic}
-            disabled={isProcessing || micState === 'processing'}
-            className={cn(
-              'h-9 w-9 rounded-full flex items-center justify-center transition-colors shrink-0',
-              micState === 'recording'
-                ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground'
-            )}
-            title={micState === 'recording' ? 'Detener grabación' : 'Grabar audio'}
-          >
-            {micState === 'processing'
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <Mic className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isProcessing || micState !== 'idle'}
-            className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
+        <DictateTasksInner onClose={handleClose} />
       </DialogContent>
     </Dialog>
   );

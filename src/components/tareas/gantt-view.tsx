@@ -77,14 +77,14 @@ export function GanttView({ tasks }: GanttViewProps) {
         resMap.set(resourceId, { id: resourceId, title: resourceTitle });
       }
 
-      const statusColors: Record<string, string> = {
-        backlog: '#94a3b8',
-        todo: '#8b5cf6',
-        in_progress: '#f59e0b',
-        in_review: '#06b6d4',
-        done: '#22c55e',
-        blocked: '#ef4444',
+      const priorityColors: Record<string, string> = {
+        urgent: '#ef4444',
+        high:   '#f97316',
+        medium: '#60a5fa',
+        low:    '#94a3b8',
       };
+
+      const color = priorityColors[task.priority] ?? '#60a5fa';
 
       evs.push({
         id: task.id,
@@ -92,8 +92,8 @@ export function GanttView({ tasks }: GanttViewProps) {
         title: task.title,
         start: start.toISOString(),
         end: safeEnd.toISOString(),
-        backgroundColor: statusColors[task.status] ?? '#3b82f6',
-        borderColor: statusColors[task.status] ?? '#3b82f6',
+        backgroundColor: color,
+        borderColor: color,
         textColor: '#ffffff',
         extendedProps: { task },
       });
@@ -114,28 +114,46 @@ export function GanttView({ tasks }: GanttViewProps) {
 
   const hasData = tasksWithDates.length > 0;
 
+  const PRIORITY_LEGEND = [
+    { label: 'Urgente', color: '#ef4444' },
+    { label: 'Alta',    color: '#f97316' },
+    { label: 'Media',   color: '#60a5fa' },
+    { label: 'Baja',    color: '#94a3b8' },
+  ];
+
   return (
     <div className="flex flex-col h-full">
-      <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b">
-        <span className="text-sm text-muted-foreground">Agrupar por:</span>
-        {groupOptions.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setGroupBy(opt.value)}
-            className={cn(
-              'inline-flex items-center gap-1.5 h-7 px-2.5 text-xs rounded-md border transition-colors',
-              groupBy === opt.value
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'hover:bg-accent'
-            )}
-          >
-            {opt.icon}
-            {opt.label}
-          </button>
-        ))}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Agrupar:</span>
+          {groupOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setGroupBy(opt.value)}
+              className={cn(
+                'inline-flex items-center gap-1.5 h-7 px-2.5 text-xs rounded-md border transition-colors',
+                groupBy === opt.value
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'hover:bg-accent'
+              )}
+            >
+              {opt.icon}
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-3">
+          {PRIORITY_LEGEND.map((p) => (
+            <span key={p.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: p.color }} />
+              {p.label}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 p-2">
+      <div className="flex-1 min-h-0 p-2 flex flex-col">
         {!hasData ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
             <CalendarX2 className="h-10 w-10 opacity-40" />
@@ -145,7 +163,7 @@ export function GanttView({ tasks }: GanttViewProps) {
             </p>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 flex flex-col rounded-md border overflow-hidden">
+          <div className="flex-1 min-h-0 rounded-md border overflow-hidden" style={{ height: '100%' }}>
             <style jsx global>{`
               .fc-timeline .fc-scrollgrid,
               .fc-timeline td, .fc-timeline th {
@@ -168,14 +186,23 @@ export function GanttView({ tasks }: GanttViewProps) {
                 background: color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--card))) !important;
               }
               .fc-timeline-event {
-                border-radius: 3px !important;
+                border-radius: 4px !important;
                 font-size: 0.72rem;
                 font-weight: 500;
-                padding: 1px 4px !important;
+                padding: 0 !important;
                 cursor: pointer !important;
+                min-height: 24px !important;
+                overflow: hidden !important;
+              }
+              .fc-timeline-event .fc-event-main {
+                padding: 0 !important;
+                overflow: hidden !important;
               }
               .fc-timeline-event:hover {
-                filter: brightness(1.2);
+                filter: brightness(1.15);
+              }
+              .fc-timeline-lane {
+                min-height: 36px !important;
               }
               .fc-button {
                 background: hsl(var(--secondary)) !important;
@@ -216,18 +243,36 @@ export function GanttView({ tasks }: GanttViewProps) {
               resources={resources}
               events={events}
               resourceAreaHeaderContent="Grupos"
-              height="auto"
+              height="100%"
+              expandRows
               schedulerLicenseKey="CC-Attribution-NonCommercial-NoDerivatives"
               eventClick={(info) => {
                 const task = info.event.extendedProps.task as Task;
                 if (task?.id) openTaskDetail(task.id);
               }}
               eventMouseEnter={(info) => { info.el.style.cursor = 'pointer'; }}
-              slotMinWidth={36}
+              slotMinWidth={40}
               resourceAreaWidth={200}
-              eventContent={(info) => ({
-                html: `<span title="${info.event.title}">${info.event.title}</span>`,
-              })}
+              eventMinWidth={60}
+              eventContent={(info) => {
+                const task = info.event.extendedProps.task as Task;
+                const priorityDot: Record<string, string> = {
+                  urgent: '#fca5a5',
+                  high: '#fed7aa',
+                  medium: '#bfdbfe',
+                  low: '#e2e8f0',
+                };
+                const dot = priorityDot[task?.priority] ?? '#bfdbfe';
+                return {
+                  html: `
+                    <div style="display:flex;align-items:center;gap:4px;padding:0 6px;height:100%;overflow:hidden;white-space:nowrap;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${dot};flex-shrink:0;"></span>
+                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:500;"
+                            title="${info.event.title.replace(/"/g, '&quot;')}">${info.event.title}</span>
+                    </div>
+                  `,
+                };
+              }}
             />
           </div>
         )}

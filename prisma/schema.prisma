@@ -117,12 +117,13 @@ model User {
   memberships   UserBusiness[]
   locationAssignments UserLocation[]
   teams         TeamMember[]
-  assignedTasks Task[]         @relation("TaskAssignees")
-  createdTasks  Task[]         @relation("TaskCreator")
-  comments      Comment[]
-  auditLogs     AuditLog[]
-  notifications Notification[]
-  timeEntries   TimeEntry[]
+  assignedTasks        Task[]         @relation("TaskAssignees")
+  createdTasks         Task[]         @relation("TaskCreator")
+  comments             Comment[]
+  auditLogs            AuditLog[]
+  notifications        Notification[]
+  timeEntries          TimeEntry[]
+  calendarEventsCreated CalendarEvent[] @relation("CalendarEventCreator")
 
   @@index([businessId])
   @@index([role])
@@ -196,18 +197,19 @@ model Business {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  users        User[]
-  owner        User             @relation("BusinessOwner", fields: [ownerId], references: [id])
-  members      UserBusiness[]
-  locations    Location[]
-  teams        Team[]
-  projects     Project[]
-  cycles       Cycle[]
-  objectives   Objective[]
-  subscription Subscription?
-  invoices     Invoice[]
-  auditLogs    AuditLog[]
-  invites      BusinessInvite[]
+  users           User[]
+  owner           User             @relation("BusinessOwner", fields: [ownerId], references: [id])
+  members         UserBusiness[]
+  locations       Location[]
+  teams           Team[]
+  projects        Project[]
+  cycles          Cycle[]
+  objectives      Objective[]
+  subscription    Subscription?
+  invoices        Invoice[]
+  auditLogs       AuditLog[]
+  invites         BusinessInvite[]
+  calendarEvents  CalendarEvent[]
 
   @@index([status])
   @@index([plan])
@@ -497,6 +499,31 @@ model BusinessInvite {
 
   @@index([businessId])
   @@index([isActive])
+}
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  businessId  String
+  creatorId   String
+  title       String
+  description String?
+  start       DateTime
+  end         DateTime
+  allDay      Boolean  @default(false)
+  color       String?
+  assigneeIds String[] @default([])
+  recurrence  Json?
+  reminders   Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  creator  User     @relation("CalendarEventCreator", fields: [creatorId], references: [id])
+
+  @@index([businessId])
+  @@index([creatorId])
+  @@index([start])
+  @@index([end])
 }
 
 model AuditLog {

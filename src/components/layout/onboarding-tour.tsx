@@ -91,6 +91,9 @@ export function OnboardingTour() {
     let driverObj: ReturnType<typeof import('driver.js')['driver']> | null = null;
 
     import('driver.js').then(({ driver }) => {
+      const availableSteps = STEPS.filter(
+        (s) => !s.element || document.querySelector(s.element)
+      );
       driverObj = driver({
         showProgress: true,
         progressText: '{{current}} de {{total}}',
@@ -103,7 +106,7 @@ export function OnboardingTour() {
           localStorage.setItem(key, '1');
           driverObj?.destroy();
         },
-        steps: STEPS,
+        steps: availableSteps,
       });
 
       setTimeout(() => driverObj?.drive(), 800);

@@ -72,6 +72,16 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     return NextResponse.json({ ok: true, nextTaskId: nextTask?.id });
   }
 
+  if (data.locationId) {
+    const loc = await prisma.location.findUnique({
+      where: { id: data.locationId },
+      select: { businessId: true },
+    });
+    if (!loc || loc.businessId !== user.businessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
   const prevTask = await taskService.getTaskById(id);
   const prevAssigneeIds = prevTask?.assigneeIds ?? [];
 

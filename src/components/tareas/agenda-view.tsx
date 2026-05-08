@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
+import { useTodayEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import { TaskDetailModal } from './task-detail-modal';
@@ -23,6 +24,7 @@ import {
   CheckCircle2,
   Timer,
   Zap,
+  CalendarDays,
 } from 'lucide-react';
 
 // --- Scoring ---
@@ -252,6 +254,7 @@ interface AgendaViewProps {
 export function AgendaView({ tasks }: AgendaViewProps) {
   const { user } = useAuth();
   const moveTask = useMoveTask();
+  const { data: todayEvents = [] } = useTodayEventsQuery();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDone, setShowDone] = useState(false);
   const [showNoDate, setShowNoDate] = useState(true);
@@ -348,6 +351,25 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   return (
     <>
       <div className="space-y-6 pb-12 max-w-3xl">
+
+        {/* BANNER EVENTOS HOY */}
+        {todayEvents.length > 0 && (
+          <a
+            href="/dashboard/tareas/calendario"
+            className="flex items-center gap-2.5 rounded-lg border border-violet-200 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/30 px-3 py-2 text-sm text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors"
+          >
+            <CalendarDays className="h-4 w-4 shrink-0" />
+            <span>
+              <span className="font-medium">{todayEvents.length} evento{todayEvents.length !== 1 ? 's' : ''} hoy</span>
+              {todayEvents.length <= 3 && (
+                <span className="text-violet-500 dark:text-violet-400">
+                  {' — '}{todayEvents.map((e) => e.title).join(', ')}
+                </span>
+              )}
+            </span>
+            <ChevronRight className="h-3.5 w-3.5 ml-auto shrink-0 opacity-60" />
+          </a>
+        )}
 
         {/* FOCO DEL DÍA */}
         {sections.focus.length > 0 && (

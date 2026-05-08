@@ -25,10 +25,8 @@ export function useBulkDeleteTasks() {
         queryClient.setQueryData(queryKey, data);
       });
     },
-    onSettled: (_data, error) => {
-      if (error) {
-        queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
 }
