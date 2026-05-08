@@ -117,7 +117,8 @@
       "Bash(xargs wc -l)",
       "Bash(powershell *)",
       "Bash(npm pkg *)",
-      "Bash(Select-String \"zod\")"
+      "Bash(Select-String \"zod\")",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -15 {}')"
     ]
   }
 }

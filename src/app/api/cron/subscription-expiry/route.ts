@@ -8,7 +8,7 @@ const WARN_DAYS = 7;
 
 function verifyCronSecret(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return false;
   const auth = req.headers.get('authorization') ?? '';
   return auth === `Bearer ${secret}`;
 }
@@ -96,8 +96,8 @@ export const GET = handle(async (req: NextRequest) => {
         });
         emailsSent++;
       } catch (err) {
-        console.error('[cron/subscription-expiry] email failed for', admin.email, ':', err);
-        emailErrors.push(admin.email);
+        console.error('[cron/subscription-expiry] email failed:', err);
+        emailErrors.push(admin.id);
       }
     }
   } catch (err) {

@@ -1,6 +1,6 @@
 # Documentación — Tablero de Control
 
-Índice central de toda la documentación del proyecto.
+Índice central de toda la documentación del proyecto. Para inicio rápido ver el [README raíz](../README.md).
 
 ---
 
@@ -8,46 +8,66 @@
 
 | Documento | Descripción |
 |---|---|
-| [architecture.md](architecture.md) | Stack, capas, estructura de carpetas, flujos, portabilidad |
-| [development.md](development.md) | Setup inicial, comandos, credenciales de emulador |
-| [testing.md](testing.md) | Cómo correr tests, Firebase Emulator, cobertura |
-| [contributing.md](contributing.md) | Convenciones, flujo de branches, PR checklist |
+| [architecture.md](architecture.md) | Stack, capas, estructura de carpetas, flujos, auth, multi-tenant |
+| [development.md](development.md) | Setup inicial, comandos, credenciales de emulador, guías rápidas |
+| [testing.md](testing.md) | Cómo correr tests, patrones de mock, fixtures, archivos existentes |
+| [contributing.md](contributing.md) | Convenciones de código, flujo de branches, PR checklist |
 
 ## Infraestructura y deploy
 
 | Documento | Descripción |
 |---|---|
-| [deploy.md](deploy.md) | Plan completo de deploy a Firebase App Hosting (plan actual) |
-| [firebase-setup.md](firebase-setup.md) | Configuración del proyecto Firebase, emuladores, reglas |
+| [deploy.md](deploy.md) | Plan de deploy a Railway (Next.js + PostgreSQL) |
+| [firebase-setup.md](firebase-setup.md) | Firebase Auth + FCM — solo autenticación y push notifications |
 
 ## Funcionalidades del sistema
 
 | Documento | Descripción |
 |---|---|
-| [permissions.md](permissions.md) | Sistema de roles, jerarquía de acceso, reglas Firestore |
-| [billing.md](billing.md) | Planes, límites, integración MercadoPago Preapproval |
+| [permissions.md](permissions.md) | RBAC, roles custom, tenant guard, custom claims |
+| [billing.md](billing.md) | Planes, límites, MercadoPago Preapproval, webhooks |
 | [superadmin.md](superadmin.md) | Operaciones del superadmin TecnoFusión |
 
 ## Para usuarios finales
 
 | Documento | Descripción |
 |---|---|
-| [user-guide.md](user-guide.md) | Guía de uso del sistema (admin y miembros) |
+| [user-guide.md](user-guide.md) | Guía completa de uso: kanban, agenda, planificación, equipo, billing, ayuda |
 
-## Archivos de referencia (pausados)
+## Especificaciones funcionales
 
 | Documento | Descripción |
 |---|---|
-| [migration.md](migration.md) | Plan de migración a Express + PostgreSQL — **pausado**, no ejecutar |
+| [functional/SCOPE_AND_REQUIREMENTS.md](functional/SCOPE_AND_REQUIREMENTS.md) | Alcance y requerimientos funcionales |
+| [functional/GLOSSARY_AND_MODELS.md](functional/GLOSSARY_AND_MODELS.md) | Glosario de términos y modelos de dominio |
+| [functional/TRACEABILITY_MATRIX.md](functional/TRACEABILITY_MATRIX.md) | Trazabilidad RF → código |
+
+## Archivos pausados / referencia histórica
+
+| Documento | Estado |
+|---|---|
+| [migration.md](migration.md) | Plan de migración anterior — **pausado**, no ejecutar |
 
 ---
 
 ## Archivos raíz del proyecto
 
-Estos archivos viven en la raíz del repo por convención y no se mueven:
-
 | Archivo | Propósito |
 |---|---|
-| `README.md` | Inicio rápido del proyecto |
-| `CLAUDE.md` | Instrucciones para agentes IA (Claude) |
-| `AGENTS.md` | Contexto del proyecto para agentes IA |
+| `README.md` | Inicio rápido, stack, funcionalidades, variables de entorno, rutas |
+| `CLAUDE.md` | Instrucciones para Claude Code — arquitectura, reglas críticas, patrones |
+| `prisma/schema.prisma` | Fuente de verdad de los modelos de datos |
+| `.env.local` | Variables de entorno locales (no commitear) |
+| `.env.example` | Template de variables de entorno |
+
+---
+
+## Convenciones de este proyecto
+
+- **Next.js 16** App Router — Server Components por defecto, `'use client'` solo cuando necesario
+- **TypeScript strict** — sin `any`, sin backwards-compat hacks
+- **Repositorios**: siempre importar singletons desde `src/repositories/index.ts`
+- **Notificaciones**: siempre usar `src/lib/notifications.ts` — escribe en DB + envía FCM
+- **Estado de tarea**: siempre `useMoveTask` (no `useUpdateTask`) para cambios de status
+- **Sprint tabs**: `useScrumUIStore` es la fuente de verdad — nunca estado local para el sprint seleccionado
+- **Firebase**: solo Auth y FCM — sin Firestore, sin Storage
