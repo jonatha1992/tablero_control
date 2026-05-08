@@ -332,23 +332,23 @@ export default function ConfigPage() {
 
           {/* FACTURACIÓN */}
           {canManageBilling && (
-          <TabsContent value="facturacion" className="mt-0 space-y-8 outline-none">
-            {!user?.businessId ? (
-              <p className="text-muted-foreground text-sm">No tenés un negocio asociado.</p>
-            ) : (
-              <>
-                <BillingCurrentPlan subscription={subscription ?? null} isLoading={isLoading} />
-                <div>
-                  <h2 className="text-lg font-semibold mb-4">Cambiar plan</h2>
-                  <BillingPlanCards currentPlan={subscription?.plan ?? 'free'} businessId={user.businessId} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold mb-4">Historial de pagos</h2>
-                  <BillingInvoices businessId={user.businessId} subscriptionId={subscription?.id} />
-                </div>
-              </>
-            )}
-          </TabsContent>
+            <TabsContent value="facturacion" className="mt-0 space-y-8 outline-none">
+              {!user?.businessId ? (
+                <p className="text-muted-foreground text-sm">No tenés una suscripción activa.</p>
+              ) : (
+                <>
+                  <BillingCurrentPlan subscription={subscription ?? null} isLoading={isLoading} />
+                  <div>
+                    <h2 className="text-lg font-semibold mb-4">Cambiar plan</h2>
+                    <BillingPlanCards currentPlan={subscription?.plan ?? 'free'} businessId={user.businessId} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold mb-4">Historial de pagos</h2>
+                    <BillingInvoices businessId={user.businessId} subscriptionId={subscription?.id} />
+                  </div>
+                </>
+              )}
+            </TabsContent>
           )}
         </div>
       </Tabs>

@@ -25,7 +25,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const searchParams = useSearchParams();
   const { filters, setFilters } = useKanbanUIStore();
   const isTasksPage = pathname?.startsWith('/dashboard/tareas');
-  
+
   const displayName = userName || user?.name || 'Usuario';
   const initials = getInitials(displayName);
   const avatarColor = stringToColor(displayName);
@@ -35,7 +35,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
 
   const getPageContext = () => {
     if (!pathname) return { title: 'Tablero de Control' };
-    if (pathname === '/dashboard') return { title: 'Dashboard de Negocio' };
+    if (pathname === '/dashboard') return { title: 'Dashboard' };
     if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
     if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
     if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };

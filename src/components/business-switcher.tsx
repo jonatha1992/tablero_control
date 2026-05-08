@@ -19,7 +19,7 @@ export function BusinessSwitcher() {
   if (!user) return null;
 
   const activeMembership = user.memberships?.find((m) => m.businessId === user.businessId && m.isActive);
-  const activeBusinessName = activeMembership?.businessName || 'Mi Negocio';
+  const activeBusinessName = activeMembership?.businessName || 'Mi Empresa';
 
   const handleSwitch = (businessId: string) => {
     if (businessId === user.businessId) return;
@@ -54,7 +54,7 @@ export function BusinessSwitcher() {
           onClick={() => router.push('/register?newBusiness=true')}
         >
           <Plus className="h-3.5 w-3.5" />
-          Crear nuevo negocio
+          Crear nueva empresa
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

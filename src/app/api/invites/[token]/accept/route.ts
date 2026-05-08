@@ -91,16 +91,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
 
   if (existingMembership) {
     if (existingMembership.isActive) {
-      // Already an active member → update role/location and cache
-      const updatedMembership = await prisma.userBusiness.update({
-        where: { userId_businessId: { userId: user.id, businessId: invite.businessId } },
-        data: { role: invite.role, locationId: invite.locationId },
-      });
-      const updatedUser = await prisma.user.update({
-        where: { id: user.id },
-        data: { businessId: invite.businessId, role: updatedMembership.role, locationId: invite.locationId },
-      });
-      return NextResponse.json(updatedUser);
+      return NextResponse.json({ error: 'already_member' }, { status: 409 });
     }
     // Reactivate membership
     await prisma.userBusiness.update({
@@ -135,15 +126,15 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     });
   }
 
-  // Update user cache (active business)
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      businessId: invite.businessId,
-      role: invite.role,
-      locationId: invite.locationId,
-    },
-  });
+  // Solo actualizar el negocio activo si el usuario no tenía uno ya (usuario nuevo).
+  // Si ya tenía otro negocio activo, preservar su contexto — el admin lo activará desde su panel.
+  const hadActiveBusiness = !!user.businessId && user.businessId !== invite.businessId;
+  const updatedUser = hadActiveBusiness
+    ? user
+    : await prisma.user.update({
+      where: { id: user.id },
+      data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId },
+    });
 
   await prisma.businessInvite.update({
     where: { id: inviteToken },

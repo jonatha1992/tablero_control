@@ -10,7 +10,7 @@ export const POST = handle(async (request: NextRequest) => {
   if (user instanceof NextResponse) return user;
 
   const body = await request.json() as { name?: string };
-  const name = body.name?.trim() || `Negocio de ${user.data.name}`;
+  const name = body.name?.trim() || `Empresa de ${user.data.name}`;
 
   const business = await businessRepository.create({
     name,

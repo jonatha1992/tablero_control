@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
-import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
+import { can, assertResourceBelongsToBusiness } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications';
@@ -44,6 +44,14 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const businessId = await getTaskBusinessId(id);
   assertResourceBelongsToBusiness(user.data, businessId);
 
+  if (!can(user.data, 'task.update.any')) {
+    const taskCheck = await prisma.task.findUnique({ where: { id }, select: { assignees: { select: { id: true } } } });
+    const assigneeIds = taskCheck?.assignees.map(a => a.id) ?? [];
+    if (!can(user.data, 'task.update.assigned', { assigneeIds })) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
   if (_move) {
     const nextTask = await taskService.moveTask(id, data.status);
 
@@ -82,6 +90,22 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     }
   }
 
+  if (data.projectId) {
+    const proj = await prisma.project.findUnique({ where: { id: data.projectId }, select: { businessId: true } });
+    if (!proj || proj.businessId !== user.businessId)
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  if (data.cycleId) {
+    const cycle = await prisma.cycle.findUnique({ where: { id: data.cycleId }, select: { businessId: true } });
+    if (!cycle || cycle.businessId !== user.businessId)
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  if (data.objectiveId) {
+    const obj = await prisma.objective.findUnique({ where: { id: data.objectiveId }, select: { businessId: true } });
+    if (!obj || obj.businessId !== user.businessId)
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
   const prevTask = await taskService.getTaskById(id);
   const prevAssigneeIds = prevTask?.assigneeIds ?? [];
 
@@ -113,7 +137,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
           body: `${assignerName} te asignó la tarea "${task.title}"`,
           type: 'task_assigned',
           link: '/dashboard/tareas',
-        }).catch(() => {});
+        }).catch(() => { });
         if (prefs?.notifications?.email !== false) {
           import('@/services/mail.service').then(({ MailService }) => {
             MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName)
@@ -135,6 +159,10 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   const businessId = await getTaskBusinessId(id);
   assertResourceBelongsToBusiness(user.data, businessId);
+
+  if (!can(user.data, 'task.delete')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   await taskService.deleteTask(id);
 

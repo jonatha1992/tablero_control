@@ -43,4 +43,17 @@ export async function uploadTaskAttachment(
   return result;
 }
 
+export async function deleteCloudinaryAsset(publicId: string): Promise<void> {
+  try {
+    await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+  } catch {
+    // Si no es imagen (PDF, doc, etc.), intentar como raw
+    try {
+      await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+    } catch (err) {
+      console.error('[cloudinary] deleteCloudinaryAsset failed for', publicId, err);
+    }
+  }
+}
+
 

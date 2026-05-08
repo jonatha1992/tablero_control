@@ -5,6 +5,8 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
+import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
+import type { PlanId } from '@/types/domain/subscription';
 
 async function getTaskBusinessId(taskId: string): Promise<string | null> {
   const task = await prisma.task.findUnique({
@@ -45,6 +47,36 @@ export const POST = handle(async (request: NextRequest) => {
     } else if (type === 'attachment') {
       const businessId = await getTaskBusinessId(id);
       assertResourceBelongsToBusiness(user.data, businessId);
+
+      // Verificar límite de adjuntos del plan
+      if (businessId) {
+        const business = await prisma.business.findUnique({ where: { id: businessId }, select: { plan: true } });
+        if (business) {
+          const planConfig = await getEffectivePlanConfig(business.plan as PlanId);
+          const limit = planConfig.limits.attachmentsPerMonth;
+          if (limit !== -1) {
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
+            const count = await prisma.attachment.count({
+              where: {
+                createdAt: { gte: startOfMonth },
+                task: { OR: [
+                  { project: { businessId } },
+                  { location: { businessId } },
+                  { creator: { businessId } },
+                ]},
+              },
+            });
+            if (count >= limit) {
+              return NextResponse.json(
+                { error: 'attachments_limit_exceeded', limit, current: count },
+                { status: 429 }
+              );
+            }
+          }
+        }
+      }
 
       const result: CloudinaryUploadResult = await uploadTaskAttachment(id, fileName ?? file.name, file);
       url = result.secure_url;

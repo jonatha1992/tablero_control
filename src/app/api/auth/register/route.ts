@@ -56,7 +56,7 @@ export const POST = handle(async (request: NextRequest) => {
   const role = isSuperadmin ? 'superadmin' : 'admin';
 
   const business = await businessRepository.create({
-    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Negocio de ${name}`),
+    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`),
     adminId: decoded.uid,
     ownerId: decoded.uid,
     plan: 'free',

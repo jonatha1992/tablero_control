@@ -3,18 +3,23 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import { useRolesQuery } from '@/hooks/queries/use-roles-query';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { RoleCard } from '@/components/roles/role-card';
 import { RoleEditorDrawer } from '@/components/roles/role-editor-drawer';
 import type { CustomRole } from '@/types/domain/custom-role';
-import { Plus, Loader2, ShieldCheck } from 'lucide-react';
+import { Plus, Loader2, ShieldCheck, Lock } from 'lucide-react';
+import Link from 'next/link';
 
 export default function EquipoRolesPage() {
   const { user } = useAuth();
   const { data: roles = [], isLoading } = useRolesQuery(user?.businessId);
+  const { data: business } = useBusinessQuery(user?.businessId);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<CustomRole | null>(null);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const plan = business?.plan ?? 'free';
+  const canUseCustomRoles = plan === 'pro' || plan === 'enterprise';
 
   function openCreate() {
     setEditing(null);
@@ -36,7 +41,7 @@ export default function EquipoRolesPage() {
         <p className="text-sm text-muted-foreground">
           Diseñá roles personalizados para tu equipo. Los roles del sistema no se pueden editar.
         </p>
-        {isAdmin && customRoles.length > 0 && (
+        {isAdmin && canUseCustomRoles && customRoles.length > 0 && (
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 shrink-0"
@@ -65,7 +70,23 @@ export default function EquipoRolesPage() {
         </section>
       )}
 
-      {!isLoading && (
+      {!isLoading && !canUseCustomRoles && (
+        <div className="rounded-xl border bg-muted/30 p-8 text-center">
+          <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <p className="font-medium">Roles personalizados requieren plan Pro o Enterprise</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Tu plan actual ({plan}) incluye solo los roles del sistema. Actualizá para crear roles con permisos granulares.
+          </p>
+          <Link
+            href="/dashboard/config?tab=facturacion"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 inline-block"
+          >
+            Ver planes
+          </Link>
+        </div>
+      )}
+
+      {!isLoading && canUseCustomRoles && (
         <section>
           <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
             Roles personalizados{customRoles.length > 0 && ` (${customRoles.length})`}

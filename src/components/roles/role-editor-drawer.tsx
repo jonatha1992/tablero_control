@@ -14,8 +14,8 @@ type Step = 0 | 1 | 2 | 3;
 
 const BASE_ROLES: Array<{ value: BaseRoleForCustom; label: string; desc: string }> = [
   { value: 'responsable', label: 'Responsable', desc: 'Jefe de local — puede crear y gestionar tareas.' },
-  { value: 'miembro',    label: 'Miembro',      desc: 'Trabajador — opera sus tareas asignadas.' },
-  { value: 'viewer',     label: 'Visualizador',       desc: 'Solo lectura dentro del negocio.' },
+  { value: 'miembro', label: 'Miembro', desc: 'Trabajador — opera sus tareas asignadas.' },
+  { value: 'viewer', label: 'Visualizador', desc: 'Solo lectura dentro de la empresa.' },
 ];
 
 const COLORS = [
@@ -122,7 +122,7 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
                 <div className={cn(
                   'h-6 w-6 rounded-full text-xs flex items-center justify-center font-medium shrink-0',
                   i === step ? 'bg-primary text-primary-foreground' :
-                  i < step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                    i < step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 )}>
                   {i + 1}
                 </div>
@@ -205,7 +205,7 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
                           draft.scope.type === t ? 'border-primary bg-primary/5 font-medium' : 'hover:bg-muted/50'
                         )}
                       >
-                        {t === 'business' ? 'Todo el negocio' : t === 'location' ? 'Por local' : 'Por equipo'}
+                        {t === 'business' ? 'Toda la empresa' : t === 'location' ? 'Por local' : 'Por equipo'}
                       </button>
                     ))}
                   </div>

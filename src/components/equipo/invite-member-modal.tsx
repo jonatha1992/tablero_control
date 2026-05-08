@@ -15,7 +15,7 @@ import type { UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO } from '@/types/dto/team.dto';
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
-  { value: 'admin', label: 'Administrador', description: 'Gestión completa del negocio' },
+  { value: 'admin', label: 'Administrador', description: 'Gestión completa de la empresa' },
   { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores' },
   { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas' },
   { value: 'viewer', label: 'Visualizador', description: 'Solo lectura' },
