@@ -1,143 +1,178 @@
-# 🤝 Contributing - Tablero de Control
+# Contributing — Tablero de Control
 
-## Cómo Contribuir
-
-### 1. Agentes de Desarrollo
-
-Este proyecto utiliza 3 agentes de IA como guías. Léelos antes de escribir código:
-
-- **`.agent-architect.md`**: Arquitectura y estructura
-- **`.agent-codegen.md`**: Patrones y convenciones de código
-- **`.agent-testing.md`**: Guía de testing
-
-### 2. Flujo de Trabajo
+## Flujo de trabajo
 
 ```bash
 # 1. Iniciar entorno de desarrollo
-npm run emulators  # Terminal 1
-npm run dev        # Terminal 2
+npm run dev:all      # Firebase Auth Emulator + Next.js
 
-# 2. Hacer cambios
-# ... editar archivos ...
+# 2. Hacer cambios en una rama nueva
+git checkout -b feat/nombre-de-la-feature
 
-# 3. Verificar build
-npm run build
+# 3. Verificar tipos
+npm run type:check
 
 # 4. Ejecutar tests
-npm test
+npm run test:run
 
-# 5. Linting
-npm run lint
+# 5. Verificar lint y build
+npm run check        # lint + tipos + tests
 ```
 
-### 3. Convenciones de Código
+### Ramas
 
-#### TypeScript
-- **Strict mode** siempre
-- **Nunca usar `any`** — usa `unknown` o tipos específicos
-- Interfaces para props de componentes
-- Types para domain objects
+| Rama | Uso |
+|---|---|
+| `dev` | Rama base. PRs apuntan aquí. |
+| `feat/*` | Nuevas funcionalidades |
+| `fix/*` | Bug fixes |
+| `chore/*` | Config, deps, infra |
 
-#### Imports Order
+**PRs siempre contra `dev`, nunca contra `main`.**
+
+---
+
+## Convenciones de código
+
+### TypeScript
+
+- **Strict mode** — siempre
+- **Nunca `any`** — usar `unknown` o tipos específicos
+- Interfaces para props de componentes; Types para domain objects
+- Path alias `@/` para todos los imports internos
+
+### Orden de imports
+
 ```typescript
-// 1. React/Next
+// 1. React / Next.js
 import { useState } from 'react';
+import Link from 'next/link';
 
 // 2. Librerías externas
-import { collection } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 
 // 3. Imports internos con @/
-import { db } from '@/lib/firebase/client';
+import { can } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
-// 4. Componentes locales
-import { Button } from '@/components/ui/button';
+// 4. Tipos
+import type { Task } from '@/types';
 ```
 
-#### Naming
-- **Componentes**: PascalCase (`TaskCard`, `Sidebar`)
-- **Funciones/variables**: camelCase (`getTasks`, `isLoading`)
-- **Constants**: UPPER_SNAKE_CASE (`TASK_STATUS_LABELS`)
-- **Types/Interfaces**: PascalCase (`Task`, `UserPreferences`)
-- **Files**: kebab-case (`task-card.tsx`, `firestore.ts`)
+### Naming
 
-#### Componentes
-- Server components por defecto
-- `'use client'` solo cuando se necesita:
-  - useState, useEffect
-  - Event handlers (onClick, onChange)
-  - Browser APIs
-  - Firebase client SDK
+| Patrón | Convención |
+|---|---|
+| Componentes | PascalCase (`TaskCard`, `KanbanBoard`) |
+| Funciones/variables | camelCase (`getTasks`, `isLoading`) |
+| Constantes | UPPER_SNAKE_CASE (`ROLE_LEVEL`, `TASK_STATUS_LABELS`) |
+| Types/Interfaces | PascalCase (`Task`, `CreateTaskDTO`) |
+| Archivos | kebab-case (`task-card.tsx`, `use-tasks-query.ts`) |
+| Stores | sufijo `.store.ts` (`kanban-ui.store.ts`) |
+| Queries | prefijo `use-` + sufijo `-query.ts` |
+| Mutations | prefijo `use-` + verbo (`use-create-task.ts`) |
 
-#### Styling
+### Componentes
+
+- Server Components por defecto
+- `'use client'` solo cuando se necesita: `useState`, `useEffect`, event handlers, Firebase client SDK, browser APIs
+- No crear estado local para algo que ya maneja un store de Zustand
+
+### Estilos
+
 - Tailwind CSS siempre
-- Usar `cn()` para clases condicionales
-- Variables CSS del theme (`bg-background`, `text-foreground`)
+- `cn()` de `@/lib/utils` para clases condicionales
+- Variables CSS del theme (`bg-background`, `text-foreground`, `border-border`)
+- No usar estilos inline salvo valores dinámicos (ej: `style={{ backgroundColor: avatarColor }}`)
 
-### 4. Estructura de Archivos
+### Comentarios
 
-```
-src/
-├── app/           # Routes (App Router)
-├── components/    # UI components
-│   ├── ui/        # Base components (button, card, etc.)
-│   └── [module]/  # Feature components
-├── lib/           # Utilities, config
-│   ├── firebase/  # Firebase setup
-│   └── utils.ts   # Helpers
-├── hooks/         # Custom hooks
-├── stores/        # Zustand stores
-└── types/         # TypeScript types
-```
+- No comentar lo que el código ya dice — nombres descriptivos son suficientes
+- Solo comentar el **por qué** cuando no es obvio: un constraint oculto, un workaround específico
+- Sin docstrings ni comentarios de bloque
 
-### 5. Commits
+---
 
-Formato: `type: description`
+## Reglas de arquitectura
 
-| Type | Uso |
-|------|-----|
-| `feat` | Nueva feature |
+### Siempre
+
+- Importar repositorios desde `src/repositories/index.ts` (singletons)
+- Usar `writeAuditLog()` después de toda mutación en API routes
+- Usar `useMoveTask` (no `useUpdateTask`) para cambios de estado de tarea
+- Usar `createNotification()` de `src/lib/notifications.ts` para notificaciones
+- Usar `assertSameTenant()` o `assertResourceBelongsToBusiness()` en todas las API routes que accedan a datos de un tenant
+
+### Nunca
+
+- Importar desde `repositories/` directamente en componentes
+- Usar Firebase Firestore o Firebase Storage (no están en el proyecto)
+- Crear estado local para el sprint seleccionado o filtros de kanban — usar los stores
+- Usar `any` en TypeScript
+- Saltear el `requireUser()` en API routes protegidas
+
+### Al agregar un nuevo modelo de datos
+
+1. Tipo en `src/types/domain/`
+2. Exportar en `src/types/index.ts`
+3. Modelo en `prisma/schema.prisma`
+4. `npx prisma migrate dev --name nombre`
+5. Interfaz en `src/repositories/interfaces/`
+6. Repositorio en `src/repositories/prisma/`
+7. Singleton en `src/repositories/index.ts`
+
+### Al agregar un nuevo permiso
+
+1. Agregar la acción al union type `Action` en `src/lib/permissions/matrix.ts`
+2. Agregarla al array del rol correspondiente en `ROLE_MATRIX`
+3. Si es granular (custom roles), mapearla en `checkGranular`
+
+---
+
+## Commits
+
+Formato: `type: description` (sin mayúscula, sin punto final)
+
+| Type | Cuándo usarlo |
+|---|---|
+| `feat` | Nueva funcionalidad |
 | `fix` | Bug fix |
-| `refactor` | Refactor de código |
+| `refactor` | Refactor sin cambio de comportamiento |
 | `docs` | Documentación |
 | `test` | Tests |
-| `chore` | Config, deps, etc. |
+| `chore` | Config, dependencias, infra |
+| `style` | Cambios de estilos/formato |
 
 Ejemplos:
 ```
-feat: add Kanban board view
-fix: task card overflow on mobile
-docs: update architecture diagram
-chore: add Firebase emulator config
+feat: add agenda view with daily scoring
+fix: task card overflows on mobile viewport
+docs: update architecture with new calendar routes
+chore: upgrade prisma to 7.7
 ```
 
-### 6. Testing
+---
 
-```bash
-# Run all tests
-npm test
+## PR checklist
 
-# Run with UI
-npm run test:ui
+Antes de abrir un PR:
 
-# Run once
-npm run test:run
+- [ ] `npm run type:check` pasa sin errores
+- [ ] `npm run test:run` pasa sin fallos
+- [ ] `npm run lint` sin warnings
+- [ ] Si se agrega una nueva ruta: agregada al árbol en `docs/architecture.md`
+- [ ] Si se cambia una regla de negocio: actualizado `CLAUDE.md`
+- [ ] Sin `console.log` de debugging
+- [ ] Sin `any` en TypeScript nuevo
+- [ ] Sin mocks en código de producción
 
-# Coverage
-npm run test:coverage
-```
+---
 
-### 7. Pull Requests
+## Recursos durante desarrollo
 
-Antes de crear un PR:
-1. ✅ `npm run build` pasa sin errores
-2. ✅ `npm run lint` pasa sin warnings
-3. ✅ `npm test` pasa todos los tests
-4. ✅ Documentación actualizada si aplica
-
-### 8. Recursos
-
-- **Emulator UI**: http://localhost:4000
-- **App**: http://localhost:3000
-- **Docs**: `/docs/` directory
-- **Agent Guides**: `.agent-*.md` files
+| Recurso | URL |
+|---|---|
+| App local | http://localhost:3000 |
+| Firebase Emulator UI | http://localhost:4000 |
+| Prisma Studio | `npx prisma studio` → http://localhost:5555 |
+| Docs del proyecto | `/docs/` |

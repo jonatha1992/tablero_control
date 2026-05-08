@@ -50,7 +50,10 @@ export type AuditAction =
   | 'project.update'
   | 'project.delete'
   | 'time_entry.create'
-  | 'time_entry.delete';
+  | 'time_entry.delete'
+  | 'calendar_event.create'
+  | 'calendar_event.update'
+  | 'calendar_event.delete';
 
 export interface AuditLog {
   id: string;

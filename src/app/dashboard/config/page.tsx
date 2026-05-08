@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
 import { can } from '@/lib/permissions';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard, CheckCircle, XCircle } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard } from 'lucide-react';
 import Image from 'next/image';
 import { auth } from '@/lib/firebase/client';
 import { resetPassword } from '@/lib/firebase/auth';

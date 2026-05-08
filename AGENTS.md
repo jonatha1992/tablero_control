@@ -10,9 +10,20 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Visión general
 
-**Tablero de Control** es un SaaS multi-tenant de gestión de tareas y proyectos. Cada negocio (Business) tiene sus propios locales (Location), equipos (Team), proyectos y usuarios. La empresa dueña del sistema es **TecnoFusión**, que accede con rol `superadmin`.
+**Tablero de Control** es un SaaS multi-tenant de gestión de tareas y proyectos. Cada negocio (`Business`) tiene sus propios locales (`Location`), equipos (`Team`), proyectos (`Project`) y usuarios (`User`). La empresa dueña del sistema es **TecnoFusión**, que accede con rol `superadmin`.
 
-El sistema soporta kanban con drag & drop, calendario (FullCalendar), cronograma/timeline (Gantt), gestión de suscripciones con MercadoPago, roles custom por negocio, transcripción de audio a tareas mediante IA (Groq), comentarios con menciones, checklists, subtareas, ciclos/períodos de trabajo, objetivos/iniciativas, múltiples tableros, y registro de tiempos por tarea.
+El sistema soporta:
+- Tablero kanban con drag & drop
+- Calendario (FullCalendar) y cronograma/timeline (Gantt) con FullCalendar Resource Timeline
+- Gestión de suscripciones con MercadoPago
+- Roles custom por negocio
+- Transcripción de audio a tareas mediante IA (Groq)
+- Comentarios con menciones, checklists, subtareas
+- Registro de tiempos por tarea (`TimeEntry`)
+- Ciclos/períodos de trabajo (`Cycle`) y objetivos/iniciativas (`Objective`)
+- Múltiples tableros (`Project`)
+- Notificaciones push (Firebase Cloud Messaging)
+- PWA con manifest y service worker
 
 ---
 
@@ -22,22 +33,24 @@ El sistema soporta kanban con drag & drop, calendario (FullCalendar), cronograma
 |---|---|---|
 | Framework | Next.js App Router | 16.2.3 |
 | UI | React + TypeScript strict | 19.2.4 / TS 5 |
-| Estilos | Tailwind CSS + Radix UI | Tailwind 4 |
+| Estilos | Tailwind CSS + Radix UI | Tailwind 4 (CSS-first) |
 | Estado UI | Zustand | 5.0.12 |
 | Estado servidor | TanStack Query (React Query) | 5.99.0 |
 | Auth & Storage | Firebase | 12.12.0 (cliente) / 13.8.0 (admin) |
 | Base de datos | PostgreSQL + Prisma ORM | Prisma 7.7.0 con `@prisma/adapter-pg` |
 | Archivos | Cloudinary | SDK v2 |
 | Pagos | MercadoPago | API de preapproval |
-| Email | Resend + React Email | — |
+| Email | Resend + React Email + Gmail (nodemailer fallback) | — |
 | IA / Audio | Groq SDK | Transcripción + extracción de tareas |
-| Calendario | FullCalendar | 6.1.20 |
-| Timeline / Gantt | FullCalendar Timeline + Resource Timeline | 6.1.20 |
+| Calendario / Gantt | FullCalendar + Resource Timeline | 6.1.20 |
 | Gráficos | Recharts | 3.8.1 |
 | Drag & Drop | @dnd-kit + react-dnd | — |
 | Tablas | @tanstack/react-table | 8.21.3 |
+| Testing unitario | Vitest + jsdom + Testing Library | 4.1.4 |
+| Testing E2E | Playwright | 1.59.1 |
+| Calidad de código | ESLint 9 (flat config) + knip | — |
 
-**Node.js requerido:** `>=22.0.0` (ver `.nvmrc`).
+**Node.js requerido:** `>=22.0.0` (ver `.nvmrc` y `Dockerfile`).
 
 ---
 
@@ -46,12 +59,12 @@ El sistema soporta kanban con drag & drop, calendario (FullCalendar), cronograma
 ### Filosofía: capas con dependencia unidireccional
 
 ```
-components / pages
+components / pages (app/)
       ↓
 hooks/queries + hooks/mutations     ← React Query (server state)
 hooks/stores                        ← Zustand (UI state)
       ↓
-services/                           ← lógica de negocio
+services/                           ← lógica de negocio / casos de uso
       ↓
 repositories/                       ← acceso a datos (interfaces)
       ↓
@@ -72,49 +85,54 @@ Base de Datos (PostgreSQL)
 
 ```
 src/
-├── app/                    # Next.js App Router (page.tsx, layout.tsx, route.ts)
-│   ├── (auth)/             # Login, Register — sin sidebar
+├── app/                    # Next.js App Router
+│   ├── (auth)/             # Login, Register, Forgot-password — sin sidebar
 │   ├── (superadmin)/       # Panel TecnoFusión — layout propio
 │   │   └── superadmin/
-│   │       └── planes/     # Edición de precios y límites por plan
-│   ├── dashboard/          # App principal con Sidebar + Header
-│   │   ├── tareas/         # Kanban board + Calendar + Cronograma toggle
-│   │   ├── equipo/         # Gestión de miembros
+│   │       ├── audit/
+│   │       ├── businesses/
+│   │       ├── planes/     # Edición de precios y límites por plan
+│   │       ├── subscriptions/
+│   │       └── users/
+│   ├── dashboard/          # App principal con Sidebar + Header + FAB
+│   │   ├── tareas/         # Kanban, Agenda, Calendario, Cronograma
+│   │   ├── equipo/         # Gestión de miembros, roles, sectores
 │   │   ├── sectores/       # Locales
 │   │   ├── calendario/     # Vista calendario standalone
-│   │   ├── ciclos/         # Períodos de trabajo (planning/active/completed/closed)
+│   │   ├── ciclos/         # Períodos de trabajo
 │   │   ├── objetivos/      # Iniciativas/campañas con progreso
-│   │   ├── cronograma/     # Vista Gantt/Timeline con FullCalendar
+│   │   ├── cronograma/     # Vista Gantt/Timeline
+│   │   ├── planificacion/  # Objetivos anidados
+│   │   ├── reportes/
 │   │   ├── billing/
 │   │   └── config/
-│   ├── planes/             # GET público — planes efectivos desde DB
-│   └── api/                # API routes (auth, tasks, members, locations, superadmin, mercadopago, upload, etc.)
+│   ├── api/                # API routes (auth, tasks, members, locations, superadmin, mercadopago, upload, etc.)
+│   ├── i/[token]/          # Página de aceptación de invitaciones
+│   └── pending/            # Usuarios pendientes de invitación
 │
 ├── components/
-│   ├── ui/                 # Componentes base reutilizables (Avatar, Badge, Button, Card, Dialog, Input, Tabs, etc.)
-│   ├── layout/             # Sidebar, Header, Footer
-│   ├── tareas/             # KanbanBoard, KanbanColumn, KanbanCard, modales
-│   │                         # TaskDetailModal, CreateTaskModal, DictateTasksModal
-│   │                         # TaskComments, TaskChecklist, TaskSubtasks, TaskAttachments
-│   │                         # TaskTimeTracking (registro de horas)
+│   ├── ui/                 # Componentes base reutilizables (shadcn/ui style)
+│   ├── layout/             # Sidebar, Header, Footer, NotificationBell, OnboardingTour
+│   ├── tareas/             # KanbanBoard, KanbanColumn, KanbanCard, modales de tarea
 │   ├── equipo/             # MemberCard, InviteMemberModal, CreateUserModal
 │   ├── sectores/           # SectorList, SectorModal
 │   ├── calendario/         # CalendarView, FullCalendarWrapper
 │   ├── ciclos/             # CycleList, CycleCard, CycleModal
 │   ├── objetivos/          # ObjectiveList, ObjectiveCard, ObjectiveModal
-│   ├── cronograma/         # GanttView (FullCalendar resource-timeline)
+│   ├── cronograma/         # GanttView
 │   ├── billing/            # Plan cards, invoices
 │   ├── roles/              # PermissionGrid, RoleCard, RoleEditorDrawer
 │   └── superadmin/         # SuperadminSidebar
 │
 ├── hooks/
-│   ├── auth-context.tsx    # AuthProvider + useAuth
+│   ├── auth-context.tsx    # AuthProvider + useAuth (Firebase Auth + perfil PostgreSQL)
 │   ├── protected-route.tsx # ProtectedRoute + withAuth HOC
 │   ├── queries/            # React Query — lectura (use-tasks-query, use-members-query, etc.)
-│   └── mutations/          # React Query — escritura (use-create-task, use-update-task, etc.)
+│   ├── mutations/          # React Query — escritura (use-create-task, use-update-task, etc.)
+│   └── use-push-notifications.ts, use-pwa-install.ts, useSortableData.ts
 │
 ├── stores/                 # Zustand — SOLO estado UI efímero
-│   ├── kanban-ui.store.ts
+│   ├── kanban-ui.store.ts  # modales, filtros, drag state
 │   ├── scrum-ui.store.ts
 │   └── team-ui.store.ts
 │
@@ -126,38 +144,37 @@ src/
 │   ├── comment.service.ts
 │   ├── cycle.service.ts
 │   ├── objective.service.ts
-│   ├── project.service.ts        # Tableros (reutiliza modelo Project)
+│   ├── project.service.ts        # Tableros
 │   ├── time-entry.service.ts     # Registro de tiempos
 │   └── mail.service.ts
 │
 ├── repositories/           # Acceso a datos — implementaciones intercambiables
 │   ├── interfaces/         # Contratos TypeScript (ITaskRepository, IUserRepository, ICommentRepository, etc.)
 │   ├── prisma/             # Implementaciones con Prisma (PostgreSQL)
-│   │                         # Task, User, Location, Business, Comment repositories
-│   ├── firebase/           # Implementaciones alternativas (legacy)
+│   ├── firebase/           # Implementaciones alternativas (legacy, excluidas de tsconfig)
 │   └── index.ts            # Singletons exportados — SIEMPRE importar desde aquí
 │
 ├── types/
-│   ├── domain/             # Entidades de negocio (task, user, team, business, location, project, etc.)
-│   ├── dto/                # Payloads de entrada/salida (CreateTaskDTO, UpdateTaskDTO, etc.)
-│   ├── ui/                 # Tipos de estado UI (KanbanDragState, KanbanUIFilters, etc.)
-│   ├── api/                # Tipos de respuesta HTTP (PaginatedResponse, ApiResponse, etc.)
+│   ├── domain/             # Entidades de negocio
+│   ├── dto/                # Payloads de entrada/salida
+│   ├── ui/                 # Tipos de estado UI
+│   ├── api/                # Tipos de respuesta HTTP
 │   └── index.ts            # Re-exporta todo
 │
 ├── lib/
-│   ├── firebase/           # Drivers de infraestructura (client.ts, admin.ts, auth.ts, firestore.ts, storage.ts)
+│   ├── firebase/           # Drivers (client.ts, admin.ts, auth.ts)
 │   ├── cloudinary/         # Upload de archivos (server-side)
-│   ├── mercadopago/        # Cliente MP — plans.ts (estático), plan-config.ts (DB), preapproval.ts
+│   ├── mercadopago/        # Cliente MP, planes estáticos, plan-config DB, preapproval
 │   ├── groq/               # Cliente Groq, transcribe, extract-tasks
-│   ├── mail/               # Templates React Email (welcome, reset-password, team-invite)
+│   ├── mail/               # Templates React Email (welcome, reset-password, team-invite, etc.)
 │   ├── resend.ts           # Cliente Resend
 │   ├── prisma.ts           # Singleton PrismaClient con adapter pg
 │   ├── api/                # Helpers de API routes (auth-helpers.ts, audit.ts, tasks.ts, members.ts, etc.)
 │   │                         # tasksApi, membersApi, locationsApi, projectsApi, cyclesApi, objectivesApi
-│   │                         # timeEntriesApi, billingApi, commentsApi
-│   ├── permissions/        # Matriz RBAC, resolución de custom roles, tenant-guard
+│   │                         # timeEntriesApi, billingApi, commentsApi, route-handler.ts
+│   ├── permissions/        # Matriz RBAC, resolución de custom roles, tenant-guard, validate-role
 │   ├── constants/          # Labels, colores, niveles de roles y estados de tarea
-│   └── utils/              # Funciones puras (cn, date, format, string, storage)
+│   └── utils/              # Funciones puras (cn, date, format, string, storage, mentions)
 │
 └── test/                   # Utilidades y tests unitarios
     ├── setup.ts            # Setup de Vitest (mocks de Prisma y Firebase)
@@ -174,9 +191,12 @@ admin       (4) → Admin de un negocio — gestiona su empresa
 responsable (3) → Responsable de un local/sector
 miembro     (2) → Trabaja dentro de un local
 viewer      (1) → Solo lectura
+pending     (0) → Sin permisos hasta aceptar invitación
 ```
 
-Fuente de verdad para labels, colores y niveles: `src/lib/constants/user.ts` (exportado también en `src/types/index.ts` como `ROLE_LEVEL`).
+Fuente de verdad para labels, colores y niveles: `src/lib/constants/user.ts`.
+
+Los permisos se resuelven en `src/lib/permissions/matrix.ts` (matriz base) + `src/lib/permissions/resolve.ts` (custom roles). La función `can(user, action, resource?, effectivePermissions?)` es el punto de entrada.
 
 ---
 
@@ -201,11 +221,12 @@ npm run build:prod       # Alias de build
 npm run start            # Inicia en producción
 
 # Calidad de código
-npm run lint             # ESLint (flat config — eslint.config.mjs)
+npm run lint             # ESLint 9 flat config (eslint.config.mjs)
 npm run type:check       # TypeScript --noEmit
-npm run check            # lint + tipos + tests (pre-commit recomendado)
+npm run knip             # Detección de código muerto (sin exit-code)
+npm run check            # lint + tipos + knip + tests (pre-commit recomendado)
 
-# Tests unitarios (Vitest + jsdom + Testing Library)
+# Tests unitarios / integración (Vitest + jsdom + Testing Library)
 npm test                 # Watch mode
 npm run test:run         # Una sola pasada
 npm run test:ui          # UI interactiva
@@ -236,16 +257,16 @@ npx playwright test      # Ejecuta tests en tests/
 
 ### TypeScript
 - `strict: true` activo en `tsconfig.json`.
-- **No usar `any`** — si no se conoce el tipo, usar `unknown` o definirlo.
-- Path alias `@/` para todos los imports internos (configurado en `tsconfig.json` y `vitest.config.ts`).
+- **No usar `any`** — si no se conoce el tipo, usar `unknown` o definirlo. ESLint lo prohíbe explícitamente (`@typescript-eslint/no-explicit-any: error`).
+- Path alias `@/` para todos los imports internos.
+- `src/repositories/firebase/` está excluido de `tsconfig.json` (`exclude`).
 
 ### Tailwind CSS
-- Usar `cn()` de `@/lib/utils` (o `@/lib/utils/cn.ts`) para clases condicionales.
-- Tailwind 4 con PostCSS (`postcss.config.mjs`). No hay `tailwind.config.js` tradicional; usa CSS-first configuration si es necesario.
+- Usar `cn()` de `@/lib/utils/cn.ts` (envuelve `clsx` + `tailwind-merge`) para clases condicionales.
+- Tailwind 4 con PostCSS (`postcss.config.mjs`). No hay `tailwind.config.js` tradicional.
 
 ### Prisma
-- PrismaClient es un **singleton** en `src/lib/prisma.ts`. Nunca instanciar `PrismaClient` directamente; importar desde `@/lib/prisma`.
-- Usa el adapter PostgreSQL (`@prisma/adapter-pg`) en lugar del driver nativo.
+- PrismaClient es un **singleton** en `src/lib/prisma.ts` usando `@prisma/adapter-pg`. Nunca instanciar `PrismaClient` directamente.
 - El schema está en `prisma/schema.prisma`.
 
 ### Repositorios
@@ -253,18 +274,20 @@ npx playwright test      # Ejecuta tests en tests/
 - Si se agrega un nuevo repositorio, crear la interfaz en `interfaces/`, la implementación en `prisma/`, y exportar el singleton en `index.ts`.
 
 ### API Routes
+- Usar el wrapper `handle()` de `@/lib/api/route-handler.ts` para capturar `TenantMismatchError` y errores genéricos.
 - Autenticación: usar `requireUser(req)` desde `@/lib/api/auth-helpers`. Retorna `AuthedUser | NextResponse`; si es `NextResponse`, devolverlo inmediatamente.
 - Multi-tenant: usar `assertSameTenant()` desde `@/lib/permissions/tenant-guard` cuando se valida acceso a recursos de otro negocio.
 - Permisos: usar `can(user, action)` desde `@/lib/permissions/` para RBAC.
 - Audit log: llamar `writeAuditLog()` desde `@/lib/api/audit` **obligatoriamente** después de toda operación CREATE/UPDATE/DELETE.
+- Respuestas de error con status apropiado: 400 validación, 401/403 auth, 404 no encontrado, 429 límite de plan excedido, 500 interno.
 
 ### Estado del cliente
 - **React Query** para datos del servidor. Query keys co-localizados en el archivo de query. Funciones HTTP en `src/lib/api/` (e.g. `tasksApi`, `membersApi`).
 - **Zustand** solo para estado UI efímero: modales abiertos, drag state, filtros de vista.
 
 ### Emails
-- Templates en `src/lib/mail/templates/` usando React Email.
-- Cliente Resend en `src/lib/resend.ts`.
+- Templates en `src/lib/mail/templates/` usando React Email (`@react-email/components`).
+- Cliente Resend en `src/lib/resend.ts`. Fallback SMTP vía `nodemailer` con Gmail configurado en `src/lib/gmail.ts`.
 
 ### Pagos y planes
 - **Definición estática:** `src/lib/mercadopago/plans.ts` — valores base (fallback cuando no hay fila en DB).
@@ -276,7 +299,7 @@ npx playwright test      # Ejecuta tests en tests/
   - `POST /api/projects` verifica `PlanConfig.limitProjects` (tableros). Retorna `429 { error: 'projects_limit_exceeded', limit, current }`.
   - Skip para superadmin en ambos casos.
 - **Preapproval y webhook:** `src/lib/mercadopago/preapproval.ts`.
-- **API client (browser):** `billingApi` en `src/lib/api/billing.ts` — incluye `getPlans()`, `createPreapproval()`, `cancelSubscription()`, `syncSubscription()`, `recoverSubscription()`.
+- **API client (browser):** `billingApi` en `src/lib/api/billing.ts`.
 
 ---
 
@@ -284,7 +307,7 @@ npx playwright test      # Ejecuta tests en tests/
 
 ### Tests unitarios / de integración
 - Framework: **Vitest 4** con entorno `jsdom`.
-- Setup global: `src/test/setup.ts` (mockea Prisma y Firebase).
+- Setup global: `src/test/setup.ts` (mockea Prisma y Firebase completamente).
 - Patrón de archivos: `src/**/*.test.ts`, `src/**/*.test.tsx`.
 - Testing Library: `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`.
 - Nomenclatura sugerida:
@@ -298,21 +321,21 @@ npx playwright test      # Ejecuta tests en tests/
 - Config: 1 worker, 1 retry, timeout 40s, navegador Chromium.
 - Screenshots, video y trace se retienen solo en fallos.
 - Auth persistente: `tests/.auth/superadmin.json` (generado por `tests/global.setup.ts`).
-- Archivos de spec: `auth.spec.ts`, `dashboard.spec.ts`, `equipo.spec.ts`, `tareas.spec.ts`, `sectores.spec.ts`, `superadmin.spec.ts`, `config.spec.ts`, `permisos.spec.ts`.
+- Specs: `auth.spec.ts`, `dashboard.spec.ts`, `equipo.spec.ts`, `tareas.spec.ts`, `sectores.spec.ts`, `superadmin.spec.ts`, `config.spec.ts`, `permisos.spec.ts`, `ciclos.spec.ts`, `objetivos.spec.ts`, `calendario.spec.ts`, `cronograma.spec.ts`, `reporte-visual.spec.ts`, etc.
 
 ---
 
 ## Seguridad
 
 ### Autenticación
-- Firebase Auth maneja tokens JWT. El Admin SDK (`src/lib/firebase/admin.ts`) verifica tokens en API routes.
-- El perfil de usuario se auto-provisiona en PostgreSQL en `GET /api/auth/profile`.
+- Firebase Auth maneja tokens JWT. El Admin SDK (`src/lib/firebase/admin.ts`) verifica tokens en API routes vía `requireUser()`.
+- El perfil de usuario se auto-provisiona en PostgreSQL en `GET /api/auth/profile` y `POST /api/auth/register`.
 - Superadmin se determina por `SUPERADMIN_EMAILS` en `.env.local`.
 
 ### Autorización
 - RBAC base en `src/lib/permissions/matrix.ts`.
 - Roles custom por negocio en `src/lib/permissions/resolve.ts` (resuelve `PermissionSet`).
-- Tenant guard en `src/lib/permissions/tenant-guard.ts`.
+- Tenant guard en `src/lib/permissions/tenant-guard.ts` (`assertSameTenant`, `TenantMismatchError`).
 
 ### Firestore Rules
 - Reglas en `firestore.rules` con lógica multi-tenant:
@@ -325,7 +348,9 @@ npx playwright test      # Ejecuta tests en tests/
 - MercadoPago (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`)
 - Cloudinary (`CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`)
 - Groq (`GROQ_API_KEY`)
-- Resend (implícito en `RESEND_API_KEY` si existe)
+- Resend (`RESEND_API_KEY`)
+- Gmail (`GMAIL_USER`, `GMAIL_APP_PASSWORD`)
+- PostgreSQL (`DATABASE_URL`)
 
 Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 
@@ -335,17 +360,15 @@ Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 
 ### Docker
 - `Dockerfile` multi-stage (deps → builder → runner) basado en `node:22.15-alpine`.
-- En runtime ejecuta `start.sh`: `npx prisma db push --skip-generate --accept-data-loss && npx next start -p ${PORT:-3000}`.
+- En runtime ejecuta `start.sh`: `npx prisma db push --accept-data-loss && npx next start -p ${PORT:-3000}`.
 
 ### Firebase App Hosting
 - Configuración en `apphosting.yaml`.
-- Define variables de entorno y secrets para runtime.
+- Define variables de entorno y secrets para runtime (MP, Cloudinary, Firebase, superadmin password).
 
 ### Railway
-- Configuración en `railway.json` usando Nixpacks.
-- Build: `npx prisma generate && npx prisma migrate deploy && npm run build`.
-- Deploy: `npm start`.
-- `nixpacks.toml` fija Node.js 24.
+- Configuración en `railway.json` usando Dockerfile.
+- `nixpacks.toml` fija Node.js 24, genera Prisma client y corre build.
 
 ### Firebase (servicios)
 - Proyecto: `gestordetrabajo`.
@@ -354,33 +377,74 @@ Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 
 ---
 
-## Nuevos endpoints (post-FASE 1-5)
+## Endpoints principales
+
+### Auth
+- `GET /api/auth/profile` — perfil del usuario autenticado
+- `POST /api/auth/register` — auto-registro
+- `POST /api/auth/forgot-password` — recuperación de contraseña
 
 ### Tareas
-- `GET/POST /api/tasks/[id]/comments` — comentarios en tarea
-- `DELETE /api/comments/[id]` — eliminar comentario
-- `GET/POST /api/tasks/[id]/subtasks` — subtareas jerárquicas
-- `GET/POST /api/tasks/[id]/time-entries` — registro de tiempos
-- `DELETE /api/time-entries/[id]` — eliminar registro de tiempo
+- `GET/POST /api/tasks`
+- `GET/PATCH/DELETE /api/tasks/[id]`
+- `GET/POST /api/tasks/[id]/comments`
+- `GET/POST /api/tasks/[id]/subtasks`
+- `GET/POST /api/tasks/[id]/time-entries`
+- `POST /api/tasks/from-audio` — dictado de tareas con IA
+- `POST /api/tasks/from-text` — extracción de tareas desde texto
 
-### Ciclos (Períodos de trabajo)
+### Equipo y miembros
+- `GET/POST /api/members`
+- `GET/PATCH/DELETE /api/members/[id]`
+- `POST /api/members/bulk`
+- `GET/POST /api/invites`
+- `POST /api/invites/[token]/accept`
+
+### Locales y tableros
+- `GET/POST /api/locations`
+- `GET/PATCH/DELETE /api/locations/[id]`
+- `GET/POST /api/projects`
+- `GET/PATCH/DELETE /api/projects/[id]`
+
+### Ciclos y objetivos
 - `GET/POST /api/cycles`
 - `GET/PATCH/DELETE /api/cycles/[id]`
 - `GET /api/cycles/[id]/tasks`
-
-### Objetivos (Iniciativas/Campañas)
 - `GET/POST /api/objectives`
 - `GET/PATCH/DELETE /api/objectives/[id]`
 - `GET /api/objectives/[id]/tasks`
 
-### Tableros (Projects)
-- `GET/POST /api/projects`
-- `GET/PATCH/DELETE /api/projects/[id]`
+### Suscripciones y pagos
+- `GET/POST /api/business/subscription`
+- `GET /api/business/invoices`
+- `POST /api/mercadopago/checkout`
+- `POST /api/mercadopago/preapproval`
+- `POST /api/mercadopago/cancel`
+- `POST /api/mercadopago/recover`
+- `POST /api/mercadopago/sync`
+- `POST /api/mercadopago/webhook`
+- `GET /api/planes` — planes públicos efectivos
+
+### Superadmin
+- `GET /api/superadmin/metrics`
+- `GET/PATCH /api/superadmin/planes`
+- `GET /api/superadmin/businesses`
+- `GET /api/superadmin/users`
+- `GET /api/superadmin/audit`
+
+### Otros
+- `POST /api/upload` — subida de archivos a Cloudinary
+- `POST /api/users/create` — creación controlada por límites de plan
+- `POST /api/users/switch-business` — cambio de contexto de negocio
+- `POST /api/users/fcm-token` — registro de token push
+- `GET/POST /api/notifications`
+
+---
 
 ## Flujo típico: crear una tarea
 
 ```
-1. Usuario hace clic "Nueva tarea"
+1. Usuario hace clic "Nueva tarea" (FAB speed-dial)
    → useKanbanUIStore.openCreateModal()       [Zustand]
 
 2. Usuario envía el formulario
@@ -392,7 +456,7 @@ Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 4. Servicio llama al repositorio
    → taskRepository.create(payload)            [Repository]
 
-5. Repositorio persisten en PostgreSQL
+5. Repositorio persiste en PostgreSQL
    → prisma.task.create({ data: payload })     [Prisma]
 
 6. Éxito → React Query invalida caché
@@ -402,8 +466,9 @@ Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 7. Modal se cierra
    → useKanbanUIStore.closeCreateModal()       [Zustand]
 
-8. Audit log
-   → writeAuditLog({ action: 'CREATE', targetType: 'TASK', ... })
+8. Audit log + notificaciones
+   → writeAuditLog({ action: 'task.create', targetType: 'TASK', ... })
+   → sendNotification(...) + email vía MailService
 ```
 
 ---
@@ -414,3 +479,6 @@ Nunca commitear `.env.local`. Usar `.env.example` como plantilla.
 - No asumir que `repositories/prisma/` es la única implementación posible; el diseño permite reemplazarla sin tocar services ni UI.
 - Al crear nuevos endpoints, seguir el patrón: `requireUser` → validar permisos/tenant → llamar service → `writeAuditLog` → retornar JSON.
 - Al crear nuevos stores de Zustand, mantenerlos en `src/stores/` y limitarlos a estado UI (no datos de servidor).
+- El header `Cross-Origin-Opener-Policy: same-origin-allow-popups` está configurado en `next.config.ts` para permitir que popups de Google OAuth se cierren correctamente.
+- La app es PWA: incluye `manifest.json`, service worker (`public/firebase-messaging-sw.js`) y componente `PwaRegister`.
+- Para onboarding guiado se usa `driver.js` (tour interactivo) a través del componente `OnboardingTour`.

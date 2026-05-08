@@ -13,6 +13,14 @@ export interface UserPreferences {
   dashboardLayout: string[];
 }
 
+export interface UserLocationAssignment {
+  id: string;
+  locationId: string;
+  locationName?: string;
+  role: UserRole;
+  customRoleIds: string[];
+}
+
 export interface UserBusiness {
   id: string;
   userId: string;
@@ -37,6 +45,7 @@ export interface User {
   phone?: string;
   teamIds: string[];
   memberships?: UserBusiness[];
+  locationAssignments?: UserLocationAssignment[];
   isOwner?: boolean;
   preferences: UserPreferences;
   isActive: boolean;

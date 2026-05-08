@@ -30,7 +30,7 @@ export default function EquipoRolesPage() {
   const customRoles = roles.filter((r) => !r.isSystem);
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 h-full overflow-auto">
       {/* Actions header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">

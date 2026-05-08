@@ -3,6 +3,7 @@ import { objectiveService } from '@/services/objective.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
+import { can } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
 
 export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -33,6 +34,15 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   }
 
   assertResourceBelongsToBusiness(user.data, objective.businessId);
+
+  if (!can(user.data, 'task.update.any')) {
+    return NextResponse.json({ error: 'Sin permisos para modificar objetivos' }, { status: 403 });
+  }
+
+  const validActions = ['complete', 'archive', undefined];
+  if (_action !== undefined && !validActions.includes(_action)) {
+    return NextResponse.json({ error: 'Acción inválida' }, { status: 400 });
+  }
 
   let updated;
   switch (_action) {
@@ -70,6 +80,10 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   }
 
   assertResourceBelongsToBusiness(user.data, objective.businessId);
+
+  if (!can(user.data, 'task.delete')) {
+    return NextResponse.json({ error: 'Sin permisos para eliminar objetivos' }, { status: 403 });
+  }
 
   await objectiveService.deleteObjective(id);
 

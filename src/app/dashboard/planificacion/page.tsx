@@ -87,7 +87,7 @@ export default function PeriodosPage() {
   const handleComplete = (id: string) => completeCycle.mutate(id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Períodos de Trabajo</h1>
         <Button size="sm" onClick={() => setShowModal(true)}>

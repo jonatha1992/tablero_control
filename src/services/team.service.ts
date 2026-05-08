@@ -63,12 +63,28 @@ class TeamService {
       isActive: true,
     });
 
+    if (dto.locationId) {
+      await userRepository.setLocationAssignments(user.id, [
+        { locationId: dto.locationId, role: dto.role as UserRole },
+      ]);
+    }
+
     const refreshed = await userRepository.findById(user.id);
     return refreshed ?? user;
   }
 
   async updateMember(id: string, dto: UpdateMemberDTO): Promise<User> {
-    return userRepository.update(id, dto);
+    const { locationAssignments, ...rest } = dto;
+    const updated = await userRepository.update(id, rest);
+    if (locationAssignments !== undefined) {
+      await userRepository.setLocationAssignments(id, locationAssignments);
+      // Keep User.locationId in sync with primary assignment (first sector, or null)
+      const primary = locationAssignments[0]?.locationId ?? null;
+      await prisma.user.update({ where: { id }, data: { locationId: primary } });
+      const refreshed = await userRepository.findById(id);
+      return refreshed ?? updated;
+    }
+    return updated;
   }
 
   async changeRole(userId: string, businessId: string, role: UserRole): Promise<void> {
@@ -114,6 +130,7 @@ class TeamService {
       await locationRepository.deleteByManagerId(userId);
     }
   }
+
 }
 
 export const teamService = new TeamService();

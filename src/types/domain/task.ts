@@ -82,6 +82,8 @@ export interface TaskFilters {
   assigneeId?: string[];
   projectId?: string[];
   locationId?: string[];
+  cycleId?: string[];
+  noCycle?: boolean;
   tags?: string[];
   dueDateFrom?: Date;
   dueDateTo?: Date;

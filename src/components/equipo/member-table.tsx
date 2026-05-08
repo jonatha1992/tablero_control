@@ -49,7 +49,17 @@ function MemberRow({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
-  const location = locations.find((l) => l.id === member.locationId);
+  // Prefer multi-sector assignments; fall back to legacy single locationId
+  const sectorChips: { id: string; name: string; role?: string }[] =
+    member.locationAssignments?.length
+      ? member.locationAssignments.map((a) => ({
+          id: a.locationId,
+          name: a.locationName ?? locations.find((l) => l.id === a.locationId)?.name ?? a.locationId,
+          role: a.role !== member.role ? a.role : undefined,
+        }))
+      : member.locationId
+        ? [{ id: member.locationId, name: locations.find((l) => l.id === member.locationId)?.name ?? member.locationId }]
+        : [];
 
   return (
     <>
@@ -105,11 +115,22 @@ function MemberRow({
         </td>
 
         <td className="px-4 py-3">
-          {location ? (
-            <span className="flex items-center gap-1 text-xs text-primary/80 font-medium whitespace-nowrap">
-              <MapPin className="h-3 w-3 shrink-0" />
-              {location.name}
-            </span>
+          {sectorChips.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {sectorChips.map((s) => (
+                <span
+                  key={s.id}
+                  className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary/80"
+                  title={s.role ? `Rol en sector: ${s.role}` : undefined}
+                >
+                  <MapPin className="h-2.5 w-2.5 shrink-0" />
+                  {s.name}
+                  {s.role && (
+                    <span className="opacity-60">· {s.role}</span>
+                  )}
+                </span>
+              ))}
+            </div>
           ) : (
             <span className="text-xs text-muted-foreground">—</span>
           )}

@@ -61,6 +61,7 @@ export function useConfirmDictatedTasks() {
           assigneeIds: t.assigneeIds,
           tags: t.tags,
           estimatedHours: t.estimatedHours,
+          locationId: t.locationId,
           dueDate: t.dueDate
             ? new Date(`${t.dueDate}T${t.dueTime ?? '00:00'}`)
             : undefined,

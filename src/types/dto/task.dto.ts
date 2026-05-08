@@ -9,6 +9,7 @@ export interface CreateTaskDTO {
   assigneeIds: string[];
   projectId?: string;
   locationId?: string;
+  cycleId?: string;
   tags: string[];
   dueDate?: Date;
   estimatedHours?: number;

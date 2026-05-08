@@ -20,7 +20,6 @@ export const GET = handle(async (request: NextRequest) => {
 
   try {
     const decoded = await verifyToken(token);
-    console.log('[profile] uid:', decoded.uid, '| email:', decoded.email);
     const decodedEmail = decoded.email?.toLowerCase().trim();
     let user = await userRepository.findById(decoded.uid);
     console.log('[profile] findById:', user ? 'FOUND' : 'NOT FOUND');
@@ -28,7 +27,6 @@ export const GET = handle(async (request: NextRequest) => {
     if (!user && decoded.email) {
       // Invited user: exists by email but has a different Firebase UID
       const existingByEmail = decodedEmail ? await userRepository.findByEmail(decodedEmail) : null;
-      console.log('[profile] findByEmail:', existingByEmail ? `FOUND id=${existingByEmail.id}` : 'NOT FOUND');
       if (existingByEmail) {
         try {
           user = await userRepository.updateId(existingByEmail.id, decoded.uid);

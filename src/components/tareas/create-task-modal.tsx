@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,11 @@ import { useCreateTask } from '@/hooks/mutations/use-create-task';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useAuth } from '@/hooks/auth-context';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
-import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban } from 'lucide-react';
+import { useScrumUIStore } from '@/stores/scrum-ui.store';
+import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer } from 'lucide-react';
 import { tasksApi } from '@/lib/api/tasks';
 import { getToken } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
@@ -107,6 +109,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [locationId, setLocationId] = useState<string>('');
   const [projectId, setProjectId] = useState<string>('');
+  const [cycleId, setCycleId] = useState<string>('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
   const [interval, setIntervalValue] = useState(1);
@@ -121,6 +124,16 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const { data: locations = [] } = useLocationsQuery();
   const { user } = useAuth();
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const { data: cycles = [] } = useCyclesQuery(user?.businessId ?? '');
+  const { selectedSprintId, viewMode: sprintMode } = useScrumUIStore();
+
+  useEffect(() => {
+    if (open && sprintMode === 'board' && selectedSprintId) {
+      setCycleId(selectedSprintId);
+    } else if (open) {
+      setCycleId('');
+    }
+  }, [open, sprintMode, selectedSprintId]);
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -132,7 +145,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setTitle(''); setDescription(''); setTags('');
     setDueDate(defaultDueDate ?? today); setDueTime(''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
-    setLocationId(''); setProjectId('');
+    setLocationId(''); setProjectId(''); setCycleId('');
     setEstimatedHours(undefined);
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
@@ -207,6 +220,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         assigneeIds,
         locationId: locationId || undefined,
         projectId: projectId || undefined,
+        cycleId: cycleId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         estimatedHours: estimatedHours || undefined,
         dueDate: dueDate ? new Date(`${dueDate}T${dueTime || '00:00'}`) : undefined,
@@ -223,8 +237,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg flex flex-col max-h-[90vh]">
+        <DialogHeader className="shrink-0">
           <div className="flex items-center justify-between pr-8">
             <DialogTitle>Crear Nueva Tarea</DialogTitle>
             <button
@@ -257,7 +271,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="overflow-y-auto flex-1 space-y-4 pr-1">
           <div>
             <label className="text-sm font-medium mb-1 block">Título *</label>
             <input
@@ -339,6 +354,26 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               ))}
             </select>
           </div>
+
+          {cycles.length > 0 && (
+            <div>
+              <label className="text-sm font-medium mb-1 block flex items-center gap-1">
+                <Timer className="h-3.5 w-3.5" /> Período/Sprint (Opcional)
+              </label>
+              <select
+                value={cycleId}
+                onChange={(e) => setCycleId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Sin período</option>
+                {cycles.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.status === 'active' ? ' ●' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Asignados */}
           {members.length > 0 && (
@@ -498,7 +533,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             )}
           </div>
 
-          <DialogFooter>
+          </div>
+          <DialogFooter className="shrink-0 pt-4">
             <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
               Cancelar
             </Button>

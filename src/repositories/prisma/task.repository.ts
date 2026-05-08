@@ -86,6 +86,8 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
     where.assignees = { some: { id: { in: filters.assigneeId } } };
   }
   if (filters?.projectId?.length) where.projectId = { in: filters.projectId };
+  if (filters?.cycleId?.length) where.cycleId = { in: filters.cycleId };
+  if (filters?.noCycle) where.cycleId = null;
   if (filters?.tags?.length) where.tags = { hasSome: filters.tags };
   if (filters?.dueDateFrom || filters?.dueDateTo) {
     where.dueDate = {};
@@ -157,6 +159,8 @@ export class PrismaTaskRepository implements ITaskRepository {
     const where: Prisma.TaskWhereInput = { creatorId };
     if (filters?.status?.length) where.status = { in: filters.status };
     if (filters?.priority?.length) where.priority = { in: filters.priority };
+    if (filters?.cycleId?.length) where.cycleId = { in: filters.cycleId };
+    if (filters?.noCycle) where.cycleId = null;
     if (filters?.search) {
       where.AND = [
         { OR: [

@@ -44,6 +44,7 @@ import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useBulkMoveTasks } from '@/hooks/mutations/use-bulk-move-tasks';
 import { useBulkDeleteTasks } from '@/hooks/mutations/use-bulk-delete-tasks';
+import { useBulkAssignTaskLocation } from '@/hooks/mutations/use-bulk-assign-task-location';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
@@ -99,6 +100,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const updateTask = useUpdateTask();
   const bulkMove = useBulkMoveTasks();
   const bulkDelete = useBulkDeleteTasks();
+  const bulkAssignLocation = useBulkAssignTaskLocation();
   const { data: locations = [] } = useLocationsQuery();
   const { data: objectives = [] } = useObjectivesQuery(user?.businessId ?? '');
 
@@ -190,6 +192,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const activeTask = dragState.draggedTaskId
     ? tasks.find((t) => t.id === dragState.draggedTaskId) ?? null
     : null;
+
+
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden w-full">
@@ -349,6 +353,49 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  {locations.length > 0 && (
+                    <>
+                      <div className="h-4 w-px bg-border" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="inline-flex items-center gap-1 h-7 px-2 text-sm rounded hover:bg-muted transition-colors text-foreground disabled:opacity-50"
+                            disabled={bulkAssignLocation.isPending}
+                          >
+                            <MapPin className="h-3.5 w-3.5" />
+                            Sector…
+                            <svg className="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem
+                            onClick={() => bulkAssignLocation.mutate(
+                              { taskIds: selectedTaskIds, locationId: null },
+                              { onSuccess: () => clearSelection() }
+                            )}
+                          >
+                            <span className="text-muted-foreground">Sin sector (Global)</span>
+                          </DropdownMenuItem>
+                          {locations.map((loc) => {
+                            const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
+                            const Icon = iconEntry?.icon ?? MapPin;
+                            return (
+                              <DropdownMenuItem
+                                key={loc.id}
+                                onClick={() => bulkAssignLocation.mutate(
+                                  { taskIds: selectedTaskIds, locationId: loc.id },
+                                  { onSuccess: () => clearSelection() }
+                                )}
+                              >
+                                <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                                {loc.name}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  )}
                   <button
                     onClick={() => requestDelete(selectedTaskIds)}
                     className="h-7 px-2 flex items-center gap-1 rounded text-sm hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -426,26 +473,29 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-2 pt-1 flex-1 min-h-0 min-w-0 w-full overflow-y-hidden">
-          {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
-            <KanbanColumn
-              key={column}
-              status={column}
-              tasks={columns[column]}
-              onCardClick={(task) => {
-                if (isSelectMode) toggleTaskSelection(task.id);
-                else openTaskDetail(task.id);
-              }}
-              onPriorityChange={handlePriorityChange}
-              onLocationChange={handleLocationChange}
-              onAddClick={openCreateModal}
-              selectedTaskIds={selectedTaskIds}
-              isSelectMode={isSelectMode}
-              onSelectAll={selectAllInColumn}
-              onBulkDelete={requestDelete}
-              locations={locations}
-            />
-          ))}
+        <div className="flex-1 min-h-0 w-full overflow-hidden">
+          <div className="flex gap-4 h-full overflow-x-auto pb-2 pt-1">
+            {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
+              <KanbanColumn
+                key={column}
+                status={column}
+                tasks={columns[column]}
+                onCardClick={(task) => {
+                  if (isSelectMode) toggleTaskSelection(task.id);
+                  else openTaskDetail(task.id);
+                }}
+                onPriorityChange={handlePriorityChange}
+                onLocationChange={handleLocationChange}
+                onAddClick={openCreateModal}
+                selectedTaskIds={selectedTaskIds}
+                isSelectMode={isSelectMode}
+                onSelectAll={selectAllInColumn}
+                onBulkDelete={requestDelete}
+                locations={locations}
+
+              />
+            ))}
+          </div>
         </div>
 
         <DragOverlay>

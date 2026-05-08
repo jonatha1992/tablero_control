@@ -22,8 +22,8 @@ export default function CalendarioPage() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden w-full gap-4">
-      <div className="flex-1 min-h-0 overflow-hidden relative">
+    <div className="flex flex-col h-full w-full gap-4">
+      <div className="flex-1 min-h-[600px] relative">
         {isLoading ? (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             Cargando calendario...
