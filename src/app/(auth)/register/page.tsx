@@ -73,7 +73,6 @@ function RegisterForm() {
     if (!trimmedName) errors.name = 'El nombre es obligatorio';
     if (!trimmedEmail) errors.email = 'El correo es obligatorio';
     else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
-    if (!trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
     if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
     if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
 
@@ -115,8 +114,10 @@ function RegisterForm() {
         throw new Error('Error al crear el negocio. Inténtalo de nuevo.');
       }
 
-      // 3. Load profile into context (triggers redirect via useEffect)
+      // 3. Load profile + redirect immediately (avoids race condition with isAuthenticated)
       await refreshProfile();
+      const target = redirect && redirect !== '/dashboard' ? redirect : '/dashboard';
+      router.push(target);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
