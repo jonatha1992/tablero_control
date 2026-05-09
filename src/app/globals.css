@@ -95,6 +95,21 @@
   animation: pulse-slow 3s ease-in-out infinite;
 }
 
+/* FullCalendar monthly grid dark mode — override CSS var + explicit borders */
+.dark .fc {
+  --fc-border-color: #3f3f46;
+}
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th,
+.dark .fc-theme-standard .fc-scrollgrid {
+  border-color: #3f3f46 !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+.dark .fc .fc-daygrid-day {
+  border-color: #3f3f46 !important;
+}
+
 /* FullCalendar resource-timeline dark mode fixes */
 .dark .fc .fc-timeline-lane-frame {
   background: transparent;
