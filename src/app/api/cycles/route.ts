@@ -22,6 +22,11 @@ export const GET = handle(async (request: NextRequest) => {
   return NextResponse.json(cycles);
 });
 
+function toDateTime(d: string | undefined | null): string | undefined {
+  if (!d) return undefined;
+  return d.includes('T') ? d : `${d}T00:00:00.000Z`;
+}
+
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
@@ -29,6 +34,8 @@ export const POST = handle(async (request: NextRequest) => {
   const body = await request.json();
   const cycle = await cycleService.createCycle({
     ...body,
+    startDate: toDateTime(body.startDate),
+    endDate: toDateTime(body.endDate),
     businessId: user.businessId ?? '',
   });
 

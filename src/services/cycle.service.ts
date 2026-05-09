@@ -34,6 +34,12 @@ class CycleService {
   }
 
   async startCycle(id: string): Promise<Cycle> {
+    const cycle = await cycleRepository.findById(id);
+    if (!cycle) throw new Error('Período no encontrado');
+    const activeCycles = await cycleRepository.findActiveByBusiness(cycle.businessId);
+    if (activeCycles.length > 0) {
+      throw new Error('Ya existe un período activo. Completalo antes de iniciar uno nuevo.');
+    }
     return cycleRepository.update(id, { status: 'active' });
   }
 

@@ -33,10 +33,10 @@ export const GET = handle(async (request: NextRequest) => {
   const cycleId = searchParams.get('cycleId');
   const noCycle = searchParams.get('noCycle');
   const search = searchParams.get('search');
-  if (status) filters.status = status.split(',') as TaskStatus[];
-  if (priority) filters.priority = priority.split(',') as TaskPriority[];
-  if (projectId) filters.projectId = projectId.split(',');
-  if (locationId) filters.locationId = locationId.split(',');
+  if (status) { const ids = status.split(',').filter(Boolean); if (ids.length) filters.status = ids as TaskStatus[]; }
+  if (priority) { const ids = priority.split(',').filter(Boolean); if (ids.length) filters.priority = ids as TaskPriority[]; }
+  if (projectId) { const ids = projectId.split(',').filter(Boolean); if (ids.length) filters.projectId = ids; }
+  if (locationId) { const ids = locationId.split(',').filter(Boolean); if (ids.length) filters.locationId = ids; }
   if (cycleId) { const ids = cycleId.split(',').filter(Boolean); if (ids.length) filters.cycleId = ids; }
   if (noCycle === 'true') filters.noCycle = true;
   if (search) filters.search = search;

@@ -27,6 +27,11 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const body = await request.json();
   const { _action, ...data } = body;
 
+  const toDateTime = (d: string | undefined | null) =>
+    d ? (d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
+  if (data.startDate !== undefined) data.startDate = toDateTime(data.startDate);
+  if (data.endDate !== undefined) data.endDate = toDateTime(data.endDate);
+
   const cycle = await cycleService.getCycleById(id);
   if (!cycle) {
     return NextResponse.json({ error: 'Período no encontrado' }, { status: 404 });
