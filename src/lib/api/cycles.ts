@@ -1,6 +1,7 @@
 import type { Cycle } from '@/types/domain/cycle';
 import type { CycleStatus } from '@/types/domain/cycle';
 import { getToken } from '@/lib/firebase/auth';
+import { ApiError } from './errors';
 
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
@@ -8,7 +9,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new ApiError(await res.text(), res.status);
   return res.json();
 }
 
@@ -54,7 +55,7 @@ export const cyclesApi = {
     const headers: HeadersInit = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`/api/cycles/${id}`, { method: 'DELETE', headers });
-    if (!res.ok) throw new Error('Error al eliminar período');
+    if (!res.ok) throw new ApiError('Error al eliminar período', res.status);
   },
 
   assignTasks: (cycleId: string, taskIds: string[]) =>

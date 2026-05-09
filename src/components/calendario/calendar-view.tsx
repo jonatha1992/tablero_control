@@ -170,6 +170,11 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
         .fc-theme-standard .fc-scrollgrid {
           border-color: hsl(var(--foreground) / 0.1) !important;
         }
+        .dark .fc-theme-standard td,
+        .dark .fc-theme-standard th,
+        .dark .fc-theme-standard .fc-scrollgrid {
+          border-color: #333333 !important;
+        }
         .fc .fc-daygrid-day {
           background: hsl(var(--card));
         }

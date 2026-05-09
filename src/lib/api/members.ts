@@ -1,13 +1,14 @@
 import type { User } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
 import { getToken } from '@/lib/firebase/auth';
+import { ApiError } from './errors';
 
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers = new Headers(init?.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new ApiError(await res.text(), res.status);
   return res.json();
 }
 
