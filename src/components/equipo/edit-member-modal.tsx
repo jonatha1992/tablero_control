@@ -262,7 +262,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
                 />
                 <Lock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
               </div>
-            </DialogHeader>
+            </div>
 
             {/* Global Role */}
             <div className="space-y-1.5">
