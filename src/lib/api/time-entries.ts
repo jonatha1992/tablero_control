@@ -1,4 +1,5 @@
 import { getToken } from '@/lib/firebase/auth';
+import { ApiError } from './errors';
 
 export interface TimeEntry {
   id: string;
@@ -24,7 +25,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new ApiError(await res.text(), res.status);
   return res.json();
 }
 
@@ -43,7 +44,7 @@ export const timeEntriesApi = {
     const headers: HeadersInit = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const r = await fetch(`/api/time-entries/${id}`, { method: 'DELETE', headers });
-    if (!r.ok) throw new Error('Error al eliminar registro de tiempo');
+    if (!r.ok) throw new ApiError('Error al eliminar registro de tiempo', r.status);
     return r.json();
   },
 };

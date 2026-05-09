@@ -14,8 +14,8 @@ type Step = 0 | 1 | 2 | 3;
 
 const BASE_ROLES: Array<{ value: BaseRoleForCustom; label: string; desc: string }> = [
   { value: 'responsable', label: 'Responsable', desc: 'Jefe de local — puede crear y gestionar tareas.' },
-  { value: 'miembro', label: 'Miembro', desc: 'Trabajador — opera sus tareas asignadas.' },
-  { value: 'viewer', label: 'Visualizador', desc: 'Solo lectura dentro de la empresa.' },
+  { value: 'miembro',    label: 'Miembro',      desc: 'Trabajador — opera sus tareas asignadas.' },
+  { value: 'viewer',     label: 'Visualizador',       desc: 'Solo lectura dentro de la empresa.' },
 ];
 
 const COLORS = [

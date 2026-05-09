@@ -2,6 +2,7 @@ import type { Task, TaskFilters, TaskStatus } from '@/types/domain/task';
 import type { CreateTaskDTO, UpdateTaskDTO } from '@/types/dto/task.dto';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import { getToken } from '@/lib/firebase/auth';
+import { ApiError } from './errors';
 
 interface FromAudioResponse {
   transcription: string;
@@ -20,7 +21,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new ApiError(await res.text(), res.status);
   return res.json();
 }
 
@@ -66,7 +67,7 @@ export const tasksApi = {
     const headers: HeadersInit = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const r = await fetch(`/api/tasks/${id}`, { method: 'DELETE', headers });
-    if (!r.ok) throw new Error('Error al eliminar tarea');
+    if (!r.ok) throw new ApiError('Error al eliminar tarea', r.status);
   },
 
   fromAudio: async (audioFile: File, token: string): Promise<FromAudioResponse> => {
@@ -77,7 +78,7 @@ export const tasksApi = {
       headers: { Authorization: `Bearer ${token}` },
       body: fd,
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new ApiError(await res.text(), res.status);
     return res.json() as Promise<FromAudioResponse>;
   },
 

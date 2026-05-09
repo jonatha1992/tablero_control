@@ -1,4 +1,5 @@
 import { getToken } from '@/lib/firebase/auth';
+import { ApiError } from './errors';
 
 export interface Project {
   id: string;
@@ -29,7 +30,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new ApiError(await res.text(), res.status);
   return res.json();
 }
 
@@ -54,7 +55,7 @@ export const projectsApi = {
     const headers: HeadersInit = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const r = await fetch(`/api/projects/${id}`, { method: 'DELETE', headers });
-    if (!r.ok) throw new Error('Error al eliminar tablero');
+    if (!r.ok) throw new ApiError('Error al eliminar tablero', r.status);
     return r.json();
   },
 };

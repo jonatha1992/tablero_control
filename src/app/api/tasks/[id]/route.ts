@@ -137,7 +137,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
           body: `${assignerName} te asignó la tarea "${task.title}"`,
           type: 'task_assigned',
           link: '/dashboard/tareas',
-        }).catch(() => { });
+        }).catch(() => {});
         if (prefs?.notifications?.email !== false) {
           import('@/services/mail.service').then(({ MailService }) => {
             MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName)

@@ -132,9 +132,9 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
   const updatedUser = hadActiveBusiness
     ? user
     : await prisma.user.update({
-      where: { id: user.id },
-      data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId },
-    });
+        where: { id: user.id },
+        data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId },
+      });
 
   await prisma.businessInvite.update({
     where: { id: inviteToken },

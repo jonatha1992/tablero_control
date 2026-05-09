@@ -22,6 +22,7 @@ interface Props {
 
 export function CreateInviteModal({ open, onClose, businessId }: Props) {
   const [locationId, setLocationId] = useState<string>('');
+  const [role, setRole] = useState<string>('miembro');
   const [maxUses, setMaxUses] = useState('0');
   const [expiresInDays, setExpiresInDays] = useState('7');
   const [copied, setCopied] = useState(false);
@@ -44,6 +45,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     mutate(
       {
         businessId,
+        role,
         locationId: locationId || undefined,
         maxUses: parsedMaxUses,
         expiresInDays: parseInt(expiresInDays, 10) || 0,
@@ -64,6 +66,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
   function handleClose() {
     if (isPending) return;
     setLocationId('');
+    setRole('miembro');
     setMaxUses('0');
     setExpiresInDays('7');
     setCopied(false);
@@ -84,7 +87,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                Compartí este link con quienes querés que se unan al equipo. Vas a asignarles el rol una vez que ingresen.
+                Compartí este link con quienes querés que se unan al equipo. Al ingresar, recibirán el rol <strong>{data.role}</strong>.
               </p>
               <div className="flex items-center gap-2">
                 <Input value={data.link} readOnly className="font-mono text-sm" />
@@ -149,8 +152,23 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                La persona que ingrese por este link quedará con rol <strong>Pendiente</strong>. Vos le asignás el rol después desde el equipo.
+                La persona que ingrese por este link recibirá el rol que elijas. Podés cambiarlo después desde el equipo.
               </p>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Rol</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="miembro">Miembro</option>
+                  <option value="responsable">Responsable</option>
+                  <option value="viewer">Solo lectura</option>
+                  <option value="admin">Admin</option>
+                  <option value="pending">Pendiente (aprobación manual)</option>
+                </select>
+              </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Local/Sector (opcional)</label>

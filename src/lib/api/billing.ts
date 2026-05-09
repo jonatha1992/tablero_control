@@ -1,6 +1,7 @@
 import type { Invoice, Subscription, PlanId, BillingFrequency } from '@/types/domain/subscription';
 import type { PlanDefinition } from '@/lib/mercadopago/plans';
 import { getToken } from '@/lib/firebase/auth';
+import { ApiError } from './errors';
 
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
@@ -8,7 +9,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (init?.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) throw new ApiError(await res.text(), res.status);
   return res.json();
 }
 
