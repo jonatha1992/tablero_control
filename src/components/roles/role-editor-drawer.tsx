@@ -122,7 +122,7 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
                 <div className={cn(
                   'h-6 w-6 rounded-full text-xs flex items-center justify-center font-medium shrink-0',
                   i === step ? 'bg-primary text-primary-foreground' :
-                  i < step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                    i < step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 )}>
                   {i + 1}
                 </div>

@@ -16,6 +16,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (!e.request.url.startsWith('http')) return;
   if (e.request.method !== 'GET') return;
   if (e.request.url.includes('/api/')) return;
 
@@ -26,6 +27,6 @@ self.addEventListener('fetch', (e) => {
         caches.open(CACHE).then((c) => c.put(e.request, clone));
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(e.request).then((r) => r ?? fetch(e.request)))
   );
 });

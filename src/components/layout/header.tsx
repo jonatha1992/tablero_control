@@ -25,7 +25,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const searchParams = useSearchParams();
   const { filters, setFilters } = useKanbanUIStore();
   const isTasksPage = pathname?.startsWith('/dashboard/tareas');
-  
+
   const displayName = userName || user?.name || 'Usuario';
   const initials = getInitials(displayName);
   const avatarColor = stringToColor(displayName);
