@@ -68,7 +68,21 @@ const include = {
 } satisfies Prisma.UserInclude;
 
 export class PrismaUserRepository implements IUserRepository {
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string, businessId?: string): Promise<User | null> {
+    if (businessId) {
+      const u = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          teams: true,
+          memberships: { include: { business: true } },
+          locationAssignments: {
+            where: { location: { businessId } },
+            include: { location: true },
+          },
+        },
+      });
+      return u ? toDomain(u as unknown as PrismaUser) : null;
+    }
     const u = await prisma.user.findUnique({ where: { id }, include });
     return u ? toDomain(u) : null;
   }
@@ -84,9 +98,20 @@ export class PrismaUserRepository implements IUserRepository {
   async findByBusiness(businessId: string): Promise<User[]> {
     const rows = await prisma.userBusiness.findMany({
       where: { businessId, isActive: true },
-      include: { user: { include } },
+      include: {
+        user: {
+          include: {
+            teams: true,
+            memberships: { include: { business: true } },
+            locationAssignments: {
+              where: { location: { businessId } },
+              include: { location: true },
+            },
+          },
+        },
+      },
     });
-    return rows.map((r) => toDomain(r.user));
+    return rows.map((r) => toDomain(r.user as unknown as PrismaUser));
   }
 
   async findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]> {
@@ -217,8 +242,8 @@ export class PrismaUserRepository implements IUserRepository {
     await prisma.user.delete({ where: { id } });
   }
 
-  async setLocationAssignments(userId: string, assignments: LocationAssignmentInput[]): Promise<void> {
-    await prisma.userLocation.deleteMany({ where: { userId } });
+  async setLocationAssignments(userId: string, assignments: LocationAssignmentInput[], businessId: string): Promise<void> {
+    await prisma.userLocation.deleteMany({ where: { userId, location: { businessId } } });
     if (assignments.length > 0) {
       await prisma.userLocation.createMany({
         data: assignments.map((a) => ({

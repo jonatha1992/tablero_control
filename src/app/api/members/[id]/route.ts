@@ -5,6 +5,7 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { can, assertSameTenant } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
+import { prisma } from '@/lib/prisma';
 
 export const PATCH = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -19,13 +20,13 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   assertSameTenant(user.data, { businessId: target.businessId });
 
+  const operatingBusinessId = target.businessId;
+  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
+
   const data = await request.json();
 
   if (data.reactivate === true) {
-    if (!target.businessId) {
-      return NextResponse.json({ error: 'No business' }, { status: 400 });
-    }
-    await teamService.reactivateMember(id, target.businessId);
+    await teamService.reactivateMember(id, operatingBusinessId);
     await writeAuditLog({
       actorId: user.uid,
       actorRole: user.role,
@@ -42,12 +43,20 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     if (user.role !== 'superadmin' && data.role === 'superadmin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (target.businessId) {
-      await teamService.changeRole(id, target.businessId, data.role);
+    await teamService.changeRole(id, operatingBusinessId, data.role);
+  }
+
+  if (data.locationAssignments?.length) {
+    const locationIds = (data.locationAssignments as { locationId: string }[]).map((a) => a.locationId);
+    const validCount = await prisma.location.count({
+      where: { id: { in: locationIds }, businessId: operatingBusinessId },
+    });
+    if (validCount !== locationIds.length) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
   }
 
-  const member = await teamService.updateMember(id, data);
+  const member = await teamService.updateMember(id, data, operatingBusinessId);
 
   await writeAuditLog({
     actorId: user.uid,

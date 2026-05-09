@@ -2,7 +2,7 @@ import type { User, UserRole, UserBusiness } from '@/types/domain/user';
 import type { LocationAssignmentInput } from '@/types/dto/team.dto';
 
 export interface IUserRepository {
-  findById(id: string): Promise<User | null>;
+  findById(id: string, businessId?: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByBusiness(businessId: string): Promise<User[]>;
   findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]>;
@@ -14,7 +14,7 @@ export interface IUserRepository {
   create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<User>;
   update(id: string, data: Partial<User>): Promise<User>;
   updateRole(id: string, role: UserRole): Promise<void>;
-  setLocationAssignments(userId: string, assignments: LocationAssignmentInput[]): Promise<void>;
+  setLocationAssignments(userId: string, assignments: LocationAssignmentInput[], businessId: string): Promise<void>;
   deactivate(id: string): Promise<void>;
   reactivate(id: string): Promise<void>;
   delete(id: string): Promise<void>;
