@@ -68,7 +68,21 @@ const include = {
 } satisfies Prisma.UserInclude;
 
 export class PrismaUserRepository implements IUserRepository {
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string, businessId?: string): Promise<User | null> {
+    if (businessId) {
+      const u = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          teams: true,
+          memberships: { include: { business: true } },
+          locationAssignments: {
+            where: { location: { businessId } },
+            include: { location: true },
+          },
+        },
+      });
+      return u ? toDomain(u as unknown as PrismaUser) : null;
+    }
     const u = await prisma.user.findUnique({ where: { id }, include });
     return u ? toDomain(u) : null;
   }

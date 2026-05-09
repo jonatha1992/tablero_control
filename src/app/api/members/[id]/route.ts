@@ -19,6 +19,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   assertSameTenant(user.data, { businessId: target.businessId });
 
+  const operatingBusinessId = target.businessId;
+  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
+
   const data = await request.json();
 
   if (data.reactivate === true) {

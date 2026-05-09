@@ -30,7 +30,7 @@ export function PushNotificationToggle() {
     setIsTesting(true);
     try {
       const token = await getToken();
-      const res = await fetch('/api/users/test-fcm', { 
+      const res = await fetch('/api/users/test-fcm', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -58,7 +58,7 @@ export function PushNotificationToggle() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4" /> 
+            <Smartphone className="h-4 w-4" />
             <p className="text-sm font-medium">Notificaciones Push</p>
           </div>
           <p className="text-xs text-muted-foreground">Recibe alertas instantáneas en tu dispositivo.</p>
@@ -66,9 +66,9 @@ export function PushNotificationToggle() {
         {isSubscribing ? (
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
-          <input 
-            type="checkbox" 
-            className="h-4 w-4 accent-primary cursor-pointer" 
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-primary cursor-pointer"
             checked={permission === 'granted'}
             onChange={handleToggle}
           />

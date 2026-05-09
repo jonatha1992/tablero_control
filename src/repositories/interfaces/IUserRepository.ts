@@ -2,7 +2,7 @@ import type { User, UserRole, UserBusiness } from '@/types/domain/user';
 import type { LocationAssignmentInput } from '@/types/dto/team.dto';
 
 export interface IUserRepository {
-  findById(id: string): Promise<User | null>;
+  findById(id: string, businessId?: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByBusiness(businessId: string): Promise<User[]>;
   findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]>;

@@ -115,8 +115,10 @@ function RegisterForm() {
         throw new Error('Error al crear el negocio. Inténtalo de nuevo.');
       }
 
-      // 3. Load profile into context (triggers redirect via useEffect)
+      // 3. Load profile + redirect immediately (avoids race condition with isAuthenticated)
       await refreshProfile();
+      const target = redirect && redirect !== '/dashboard' ? redirect : '/dashboard';
+      router.push(target);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
