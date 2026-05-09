@@ -256,7 +256,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
       {/* Footer */}
       {!collapsed && (
         <div className="border-t p-4 text-xs text-muted-foreground">
-          <p>v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_GIT_HASH} · {process.env.NEXT_PUBLIC_BUILD_ENV === 'production' ? 'Producción' : 'Desarrollo'}</p>
+          <p>v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_GIT_HASH}</p>
         </div>
       )}
     </div>
