@@ -2,9 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/tareas/kanban-board';
-import { CalendarView } from '@/components/calendario/calendar-view';
-import { TaskDetailModal } from '@/components/tareas/task-detail-modal';
-import { CreateTaskModal } from '@/components/tareas/create-task-modal';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
@@ -177,34 +174,6 @@ export default function TareasPage() {
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <KanbanBoard tasks={tasks} />
       </div>
-
-      {/* Vista activa */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {viewMode === 'board' ? (
-          <KanbanBoard tasks={tasks} />
-        ) : (
-          <div className="h-full p-4">
-            <CalendarView
-              tasks={tasks}
-              onEventDrop={handleEventDrop}
-              onEventClick={handleEventClick}
-              onDateClick={handleDateClick}
-            />
-          </div>
-        )}
-      </div>
-
-      <TaskDetailModal
-        task={selectedTask}
-        open={!!selectedTask}
-        onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
-      />
-
-      <CreateTaskModal
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
-        initialDate={createInitialDate}
-      />
     </div>
   );
 }
