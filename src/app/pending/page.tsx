@@ -56,7 +56,10 @@ export default function PendingPage() {
           </p>
           <p>
             <span className="text-muted-foreground">Negocio:</span>{' '}
-            <span className="font-medium">{user?.businessId ? 'Registrado' : '—'}</span>
+            <span className="font-medium">
+              {user?.memberships?.find((m) => m.businessId === user.businessId)?.businessName
+                || (user?.businessId ? 'Registrado' : '—')}
+            </span>
           </p>
         </div>
 
