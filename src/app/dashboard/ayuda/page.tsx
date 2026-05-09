@@ -69,12 +69,36 @@ const SECTIONS: Section[] = [
     emoji: '📅',
     subsections: [
       {
-        title: 'Períodos (Ciclos)',
-        description: 'Sprints de trabajo con fecha de inicio y fin. Estados: Planificación → Activo → Completado → Cerrado. Solo puede haber un ciclo activo a la vez. Las tareas se asocian a un ciclo desde el formulario de tarea.',
+        title: '¿Qué es un Período?',
+        description: 'Un período es un bloque de tiempo con nombre, fecha de inicio y fecha de fin. Sirve para agrupar qué tareas vas a trabajar en esa franja (una semana, una quincena, un mes). Es equivalente a un "sprint" en metodologías ágiles.',
       },
       {
-        title: 'Objetivos',
-        description: 'Metas de alto nivel (épicas/OKRs) con progreso del 0 al 100%. Podés vincular tareas a un objetivo para ver el avance. Los objetivos pueden estar activos, completados o archivados.',
+        title: 'Flujo de un Período paso a paso',
+        description: '1. Creás el período (queda en "Planificación"). 2. Asignás tareas al período desde el Kanban o desde el detalle de cada tarea. 3. Cuando empieza el trabajo, hacés clic en "Iniciar" → pasa a "Activo". El período activo aparece como tab verde en el Kanban. 4. Al terminar, hacés clic en "Completar". Solo puede haber UN período activo a la vez — si intentás iniciar otro, el sistema te avisa.',
+      },
+      {
+        title: 'Cómo asignar tareas a un período',
+        description: 'Opción A: en el Kanban, hacé clic en el tab del período activo y creá una nueva tarea — queda asignada automáticamente. Opción B: abrí una tarea existente y elegí el período en el campo "Período/Sprint". Opción C: en el tab "Backlog" del Kanban aparecen todas las tareas sin período asignado.',
+      },
+      {
+        title: '¿Qué es un Objetivo?',
+        description: 'Un objetivo es una meta grande que puede durar semanas o meses. Por ejemplo: "Apertura sucursal Palermo" o "Lanzamiento v2 del producto". Es equivalente a una "épica" o un "OKR". No tiene fechas de sprint — es una meta de alto nivel.',
+      },
+      {
+        title: 'Progreso automático de Objetivos',
+        description: 'El progreso de un objetivo se calcula solo: (tareas con estado "Hecho" ÷ total de tareas vinculadas) × 100. No hay que actualizar el porcentaje manualmente. Si tenés 10 tareas en un objetivo y 4 están en "Hecho", el progreso es 40%.',
+      },
+      {
+        title: 'Cómo vincular tareas a un Objetivo',
+        description: 'Abrí el detalle de cualquier tarea y buscá el campo "Objetivo". Seleccioná el objetivo correspondiente. La tarea pasa a contar para el progreso del objetivo automáticamente.',
+      },
+      {
+        title: 'Estados de un Objetivo',
+        description: '"Activo" → en curso. "Completado" → meta alcanzada (botón "Completar" en la card). "Archivado" → descartado o pausado indefinidamente. Los objetivos completados y archivados se muestran en tabs separados para no saturar la vista principal.',
+      },
+      {
+        title: 'Diferencia entre Período y Objetivo',
+        description: 'Período = cuándo. Objetivo = qué meta perseguís. Una tarea puede pertenecer a un período Y a un objetivo al mismo tiempo. Ejemplo: la tarea "Diseñar logo" puede estar en el período "Semana del 9 al 16" y también vincular al objetivo "Branding 2026".',
       },
     ],
   },

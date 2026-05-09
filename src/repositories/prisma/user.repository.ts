@@ -98,20 +98,9 @@ export class PrismaUserRepository implements IUserRepository {
   async findByBusiness(businessId: string): Promise<User[]> {
     const rows = await prisma.userBusiness.findMany({
       where: { businessId, isActive: true },
-      include: {
-        user: {
-          include: {
-            teams: true,
-            memberships: { include: { business: true } },
-            locationAssignments: {
-              where: { location: { businessId } },
-              include: { location: true },
-            },
-          },
-        },
-      },
+      include: { user: { include } },
     });
-    return rows.map((r) => toDomain(r.user as unknown as PrismaUser));
+    return rows.map((r) => toDomain(r.user));
   }
 
   async findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]> {
@@ -242,8 +231,8 @@ export class PrismaUserRepository implements IUserRepository {
     await prisma.user.delete({ where: { id } });
   }
 
-  async setLocationAssignments(userId: string, assignments: LocationAssignmentInput[], businessId: string): Promise<void> {
-    await prisma.userLocation.deleteMany({ where: { userId, location: { businessId } } });
+  async setLocationAssignments(userId: string, assignments: LocationAssignmentInput[]): Promise<void> {
+    await prisma.userLocation.deleteMany({ where: { userId } });
     if (assignments.length > 0) {
       await prisma.userLocation.createMany({
         data: assignments.map((a) => ({

@@ -41,9 +41,14 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
   }
 
+  const toDateTime = (d: string | undefined | null) =>
+    d ? (d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
+
   const objective = await objectiveService.createObjective({
     ...body,
     name: body.name.trim(),
+    targetDate: toDateTime(body.targetDate),
+    dueDate: toDateTime(body.dueDate),
     businessId: user.businessId,
   });
 

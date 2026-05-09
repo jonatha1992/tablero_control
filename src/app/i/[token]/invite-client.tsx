@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { useAcceptInvite } from '@/hooks/mutations/use-accept-invite';
 import { Button } from '@/components/ui/button';
-import { Users, ArrowRight, Loader2, CheckCircle, AlertTriangle, LogIn, LogOut } from 'lucide-react';
+import { Users, ArrowRight, Loader2, CheckCircle, AlertTriangle, LogIn } from 'lucide-react';
 interface Props {
   token: string;
   businessName: string;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props) {
-  const { user, firebaseUser, isAuthenticated, loading, refreshProfile, signOut } = useAuth();
+  const { user, firebaseUser, isAuthenticated, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const accept = useAcceptInvite();
   const [error, setError] = useState('');
@@ -109,17 +109,6 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
                     </>
                   )}
                 </Button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await signOut();
-                    router.push(`/login?redirect=${redirectParam}`);
-                  }}
-                  className="flex w-full items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
-                >
-                  <LogOut className="h-3 w-3" />
-                  Usar otra cuenta
-                </button>
               </>
             )}
           </div>

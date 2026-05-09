@@ -73,6 +73,7 @@ function RegisterForm() {
     if (!trimmedName) errors.name = 'El nombre es obligatorio';
     if (!trimmedEmail) errors.email = 'El correo es obligatorio';
     else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
+    if (!trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
     if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
     if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
 

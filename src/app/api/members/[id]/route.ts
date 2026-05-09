@@ -5,7 +5,6 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { can, assertSameTenant } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
-import { prisma } from '@/lib/prisma';
 
 export const PATCH = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -26,7 +25,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const data = await request.json();
 
   if (data.reactivate === true) {
-    await teamService.reactivateMember(id, operatingBusinessId);
+    if (!target.businessId) {
+      return NextResponse.json({ error: 'No business' }, { status: 400 });
+    }
+    await teamService.reactivateMember(id, target.businessId);
     await writeAuditLog({
       actorId: user.uid,
       actorRole: user.role,
@@ -43,20 +45,12 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     if (user.role !== 'superadmin' && data.role === 'superadmin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    await teamService.changeRole(id, operatingBusinessId, data.role);
-  }
-
-  if (data.locationAssignments?.length) {
-    const locationIds = (data.locationAssignments as { locationId: string }[]).map((a) => a.locationId);
-    const validCount = await prisma.location.count({
-      where: { id: { in: locationIds }, businessId: operatingBusinessId },
-    });
-    if (validCount !== locationIds.length) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    if (target.businessId) {
+      await teamService.changeRole(id, target.businessId, data.role);
     }
   }
 
-  const member = await teamService.updateMember(id, data, operatingBusinessId);
+  const member = await teamService.updateMember(id, data);
 
   await writeAuditLog({
     actorId: user.uid,

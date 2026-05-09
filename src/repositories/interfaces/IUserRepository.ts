@@ -14,7 +14,7 @@ export interface IUserRepository {
   create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<User>;
   update(id: string, data: Partial<User>): Promise<User>;
   updateRole(id: string, role: UserRole): Promise<void>;
-  setLocationAssignments(userId: string, assignments: LocationAssignmentInput[], businessId: string): Promise<void>;
+  setLocationAssignments(userId: string, assignments: LocationAssignmentInput[]): Promise<void>;
   deactivate(id: string): Promise<void>;
   reactivate(id: string): Promise<void>;
   delete(id: string): Promise<void>;

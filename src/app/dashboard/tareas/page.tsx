@@ -61,39 +61,39 @@ export default function TareasPage() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
 
-      {/* Barra superior: selector de proyecto — solo visible si hay proyectos */}
+      {/* Selector de proyecto — solo si hay proyectos */}
       {projects.length > 0 && (
-      <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[220px]">
-              <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">
-                {selectedProjectId
-                  ? projects.find((p) => p.id === selectedProjectId)?.name ?? 'Tablero'
-                  : 'Todas las tareas'}
-              </span>
-              <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-w-[260px]">
-            <DropdownMenuItem onClick={() => setSelectedProjectId('')}>
-              <span className={cn('flex-1', !selectedProjectId && 'font-medium')}>Todas las tareas</span>
-            </DropdownMenuItem>
-            {projects.map((project) => (
-              <DropdownMenuItem key={project.id} onClick={() => setSelectedProjectId(project.id)}>
-                <span className={cn('flex-1 truncate', selectedProjectId === project.id && 'font-medium')}>
-                  {project.name}
+        <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[220px]">
+                <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {selectedProjectId
+                    ? projects.find((p) => p.id === selectedProjectId)?.name ?? 'Tablero'
+                    : 'Todas las tareas'}
                 </span>
-                <span className="text-xs text-muted-foreground ml-2 shrink-0">{project._count?.tasks ?? 0}</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-w-[260px]">
+              <DropdownMenuItem onClick={() => setSelectedProjectId('')}>
+                <span className={cn('flex-1', !selectedProjectId && 'font-medium')}>Todas las tareas</span>
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              {projects.map((project) => (
+                <DropdownMenuItem key={project.id} onClick={() => setSelectedProjectId(project.id)}>
+                  <span className={cn('flex-1 truncate', selectedProjectId === project.id && 'font-medium')}>
+                    {project.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2 shrink-0">{project._count?.tasks ?? 0}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )}
 
-      {/* Sprint tabs (metodología Scrum) */}
+      {/* Sprint tabs */}
       <div className="shrink-0 flex items-center gap-1 px-4 py-1.5 border-b bg-muted/20">
         <Timer className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
 
@@ -170,8 +170,8 @@ export default function TareasPage() {
         )}
       </div>
 
-      {/* Kanban board */}
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      {/* Kanban board — handles its own modals internally */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         <KanbanBoard tasks={tasks} />
       </div>
     </div>
