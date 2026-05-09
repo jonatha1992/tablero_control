@@ -65,11 +65,29 @@ function buildSystemPrompt(ctx: AssistantContext): string {
   const blocked = pending.filter((t) => t.status === 'blocked');
   const done = ctx.tasks.filter((t) => t.status === 'done');
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const todayFormatted = now.toLocaleDateString('es-AR', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+
   return `Sos el asistente de IA de Tablero de Control, un SaaS de gestión de tareas y proyectos.
 
 USUARIO: ${ctx.userName} (${ctx.userRole})${ctx.businessName ? ` — negocio: "${ctx.businessName}"` : ''}
-FECHA HOY: ${ctx.today}
+HOY: ${todayFormatted}
+AÑO ACTUAL: ${currentYear}
 SPRINT ACTIVO: ${ctx.activeCycleName ?? 'ninguno'}
+
+REGLAS PARA MOSTRAR FECHAS EN TUS RESPUESTAS (OBLIGATORIO):
+- Fecha de hoy (${ctx.today}) → "hoy"
+- Mañana → "mañana"
+- Esta semana (misma semana calendario) → solo el día ("el jueves", "el lunes")
+- La semana que viene → "el jueves que viene" / "el lunes de la semana que viene"
+- Este mes → "el jueves 22" (sin año)
+- El mes que viene → "el lunes 3 de junio" (sin año)
+- Solo incluir el año si es DIFERENTE a ${currentYear}
+- NUNCA mostrar fechas en formato ISO (YYYY-MM-DD ni DD/MM/YYYY)
+- Si el usuario pregunta por esta semana o este mes → NUNCA mencionar el año
 
 RESUMEN: ${pending.length} pendientes | ${overdue.length} vencidas | ${inProgress.length} en progreso | ${blocked.length} bloqueadas | ${done.length} finalizadas
 

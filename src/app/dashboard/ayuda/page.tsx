@@ -146,6 +146,33 @@ const SECTIONS: Section[] = [
       },
     ],
   },
+  {
+    id: 'notificaciones-push',
+    title: 'Notificaciones push',
+    emoji: '🔔',
+    subsections: [
+      {
+        title: '¿Qué son las notificaciones push?',
+        description: 'Son alertas que aparecen en tu sistema operativo, incluso con la pestaña cerrada. Se usan para avisar sobre tareas asignadas, menciones y cambios de estado.',
+      },
+      {
+        title: 'Compatibilidad con navegadores',
+        description: 'Chrome y Edge: funcionan sin configuración adicional. Brave: funciona si activás "Usar servicios de Google para push" en Configuración → Privacidad. Firefox y Safari: no compatibles con el sistema de notificaciones actual.',
+      },
+      {
+        title: 'Múltiples dispositivos',
+        description: 'Cada dispositivo donde iniciás sesión y activás las notificaciones queda registrado por separado. Si usás el dashboard en la PC y en el celular, las alertas llegan a ambos simultáneamente.',
+      },
+      {
+        title: 'Cómo activar las notificaciones',
+        description: 'Ir a Configuración → Notificaciones → Activar notificaciones push. El navegador pedirá permiso. Si lo rechazaste antes, debés habilitarlo manualmente desde el ícono de candado en la barra de direcciones.',
+      },
+      {
+        title: 'Las notificaciones no llegan',
+        description: 'Verificá: (1) que el navegador tenga permiso concedido, (2) que no estés en modo incógnito, (3) que tengas conexión a internet al momento de activarlas. Si el problema persiste, desactivá y volvé a activar desde Configuración.',
+      },
+    ],
+  },
 ];
 
 function AccordionSection({ section }: { section: Section }) {
@@ -210,6 +237,15 @@ export default function AyudaPage() {
         <p className="text-xs text-muted-foreground text-center pt-4">
           ¿Encontraste un problema? Contactá al soporte desde el chat del asistente IA.
         </p>
+
+        <div className="flex justify-center gap-4 pt-2">
+          <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline">
+            Términos y condiciones
+          </a>
+          <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline">
+            Política de privacidad
+          </a>
+        </div>
       </div>
     </div>
   );

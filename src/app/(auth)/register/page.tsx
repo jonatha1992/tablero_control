@@ -282,6 +282,12 @@ function RegisterForm() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            Al crear una cuenta aceptás los{' '}
+            <Link href="/terminos" className="underline underline-offset-4 hover:text-foreground transition-colors">Términos y Condiciones</Link>
+            {' '}y la{' '}
+            <Link href="/privacidad" className="underline underline-offset-4 hover:text-foreground transition-colors">Política de Privacidad</Link>.
+          </p>
           <p className="text-center text-sm text-muted-foreground">
             ¿Ya tenés cuenta?{' '}
             <Link href="/login" className="text-primary underline hover:text-primary/80">

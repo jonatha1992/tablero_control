@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Bot, ListTodo, Send, Sparkles } from 'lucide-react';
+import { Bot, ListTodo, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAssistantChat } from '@/hooks/mutations/use-assistant-chat';
 import { DictateTasksContent } from '@/components/tareas/dictate-tasks-modal';
@@ -24,12 +24,41 @@ const SUGGESTIONS = [
 export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
   const [tab, setTab] = useState<Tab>('assistant');
   const [input, setInput] = useState('');
+  const [isMuted, setIsMuted] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('ai_panel_muted') === 'true';
+  });
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevMsgLenRef = useRef(0);
   const { messages, send, clear, isPending } = useAssistantChat();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isPending]);
+
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (
+      tab === 'assistant' &&
+      messages.length > prevMsgLenRef.current &&
+      lastMsg?.role === 'assistant' &&
+      !isMuted
+    ) {
+      const utterance = new SpeechSynthesisUtterance(lastMsg.content);
+      utterance.lang = 'es-AR';
+      utterance.rate = 1.1;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+    prevMsgLenRef.current = messages.length;
+  }, [messages, isMuted, tab]);
+
+  const toggleMute = () => {
+    const next = !isMuted;
+    setIsMuted(next);
+    localStorage.setItem('ai_panel_muted', String(next));
+    if (next) window.speechSynthesis.cancel();
+  };
 
   const handleSend = async (text?: string) => {
     const msg = text ?? input.trim();
@@ -40,6 +69,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
 
   const handleClose = () => {
     if (isPending) return;
+    window.speechSynthesis.cancel();
     clear();
     setInput('');
     setTab('assistant');
@@ -55,7 +85,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
         <DialogHeader className="px-4 pt-3 pb-0 shrink-0">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
-            <DialogTitle className="text-base">Asistente IA</DialogTitle>
+            <DialogTitle className="text-base flex-1">Asistente IA</DialogTitle>
+            <button
+              onClick={toggleMute}
+              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title={isMuted ? 'Activar audio' : 'Silenciar'}
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
           </div>
 
           {/* Tabs */}

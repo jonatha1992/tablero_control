@@ -204,6 +204,16 @@ function LoginForm() {
               Registrate
             </Link>
           </p>
+
+          <div className="mt-4 flex justify-center gap-3">
+            <Link href="/terminos" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors">
+              Términos
+            </Link>
+            <span className="text-xs text-muted-foreground">·</span>
+            <Link href="/privacidad" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors">
+              Privacidad
+            </Link>
+          </div>
         </div>
       </div>
     </div>
