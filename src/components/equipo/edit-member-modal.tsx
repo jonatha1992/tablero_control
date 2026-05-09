@@ -262,7 +262,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               />
               <Lock className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
             </div>
-          </DialogHeader>
+          </div>
 
           {/* Global Role */}
           <div className="space-y-1.5">
@@ -472,49 +472,6 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
         </form>
       </DialogContent>
     </Dialog>
-
-            {error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            )}
-
-            <DialogFooter className="gap-2 sm:justify-between pt-1">
-              {onRemove && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setConfirmDelete(true)}
-                  disabled={isPending}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Eliminar
-                </Button>
-              )}
-              <div className="flex gap-2 sm:ml-auto">
-                <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isPending}>
-                  <X className="mr-1.5 h-3.5 w-3.5" />
-                  Cancelar
-                </Button>
-                <Button type="submit" size="sm" disabled={isPending}>
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-1.5 h-3.5 w-3.5" />
-                      Guardar cambios
-                    </>
-                  )}
-                </Button>
-              </div>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {member && onRemove && (
         <ConfirmDialog
