@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserRole } from '@prisma/client';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
@@ -48,10 +49,13 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { businessId, locationId, maxUses = 0, expiresInDays = 7 } = body;
+  const { businessId, locationId, maxUses = 0, expiresInDays = 7, role: bodyRole } = body;
   if (!businessId) {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
   }
+
+  const validRoles: UserRole[] = ['miembro', 'responsable', 'viewer', 'admin', 'pending'];
+  const inviteRole: UserRole = validRoles.includes(bodyRole as UserRole) ? (bodyRole as UserRole) : 'miembro';
 
   assertSameTenant(user.data, { businessId });
 
@@ -62,7 +66,7 @@ export const POST = handle(async (request: NextRequest) => {
   const invite = await prisma.businessInvite.create({
     data: {
       businessId,
-      role: 'pending',
+      role: inviteRole,
       locationId: locationId || null,
       maxUses: Math.max(0, maxUses),
       expiresAt,
@@ -78,7 +82,7 @@ export const POST = handle(async (request: NextRequest) => {
     action: 'invite_link.create',
     targetType: 'BUSINESS_INVITE',
     targetId: invite.id,
-    metadata: { role: 'pending', maxUses, expiresInDays },
+    metadata: { role: inviteRole, maxUses, expiresInDays },
   });
 
   const link = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/i/${invite.id}`;
