@@ -22,9 +22,9 @@ export const GET = handle(async (request: NextRequest) => {
   return NextResponse.json(cycles);
 });
 
-function toDateTime(d: string | undefined | null): string | undefined {
+function toDateTime(d: string | undefined | null): Date | undefined {
   if (!d) return undefined;
-  return d.includes('T') ? d : `${d}T00:00:00.000Z`;
+  return new Date(d.includes('T') ? d : `${d}T00:00:00.000Z`);
 }
 
 export const POST = handle(async (request: NextRequest) => {
@@ -34,10 +34,12 @@ export const POST = handle(async (request: NextRequest) => {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const cycle = await cycleService.createCycle({
-    ...body,
-    startDate: toDateTime(body.startDate),
-    endDate: toDateTime(body.endDate),
+    name: body.name as string,
+    goal: body.goal as string | undefined,
     businessId: user.businessId ?? '',
+    status: (body.status as string | undefined) === 'active' ? 'active' : 'planning',
+    startDate: toDateTime(body.startDate as string | null),
+    endDate: toDateTime(body.endDate as string | null),
   });
 
   await writeAuditLog({

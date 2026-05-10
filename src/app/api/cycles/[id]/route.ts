@@ -28,10 +28,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const { _action, ...data } = body;
 
-  const toDateTime = (d: string | undefined | null) =>
-    d ? (d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
-  if (data.startDate !== undefined) data.startDate = toDateTime(data.startDate);
-  if (data.endDate !== undefined) data.endDate = toDateTime(data.endDate);
+  const toDateTime = (d: string | undefined | null): Date | undefined =>
+    d ? new Date(d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
+  if (data.startDate !== undefined) data.startDate = toDateTime(data.startDate as string | null) as unknown;
+  if (data.endDate !== undefined) data.endDate = toDateTime(data.endDate as string | null) as unknown;
 
   const cycle = await cycleService.getCycleById(id);
   if (!cycle) {

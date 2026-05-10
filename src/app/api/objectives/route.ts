@@ -36,14 +36,14 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
   }
 
-  const toDateTime = (d: string | undefined | null) =>
-    d ? (d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
+  const toDateTime = (d: string | undefined | null): Date | undefined =>
+    d ? new Date(d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
 
   const objective = await objectiveService.createObjective({
-    ...body,
     name: body.name.trim(),
-    targetDate: toDateTime(body.targetDate),
-    dueDate: toDateTime(body.dueDate),
+    description: typeof body.description === 'string' ? body.description : undefined,
+    color: typeof body.color === 'string' ? body.color : undefined,
+    targetDate: toDateTime(body.targetDate as string | null),
     businessId: user.businessId,
   });
 
