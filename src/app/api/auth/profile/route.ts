@@ -35,7 +35,7 @@ export const GET = handle(async (request: NextRequest) => {
           }
         } catch (e) {
           console.error('[profile] updateId failed:', e);
-          return NextResponse.json({ error: 'uid_sync_failed' }, { status: 500 });
+          user = existingByEmail;
         }
       }
     }

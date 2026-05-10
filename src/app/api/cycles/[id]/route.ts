@@ -24,7 +24,8 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (user instanceof NextResponse) return user;
 
   const { id } = await params;
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const { _action, ...data } = body;
 
   const toDateTime = (d: string | undefined | null) =>

@@ -61,7 +61,9 @@ export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  const { dto, creatorId, businessId } = await request.json();
+  let body: { dto: unknown; creatorId?: string; businessId?: string };
+  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const { dto, creatorId, businessId } = body;
   const effectiveBusinessId = businessId ?? user.businessId;
   if (!effectiveBusinessId) {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
@@ -99,15 +101,15 @@ export const POST = handle(async (request: NextRequest) => {
           body: `${assignerName} te asignó la tarea "${task.title}"`,
           type: 'task_assigned',
           link: '/dashboard/tareas',
-        }).catch(() => {});
+        }).catch((err) => console.error('[notify-error]', err));
         // Email solo si tiene preferencia activa
         if (prefs?.notifications?.email !== false) {
           import('@/services/mail.service').then(({ MailService }) => {
-            MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch(() => {});
+            MailService.sendTaskAssignedEmail(assignee.email, task.title, assignerName).catch((err) => console.error('[mail-error]', err));
           });
         }
       }
-    }).catch(() => {});
+    }).catch((err) => console.error('[notify-query-error]', err));
   }
 
   return NextResponse.json(task, { status: 201 });

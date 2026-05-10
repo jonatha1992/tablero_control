@@ -31,7 +31,8 @@ export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const cycle = await cycleService.createCycle({
     ...body,
     startDate: toDateTime(body.startDate),

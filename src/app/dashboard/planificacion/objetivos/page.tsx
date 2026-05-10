@@ -99,9 +99,8 @@ export default function ObjetivosPage() {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (targetDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (new Date(targetDate) < today) {
+      const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD en zona local
+      if (targetDate < todayStr) {
         setDateError('La fecha objetivo no puede ser anterior a hoy');
         return;
       }

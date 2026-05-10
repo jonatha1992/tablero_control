@@ -101,13 +101,12 @@ describe('POST /api/objectives', () => {
     expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ businessId: 'biz-1' }));
   });
 
-  it('retorna 500 si nombre vacío lanza error de servicio', async () => {
-    mockCreate.mockRejectedValueOnce(new Error('El nombre del objetivo es requerido'));
+  it('retorna 400 si nombre vacío', async () => {
     const req = new NextRequest('http://localhost/api/objectives', {
       method: 'POST',
       body: JSON.stringify({ name: '' }),
     });
     const res = await POST(req);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(400);
   });
 });
