@@ -62,7 +62,14 @@ export const usePushNotifications = () => {
       }
 
       const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-      const currentToken = await getToken(m, { vapidKey });
+      let swReg: ServiceWorkerRegistration | undefined;
+      try {
+        swReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')
+          ?? await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      } catch {
+        // fallback: let Firebase auto-discover
+      }
+      const currentToken = await getToken(m, { vapidKey, serviceWorkerRegistration: swReg });
 
       if (currentToken) {
         const authToken = await getFirebaseAuthToken();

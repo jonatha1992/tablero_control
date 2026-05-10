@@ -128,7 +128,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
         <DialogHeader>
           <div className="pr-6">
             <div className="flex items-center gap-2 mb-0.5">
@@ -551,9 +552,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
 
-        {/* Save/Cancel — always at bottom when editing */}
+        </div>
+
+        {/* Save/Cancel footer — outside scroll area, always visible */}
         {editing && (
-          <div className="flex gap-2 pt-3 border-t sticky bottom-0 bg-background pb-1">
+          <div className="shrink-0 flex gap-2 px-6 py-3 border-t bg-background">
             <Button size="sm" onClick={handleSave} disabled={updateTask.isPending} className="gap-1.5">
               <Save className="h-3.5 w-3.5" />
               {updateTask.isPending ? 'Guardando...' : 'Guardar'}

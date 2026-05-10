@@ -6,6 +6,14 @@ interface AssistantResponse {
   message: string;
 }
 
+export interface GeneratePlanResponse {
+  type: 'cycle' | 'objective';
+  name: string;
+  id: string;
+  tasksCreated: number;
+  taskTitles: string[];
+}
+
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers = new Headers(init?.headers);
@@ -21,5 +29,15 @@ export const assistantApi = {
     fetchJsonAuth<AssistantResponse>('/api/assistant/chat', {
       method: 'POST',
       body: JSON.stringify({ messages }),
+    }),
+  generatePlan: (type: 'cycle' | 'objective', description: string) =>
+    fetchJsonAuth<GeneratePlanResponse>('/api/assistant/generate-plan', {
+      method: 'POST',
+      body: JSON.stringify({ type, description }),
+    }),
+  previewPlan: (type: 'cycle' | 'objective', description: string) =>
+    fetchJsonAuth<{ type: 'cycle' | 'objective'; description: string; plan: import('@/lib/groq/generate-plan').GeneratedPlan }>('/api/assistant/preview-plan', {
+      method: 'POST',
+      body: JSON.stringify({ type, description }),
     }),
 };
