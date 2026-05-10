@@ -28,10 +28,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const body = await request.json();
   const { _action, ...data } = body;
 
-  const toDateTime = (d: string | undefined | null) =>
-    d ? (d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
-  if (data.targetDate !== undefined) data.targetDate = toDateTime(data.targetDate);
-  if (data.dueDate !== undefined) data.dueDate = toDateTime(data.dueDate);
+  const toDateTime = (d: string | undefined | null): Date | undefined =>
+    d ? new Date(d.includes('T') ? d : `${d}T00:00:00.000Z`) : undefined;
+  if (data.targetDate !== undefined) data.targetDate = toDateTime(data.targetDate as string | null) as unknown;
+  if (data.dueDate !== undefined) data.dueDate = toDateTime(data.dueDate as string | null) as unknown;
 
   const objective = await objectiveService.getObjectiveById(id);
   if (!objective) {

@@ -1,0 +1,171 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - link "Tablero de Control Tablero Control" [ref=e18] [cursor=pointer]:
+              - /url: /
+              - img "Tablero de Control" [ref=e19]
+              - generic [ref=e20]: Tablero Control
+            - button [ref=e21]:
+              - img [ref=e22]
+          - navigation [ref=e24]:
+            - link "Dashboard" [ref=e26] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e27]
+              - generic [ref=e32]: Dashboard
+            - link "Tareas" [ref=e34] [cursor=pointer]:
+              - /url: /dashboard/tareas
+              - img [ref=e35]
+              - generic [ref=e38]: Tareas
+            - link "Equipo" [ref=e40] [cursor=pointer]:
+              - /url: /dashboard/equipo
+              - img [ref=e41]
+              - generic [ref=e46]: Equipo
+            - link "Reportes" [ref=e48] [cursor=pointer]:
+              - /url: /dashboard/reportes
+              - img [ref=e49]
+              - generic [ref=e50]: Reportes
+            - link "Facturación" [ref=e52] [cursor=pointer]:
+              - /url: /dashboard/billing
+              - img [ref=e53]
+              - generic [ref=e55]: Facturación
+            - link "Configuración" [ref=e57] [cursor=pointer]:
+              - /url: /dashboard/config
+              - img [ref=e58]
+              - generic [ref=e61]: Configuración
+            - link "Ayuda" [ref=e63] [cursor=pointer]:
+              - /url: /dashboard/ayuda
+              - img [ref=e64]
+              - generic [ref=e67]: Ayuda
+            - generic [ref=e68]:
+              - paragraph [ref=e69]: Administración
+              - generic [ref=e70]:
+                - link "Plataforma" [ref=e71] [cursor=pointer]:
+                  - /url: /superadmin
+                  - img [ref=e72]
+                  - generic [ref=e75]: Plataforma
+                - link "Negocios" [ref=e76] [cursor=pointer]:
+                  - /url: /superadmin/businesses
+                  - img [ref=e77]
+                  - generic [ref=e81]: Negocios
+                - link "Usuarios" [ref=e82] [cursor=pointer]:
+                  - /url: /superadmin/users
+                  - img [ref=e83]
+                  - generic [ref=e88]: Usuarios
+                - link "Suscripciones" [ref=e89] [cursor=pointer]:
+                  - /url: /superadmin/subscriptions
+                  - img [ref=e90]
+                  - generic [ref=e92]: Suscripciones
+                - link "Planes" [ref=e93] [cursor=pointer]:
+                  - /url: /superadmin/planes
+                  - img [ref=e94]
+                  - generic [ref=e95]: Planes
+                - link "Auditoría" [ref=e96] [cursor=pointer]:
+                  - /url: /superadmin/audit
+                  - img [ref=e97]
+                  - generic [ref=e100]: Auditoría
+          - paragraph [ref=e102]: v0.1.0 · 3c3f753
+      - generic [ref=e103]:
+        - banner [ref=e104]:
+          - heading "Objetivos" [level=1] [ref=e107]
+          - generic [ref=e108]:
+            - button "Instalar app" [ref=e203]:
+              - img [ref=e204]
+              - text: Instalar app
+            - link [ref=e109] [cursor=pointer]:
+              - /url: /dashboard/ayuda
+              - button "Ayuda" [ref=e110]:
+                - img [ref=e111]
+            - button "Notificaciones" [ref=e115]:
+              - img [ref=e116]
+            - button "Negocio de TecnoFusión SuperAdmin" [ref=e119]:
+              - img [ref=e120]
+              - generic [ref=e124]: Negocio de TecnoFusión SuperAdmin
+              - img [ref=e125]
+            - generic [ref=e127]:
+              - img "TecnoFusión Admin" [ref=e129]
+              - generic [ref=e130]:
+                - generic [ref=e131]: TecnoFusión Admin
+                - generic [ref=e132]: Super Admin
+            - button "Cerrar sesión" [ref=e133]:
+              - img [ref=e134]
+        - main [ref=e137]:
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - heading "Objetivos" [level=1] [ref=e140]
+              - button "Nuevo objetivo" [ref=e141]:
+                - img [ref=e142]
+                - text: Nuevo objetivo
+            - generic [ref=e143]:
+              - button "Activos 0" [ref=e144]:
+                - text: Activos
+                - generic [ref=e145]: "0"
+              - button "Completados 0" [ref=e146]:
+                - text: Completados
+                - generic [ref=e147]: "0"
+              - button "Archivados 0" [ref=e148]:
+                - text: Archivados
+                - generic [ref=e149]: "0"
+              - button "Todos 0" [ref=e150]:
+                - text: Todos
+                - generic [ref=e151]: "0"
+            - generic [ref=e152]:
+              - img [ref=e153]
+              - paragraph [ref=e157]: Sin objetivos activo.
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - heading "Nuevo objetivo" [level=2] [ref=e161]
+                - button [ref=e162]:
+                  - img [ref=e163]
+              - generic [ref=e166]:
+                - generic [ref=e167]:
+                  - generic [ref=e168]: Nombre
+                  - 'textbox "Ej: Apertura Sucursal Palermo" [ref=e169]': Objetivo de prueba producción
+                - generic [ref=e170]:
+                  - generic [ref=e171]: Descripción (opcional)
+                  - 'textbox "Ej: Completar todos los pasos para abrir la nueva sucursal" [ref=e172]'
+                - generic [ref=e173]:
+                  - generic [ref=e174]:
+                    - generic [ref=e175]: Color
+                    - textbox [ref=e176]: "#3b82f6"
+                  - generic [ref=e177]:
+                    - generic [ref=e178]: Fecha objetivo
+                    - textbox [ref=e179]: 2026-05-15
+                - paragraph [ref=e207]: "{\"error\":\"Sin permisos para crear objetivos\"}"
+                - generic [ref=e180]:
+                  - button "Cancelar" [ref=e181]
+                  - button "Crear objetivo" [ref=e182]
+        - contentinfo [ref=e183]:
+          - generic [ref=e184]:
+            - paragraph [ref=e185]: © 2026 Tablero de Control. Todos los derechos reservados.
+            - generic [ref=e186]:
+              - generic [ref=e187]: Hecho con
+              - img [ref=e188]
+              - generic [ref=e190]: por
+              - link "TecnoFusión.it" [ref=e191] [cursor=pointer]:
+                - /url: https://tecnofusion-it.web.app/
+                - text: TecnoFusión.it
+                - img [ref=e192]
+    - button "Asistente IA" [ref=e197]:
+      - img [ref=e198]
+  - button "Open Next.js Dev Tools" [ref=e11] [cursor=pointer]:
+    - img [ref=e12]
+  - alert [ref=e201]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e208]:
+        - button "Close toast" [ref=e209] [cursor=pointer]:
+          - img [ref=e210]
+        - img [ref=e214]
+        - generic [ref=e216]:
+          - generic [ref=e217]: Error al crear el objetivo
+          - generic [ref=e218]: "{\"error\":\"Sin permisos para crear objetivos\"}"
+      - listitem [ref=e219]:
+        - button "Close toast" [ref=e220] [cursor=pointer]:
+          - img [ref=e221]
+        - img [ref=e225]
+        - generic [ref=e227]:
+          - generic [ref=e228]: Acción no permitida
+          - generic [ref=e229]: Tu rol en este negocio no tiene permiso para realizar esta acción.
