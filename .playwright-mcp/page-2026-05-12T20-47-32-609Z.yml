@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - img "Tablero de Control" [ref=e19]
+      - heading "Crear Cuenta" [level=3] [ref=e20]
+      - paragraph [ref=e21]: Registrá tu negocio para acceder al tablero
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - text: Tu nombre
+          - textbox "Tu nombre" [ref=e25]:
+            - /placeholder: Juan García
+        - generic [ref=e26]:
+          - generic [ref=e27]: Nombre del negocio (opcional)
+          - textbox "Nombre del negocio (opcional)" [ref=e28]:
+            - /placeholder: Mi Empresa S.A.
+        - generic [ref=e29]:
+          - text: Correo
+          - textbox "Correo" [ref=e30]:
+            - /placeholder: tu@correo.com
+        - generic [ref=e31]:
+          - text: Contraseña
+          - textbox "Contraseña" [ref=e32]:
+            - /placeholder: Mínimo 6 caracteres
+        - generic [ref=e33]:
+          - text: Confirmar Contraseña
+          - textbox "Confirmar Contraseña" [ref=e34]:
+            - /placeholder: Repite la contraseña
+      - generic [ref=e35]:
+        - button "Crear cuenta" [ref=e36]
+        - paragraph [ref=e37]:
+          - text: Al crear una cuenta aceptás los
+          - link "Términos y Condiciones" [ref=e38] [cursor=pointer]:
+            - /url: /terminos
+          - text: y la
+          - link "Política de Privacidad" [ref=e39] [cursor=pointer]:
+            - /url: /privacidad
+          - text: .
+        - paragraph [ref=e40]:
+          - text: ¿Ya tenés cuenta?
+          - link "Iniciá sesión" [ref=e41] [cursor=pointer]:
+            - /url: /login
+  - button "Open Next.js Dev Tools" [ref=e12] [cursor=pointer]:
+    - img [ref=e13]
+  - alert [ref=e42]
+  - region "Notifications alt+T"

@@ -32,7 +32,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
+        <AuthProvider onSignOut={() => queryClient.clear()}>
           {children}
         </AuthProvider>
       </QueryClientProvider>

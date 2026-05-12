@@ -9,12 +9,11 @@ import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited } = useAuth();
   const router = useRouter();
@@ -33,22 +32,28 @@ function LoginForm() {
     setError('');
     setFieldErrors({});
 
-    const trimmedEmail = email.trim();
-    const errors: Record<string, string> = {};
-    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
-    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    const trimmed = loginInput.trim();
+    if (!trimmed) {
+      setFieldErrors({ login: 'El correo o usuario es obligatorio' });
       return;
     }
 
     setLoading(true);
     try {
-      await login(trimmedEmail, password);
+      let firebaseEmail = trimmed;
+      if (!trimmed.includes('@')) {
+        const res = await fetch(`/api/auth/resolve?login=${encodeURIComponent(trimmed)}`);
+        if (!res.ok) {
+          setError('Usuario no encontrado');
+          return;
+        }
+        const data = await res.json();
+        firebaseEmail = data.email;
+      }
+      await login(firebaseEmail, password);
       router.push(redirect);
     } catch (err) {
-      setError('Correo o contraseña incorrectos');
+      setError('Correo, usuario o contraseña incorrectos');
       console.error(err);
     } finally {
       setLoading(false);
@@ -163,18 +168,19 @@ function LoginForm() {
           {/* Formulario email/password */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">Correo</label>
+              <label htmlFor="login" className="text-sm font-medium">Correo o usuario</label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
+                id="login"
+                type="text"
+                value={loginInput}
+                onChange={(e) => setLoginInput(e.target.value)}
+                placeholder="tu@correo.com o nombre_usuario"
                 required
                 maxLength={150}
+                autoComplete="username"
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               />
-              {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
+              {fieldErrors.login && <p className="text-xs text-destructive mt-1">{fieldErrors.login}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">

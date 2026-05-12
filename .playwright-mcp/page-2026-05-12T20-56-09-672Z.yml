@@ -1,0 +1,273 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - generic:
+            - link:
+              - /url: /
+              - img
+              - generic: Tablero Control
+            - button:
+              - img
+          - navigation:
+            - generic:
+              - link:
+                - /url: /dashboard
+                - img
+                - generic: Dashboard
+            - generic:
+              - link:
+                - /url: /dashboard/tareas
+                - img
+                - generic: Tareas
+            - generic:
+              - link:
+                - /url: /dashboard/equipo
+                - img
+                - generic: Equipo
+              - generic:
+                - link:
+                  - /url: /dashboard/equipo
+                  - img
+                  - text: Miembros
+                - link:
+                  - /url: /dashboard/equipo/sectores
+                  - img
+                  - text: Sectores
+                - link:
+                  - /url: /dashboard/equipo/roles
+                  - img
+                  - text: Roles
+            - generic:
+              - link:
+                - /url: /dashboard/reportes
+                - img
+                - generic: Reportes
+            - generic:
+              - link:
+                - /url: /dashboard/billing
+                - img
+                - generic: Facturación
+            - generic:
+              - link:
+                - /url: /dashboard/config
+                - img
+                - generic: Configuración
+            - generic:
+              - link:
+                - /url: /dashboard/ayuda
+                - img
+                - generic: Ayuda
+            - generic:
+              - paragraph: Administración
+              - generic:
+                - link:
+                  - /url: /superadmin
+                  - img
+                  - generic: Plataforma
+                - link:
+                  - /url: /superadmin/businesses
+                  - img
+                  - generic: Negocios
+                - link:
+                  - /url: /superadmin/users
+                  - img
+                  - generic: Usuarios
+                - link:
+                  - /url: /superadmin/subscriptions
+                  - img
+                  - generic: Suscripciones
+                - link:
+                  - /url: /superadmin/planes
+                  - img
+                  - generic: Planes
+                - link:
+                  - /url: /superadmin/audit
+                  - img
+                  - generic: Auditoría
+          - generic:
+            - paragraph: v0.1.0 · 3e9de01
+      - generic:
+        - banner:
+          - generic:
+            - generic:
+              - heading [level=1]: Equipo
+          - generic:
+            - link:
+              - /url: /dashboard/ayuda
+              - button:
+                - img
+            - generic:
+              - button:
+                - img
+            - button:
+              - img
+              - generic: Negocio de TecnoFusión SuperAdmin
+              - img
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - generic: TecnoFusión Admin
+                - generic: Super Admin
+            - button:
+              - img
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - button:
+                  - img
+                  - text: Seleccionar
+                - button:
+                  - img
+                  - text: Link de invitación
+                - button:
+                  - img
+                  - text: Crear usuario
+              - generic:
+                - textbox:
+                  - /placeholder: Buscar por nombre o correo...
+                - combobox
+                - generic:
+                  - button: Todos
+                  - button: Administrador
+                  - button: Responsable
+                  - button: Miembro
+                  - button: Visualizador
+            - generic:
+              - generic:
+                - generic:
+                  - table:
+                    - rowgroup:
+                      - row:
+                        - columnheader: Usuario
+                        - columnheader: Rol
+                        - columnheader: Sector
+                        - columnheader: Estado
+                        - columnheader: Acciones
+                    - rowgroup:
+                      - row:
+                        - cell:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - img
+                            - generic:
+                              - paragraph: TecnoFusión Admin
+                              - paragraph: tecnofusion.it@gmail.com
+                        - cell:
+                          - generic: Super Admin
+                        - cell: —
+                        - cell: Activo
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                            - button:
+                              - img
+                      - row:
+                        - cell:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: UT
+                            - generic:
+                              - paragraph: Usuario Test
+                              - paragraph: usuario.test@tablero.local
+                        - cell:
+                          - generic: Miembro
+                        - cell: —
+                        - cell: Activo
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                            - button:
+                              - img
+                      - row:
+                        - cell:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: TL
+                            - generic:
+                              - paragraph: Test Login User
+                              - paragraph: testlogin@tablero.local
+                        - cell:
+                          - generic: Miembro
+                        - cell: —
+                        - cell: Activo
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                            - button:
+                              - img
+                            - button:
+                              - img
+              - generic:
+                - generic:
+                  - heading [level=3]:
+                    - img
+                    - text: Links de invitación
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: cmorw95eg000...
+                        - generic: Pendiente
+                        - generic:
+                          - img
+                          - text: Expirado
+                    - generic:
+                      - button:
+                        - img
+                      - button:
+                        - img
+        - contentinfo:
+          - generic:
+            - paragraph: © 2026 Tablero de Control. Todos los derechos reservados.
+            - generic:
+              - generic: Hecho con
+              - img
+              - generic: por
+              - link:
+                - /url: https://tecnofusion-it.web.app/
+                - text: TecnoFusión.it
+                - img
+    - generic:
+      - button:
+        - img
+  - button "Open Next.js Dev Tools" [ref=e11] [cursor=pointer]:
+    - img [ref=e12]
+  - alert
+  - region "Notifications alt+T"
+  - dialog "Usuario creado" [active] [ref=e366]:
+    - generic [ref=e293]:
+      - heading "Usuario creado" [level=2] [ref=e367]:
+        - img [ref=e368]
+        - text: Usuario creado
+      - paragraph [ref=e298]: El usuario ha sido registrado exitosamente en el sistema.
+    - generic [ref=e370]:
+      - paragraph [ref=e371]: "El usuario Test Login User fue creado correctamente. Compartile estas credenciales:"
+      - generic [ref=e372]:
+        - generic [ref=e373]:
+          - generic [ref=e374]: Usuario
+          - generic [ref=e375]: testlogin
+        - generic [ref=e376]:
+          - generic [ref=e377]: Contraseña
+          - generic [ref=e378]:
+            - generic [ref=e379]: Test1234!
+            - button "Copiar contraseña" [ref=e380]:
+              - img [ref=e381]
+      - paragraph [ref=e384]: Guardá esta contraseña ahora — no se podrá ver de nuevo.
+    - button "Listo" [ref=e386]
+    - button "Cerrar" [ref=e358]:
+      - img [ref=e359]
+      - generic [ref=e362]: Cerrar

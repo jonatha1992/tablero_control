@@ -1,0 +1,257 @@
+- generic [ref=e1]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - button "Open Next.js Dev Tools":
+                - img
+  - generic:
+    - alert
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - generic:
+            - link "Tablero de Control Tablero Control":
+              - /url: /
+              - img "Tablero de Control"
+              - generic: Tablero Control
+            - button:
+              - img
+          - navigation:
+            - link "Dashboard" [expanded] [ref=e49] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e50]
+              - generic [ref=e55]: Dashboard
+            - generic:
+              - link "Tareas":
+                - /url: /dashboard/tareas
+                - img
+                - generic: Tareas
+            - generic:
+              - link "Equipo":
+                - /url: /dashboard/equipo
+                - img
+                - generic: Equipo
+            - generic:
+              - link "Reportes":
+                - /url: /dashboard/reportes
+                - img
+                - generic: Reportes
+            - generic:
+              - link "Facturación":
+                - /url: /dashboard/billing
+                - img
+                - generic: Facturación
+            - generic:
+              - link "Configuración":
+                - /url: /dashboard/config
+                - img
+                - generic: Configuración
+            - generic:
+              - link "Ayuda":
+                - /url: /dashboard/ayuda
+                - img
+                - generic: Ayuda
+            - generic:
+              - paragraph: Administración
+              - generic:
+                - link "Plataforma":
+                  - /url: /superadmin
+                  - img
+                  - generic: Plataforma
+                - link "Negocios":
+                  - /url: /superadmin/businesses
+                  - img
+                  - generic: Negocios
+                - link "Usuarios":
+                  - /url: /superadmin/users
+                  - img
+                  - generic: Usuarios
+                - link "Suscripciones":
+                  - /url: /superadmin/subscriptions
+                  - img
+                  - generic: Suscripciones
+                - link "Planes":
+                  - /url: /superadmin/planes
+                  - img
+                  - generic: Planes
+                - link "Auditoría":
+                  - /url: /superadmin/audit
+                  - img
+                  - generic: Auditoría
+          - generic:
+            - paragraph: v0.1.0 · 3e9de01
+      - generic:
+        - banner:
+          - generic:
+            - generic:
+              - heading "Dashboard" [level=1]
+          - generic:
+            - button "Instalar app":
+              - img
+              - text: Instalar app
+            - link:
+              - /url: /dashboard/ayuda
+              - button "Ayuda":
+                - img
+            - generic:
+              - button "Notificaciones":
+                - img
+            - button "Negocio de TecnoFusión SuperAdmin":
+              - img
+              - generic: Negocio de TecnoFusión SuperAdmin
+              - img
+            - generic:
+              - generic:
+                - generic: TA
+              - generic:
+                - generic: TecnoFusión Admin
+                - generic: Super Admin
+            - button "Cerrar sesión":
+              - img
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - heading "Tareas Activas" [level=3]
+                - generic:
+                  - generic: —
+                  - paragraph:
+                    - img
+                    - text: Tareas activas
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - heading "Tareas Completadas" [level=3]
+                - generic:
+                  - generic: —
+                  - paragraph: Eficiencia histórica
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - heading "Bloqueadas" [level=3]
+                - generic:
+                  - generic: —
+                  - paragraph: Requieren atención
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - heading "Urgentes" [level=3]
+                - generic:
+                  - generic: —
+                  - paragraph: Prioridad inmediata
+            - generic:
+              - generic:
+                - heading "Análisis de Operaciones" [level=2]
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading "Burndown (7d)" [level=3]
+                      - paragraph: Trabajo restante vs ideal
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - application:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: mié 6
+                                    - generic:
+                                      - generic: vie 8
+                                    - generic:
+                                      - generic: dom 10
+                                    - generic:
+                                      - generic: mar 12
+                                  - generic:
+                                    - generic:
+                                      - generic: "0"
+                                    - generic:
+                                      - generic: "1"
+                                    - generic:
+                                      - generic: "2"
+                                    - generic:
+                                      - generic: "3"
+                                    - generic:
+                                      - generic: "4"
+                  - generic:
+                    - generic:
+                      - heading "Tendencia" [level=3]
+                      - paragraph: Resolución semanal
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - application:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: 13 abr
+                                    - generic:
+                                      - generic: 27 abr
+                                    - generic:
+                                      - generic: 11 may
+                                  - generic:
+                                    - generic:
+                                      - generic: "0"
+                                    - generic:
+                                      - generic: "1"
+                                    - generic:
+                                      - generic: "2"
+                                    - generic:
+                                      - generic: "3"
+                                    - generic:
+                                      - generic: "4"
+                  - generic:
+                    - generic:
+                      - heading "Distribución" [level=3]
+                      - paragraph: Estado actual global
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - application
+              - generic:
+                - heading "Resumen por Local/Sector" [level=2]
+                - generic:
+                  - generic:
+                    - generic:
+                      - paragraph: No hay datos disponibles.
+        - contentinfo:
+          - generic:
+            - paragraph: © 2026 Tablero de Control. Todos los derechos reservados.
+            - generic:
+              - generic: Hecho con
+              - img
+              - generic: por
+              - link "TecnoFusión.it":
+                - /url: https://tecnofusion-it.web.app/
+                - text: TecnoFusión.it
+                - img
+    - generic:
+      - button "Asistente IA":
+        - img
+  - region "Notifications alt+T"
+  - generic: "27"
+  - dialog "📊 Dashboard" [ref=e56]:
+    - button "Close" [active] [ref=e57] [cursor=pointer]: ×
+    - banner [ref=e59]: 📊 Dashboard
+    - generic [ref=e60]: "Vista general con métricas clave: tareas activas, completadas, bloqueadas y urgentes."
+    - contentinfo [ref=e61]:
+      - generic [ref=e62]: 1 de 8
+      - generic [ref=e63]:
+        - button "← Anterior" [disabled]
+        - button "Siguiente →" [ref=e64] [cursor=pointer]
+  - img

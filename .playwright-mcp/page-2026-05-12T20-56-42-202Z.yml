@@ -1,0 +1,122 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e11] [cursor=pointer]:
+    - img [ref=e12]
+  - alert [ref=e15]
+  - generic [ref=e452]:
+    - generic [ref=e453]:
+      - complementary [ref=e454]:
+        - generic [ref=e455]:
+          - generic [ref=e456]:
+            - link "Tablero de Control Tablero Control" [ref=e457] [cursor=pointer]:
+              - /url: /
+              - img "Tablero de Control" [ref=e458]
+              - generic [ref=e459]: Tablero Control
+            - button [ref=e460]:
+              - img [ref=e461]
+          - navigation [ref=e463]
+          - paragraph [ref=e465]: v0.1.0 · 3e9de01
+      - generic [ref=e466]:
+        - banner [ref=e467]:
+          - heading "Dashboard" [level=1] [ref=e470]
+          - generic [ref=e471]:
+            - button "Instalar app" [ref=e472]:
+              - img [ref=e473]
+              - text: Instalar app
+            - link [ref=e476] [cursor=pointer]:
+              - /url: /dashboard/ayuda
+              - button "Ayuda" [ref=e477]:
+                - img [ref=e478]
+            - generic [ref=e481]:
+              - generic [ref=e483]: U
+              - generic [ref=e485]: Usuario
+            - button "Cerrar sesión" [ref=e486]:
+              - img [ref=e487]
+        - main [ref=e490]:
+          - generic [ref=e491]:
+            - generic [ref=e492]:
+              - generic [ref=e493]:
+                - img [ref=e495]
+                - heading "Tareas Activas" [level=3] [ref=e499]
+                - generic [ref=e500]:
+                  - generic [ref=e501]: "0"
+                  - paragraph [ref=e502]:
+                    - img [ref=e503]
+                    - text: Tareas activas
+              - generic [ref=e506]:
+                - img [ref=e508]
+                - heading "Tareas Completadas" [level=3] [ref=e512]
+                - generic [ref=e513]:
+                  - generic [ref=e514]: "0"
+                  - paragraph [ref=e515]: Eficiencia histórica
+              - generic [ref=e516]:
+                - img [ref=e518]
+                - heading "Bloqueadas" [level=3] [ref=e521]
+                - generic [ref=e522]:
+                  - generic [ref=e523]: "0"
+                  - paragraph [ref=e524]: Requieren atención
+              - generic [ref=e525]:
+                - img [ref=e527]
+                - heading "Urgentes" [level=3] [ref=e530]
+                - generic [ref=e531]:
+                  - generic [ref=e532]: "0"
+                  - paragraph [ref=e533]: Prioridad inmediata
+            - generic [ref=e534]:
+              - generic [ref=e535]:
+                - heading "Análisis de Operaciones" [level=2] [ref=e536]
+                - generic [ref=e537]:
+                  - generic [ref=e538]:
+                    - generic [ref=e539]:
+                      - heading "Burndown (7d)" [level=3] [ref=e540]
+                      - paragraph [ref=e541]: Trabajo restante vs ideal
+                    - application [ref=e546]:
+                      - generic [ref=e559]:
+                        - generic [ref=e560]:
+                          - generic [ref=e562]: mié 6
+                          - generic [ref=e564]: vie 8
+                          - generic [ref=e566]: dom 10
+                          - generic [ref=e568]: mar 12
+                        - generic [ref=e569]:
+                          - generic [ref=e571]: "0"
+                          - generic [ref=e573]: "1"
+                          - generic [ref=e575]: "2"
+                          - generic [ref=e577]: "3"
+                          - generic [ref=e579]: "4"
+                  - generic [ref=e580]:
+                    - generic [ref=e581]:
+                      - heading "Tendencia" [level=3] [ref=e582]
+                      - paragraph [ref=e583]: Resolución semanal
+                    - application [ref=e588]:
+                      - generic [ref=e592]:
+                        - generic [ref=e593]:
+                          - generic [ref=e595]: 13 abr
+                          - generic [ref=e597]: 27 abr
+                          - generic [ref=e599]: 11 may
+                        - generic [ref=e600]:
+                          - generic [ref=e602]: "0"
+                          - generic [ref=e604]: "1"
+                          - generic [ref=e606]: "2"
+                          - generic [ref=e608]: "3"
+                          - generic [ref=e610]: "4"
+                  - generic [ref=e611]:
+                    - generic [ref=e612]:
+                      - heading "Distribución" [level=3] [ref=e613]
+                      - paragraph [ref=e614]: Estado actual global
+                    - application [ref=e620]
+              - generic [ref=e621]:
+                - heading "Resumen por Local/Sector" [level=2] [ref=e622]
+                - paragraph [ref=e626]: No hay datos disponibles.
+        - contentinfo [ref=e627]:
+          - generic [ref=e628]:
+            - paragraph [ref=e629]: © 2026 Tablero de Control. Todos los derechos reservados.
+            - generic [ref=e630]:
+              - generic [ref=e631]: Hecho con
+              - img [ref=e632]
+              - generic [ref=e634]: por
+              - link "TecnoFusión.it" [ref=e635] [cursor=pointer]:
+                - /url: https://tecnofusion-it.web.app/
+                - text: TecnoFusión.it
+                - img [ref=e636]
+    - button "Asistente IA" [ref=e641]:
+      - img [ref=e642]
+  - region "Notifications alt+T"
+  - generic [ref=e645]: "27"

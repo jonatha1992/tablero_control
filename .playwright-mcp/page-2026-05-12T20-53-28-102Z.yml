@@ -1,0 +1,208 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - link "Tablero de Control Tablero Control" [ref=e19] [cursor=pointer]:
+              - /url: /
+              - img "Tablero de Control" [ref=e20]
+              - generic [ref=e21]: Tablero Control
+            - button [ref=e22]:
+              - img [ref=e23]
+          - navigation [ref=e25]:
+            - link "Dashboard" [ref=e27] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e28]
+              - generic [ref=e33]: Dashboard
+            - link "Tareas" [ref=e35] [cursor=pointer]:
+              - /url: /dashboard/tareas
+              - img [ref=e36]
+              - generic [ref=e39]: Tareas
+            - generic [ref=e40]:
+              - link "Equipo" [ref=e41] [cursor=pointer]:
+                - /url: /dashboard/equipo
+                - img [ref=e42]
+                - generic [ref=e47]: Equipo
+              - generic [ref=e48]:
+                - link "Miembros" [ref=e49] [cursor=pointer]:
+                  - /url: /dashboard/equipo
+                  - img [ref=e50]
+                  - text: Miembros
+                - link "Sectores" [ref=e55] [cursor=pointer]:
+                  - /url: /dashboard/equipo/sectores
+                  - img [ref=e56]
+                  - text: Sectores
+                - link "Roles" [ref=e60] [cursor=pointer]:
+                  - /url: /dashboard/equipo/roles
+                  - img [ref=e61]
+                  - text: Roles
+            - link "Reportes" [ref=e65] [cursor=pointer]:
+              - /url: /dashboard/reportes
+              - img [ref=e66]
+              - generic [ref=e67]: Reportes
+            - link "Facturación" [ref=e69] [cursor=pointer]:
+              - /url: /dashboard/billing
+              - img [ref=e70]
+              - generic [ref=e72]: Facturación
+            - link "Configuración" [ref=e74] [cursor=pointer]:
+              - /url: /dashboard/config
+              - img [ref=e75]
+              - generic [ref=e78]: Configuración
+            - link "Ayuda" [ref=e80] [cursor=pointer]:
+              - /url: /dashboard/ayuda
+              - img [ref=e81]
+              - generic [ref=e84]: Ayuda
+            - generic [ref=e85]:
+              - paragraph [ref=e86]: Administración
+              - generic [ref=e87]:
+                - link "Plataforma" [ref=e88] [cursor=pointer]:
+                  - /url: /superadmin
+                  - img [ref=e89]
+                  - generic [ref=e92]: Plataforma
+                - link "Negocios" [ref=e93] [cursor=pointer]:
+                  - /url: /superadmin/businesses
+                  - img [ref=e94]
+                  - generic [ref=e98]: Negocios
+                - link "Usuarios" [ref=e99] [cursor=pointer]:
+                  - /url: /superadmin/users
+                  - img [ref=e100]
+                  - generic [ref=e105]: Usuarios
+                - link "Suscripciones" [ref=e106] [cursor=pointer]:
+                  - /url: /superadmin/subscriptions
+                  - img [ref=e107]
+                  - generic [ref=e109]: Suscripciones
+                - link "Planes" [ref=e110] [cursor=pointer]:
+                  - /url: /superadmin/planes
+                  - img [ref=e111]
+                  - generic [ref=e112]: Planes
+                - link "Auditoría" [ref=e113] [cursor=pointer]:
+                  - /url: /superadmin/audit
+                  - img [ref=e114]
+                  - generic [ref=e117]: Auditoría
+          - paragraph [ref=e119]: v0.1.0 · 3e9de01
+      - generic [ref=e120]:
+        - banner [ref=e121]:
+          - heading "Equipo" [level=1] [ref=e124]
+          - generic [ref=e125]:
+            - link [ref=e126] [cursor=pointer]:
+              - /url: /dashboard/ayuda
+              - button "Ayuda" [ref=e127]:
+                - img [ref=e128]
+            - button "Notificaciones" [ref=e132]:
+              - img [ref=e133]
+            - button "Negocio de TecnoFusión SuperAdmin" [ref=e136]:
+              - img [ref=e137]
+              - generic [ref=e141]: Negocio de TecnoFusión SuperAdmin
+              - img [ref=e142]
+            - generic [ref=e144]:
+              - generic [ref=e146]: TA
+              - generic [ref=e147]:
+                - generic [ref=e148]: TecnoFusión Admin
+                - generic [ref=e149]: Super Admin
+            - button "Cerrar sesión" [ref=e150]:
+              - img [ref=e151]
+        - main [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - button "Seleccionar" [ref=e158]:
+                  - img [ref=e159]
+                  - text: Seleccionar
+                - button "Link de invitación" [ref=e162]:
+                  - img [ref=e163]
+                  - text: Link de invitación
+                - button "Crear usuario" [ref=e166]:
+                  - img [ref=e167]
+                  - text: Crear usuario
+              - generic [ref=e170]:
+                - textbox "Buscar por nombre o correo..." [ref=e171]
+                - combobox [ref=e172]:
+                  - option "Todos los sectores" [selected]
+                - generic [ref=e173]:
+                  - button "Todos" [ref=e174]
+                  - button "Administrador" [ref=e175]
+                  - button "Responsable" [ref=e176]
+                  - button "Miembro" [ref=e177]
+                  - button "Visualizador" [ref=e178]
+            - generic [ref=e179]:
+              - table [ref=e182]:
+                - rowgroup [ref=e183]:
+                  - row "Usuario Rol Sector Estado Acciones" [ref=e184]:
+                    - columnheader "Usuario" [ref=e185]
+                    - columnheader "Rol" [ref=e186]
+                    - columnheader "Sector" [ref=e187]
+                    - columnheader "Estado" [ref=e188]
+                    - columnheader "Acciones" [ref=e189]
+                - rowgroup [ref=e190]:
+                  - row "TA TecnoFusión Admin tecnofusion.it@gmail.com Super Admin — Activo" [ref=e191]:
+                    - cell "TA TecnoFusión Admin tecnofusion.it@gmail.com" [ref=e192]:
+                      - generic [ref=e193]:
+                        - generic [ref=e196]: TA
+                        - generic [ref=e198]:
+                          - paragraph [ref=e199]: TecnoFusión Admin
+                          - paragraph [ref=e200]: tecnofusion.it@gmail.com
+                    - cell "Super Admin" [ref=e201]:
+                      - generic [ref=e202]: Super Admin
+                    - cell "—" [ref=e203]
+                    - cell "Activo" [ref=e204]
+                    - cell [ref=e205]:
+                      - generic [ref=e206]:
+                        - button "Editar miembro" [ref=e207]:
+                          - img [ref=e208]
+                        - button "Enviar email" [ref=e210]:
+                          - img [ref=e211]
+                        - button "Eliminar miembro" [ref=e214]:
+                          - img [ref=e215]
+                  - row "UT Usuario Test usuario.test@tablero.local Miembro — Activo" [ref=e358]:
+                    - cell "UT Usuario Test usuario.test@tablero.local" [ref=e359]:
+                      - generic [ref=e360]:
+                        - generic [ref=e363]: UT
+                        - generic [ref=e365]:
+                          - paragraph [ref=e366]: Usuario Test
+                          - paragraph [ref=e367]: usuario.test@tablero.local
+                    - cell "Miembro" [ref=e368]:
+                      - generic [ref=e369]: Miembro
+                    - cell "—" [ref=e370]
+                    - cell "Activo" [ref=e371]
+                    - cell [ref=e372]:
+                      - generic [ref=e373]:
+                        - button "Editar miembro" [ref=e374]:
+                          - img [ref=e375]
+                        - button "Enviar email" [ref=e377]:
+                          - img [ref=e378]
+                        - button "Eliminar miembro" [ref=e381]:
+                          - img [ref=e382]
+              - generic [ref=e220]:
+                - heading "Links de invitación" [level=3] [ref=e222]:
+                  - img [ref=e223]
+                  - text: Links de invitación
+                - generic [ref=e227]:
+                  - generic [ref=e229]:
+                    - generic [ref=e230]: cmorw95eg000...
+                    - generic [ref=e231]: Pendiente
+                    - generic [ref=e232]:
+                      - img [ref=e233]
+                      - text: Expirado
+                  - generic [ref=e235]:
+                    - button "Copiar link" [ref=e236]:
+                      - img [ref=e237]
+                    - button "Revocar" [ref=e240]:
+                      - img [ref=e241]
+        - contentinfo [ref=e244]:
+          - generic [ref=e245]:
+            - paragraph [ref=e246]: © 2026 Tablero de Control. Todos los derechos reservados.
+            - generic [ref=e247]:
+              - generic [ref=e248]: Hecho con
+              - img [ref=e249]
+              - generic [ref=e251]: por
+              - link "TecnoFusión.it" [ref=e252] [cursor=pointer]:
+                - /url: https://tecnofusion-it.web.app/
+                - text: TecnoFusión.it
+                - img [ref=e253]
+    - button "Asistente IA" [ref=e258]:
+      - img [ref=e259]
+  - button "Open Next.js Dev Tools" [ref=e11] [cursor=pointer]:
+    - img [ref=e12]
+  - alert [ref=e15]
+  - region "Notifications alt+T"

@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e11] [cursor=pointer]:
+    - img [ref=e12]
+  - alert [ref=e15]
+  - generic [ref=e418]:
+    - generic [ref=e419]:
+      - img "Tablero de Control" [ref=e421]
+      - heading "Tablero de Control" [level=1] [ref=e422]
+      - paragraph [ref=e423]: Iniciá sesión para continuar
+    - generic [ref=e424]:
+      - button "Continuar con Google" [ref=e425]:
+        - generic [ref=e426]:
+          - img [ref=e427]
+          - text: Continuar con Google
+      - generic [ref=e436]: O continuá con correo
+      - generic [ref=e437]:
+        - generic [ref=e438]:
+          - text: Correo o usuario
+          - textbox "Correo o usuario" [ref=e439]:
+            - /placeholder: tu@correo.com o nombre_usuario
+        - generic [ref=e440]:
+          - generic [ref=e441]:
+            - generic [ref=e442]: Contraseña
+            - link "¿Olvidaste tu contraseña?" [ref=e443] [cursor=pointer]:
+              - /url: /forgot-password
+          - textbox "Contraseña" [ref=e444]
+        - button "Iniciar sesión" [ref=e445]
+      - paragraph [ref=e446]:
+        - text: ¿No tenés cuenta?
+        - link "Registrate" [ref=e447] [cursor=pointer]:
+          - /url: /register
+      - generic [ref=e448]:
+        - link "Términos" [ref=e449] [cursor=pointer]:
+          - /url: /terminos
+        - generic [ref=e450]: ·
+        - link "Privacidad" [ref=e451] [cursor=pointer]:
+          - /url: /privacidad
+  - region "Notifications alt+T"
