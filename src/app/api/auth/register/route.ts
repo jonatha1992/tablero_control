@@ -55,6 +55,20 @@ export const POST = handle(async (request: NextRequest) => {
   const isSuperadmin = superadminEmails.includes(email);
   const role = isSuperadmin ? 'superadmin' : 'admin';
 
+  // User must exist before Business (FK: Business.ownerId → User.id)
+  const user = await userRepository.create({
+    id: decoded.uid,
+    email,
+    name,
+    role,
+    businessId: undefined,
+    avatar: decoded.picture ?? undefined,
+    teamIds: [],
+    customRoleIds: [],
+    preferences: DEFAULT_PREFERENCES,
+    isActive: true,
+  } as Parameters<typeof userRepository.create>[0]);
+
   const business = await businessRepository.create({
     name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`),
     adminId: decoded.uid,
@@ -76,18 +90,7 @@ export const POST = handle(async (request: NextRequest) => {
     teamIds: [],
   });
 
-  const user = await userRepository.create({
-    id: decoded.uid,
-    email,
-    name,
-    role,
-    businessId: business.id,
-    avatar: decoded.picture ?? undefined,
-    teamIds: [],
-    customRoleIds: [],
-    preferences: DEFAULT_PREFERENCES,
-    isActive: true,
-  } as Parameters<typeof userRepository.create>[0]);
+  await userRepository.update(decoded.uid, { businessId: business.id });
 
   await userRepository.addMembership({
     userId: user.id,
