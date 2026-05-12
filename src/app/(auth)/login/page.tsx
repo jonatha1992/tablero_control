@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { login, loginWithGoogle } from '@/lib/firebase/auth';
+import { login, loginWithGoogle, checkGoogleRedirectResult } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 
@@ -16,7 +16,7 @@ function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading, user, notInvited } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, notInvited, refreshProfile } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
@@ -27,6 +27,26 @@ function LoginForm() {
       router.push(target);
     }
   }, [isAuthenticated, authLoading, user, router]);
+
+  // Handle Google redirect flow (popup blocked → signInWithRedirect)
+  useEffect(() => {
+    checkGoogleRedirectResult().then(async (result) => {
+      if (!result) return;
+      const { token } = result;
+      const profileRes = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (profileRes.status === 404) {
+        await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+      }
+      await refreshProfile();
+      router.push(redirect !== '/dashboard' ? redirect : '/dashboard');
+    }).catch(() => { });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +86,32 @@ function LoginForm() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle();
-      if (result) router.push(redirect);
+      if (!result) return; // redirect flow — onAuthStateChanged handles it
+
+      const { token } = result;
+
+      // Check if user exists in PostgreSQL
+      const profileRes = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (profileRes.status === 404) {
+        // New user — provision account automatically
+        const registerRes = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        if (!registerRes.ok) {
+          const data = await registerRes.json().catch(() => ({ error: 'unknown' }));
+          throw new Error((data as { error?: string }).error || 'Error al registrar usuario');
+        }
+      } else if (!profileRes.ok) {
+        throw new Error('Error al cargar el perfil');
+      }
+
+      await refreshProfile();
+      const target = redirect !== '/dashboard' ? redirect : '/dashboard';
+      router.push(target);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/popup-closed-by-user') {
@@ -74,7 +119,7 @@ function LoginForm() {
       } else if (code === 'auth/unauthorized-domain') {
         setError('Inicio de sesión con Google no está configurado para este dominio. Contactá al administrador.');
       } else {
-        setError('Error al iniciar sesión con Google');
+        setError((err as Error).message || 'Error al iniciar sesión con Google');
       }
       console.error(err);
     } finally {
