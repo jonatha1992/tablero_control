@@ -42,6 +42,8 @@ const defaultProps = {
           locations: [],
   onSelectAll: vi.fn(),
   onBulkDelete: vi.fn(),
+  onDelete: vi.fn(),
+  onToggleSelect: vi.fn(),
 };
 
 beforeEach(() => {

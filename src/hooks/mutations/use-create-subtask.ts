@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { subtasksApi } from '@/lib/api/subtasks';
 import { subtaskKeys } from '@/hooks/queries/use-subtasks-query';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
@@ -20,10 +21,14 @@ export function useCreateSubtask() {
 
       return { previousSubtasks };
     },
-    onError: (_err, { taskId }, context) => {
+    onSuccess: () => {
+      toast.success('Subtarea creada');
+    },
+    onError: (err, { taskId }, context) => {
       if (context?.previousSubtasks) {
         queryClient.setQueryData(subtaskKeys.byTask(taskId), context.previousSubtasks);
       }
+      toast.error('Error al crear subtarea', { description: (err as Error).message });
     },
     onSettled: (_data, _error, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) });

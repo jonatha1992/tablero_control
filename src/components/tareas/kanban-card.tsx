@@ -12,6 +12,7 @@ import {
   ChevronUp,
   Check,
   MapPin,
+  Trash2,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
@@ -71,6 +72,8 @@ interface KanbanCardProps {
   onMove: (taskId: string, from: TaskStatus, to: TaskStatus) => void;
   onPriorityChange: (taskId: string, newPriority: TaskPriority) => void;
   onLocationChange?: (taskId: string, locationId: string | null) => void;
+  onDelete?: (taskId: string) => void;
+  onToggleSelect?: (taskId: string) => void;
   onClick: (task: Task) => void;
   isSelected: boolean;
   isSelectMode: boolean;
@@ -79,7 +82,7 @@ interface KanbanCardProps {
   locations?: { id: string; name: string }[];
 }
 
-export function KanbanCard({ task, column, onPriorityChange, onLocationChange, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
+export function KanbanCard({ task, column, onPriorityChange, onLocationChange, onDelete, onToggleSelect, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
@@ -124,17 +127,22 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
 
       {/* Header: checkbox + title + avatars + menú */}
       <div className="flex items-start gap-1.5 mb-1.5">
-        {(isSelectMode || isSelected) && (
-          <div className="shrink-0 mt-0.5">
-            <div
-              className={cn(
-                'h-4 w-4 rounded border-2 flex items-center justify-center transition-colors',
-                isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-              )}
-            >
+        {onToggleSelect && (
+          <button
+            className={cn(
+              'shrink-0 mt-0.5 transition-opacity',
+              isSelected || isSelectMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            )}
+            onClick={(e) => { e.stopPropagation(); onToggleSelect(task.id); }}
+            title={isSelected ? 'Deseleccionar' : 'Seleccionar'}
+          >
+            <div className={cn(
+              'h-4 w-4 rounded border-2 flex items-center justify-center transition-colors',
+              isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary/60'
+            )}>
               {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
             </div>
-          </div>
+          </button>
         )}
         <h4 className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{task.title}</h4>
 
@@ -165,6 +173,15 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
           );
         })()}
 
+        {onDelete && !isSelectMode && (
+          <button
+            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive mt-0.5 text-muted-foreground"
+            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+            title="Eliminar tarea"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -214,6 +231,21 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
+            )}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(task.id);
+                  }}
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

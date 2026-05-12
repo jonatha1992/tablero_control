@@ -17,10 +17,12 @@ interface KanbanColumnProps {
   isSelectMode: boolean;
   onSelectAll: (taskIds: string[]) => void;
   onBulkDelete: (taskIds: string[]) => void;
+  onDelete: (taskId: string) => void;
+  onToggleSelect: (taskId: string) => void;
   locations: { id: string; name: string }[];
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete, locations }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete, onDelete, onToggleSelect, locations }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
@@ -46,40 +48,21 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
             const allSelected = selectedCount === tasks.length;
             const someSelected = selectedCount > 0 && !allSelected;
             return (
-              <>
-                <button
-                  onClick={() => onSelectAll(taskIds)}
-                  className={cn(
-                    'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
-                    allSelected
-                      ? 'bg-primary border-primary'
-                      : someSelected
-                      ? 'bg-primary/40 border-primary/60'
-                      : 'border-muted-foreground/40 hover:border-primary/60'
-                  )}
-                  title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
-                >
-                  {allSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                  {someSelected && <Minus className="h-2.5 w-2.5 text-primary-foreground" />}
-                </button>
-                {selectedCount > 0 && (
-                  <button
-                    onClick={() => onSelectAll(taskIds)}
-                    className={cn(
-                      'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
-                      allSelected
-                        ? 'bg-primary border-primary'
-                        : someSelected
-                        ? 'bg-primary/40 border-primary/60'
-                        : 'border-muted-foreground/40 hover:border-primary/60'
-                    )}
-                    title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
-                  >
-                    {allSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                    {someSelected && <Minus className="h-2.5 w-2.5 text-primary-foreground" />}
-                  </button>
+              <button
+                onClick={() => onSelectAll(taskIds)}
+                className={cn(
+                  'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                  allSelected
+                    ? 'bg-primary border-primary'
+                    : someSelected
+                    ? 'bg-primary/40 border-primary/60'
+                    : 'border-muted-foreground/40 hover:border-primary/60'
                 )}
-              </>
+                title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+              >
+                {allSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                {someSelected && <Minus className="h-2.5 w-2.5 text-primary-foreground" />}
+              </button>
             );
           })()}
           <div className={cn('h-3 w-3 rounded-full shrink-0', {
@@ -119,6 +102,8 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
               onMove={() => { }}
               onPriorityChange={onPriorityChange}
               onLocationChange={onLocationChange}
+              onDelete={onDelete}
+              onToggleSelect={onToggleSelect}
               onClick={onCardClick}
               isSelected={selectedTaskIds.includes(task.id)}
               isSelectMode={isSelectMode}

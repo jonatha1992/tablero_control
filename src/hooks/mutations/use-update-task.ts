@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import type { UpdateTaskDTO } from '@/types/dto/task.dto';
@@ -52,6 +53,7 @@ export function useUpdateTask() {
       if (context?.previousDetail) {
         queryClient.setQueryData(taskKeys.detail(id), context.previousDetail);
       }
+      toast.error('Error al actualizar tarea', { description: (err as Error).message });
     },
     onSettled: (_data, _error, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });

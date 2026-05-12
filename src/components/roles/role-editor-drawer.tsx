@@ -111,7 +111,9 @@ export function RoleEditorDrawer({ open, onClose, initial }: Props) {
               {initial ? 'Editar rol' : 'Nuevo rol'}
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+              <button className="rounded-sm bg-destructive p-1 text-destructive-foreground opacity-90 ring-offset-background transition-opacity hover:opacity-100 hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                <X className="h-5 w-5" />
+              </button>
             </Dialog.Close>
           </div>
 

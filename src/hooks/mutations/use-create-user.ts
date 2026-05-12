@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { getToken } from '@/lib/firebase/auth';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UserRole } from '@/types/domain/user';
@@ -61,6 +62,13 @@ export function useCreateUser() {
     mutationFn: createUserViaApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      toast.success('Usuario creado');
+    },
+    onError: (err) => {
+      const msg = (err as Error).message;
+      if (msg !== 'members_limit_exceeded') {
+        toast.error('Error al crear usuario', { description: msg });
+      }
     },
   });
 }
