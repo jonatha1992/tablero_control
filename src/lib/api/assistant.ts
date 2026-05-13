@@ -30,6 +30,11 @@ export const assistantApi = {
       method: 'POST',
       body: JSON.stringify({ messages }),
     }),
+  extractFromText: (text: string) =>
+    fetchJsonAuth<{ tasks: import('@/lib/groq/extract-tasks').ExtractedTask[]; parseError: boolean }>('/api/tasks/from-text', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }),
   generatePlan: (type: 'cycle' | 'objective', description: string) =>
     fetchJsonAuth<GeneratePlanResponse>('/api/assistant/generate-plan', {
       method: 'POST',

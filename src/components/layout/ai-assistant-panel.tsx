@@ -31,6 +31,8 @@ const CYCLE_PATTERN =
   /^(crear|nueva?|quiero\s+(crear|hacer)|planificar)\s*(una?\s+)?(planificaci[oó]n|sprint|ciclo|per[ií]odo)[:\-–]\s*(.+)/i;
 const OBJECTIVE_PATTERN =
   /^(crear|nuevo?|quiero\s+(crear|hacer))\s*(un[ao]?\s+)?(objetivo|[eé]pica|meta)[:\-–]\s*(.+)/i;
+const TASK_PATTERN =
+  /^(crear|nueva?s?|quiero\s+(crear|hacer|agregar|añadir)|agrega?r?|añadir)\s*(una?s?\s+)?(tarea|tareas)[:\-–]?\s*(.{3,})/i;
 
 const PRIORITY_BORDER: Record<TaskPriority, string> = {
   low: 'border-l-slate-300', medium: 'border-l-blue-400',
@@ -84,7 +86,7 @@ function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
 
 const SUGGESTIONS = [
   '¿Qué tareas están vencidas?',
-  '¿Para qué sirven los ciclos?',
+  'Crear tarea: revisar el informe mensual',
   'Quiero planificar el lanzamiento de un producto',
   'Crear planificación: migrar el servidor a la nube',
 ];
@@ -167,6 +169,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
 
     const cycleMatch = msg.match(CYCLE_PATTERN);
     const objMatch = msg.match(OBJECTIVE_PATTERN);
+    const taskMatch = msg.match(TASK_PATTERN);
 
     if (cycleMatch || objMatch) {
       const type = cycleMatch ? 'cycle' : 'objective';
@@ -176,6 +179,20 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
       try {
         const result = await assistantApi.previewPlan(type, description);
         addPreview(result.type, result.description, result.plan);
+      } catch {
+        await send(msg);
+      } finally {
+        setIsGenerating(false);
+      }
+      return;
+    }
+
+    if (taskMatch) {
+      const description = taskMatch[5]?.trim() ?? msg;
+      setIsGenerating(true);
+      try {
+        const result = await assistantApi.extractFromText(description);
+        addTaskPreview(result.tasks, result.parseError);
       } catch {
         await send(msg);
       } finally {
@@ -420,7 +437,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : 'Preguntá, o escribí "Crear planificación: …"'}
+            placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : 'Preguntá, o escribí "Crear tarea: …" / "Crear planificación: …"'}
             disabled={isLoading || micState !== 'idle'}
             className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
           />

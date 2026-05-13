@@ -140,13 +140,16 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
       setNewLocationRole('miembro');
 
       if (member.locationAssignments?.length) {
+        const businessLocationIds = new Set(locations.map((l) => l.id));
         setLocationAssignments(
-          member.locationAssignments.map((a: UserLocationAssignment) => ({
-            locationId: a.locationId,
-            locationName: a.locationName ?? a.locationId,
-            role: a.role,
-            customRoleIds: a.customRoleIds,
-          }))
+          member.locationAssignments
+            .filter((a: UserLocationAssignment) => businessLocationIds.has(a.locationId))
+            .map((a: UserLocationAssignment) => ({
+              locationId: a.locationId,
+              locationName: a.locationName ?? a.locationId,
+              role: a.role,
+              customRoleIds: a.customRoleIds,
+            }))
         );
       } else if (member.locationId) {
         // Migrate legacy single locationId
