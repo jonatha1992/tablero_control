@@ -6,6 +6,7 @@ import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
+import { businessRepository } from '@/repositories';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -19,8 +20,13 @@ export const GET = handle(async (request: NextRequest) => {
 
   assertSameTenant(user.data, { businessId });
 
-  const members = await teamService.getMembersByBusiness(businessId);
-  return NextResponse.json(members);
+  const [members, business] = await Promise.all([
+    teamService.getMembersByBusiness(businessId),
+    businessRepository.findById(businessId),
+  ]);
+
+  const membersWithOwner = members.map((m) => ({ ...m, isOwner: m.id === business?.ownerId }));
+  return NextResponse.json(membersWithOwner);
 });
 
 export const POST = handle(async (request: NextRequest) => {

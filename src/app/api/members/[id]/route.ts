@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
-import { can, assertSameTenant } from '@/lib/permissions';
+import { can } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 import { sendNotification } from '@/lib/notifications';
@@ -18,18 +18,18 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const { id } = await params;
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  assertSameTenant(user.data, { businessId: target.businessId });
 
-  const operatingBusinessId = target.businessId;
+  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
+  const operatingBusinessId = user.data.businessId;
   if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
+
+  const membership = target.memberships?.find((m) => m.businessId === operatingBusinessId);
+  if (!membership) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const data = await request.json();
 
   if (data.reactivate === true) {
-    if (!target.businessId) {
-      return NextResponse.json({ error: 'No business' }, { status: 400 });
-    }
-    await teamService.reactivateMember(id, target.businessId);
+    await teamService.reactivateMember(id, operatingBusinessId);
     await writeAuditLog({
       actorId: user.uid,
       actorRole: user.role,
@@ -46,9 +46,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     if (user.role !== 'superadmin' && data.role === 'superadmin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (target.businessId) {
-      await teamService.changeRole(id, target.businessId, data.role);
-    }
+    await teamService.changeRole(id, operatingBusinessId, data.role);
     sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambió a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
   }
 
@@ -78,23 +76,25 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const { id } = await params;
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  assertSameTenant(user.data, { businessId: target.businessId });
 
-  if (!target.businessId) {
-    return NextResponse.json({ error: 'No business' }, { status: 400 });
-  }
+  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
+  const operatingBusinessId = user.data.businessId;
+  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
+
+  const membership = target.memberships?.find((m) => m.businessId === operatingBusinessId && m.isActive);
+  if (!membership) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   // Prevent removing the owner
-  const business = await businessRepository.findById(target.businessId);
+  const business = await businessRepository.findById(operatingBusinessId);
   if (business?.ownerId === id) {
     return NextResponse.json({ error: 'cannot_remove_owner' }, { status: 403 });
   }
 
-  await teamService.removeMember(id, target.businessId);
+  await teamService.removeMember(id, operatingBusinessId);
   sendNotification({ userId: id, title: 'Acceso al equipo removido', body: 'Fuiste removido del equipo', type: 'info', link: '/dashboard' }).catch(() => {});
 
-  if (target.role === 'admin' && target.businessId) {
-    await teamService.handleManagerDeletion(id, target.businessId);
+  if (membership.role === 'admin') {
+    await teamService.handleManagerDeletion(id, operatingBusinessId);
   }
 
   void writeAuditLog({
