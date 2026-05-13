@@ -37,9 +37,13 @@ export function useRemoveMember() {
       queryClient.setQueryData<User[]>(key, (old = []) => old.filter((m) => m.id !== id));
       return { previous, key };
     },
-    onError: (_err: Error, _id: string, context) => {
+    onError: (err: Error, _id: string, context) => {
       if (context?.previous) queryClient.setQueryData(context.key, context.previous);
-      toast.error('Error al eliminar miembro');
+      if (err.message?.includes('cannot_remove_owner')) {
+        toast.error('No se puede eliminar al propietario del negocio');
+      } else {
+        toast.error('Error al eliminar miembro');
+      }
     },
     onSuccess: () => {
       toast.success('Miembro eliminado del equipo');
