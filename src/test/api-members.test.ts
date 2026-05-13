@@ -3,12 +3,11 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/members/route';
 import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
+import { businessRepository } from '@/repositories';
 
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
 }));
-
-const mockRequireUser = vi.mocked(requireUser);
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -35,8 +34,17 @@ vi.mock('@/services/team.service', () => ({
   },
 }));
 
+vi.mock('@/repositories', () => ({
+  businessRepository: { findById: vi.fn() },
+  userRepository: { findById: vi.fn(), addMembership: vi.fn() },
+  teamRepository: {},
+  locationRepository: {},
+}));
+
+const mockRequireUser = vi.mocked(requireUser);
 const mockGetMembers = vi.mocked(teamService.getMembersByBusiness);
 const mockInvite = vi.mocked(teamService.inviteMember);
+const mockFindBusiness = vi.mocked(businessRepository.findById);
 
 const mockMembers = [
   { id: 'mem-1', name: 'Ana García', email: 'ana@biz.com', role: 'miembro', businessId: 'biz-1' },
@@ -53,6 +61,7 @@ beforeEach(() => {
     name: 'Admin',
     data: { id: 'user-1', role: 'admin', businessId: 'biz-1', name: 'Admin', email: 'admin@biz.com', teamIds: [], preferences: {}, isActive: true, createdAt: new Date(), updatedAt: new Date() },
   } as never);
+  mockFindBusiness.mockResolvedValue({ id: 'biz-1', ownerId: 'owner-1' } as never);
 });
 
 // ─── GET /api/members ────────────────────────────────────────────────────────
@@ -66,14 +75,29 @@ describe('GET /api/members', () => {
     expect(body.error).toMatch(/businessId/i);
   });
 
-  it('retorna los miembros del negocio', async () => {
+  it('retorna los miembros con isOwner calculado', async () => {
     mockGetMembers.mockResolvedValueOnce(mockMembers as never);
     const req = new NextRequest('http://localhost/api/members?businessId=biz-1');
     const res = await GET(req);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(2);
-    expect(mockGetMembers).toHaveBeenCalledWith('biz-1');
+    expect(body[0].isOwner).toBe(false);
+    expect(body[1].isOwner).toBe(false);
+  });
+
+  it('marca isOwner=true para el propietario del negocio', async () => {
+    const membersWithOwner = [
+      ...mockMembers,
+      { id: 'owner-1', name: 'Dueño', email: 'owner@biz.com', role: 'admin', businessId: 'biz-1' },
+    ];
+    mockGetMembers.mockResolvedValueOnce(membersWithOwner as never);
+    const req = new NextRequest('http://localhost/api/members?businessId=biz-1');
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const owner = body.find((m: { id: string }) => m.id === 'owner-1');
+    expect(owner.isOwner).toBe(true);
   });
 
   it('retorna array vacío si no hay miembros', async () => {
@@ -118,3 +142,4 @@ describe('POST /api/members', () => {
     expect(mockInvite).toHaveBeenCalledWith(dto, 'biz-1', 'firebase-uid-123');
   });
 });
+
