@@ -497,7 +497,7 @@ export default function UsersPage() {
         title="Eliminar usuario"
         description={
           singleDelete
-            ? `¿Eliminar a ${singleDelete.user.name}? Esto borrará su cuenta de Firebase y PostgreSQL permanentemente. No se puede deshacer.`
+            ? `¿Eliminar a ${singleDelete.user.name}? Se eliminará su cuenta y acceso al sistema permanentemente. No se puede deshacer.`
             : ''
         }
         variant="destructive"
@@ -534,7 +534,7 @@ export default function UsersPage() {
           }
         }}
         title={`Eliminar ${selectedIds.size} usuario(s)`}
-        description="Esta acción eliminará permanentemente los usuarios seleccionados de Firebase y PostgreSQL. No se puede deshacer."
+        description="Se eliminarán permanentemente los usuarios seleccionados del sistema. No se puede deshacer."
         variant="destructive"
         confirmLabel="Eliminar seleccionados"
         onConfirm={handleBulkDeleteConfirm}

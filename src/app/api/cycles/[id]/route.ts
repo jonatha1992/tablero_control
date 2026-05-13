@@ -4,6 +4,8 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
+import { sendNotification } from '@/lib/notifications';
+import { prisma } from '@/lib/prisma';
 
 export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -53,6 +55,18 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       break;
     default:
       updated = await cycleService.updateCycle(id, data);
+  }
+
+  if (_action === 'start' || _action === 'complete' || _action === 'close') {
+    const labels: Record<string, string> = { start: 'está activo', complete: 'fue completado', close: 'fue cerrado' };
+    const notifBody = `El período "${cycle.name}" ${labels[_action as string]}`;
+    prisma.userBusiness.findMany({ where: { businessId: cycle.businessId, isActive: true }, select: { userId: true } })
+      .then((members) => {
+        for (const m of members) {
+          if (m.userId === user.uid) continue;
+          sendNotification({ userId: m.userId, title: 'Período actualizado', body: notifBody, type: 'info', link: '/dashboard/planificacion' }).catch(() => {});
+        }
+      }).catch(() => {});
   }
 
   await writeAuditLog({

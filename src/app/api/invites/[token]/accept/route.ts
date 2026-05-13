@@ -4,6 +4,7 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
+import { sendNotification } from '@/lib/notifications';
 
 export const POST = handle(async (request: NextRequest, { params }: { params: Promise<{ token: string }> }) => {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -150,6 +151,15 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     targetId: decoded.uid,
     metadata: { inviteId: inviteToken, role: invite.role },
   });
+
+  const joinerName = updatedUser.name ?? decoded.email ?? 'Un nuevo miembro';
+  prisma.userBusiness.findMany({ where: { businessId: invite.businessId, role: 'admin', isActive: true }, select: { userId: true } })
+    .then((admins) => {
+      for (const a of admins) {
+        if (a.userId === decoded.uid) continue;
+        sendNotification({ userId: a.userId, title: 'Nuevo miembro en el equipo', body: `${joinerName} se unió al equipo`, type: 'info', link: '/dashboard/equipo' }).catch(() => {});
+      }
+    }).catch(() => {});
 
   return NextResponse.json(updatedUser);
 });

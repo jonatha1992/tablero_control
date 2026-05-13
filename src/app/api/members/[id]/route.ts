@@ -5,6 +5,7 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { can, assertSameTenant } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
+import { sendNotification } from '@/lib/notifications';
 
 export const PATCH = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -48,6 +49,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     if (target.businessId) {
       await teamService.changeRole(id, target.businessId, data.role);
     }
+    sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambió a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
   }
 
   const member = await teamService.updateMember(id, data);
@@ -89,6 +91,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   }
 
   await teamService.removeMember(id, target.businessId);
+  sendNotification({ userId: id, title: 'Acceso al equipo removido', body: 'Fuiste removido del equipo', type: 'info', link: '/dashboard' }).catch(() => {});
 
   if (target.role === 'admin' && target.businessId) {
     await teamService.handleManagerDeletion(id, target.businessId);

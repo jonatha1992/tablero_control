@@ -77,6 +77,16 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       });
     }
 
+    prisma.task.findUnique({ where: { id }, select: { title: true, assignees: { select: { id: true } } } })
+      .then((t) => {
+        if (!t) return;
+        const actorName = user.data.name ?? 'Un compañero';
+        for (const a of t.assignees) {
+          if (a.id === user.uid) continue;
+          sendNotification({ userId: a.id, title: 'Tarea actualizada', body: `${actorName} movió "${t.title}" a ${data.status}`, type: 'task_updated', link: '/dashboard/tareas' }).catch(() => {});
+        }
+      }).catch(() => {});
+
     return NextResponse.json({ ok: true, nextTaskId: nextTask?.id });
   }
 
@@ -148,6 +158,14 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     }).catch((err: unknown) => console.error('[mail] findMany failed:', (err as Error)?.message ?? err));
   }
 
+  if (data.status && prevTask) {
+    const actorName = user.data.name ?? 'Un compañero';
+    for (const uid of prevAssigneeIds) {
+      if (uid === user.uid) continue;
+      sendNotification({ userId: uid, title: 'Tarea actualizada', body: `${actorName} cambió el estado de "${task.title}"`, type: 'task_updated', link: '/dashboard/tareas' }).catch(() => {});
+    }
+  }
+
   return NextResponse.json(task);
 });
 
@@ -164,6 +182,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  const deletedTask = await taskService.getTaskById(id);
   await taskService.deleteTask(id);
 
   await writeAuditLog({
@@ -174,6 +193,14 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     targetType: 'TASK',
     targetId: id,
   });
+
+  if (deletedTask?.assigneeIds?.length) {
+    const actorName = user.data.name ?? 'Un compañero';
+    for (const uid of deletedTask.assigneeIds) {
+      if (uid === user.uid) continue;
+      sendNotification({ userId: uid, title: 'Tarea eliminada', body: `${actorName} eliminó la tarea "${deletedTask.title}"`, type: 'info', link: '/dashboard/tareas' }).catch(() => {});
+    }
+  }
 
   return NextResponse.json({ ok: true });
 });
