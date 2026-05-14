@@ -56,9 +56,11 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     );
   }
 
+  const inviteLink = data ? `${window.location.origin}/i/${data.id}` : '';
+
   async function handleCopy() {
-    if (!data?.link) return;
-    await navigator.clipboard.writeText(data.link);
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -90,7 +92,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                 Compartí este link con quienes querés que se unan al equipo. Al ingresar, recibirán el rol <strong>{data.role}</strong>.
               </p>
               <div className="flex items-center gap-2">
-                <Input value={data.link} readOnly className="font-mono text-sm" />
+                <Input value={inviteLink} readOnly className="font-mono text-sm" />
                 <Button type="button" variant="outline" size="icon" onClick={handleCopy} title="Copiar">
                   {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -102,7 +104,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   variant="outline"
                   className="flex-1 h-10 gap-2"
                   onClick={() => {
-                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${data.link}`;
+                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
                     if (navigator.share) {
                       navigator.share({ title: 'Invitación a Tablero de Control', text });
                     } else {
@@ -118,7 +120,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   variant="outline"
                   className="flex-1 h-10 gap-2"
                   onClick={() => {
-                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${data.link}`;
+                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                   }}
                 >

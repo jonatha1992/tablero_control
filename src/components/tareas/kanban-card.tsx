@@ -13,6 +13,7 @@ import {
   Check,
   MapPin,
   Trash2,
+  ListTree,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
@@ -353,8 +354,8 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
           )}
           {task.subtaskIds && task.subtaskIds.length > 0 && (
             <div className="flex items-center gap-0.5 text-[10px]">
-              <CheckSquare className="h-3 w-3" />
-              <span>{task.subtaskIds.length}</span>
+              <ListTree className="h-3 w-3" />
+              <span>{task.subtasksCompleted}/{task.subtaskIds.length}</span>
             </div>
           )}
           {task.dueDate && (

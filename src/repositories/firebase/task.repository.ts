@@ -73,6 +73,7 @@ export class FirebaseTaskRepository implements ITaskRepository {
     const payload = {
       ...data,
       subtaskIds: [],
+      subtasksCompleted: 0,
       attachmentUrls: [],
       commentCount: 0,
       position: Date.now(),

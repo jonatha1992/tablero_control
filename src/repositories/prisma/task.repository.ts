@@ -8,7 +8,7 @@ import type { Prisma } from '@prisma/client';
 type PrismaTask = Prisma.TaskGetPayload<{
   include: {
     assignees: { select: { id: true; name: true; avatar: true } };
-    subtasks: { select: { id: true } };
+    subtasks: { select: { id: true; status: true } };
     attachments: { select: { url: true; filename: true } };
   };
 }>;
@@ -37,7 +37,8 @@ function toDomain(t: PrismaTask): Task {
     actualHours: t.actualHours ?? undefined,
     recurrence: t.recurrence as unknown as Task['recurrence'],
     checklist: (t.checklist as unknown as Task['checklist']) ?? [],
-    subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
+    subtaskIds: t.subtasks.map((s) => s.id),
+    subtasksCompleted: t.subtasks.filter((s) => s.status === 'done').length,
     attachmentUrls: t.attachments.map((a: { url: string }) => a.url),
     attachments: t.attachments.map((a) => ({ url: a.url, name: a.filename })),
     commentCount: t.commentCount,
@@ -49,12 +50,12 @@ function toDomain(t: PrismaTask): Task {
 
 const include = {
   assignees: { select: { id: true, name: true, avatar: true } },
-  subtasks: { select: { id: true } },
+  subtasks: { select: { id: true, status: true } },
   attachments: { select: { url: true, filename: true } },
 } satisfies Prisma.TaskInclude;
 
 function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhereInput {
-  const conditions: Prisma.TaskWhereInput[] = [];
+  const conditions: Prisma.TaskWhereInput[] = [{ parentId: null }];
 
   // Filtro por negocio
   if (businessId !== 'all') {
