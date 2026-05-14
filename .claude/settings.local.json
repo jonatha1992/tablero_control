@@ -118,7 +118,13 @@
       "Bash(powershell *)",
       "Bash(npm pkg *)",
       "Bash(Select-String \"zod\")",
-      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -15 {}')"
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -15 {}')",
+      "Bash(Start-Sleep -Seconds 8)",
+      "Bash(Get-Content \"C:\\\\Users\\\\jonat\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Repositorio-tablero-control\\\\98b445c4-603b-4fc5-9fd4-5922f38c673f\\\\tasks\\\\bmt7p4fso.output\")",
+      "Bash(Select-Object -Last 10)",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs kill -9)",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

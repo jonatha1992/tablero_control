@@ -8,7 +8,7 @@ import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
 import type { UserRole } from '@/types/domain/user';
 
-export type CreateUserMode = 'email' | 'username' | 'google';
+export type CreateUserMode = 'email' | 'username' | 'google' | 'ghost';
 
 export interface CreateUserBody {
   name: string;
@@ -69,8 +69,9 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
-  const syntheticEmail = mode === 'username' ? `${username}@tablero.local` : '';
-  const firebaseEmail = mode === 'username' ? syntheticEmail : email;
+  const isGhost = mode === 'ghost';
+  const syntheticEmail = mode === 'username' ? `${username}@tablero.local` : isGhost ? `ghost-${crypto.randomUUID()}@tablero.local` : '';
+  const firebaseEmail = (mode === 'username' || isGhost) ? syntheticEmail : email;
   const isSyntheticEmail = firebaseEmail.endsWith('@tablero.local');
   const password = body.password ?? '';
 
@@ -123,7 +124,7 @@ export const POST = handle(async (req: NextRequest) => {
   }
 
   // Check email in PostgreSQL (for email and google modes)
-  if (mode !== 'username') {
+  if (mode !== 'username' && !isGhost) {
     let existing;
     try {
       existing = await prisma.user.findFirst({
@@ -145,20 +146,25 @@ export const POST = handle(async (req: NextRequest) => {
 
   const adminAuth = getAdminAuth();
   let uid: string;
-  try {
-    const authUser = await adminAuth.createUser({
-      email: firebaseEmail,
-      ...(password ? { password } : {}),
-      displayName: name.trim(),
-      emailVerified: mode !== 'google',
-    });
-    uid = authUser.uid;
-  } catch (err: unknown) {
-    const code = (err as { code?: string }).code;
-    if (code === 'auth/email-already-exists') {
-      return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
+  
+  if (isGhost) {
+    uid = crypto.randomUUID();
+  } else {
+    try {
+      const authUser = await adminAuth.createUser({
+        email: firebaseEmail,
+        ...(password ? { password } : {}),
+        displayName: name.trim(),
+        emailVerified: mode !== 'google',
+      });
+      uid = authUser.uid;
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/email-already-exists') {
+        return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
+      }
+      return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
   }
 
   try {
@@ -173,6 +179,7 @@ export const POST = handle(async (req: NextRequest) => {
         locationId: locationId ?? null,
         preferences: DEFAULT_PREFERENCES,
         isActive: true,
+        isGuest: isGhost,
       },
     });
     if (targetBusinessId) {
@@ -191,10 +198,12 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });
   }
 
-  try {
-    await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
-  } catch (err) {
-    console.error('[create-user] setCustomUserClaims failed (non-fatal):', err);
+  if (!isGhost) {
+    try {
+      await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+    } catch (err) {
+      console.error('[create-user] setCustomUserClaims failed (non-fatal):', err);
+    }
   }
 
   await writeAuditLog({

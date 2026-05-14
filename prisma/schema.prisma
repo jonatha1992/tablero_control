@@ -102,6 +102,7 @@ model User {
   name         String
   role         UserRole  @default(miembro)
   businessId   String?
+  isGuest      Boolean   @default(false)
   locationId   String?
   customRoleIds String[] @default([])
   avatar       String?
