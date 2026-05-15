@@ -1,11 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-<<<<<<< HEAD
-import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck, Loader2, X, Mail, User, Globe } from 'lucide-react';
-=======
-import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck, Loader2, X } from 'lucide-react';
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+import { Eye, EyeOff, RefreshCw, Copy, Check, UserPlus, AlertTriangle, UserCheck, Loader2, X, Mail, User, Globe, UserRoundCog } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -30,8 +26,8 @@ import type { CreateUserMode } from '@/app/api/users/create/route';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ROLES: { value: UserRole; label: string; description: string }[] = [
-  { value: 'admin', label: 'Administrador', description: 'Gestión completa de la empresa' },
-  { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores' },
+  { value: 'admin', label: 'Administrador', description: 'GestiÃ³n completa de la empresa' },
+  { value: 'responsable', label: 'Responsable', description: 'GestiÃ³n de locales/sectores' },
   { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas' },
   { value: 'viewer', label: 'Visualizador', description: 'Solo lectura' },
 ];
@@ -42,9 +38,10 @@ const SUPERADMIN_ROLES: { value: UserRole; label: string; description: string }[
 ];
 
 const MODES: { value: CreateUserMode; label: string; icon: React.ReactNode; hint: string }[] = [
-  { value: 'email', label: 'Con correo', icon: <Mail className="h-4 w-4" />, hint: 'Email + contraseña. Se envía invitación.' },
+  { value: 'email', label: 'Con correo', icon: <Mail className="h-4 w-4" />, hint: 'Email + contraseÃ±a. Se envÃ­a invitaciÃ³n.' },
   { value: 'username', label: 'Con usuario', icon: <User className="h-4 w-4" />, hint: 'Sin email. Ingresa con nombre de usuario.' },
   { value: 'google', label: 'Con Google', icon: <Globe className="h-4 w-4" />, hint: 'Ingresa su Gmail. El usuario usa Google para entrar.' },
+  { value: 'ghost', label: 'Sin acceso', icon: <UserRoundCog className="h-4 w-4" />, hint: 'Solo para control interno y asignaciÃ³n de tareas.' },
 ];
 
 function generatePassword(): string {
@@ -100,37 +97,28 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     const nextErrors: Record<string, string> = {};
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-<<<<<<< HEAD
     const trimmedUsername = username.trim();
 
     if (!trimmedName) nextErrors.name = 'El nombre es obligatorio';
 
     if (mode === 'email') {
-      if (!trimmedEmail) nextErrors.email = 'El correo electrónico es obligatorio';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) nextErrors.email = 'El correo no es válido';
-      if (!password) nextErrors.password = 'La contraseña es obligatoria';
-      else if (password.length < 6) nextErrors.password = 'Mínimo 6 caracteres';
+      if (!trimmedEmail) nextErrors.email = 'El correo electrÃ³nico es obligatorio';
+      else if (!EMAIL_REGEX.test(trimmedEmail)) nextErrors.email = 'El correo no es vÃ¡lido';
+      if (createAccess && !password) nextErrors.password = 'La contraseÃ±a es obligatoria';
+      else if (createAccess && password.length < 6) nextErrors.password = 'MÃ­nimo 6 caracteres';
     }
 
     if (mode === 'username') {
       if (!trimmedUsername) nextErrors.username = 'El nombre de usuario es obligatorio';
-      else if (!/^[a-z0-9_.-]{3,30}$/.test(trimmedUsername)) nextErrors.username = 'Solo letras minúsculas, números, _ . - (3-30 caracteres)';
-      if (!password) nextErrors.password = 'La contraseña es obligatoria';
-      else if (password.length < 6) nextErrors.password = 'Mínimo 6 caracteres';
+      else if (!/^[a-z0-9_.-]{3,30}$/.test(trimmedUsername)) nextErrors.username = 'Solo letras minÃºsculas, nÃºmeros, _ . - (3-30 caracteres)';
+      if (!password) nextErrors.password = 'La contraseÃ±a es obligatoria';
+      else if (password.length < 6) nextErrors.password = 'MÃ­nimo 6 caracteres';
     }
 
     if (mode === 'google') {
       if (!trimmedEmail) nextErrors.email = 'El Gmail es obligatorio';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) nextErrors.email = 'El Gmail no es válido';
+      else if (!EMAIL_REGEX.test(trimmedEmail)) nextErrors.email = 'El Gmail no es vÃ¡lido';
     }
-=======
-
-    if (!trimmedName) nextErrors.name = 'El nombre es obligatorio';
-    if (!trimmedEmail) nextErrors.email = 'El correo electrónico es obligatorio';
-    else if (!EMAIL_REGEX.test(trimmedEmail)) nextErrors.email = 'El correo electrónico no es válido';
-    if (!password) nextErrors.password = 'La contraseña es obligatoria';
-    else if (password.length < 6) nextErrors.password = 'La contraseña debe tener al menos 6 caracteres';
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -141,15 +129,10 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     mutate(
       {
         name: trimmedName,
-<<<<<<< HEAD
-        email: mode !== 'username' ? trimmedEmail : undefined,
+        email: mode !== 'username' && mode !== 'ghost' ? trimmedEmail : undefined,
         username: mode === 'username' ? trimmedUsername : undefined,
-        password: mode !== 'google' ? password : undefined,
+        password: mode === 'username' || (mode === 'email' && createAccess) ? password : undefined,
         mode,
-=======
-        email: trimmedEmail,
-        password: createAccess ? password : undefined,
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
         role,
         businessId,
         locationId: locationId || undefined,
@@ -212,6 +195,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   }
 
   const successLabel = mode === 'username' ? username : email;
+  const hasCredentials = mode === 'username' || (mode === 'email' && createAccess);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -224,12 +208,12 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 Crear usuario
               </DialogTitle>
               <DialogDescription>
-                Elegí cómo va a ingresar el nuevo usuario al sistema.
+                ElegÃ­ cÃ³mo va a ingresar el nuevo usuario al sistema.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Mode selector */}
-              <div className="grid grid-cols-3 gap-1.5 rounded-lg border p-1">
+              <div className="grid grid-cols-2 gap-1.5 rounded-lg border p-1 sm:grid-cols-4">
                 {MODES.map((m) => (
                   <button
                     key={m.value}
@@ -255,24 +239,19 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Nombre completo</label>
                 <Input
-                  placeholder="Juan García"
+                  placeholder="Juan GarcÃ­a"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-<<<<<<< HEAD
-=======
-                  required
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                   maxLength={100}
                 />
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
-<<<<<<< HEAD
               {/* Email (modes: email, google) */}
               {(mode === 'email' || mode === 'google') && (
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">
-                    {mode === 'google' ? 'Gmail del usuario' : 'Correo electrónico'}
+                    {mode === 'google' ? 'Gmail del usuario' : 'Correo electrÃ³nico'}
                   </label>
                   <Input
                     type="email"
@@ -282,62 +261,6 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                     maxLength={150}
                   />
                   {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-=======
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Correo electrónico</label>
-                <Input
-                  type="email"
-                  placeholder="juan@empresa.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  maxLength={150}
-                />
-                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-              </div>
-
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Checkbox
-                  checked={createAccess}
-                  onChange={(e) => {
-                    setCreateAccess(e.target.checked);
-                    if (!e.target.checked && !password) setPassword(generatePassword());
-                  }}
-                />
-                Crear acceso con contraseña
-              </label>
-
-              <div className={cn('space-y-1.5', !createAccess && 'hidden')}>
-                <label className="text-sm font-medium">Contraseña inicial</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pr-10 font-mono text-sm"
-                      required={createAccess}
-                      minLength={createAccess ? 6 : undefined}
-                    />
-                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleGenerate}
-                    title="Generar contraseña"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                 </div>
               )}
 
@@ -352,14 +275,24 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                     maxLength={30}
                   />
                   {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
-                  <p className="text-xs text-muted-foreground">Solo letras, números, puntos, guiones.</p>
+                  <p className="text-xs text-muted-foreground">Solo letras, nÃºmeros, puntos, guiones.</p>
                 </div>
               )}
 
               {/* Password (modes: email, username) */}
-              {mode !== 'google' && (
+              {mode === 'email' && (
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Checkbox
+                    checked={createAccess}
+                    onChange={(e) => setCreateAccess(e.target.checked)}
+                  />
+                  Crear acceso con contraseña
+                </label>
+              )}
+
+              {mode === 'username' || (mode === 'email' && createAccess) ? (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Contraseña inicial</label>
+                  <label className="text-sm font-medium">ContraseÃ±a inicial</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Input
@@ -377,18 +310,24 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <Button type="button" variant="outline" size="icon" onClick={handleGenerate} title="Generar contraseña">
+                    <Button type="button" variant="outline" size="icon" onClick={handleGenerate} title="Generar contraseÃ±a">
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
                   {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                  <p className="text-xs text-muted-foreground">El usuario podrá cambiarla luego.</p>
+                  <p className="text-xs text-muted-foreground">El usuario podrÃ¡ cambiarla luego.</p>
                 </div>
-              )}
+              ) : null}
 
               {mode === 'google' && (
                 <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
-                  El usuario deberá usar "Continuar con Google" para ingresar al sistema.
+                  El usuario deberÃ¡ usar Continuar con Google para ingresar al sistema.
+                </div>
+              )}
+
+              {mode === 'ghost' && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                  Se crea sin credenciales. Queda disponible para asignarle sector y tareas.
                 </div>
               )}
 
@@ -434,10 +373,10 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">
                   <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
-                    <p className="text-sm font-medium">Límite de usuarios alcanzado</p>
+                    <p className="text-sm font-medium">LÃ­mite de usuarios alcanzado</p>
                   </div>
                   <p className="text-sm text-amber-700 dark:text-amber-400">
-                    Tu plan permite hasta <strong>{limitInfo.limit}</strong> usuarios y ya tenés <strong>{limitInfo.current}</strong> activos.
+                    Tu plan permite hasta <strong>{limitInfo.limit}</strong> usuarios y ya tenÃ©s <strong>{limitInfo.current}</strong> activos.
                   </p>
                   <Link href="/dashboard/billing" onClick={handleClose} className="inline-block text-sm font-medium text-amber-800 dark:text-amber-300 underline underline-offset-2">
                     Ver planes disponibles
@@ -451,22 +390,10 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={handleClose} disabled={isPending}>
-<<<<<<< HEAD
                   <X className="mr-1.5 h-4 w-4" />Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending}>
                   {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1.5 h-4 w-4" />}
-=======
-                  <X className="mr-1.5 h-4 w-4" />
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <UserPlus className="mr-1.5 h-4 w-4" />
-                  )}
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                   {isPending ? 'Creando...' : 'Crear usuario'}
                 </Button>
               </DialogFooter>
@@ -480,37 +407,21 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 Usuario desactivado
               </DialogTitle>
               <DialogDescription>
-                Este correo electrónico pertenece a un usuario que fue desactivado anteriormente.
+                Este correo electrÃ³nico pertenece a un usuario que fue desactivado anteriormente.
               </DialogDescription>
             </DialogHeader>
             <div className="py-2 space-y-3">
               <p className="text-sm text-muted-foreground">
-<<<<<<< HEAD
-                El correo <span className="font-medium text-foreground">{email}</span> ya existe pero está inactivo. ¿Querés reactivarlo?
-=======
-                El correo electrónico <span className="font-medium text-foreground">{email}</span> ya existe en el sistema pero está inactivo. ¿Querés reactivarlo?
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+                El correo <span className="font-medium text-foreground">{email}</span> ya existe pero estÃ¡ inactivo. Â¿QuerÃ©s reactivarlo?
               </p>
               {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={handleClose} disabled={reactivating}>
-<<<<<<< HEAD
                 <X className="mr-1.5 h-4 w-4" />Cancelar
               </Button>
               <Button onClick={handleReactivate} disabled={reactivating}>
                 {reactivating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <UserCheck className="mr-1.5 h-4 w-4" />}
-=======
-                <X className="mr-1.5 h-4 w-4" />
-                Cancelar
-              </Button>
-              <Button onClick={handleReactivate} disabled={reactivating}>
-                {reactivating ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <UserCheck className="mr-1.5 h-4 w-4" />
-                )}
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                 {reactivating ? 'Reactivando...' : 'Reactivar usuario'}
               </Button>
             </DialogFooter>
@@ -528,71 +439,37 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-<<<<<<< HEAD
                 El usuario <span className="font-medium text-foreground">{name}</span> fue creado correctamente.
-                {mode !== 'google' && ' Compartile estas credenciales:'}
+                {hasCredentials && ' Compartile estas credenciales:'}
               </p>
-              {mode !== 'google' ? (
+              {hasCredentials ? (
                 <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{mode === 'username' ? 'Usuario' : 'Correo'}</span>
                     <span className="font-medium">{successLabel}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Contraseña</span>
+                    <span className="text-muted-foreground">ContraseÃ±a</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-medium">{password}</span>
-                      <button type="button" onClick={handleCopyPassword} className="text-muted-foreground hover:text-foreground" title="Copiar contraseña">
+                      <button type="button" onClick={handleCopyPassword} className="text-muted-foreground hover:text-foreground" title="Copiar contraseÃ±a">
                         {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                 </div>
-              ) : (
+              ) : mode === 'google' ? (
                 <div className="rounded-lg border bg-muted/40 p-4 text-sm">
                   <p className="text-muted-foreground">El usuario debe ingresar con <strong>Continuar con Google</strong> usando <span className="font-medium text-foreground">{email}</span>.</p>
                 </div>
-              )}
-              {mode !== 'google' && (
-                <p className="text-xs text-muted-foreground">Guardá esta contraseña ahora — no se podrá ver de nuevo.</p>
-              )}
-=======
-                El usuario <span className="font-medium text-foreground">{name}</span> fue creado
-                correctamente.{createAccess ? ' Compartile estas credenciales:' : ''}
-              </p>
-              <div className={cn('rounded-lg border bg-muted/40 p-4 space-y-2 text-sm', !createAccess && 'hidden')}>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Correo electrónico</span>
-                  <span className="font-medium">{email}</span>
+              ) : (
+                <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+                  <p className="text-muted-foreground">No se generaron credenciales. PodÃ©s asignarle tareas desde el tablero.</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Contraseña</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-medium">{password}</span>
-                    <button
-                      type="button"
-                      onClick={handleCopyPassword}
-                      className="text-muted-foreground hover:text-foreground"
-                      title="Copiar contraseña"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {!createAccess && (
-                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                  No se generaron credenciales. Podés asignarle tareas desde el tablero.
-                </p>
               )}
-              <p className={cn('text-xs text-muted-foreground', !createAccess && 'hidden')}>
-                Guardá esta contraseña ahora — no se podrá ver de nuevo.
-              </p>
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+              {hasCredentials && (
+                <p className="text-xs text-muted-foreground">GuardÃ¡ esta contraseÃ±a ahora â€” no se podrÃ¡ ver de nuevo.</p>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={handleClose}>Listo</Button>

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { can } from '@/lib/permissions';
@@ -21,23 +21,13 @@ export const POST = handle(async (request: NextRequest) => {
 
   const targets = await prisma.userBusiness.findMany({
     where: { userId: { in: ids }, businessId: user.businessId },
-<<<<<<< HEAD
-    select: { userId: true },
-=======
     select: { userId: true, role: true },
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   });
 
   if (targets.length !== ids.length) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-<<<<<<< HEAD
-  await prisma.userBusiness.updateMany({
-    where: { userId: { in: ids }, businessId: user.businessId },
-    data: { locationId: locationId ?? null },
-  });
-=======
   await prisma.$transaction([
     prisma.userBusiness.updateMany({
       where: { userId: { in: ids }, businessId: user.businessId },
@@ -64,7 +54,6 @@ export const POST = handle(async (request: NextRequest) => {
         ]
       : []),
   ]);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   await writeAuditLog({
     actorId: user.uid,

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { membersApi } from '@/lib/api/members';
@@ -37,7 +37,6 @@ export function useRemoveMember() {
       queryClient.setQueryData<User[]>(key, (old = []) => old.filter((m) => m.id !== id));
       return { previous, key };
     },
-<<<<<<< HEAD
     onError: (err: Error, _id: string, context) => {
       if (context?.previous) queryClient.setQueryData(context.key, context.previous);
       if (err.message?.includes('cannot_remove_owner')) {
@@ -45,11 +44,6 @@ export function useRemoveMember() {
       } else {
         toast.error('Error al eliminar miembro');
       }
-=======
-    onError: (_err: Error, _id: string, context) => {
-      if (context?.previous) queryClient.setQueryData(context.key, context.previous);
-      toast.error('Error al eliminar miembro');
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     },
     onSuccess: () => {
       toast.success('Miembro eliminado del equipo');

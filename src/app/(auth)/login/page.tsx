@@ -1,29 +1,20 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-<<<<<<< HEAD
 import { login, loginWithGoogle, checkGoogleRedirectResult } from '@/lib/firebase/auth';
-=======
-import { login, loginWithGoogle } from '@/lib/firebase/auth';
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
-<<<<<<< HEAD
   const [loginInput, setLoginInput] = useState('');
-=======
-  const [email, setEmail] = useState('');
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited, refreshProfile } = useAuth();
   const router = useRouter();
@@ -37,7 +28,7 @@ function LoginForm() {
     }
   }, [isAuthenticated, authLoading, user, router]);
 
-  // Handle Google redirect flow (popup blocked → signInWithRedirect)
+  // Handle Google redirect flow (popup blocked â†’ signInWithRedirect)
   useEffect(() => {
     checkGoogleRedirectResult().then(async (result) => {
       if (!result) return;
@@ -62,25 +53,14 @@ function LoginForm() {
     setError('');
     setFieldErrors({});
 
-<<<<<<< HEAD
     const trimmed = loginInput.trim();
     if (!trimmed) {
       setFieldErrors({ login: 'El correo o usuario es obligatorio' });
-=======
-    const trimmedEmail = email.trim();
-    const errors: Record<string, string> = {};
-    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
-    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       return;
     }
 
     setLoading(true);
     try {
-<<<<<<< HEAD
       let firebaseEmail = trimmed;
       if (!trimmed.includes('@')) {
         const res = await fetch(`/api/auth/resolve?login=${encodeURIComponent(trimmed)}`);
@@ -94,13 +74,7 @@ function LoginForm() {
       await login(firebaseEmail, password);
       router.push(redirect);
     } catch (err) {
-      setError('Correo, usuario o contraseña incorrectos');
-=======
-      await login(trimmedEmail, password);
-      router.push(redirect);
-    } catch (err) {
-      setError('Correo o contraseña incorrectos');
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+      setError('Correo, usuario o contraseÃ±a incorrectos');
       console.error(err);
     } finally {
       setLoading(false);
@@ -112,8 +86,7 @@ function LoginForm() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle();
-<<<<<<< HEAD
-      if (!result) return; // redirect flow — onAuthStateChanged handles it
+      if (!result) return; // redirect flow â€” onAuthStateChanged handles it
 
       const { token } = result;
 
@@ -123,7 +96,7 @@ function LoginForm() {
       });
 
       if (profileRes.status === 404) {
-        // New user — provision account automatically
+        // New user â€” provision account automatically
         const registerRes = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -139,17 +112,14 @@ function LoginForm() {
       await refreshProfile();
       const target = redirect !== '/dashboard' ? redirect : '/dashboard';
       router.push(target);
-=======
-      if (result) router.push(redirect);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/popup-closed-by-user') {
         setError('');
       } else if (code === 'auth/unauthorized-domain') {
-        setError('Inicio de sesión con Google no está configurado para este dominio. Contactá al administrador.');
+        setError('Inicio de sesiÃ³n con Google no estÃ¡ configurado para este dominio. ContactÃ¡ al administrador.');
       } else {
-        setError((err as Error).message || 'Error al iniciar sesión con Google');
+        setError((err as Error).message || 'Error al iniciar sesiÃ³n con Google');
       }
       console.error(err);
     } finally {
@@ -186,7 +156,7 @@ function LoginForm() {
             />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Tablero de Control</h1>
-          <p className="mt-2 text-base text-muted-foreground">Iniciá sesión para continuar</p>
+          <p className="mt-2 text-base text-muted-foreground">IniciÃ¡ sesiÃ³n para continuar</p>
         </div>
 
         {/* Card */}
@@ -194,7 +164,7 @@ function LoginForm() {
           {/* Alerta not_invited */}
           {notInvited && (
             <div className="mb-6 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-              Tu cuenta no está registrada en el sistema. Pedile a tu administrador que te invite.
+              Tu cuenta no estÃ¡ registrada en el sistema. Pedile a tu administrador que te invite.
             </div>
           )}
 
@@ -237,14 +207,13 @@ function LoginForm() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-3 text-muted-foreground tracking-wider">O continuá con correo</span>
+              <span className="bg-card px-3 text-muted-foreground tracking-wider">O continuÃ¡ con correo</span>
             </div>
           </div>
 
           {/* Formulario email/password */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-<<<<<<< HEAD
               <label htmlFor="login" className="text-sm font-medium">Correo o usuario</label>
               <input
                 id="login"
@@ -258,29 +227,14 @@ function LoginForm() {
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               />
               {fieldErrors.login && <p className="text-xs text-destructive mt-1">{fieldErrors.login}</p>}
-=======
-              <label htmlFor="email" className="text-sm font-medium">Correo</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
-                required
-                maxLength={150}
-                className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-              />
-              {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
+                <label htmlFor="password" className="text-sm font-medium">ContraseÃ±a</label>
                 <Link href="/forgot-password" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-primary transition-colors">
-                  ¿Olvidaste tu contraseña?
+                  Â¿Olvidaste tu contraseÃ±a?
                 </Link>
               </div>
-<<<<<<< HEAD
               <div className="relative">
                 <input
                   id="password"
@@ -295,7 +249,7 @@ function LoginForm() {
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-label={showPassword ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -304,25 +258,15 @@ function LoginForm() {
                   )}
                 </button>
               </div>
-=======
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-              />
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             </div>
             <Button type="submit" className="w-full h-12 text-base font-medium" disabled={loading}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+              {loading ? 'Iniciando sesiÃ³n...' : 'Iniciar sesiÃ³n'}
             </Button>
           </form>
 
           {/* Footer */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            ¿No tenés cuenta?{' '}
+            Â¿No tenÃ©s cuenta?{' '}
             <Link href="/register" className="text-primary font-medium underline-offset-4 hover:underline transition-colors">
               Registrate
             </Link>
@@ -330,9 +274,9 @@ function LoginForm() {
 
           <div className="mt-4 flex justify-center gap-3">
             <Link href="/terminos" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors">
-              Términos
+              TÃ©rminos
             </Link>
-            <span className="text-xs text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground">Â·</span>
             <Link href="/privacidad" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors">
               Privacidad
             </Link>

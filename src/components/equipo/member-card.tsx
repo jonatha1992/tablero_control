@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -87,11 +87,7 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
             </div>
 
             {canManage && !isSelectMode && (
-<<<<<<< HEAD
               <div className="flex shrink-0 items-start gap-1 transition-opacity">
-=======
-              <div className="flex shrink-0 items-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                 <Button
                   variant="ghost"
                   size="icon"
@@ -127,14 +123,14 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
         </CardContent>
       </Card>
 
-      {/* Diálogo de confirmación de eliminación */}
+      {/* DiÃ¡logo de confirmaciÃ³n de eliminaciÃ³n */}
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         variant="destructive"
-        title={`¿Eliminar a ${member.name}?`}
-        description="El miembro perderá el acceso al equipo. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        title={`Â¿Eliminar a ${member.name}?`}
+        description="El miembro perderÃ¡ el acceso al equipo. Esta acciÃ³n no se puede deshacer."
+        confirmLabel="SÃ­, eliminar"
         onConfirm={() => {
           onRemove?.(member.id);
           setConfirmOpen(false);

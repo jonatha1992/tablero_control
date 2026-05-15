@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -85,11 +85,7 @@ export const DELETE = handle(async (
     return NextResponse.json({ error: 'cannot_delete_superadmin' }, { status: 400 });
   }
 
-<<<<<<< HEAD
   const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusinesses') === 'true';
-=======
-  const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusiness') === 'true';
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -101,7 +97,7 @@ export const DELETE = handle(async (
         });
 
         for (const biz of businesses) {
-          // Delete location-only tasks first — Location→Task is SetNull (not Cascade),
+          // Delete location-only tasks first â€” Locationâ†’Task is SetNull (not Cascade),
           // so these orphan after business.delete() and block user deletion.
           const locationIds = (await tx.location.findMany({
             where: { businessId: biz.id },
@@ -147,16 +143,13 @@ export const DELETE = handle(async (
       // 3. Clean up non-cascading FK references
       await tx.comment.deleteMany({ where: { authorId: id } });
       await tx.auditLog.deleteMany({ where: { actorId: id } });
-<<<<<<< HEAD
-      // Transfer business ownership (Business.ownerId FK has no onDelete — Restrict by default)
+      // Transfer business ownership (Business.ownerId FK has no onDelete â€” Restrict by default)
       await tx.business.updateMany({
         where: { ownerId: id },
         data: { ownerId: user.uid },
       });
-      // Delete calendar events (CalendarEvent.creatorId FK has no onDelete — Restrict by default)
+      // Delete calendar events (CalendarEvent.creatorId FK has no onDelete â€” Restrict by default)
       await tx.calendarEvent.deleteMany({ where: { creatorId: id } });
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       // Disconnect from all assigned tasks
       await tx.user.update({
         where: { id },

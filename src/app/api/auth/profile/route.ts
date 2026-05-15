@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
@@ -45,7 +45,7 @@ export const GET = handle(async (request: NextRequest) => {
       if (superadminEmails.includes(decoded.email)) {
         const name = decoded.name ?? decoded.email.split('@')[0] ?? 'Admin';
         const business = await businessRepository.create({
-          name: 'TecnoFusión (Master)',
+          name: 'TecnoFusiÃ³n (Master)',
           adminId: decoded.uid,
           ownerId: decoded.uid,
           plan: 'free',
@@ -113,7 +113,7 @@ export const GET = handle(async (request: NextRequest) => {
       const isSuperadmin = superadminEmails.includes(email);
 
       const business = await businessRepository.create({
-        name: isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`,
+        name: isSuperadmin ? 'TecnoFusiÃ³n (Master)' : `Empresa de ${name}`,
         adminId: decoded.uid,
         ownerId: decoded.uid,
         plan: 'free',
@@ -132,15 +132,11 @@ export const GET = handle(async (request: NextRequest) => {
         locationIds: [],
         teamIds: [],
       });
-<<<<<<< HEAD
       user = await userRepository.update(user.id, {
         businessId: business.id,
         role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,
         ...(!user.avatar && decoded.picture ? { avatar: decoded.picture } : {}),
       });
-=======
-      user = await userRepository.update(user.id, { businessId: business.id, role: isSuperadmin ? 'superadmin' : 'admin' as UserRole });
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       await userRepository.addMembership({
         userId: user.id,
         businessId: business.id,
@@ -150,13 +146,10 @@ export const GET = handle(async (request: NextRequest) => {
       user = await userRepository.findById(user.id) ?? user;
     }
 
-<<<<<<< HEAD
     if (!user.avatar && decoded.picture) {
       user = await userRepository.update(user.id, { avatar: decoded.picture });
     }
 
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     // Determine if user is owner of active business
     const isOwner = user.businessId
       ? (await businessRepository.findById(user.businessId))?.ownerId === user.id

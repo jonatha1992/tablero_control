@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -6,10 +6,7 @@ import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
-<<<<<<< HEAD
 import { businessRepository } from '@/repositories';
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -23,7 +20,6 @@ export const GET = handle(async (request: NextRequest) => {
 
   assertSameTenant(user.data, { businessId });
 
-<<<<<<< HEAD
   const [members, business] = await Promise.all([
     teamService.getMembersByBusiness(businessId),
     businessRepository.findById(businessId),
@@ -33,12 +29,6 @@ export const GET = handle(async (request: NextRequest) => {
   return NextResponse.json(membersWithOwner);
 });
 
-=======
-  const members = await teamService.getMembersByBusiness(businessId);
-  return NextResponse.json(members);
-});
-
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
@@ -72,7 +62,7 @@ export const POST = handle(async (request: NextRequest) => {
 
   const member = await teamService.inviteMember(dto, businessId, firebaseUid);
 
-  // Generar link para establecer contraseña
+  // Generar link para establecer contraseÃ±a
   let resetLink: string | undefined;
   try {
     resetLink = await adminAuth.generatePasswordResetLink(normalizedEmail, {

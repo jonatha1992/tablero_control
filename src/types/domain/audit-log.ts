@@ -13,6 +13,7 @@ export type AuditAction =
   | 'user.reactivate'
   | 'user.delete'
   | 'user.impersonate'
+  | 'user.upgrade_ghost'
   | 'role.create'
   | 'role.update'
   | 'role.delete'

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -126,13 +126,13 @@ function MemberRow({
                   <MapPin className="h-2.5 w-2.5 shrink-0" />
                   {s.name}
                   {s.role && (
-                    <span className="opacity-60">· {s.role}</span>
+                    <span className="opacity-60">Â· {s.role}</span>
                   )}
                 </span>
               ))}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground">—</span>
+            <span className="text-xs text-muted-foreground">â€”</span>
           )}
         </td>
 
@@ -149,11 +149,7 @@ function MemberRow({
 
         {canManage && !isSelectMode && (
           <td className="px-4 py-3">
-<<<<<<< HEAD
             <div className="flex items-center gap-0.5 transition-opacity">
-=======
-            <div className="flex items-center gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
               <Button
                 variant="ghost"
                 size="icon"
@@ -192,9 +188,9 @@ function MemberRow({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         variant="destructive"
-        title={`¿Eliminar a ${member.name}?`}
-        description="El miembro perderá el acceso al equipo. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        title={`Â¿Eliminar a ${member.name}?`}
+        description="El miembro perderÃ¡ el acceso al equipo. Esta acciÃ³n no se puede deshacer."
+        confirmLabel="SÃ­, eliminar"
         onConfirm={() => {
           onRemove?.(member.id);
           setConfirmOpen(false);

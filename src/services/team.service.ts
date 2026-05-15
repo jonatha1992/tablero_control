@@ -1,4 +1,4 @@
-import { userRepository, locationRepository } from '@/repositories';
+﻿import { userRepository, locationRepository } from '@/repositories';
 import { prisma } from '@/lib/prisma';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
@@ -12,7 +12,7 @@ class TeamService {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const existing = await userRepository.findByEmail(normalizedEmail);
     if (existing) {
-      // User already exists → add or update membership
+      // User already exists â†’ add or update membership
       const existingMembership = await prisma.userBusiness.findUnique({
         where: { userId_businessId: { userId: existing.id, businessId } },
       });
@@ -78,11 +78,6 @@ class TeamService {
     const updated = await userRepository.update(id, rest);
     if (locationAssignments !== undefined) {
       await userRepository.setLocationAssignments(id, locationAssignments);
-<<<<<<< HEAD
-      // Keep User.locationId in sync with primary assignment (first sector, or null)
-      const primary = locationAssignments[0]?.locationId ?? null;
-      await prisma.user.update({ where: { id }, data: { locationId: primary } });
-=======
       const primary = locationAssignments[0]?.locationId ?? null;
       await prisma.user.update({ where: { id }, data: { locationId: primary } });
       if (updated.businessId) {
@@ -91,7 +86,6 @@ class TeamService {
           data: { locationId: primary },
         });
       }
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       const refreshed = await userRepository.findById(id);
       return refreshed ?? updated;
     }

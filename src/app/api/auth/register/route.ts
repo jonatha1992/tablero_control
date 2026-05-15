@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { MailService } from '@/services/mail.service';
@@ -55,7 +55,7 @@ export const POST = handle(async (request: NextRequest) => {
   const isSuperadmin = superadminEmails.includes(email);
   const role = isSuperadmin ? 'superadmin' : 'admin';
 
-  // User must exist before Business (FK: Business.ownerId → User.id)
+  // User must exist before Business (FK: Business.ownerId â†’ User.id)
   const user = await userRepository.create({
     id: decoded.uid,
     email,
@@ -70,7 +70,7 @@ export const POST = handle(async (request: NextRequest) => {
   } as Parameters<typeof userRepository.create>[0]);
 
   const business = await businessRepository.create({
-    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`),
+    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusiÃ³n (Master)' : `Empresa de ${name}`),
     adminId: decoded.uid,
     ownerId: decoded.uid,
     plan: 'free',
@@ -90,22 +90,7 @@ export const POST = handle(async (request: NextRequest) => {
     teamIds: [],
   });
 
-<<<<<<< HEAD
   await userRepository.update(decoded.uid, { businessId: business.id });
-=======
-  const user = await userRepository.create({
-    id: decoded.uid,
-    email,
-    name,
-    role,
-    businessId: business.id,
-    avatar: decoded.picture ?? undefined,
-    teamIds: [],
-    customRoleIds: [],
-    preferences: DEFAULT_PREFERENCES,
-    isActive: true,
-  } as Parameters<typeof userRepository.create>[0]);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   await userRepository.addMembership({
     userId: user.id,

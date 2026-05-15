@@ -1,10 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-<<<<<<< HEAD
 import { toast } from 'sonner';
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 import { cyclesApi } from '@/lib/api/cycles';
 import { cycleKeys } from '@/hooks/queries/use-cycles-query';
 
@@ -17,13 +14,10 @@ export function useUpdateCycle() {
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
       queryClient.invalidateQueries({ queryKey: cycleKeys.detail(id) });
-<<<<<<< HEAD
-      toast.success('Período actualizado');
+      toast.success('PerÃ­odo actualizado');
     },
     onError: (err) => {
-      toast.error('Error al actualizar período', { description: (err as Error).message });
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+      toast.error('Error al actualizar perÃ­odo', { description: (err as Error).message });
     },
   });
 }
@@ -35,13 +29,10 @@ export function useDeleteCycle() {
     mutationFn: (id: string) => cyclesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
-<<<<<<< HEAD
-      toast.success('Período eliminado');
+      toast.success('PerÃ­odo eliminado');
     },
     onError: (err) => {
-      toast.error('Error al eliminar período', { description: (err as Error).message });
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+      toast.error('Error al eliminar perÃ­odo', { description: (err as Error).message });
     },
   });
 }
@@ -54,13 +45,10 @@ export function useStartCycle() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
       queryClient.invalidateQueries({ queryKey: cycleKeys.detail(id) });
-<<<<<<< HEAD
-      toast.success('Período iniciado');
+      toast.success('PerÃ­odo iniciado');
     },
     onError: (err) => {
-      toast.error('Error al iniciar período', { description: (err as Error).message });
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+      toast.error('Error al iniciar perÃ­odo', { description: (err as Error).message });
     },
   });
 }
@@ -73,13 +61,10 @@ export function useCompleteCycle() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
       queryClient.invalidateQueries({ queryKey: cycleKeys.detail(id) });
-<<<<<<< HEAD
-      toast.success('Período completado');
+      toast.success('PerÃ­odo completado');
     },
     onError: (err) => {
-      toast.error('Error al completar período', { description: (err as Error).message });
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+      toast.error('Error al completar perÃ­odo', { description: (err as Error).message });
     },
   });
 }

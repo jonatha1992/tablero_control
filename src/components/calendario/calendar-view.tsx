@@ -108,19 +108,6 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
     tooltipTimeout.current = setTimeout(() => setTooltip(null), 120);
   }, []);
 
-  const handleEventClick = (info: { event: { id: string; extendedProps: Record<string, unknown> } }) => {
-    if (info.event.extendedProps.isGhost) return;
-    if (onEventClick) {
-      onEventClick(info.event.id);
-    }
-  };
-
-  const handleDateClick = (info: { date: Date }) => {
-    if (onDateClick) {
-      onDateClick(info.date);
-    }
-  };
-
   return (
     <div className="relative h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4">
       <style jsx global>{`

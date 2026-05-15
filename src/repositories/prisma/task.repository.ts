@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+﻿import { prisma } from '@/lib/prisma';
 import type { ITaskRepository } from '../interfaces/ITaskRepository';
 import type { Task, TaskFilters, TaskSort, TaskStatus } from '@/types/domain/task';
 import type { CreateTaskDTO, UpdateTaskDTO } from '@/types/dto/task.dto';
@@ -37,12 +37,8 @@ function toDomain(t: PrismaTask): Task {
     actualHours: t.actualHours ?? undefined,
     recurrence: t.recurrence as unknown as Task['recurrence'],
     checklist: (t.checklist as unknown as Task['checklist']) ?? [],
-<<<<<<< HEAD
     subtaskIds: t.subtasks.map((s) => s.id),
     subtasksCompleted: t.subtasks.filter((s) => s.status === 'done').length,
-=======
-    subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     attachmentUrls: t.attachments.map((a: { url: string }) => a.url),
     attachments: t.attachments.map((a) => ({ url: a.url, name: a.filename })),
     commentCount: t.commentCount,
@@ -72,7 +68,7 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
     });
   }
 
-  // Filtro de búsqueda (usando AND para no pisar el OR de businessId)
+  // Filtro de bÃºsqueda (usando AND para no pisar el OR de businessId)
   if (filters?.search) {
     conditions.push({
       OR: [

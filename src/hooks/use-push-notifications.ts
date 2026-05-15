@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { getMessagingInstance } from '@/lib/firebase/client';
 import { getToken as getFirebaseAuthToken } from '@/lib/firebase/auth';
@@ -13,7 +13,6 @@ export const usePushNotifications = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let cleanup: (() => void) | undefined;
-<<<<<<< HEAD
     let isMounted = true;
 
     getMessagingInstance().then((m) => {
@@ -21,19 +20,14 @@ export const usePushNotifications = () => {
       // the listener to prevent orphaned async message handlers (which cause the
       // "message channel closed before a response was received" error).
       if (!m || !isMounted) return;
-=======
-
-    getMessagingInstance().then((m) => {
-      if (!m) return;
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       cleanup = onMessage(m, (payload) => {
         console.log('Mensaje recibido en foreground: ', payload);
-        const title = payload.notification?.title || 'Nueva Notificación';
+        const title = payload.notification?.title || 'Nueva NotificaciÃ³n';
         const body = payload.notification?.body || '';
 
         toast(title, {
           description: body,
-          icon: '🔔',
+          icon: 'ðŸ””',
           duration: 8000,
         });
 
@@ -47,10 +41,7 @@ export const usePushNotifications = () => {
     });
 
     return () => {
-<<<<<<< HEAD
       isMounted = false;
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       cleanup?.();
     };
   }, []);
@@ -60,7 +51,7 @@ export const usePushNotifications = () => {
 
     const m = await getMessagingInstance();
     if (!m) {
-      toast.error('Las notificaciones push no están soportadas en este navegador.');
+      toast.error('Las notificaciones push no estÃ¡n soportadas en este navegador.');
       return;
     }
 
@@ -76,7 +67,6 @@ export const usePushNotifications = () => {
       }
 
       const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-<<<<<<< HEAD
       let swReg: ServiceWorkerRegistration | undefined;
       try {
         swReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')
@@ -85,9 +75,6 @@ export const usePushNotifications = () => {
         // fallback: let Firebase auto-discover
       }
       const currentToken = await getToken(m, { vapidKey, serviceWorkerRegistration: swReg });
-=======
-      const currentToken = await getToken(m, { vapidKey });
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
       if (currentToken) {
         const authToken = await getFirebaseAuthToken();
@@ -104,13 +91,13 @@ export const usePushNotifications = () => {
           throw new Error('Error al guardar el token en la base de datos.');
         }
 
-        toast.success('¡Notificaciones activadas exitosamente!');
+        toast.success('Â¡Notificaciones activadas exitosamente!');
       } else {
         toast.error('No se pudo obtener el token de notificaciones.');
       }
     } catch (error) {
       console.error('[PUSH_NOTIFICATIONS_ERROR]', error);
-      toast.error('Ocurrió un error al intentar suscribirse a las notificaciones.');
+      toast.error('OcurriÃ³ un error al intentar suscribirse a las notificaciones.');
     } finally {
       setIsSubscribing(false);
     }

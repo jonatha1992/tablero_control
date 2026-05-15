@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -74,10 +74,10 @@ function RegisterForm() {
 
     if (!trimmedName) errors.name = 'El nombre es obligatorio';
     if (!trimmedEmail) errors.email = 'El correo es obligatorio';
-    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
+    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'IngresÃ¡ un correo vÃ¡lido';
     if (!trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
-    if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
-    if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
+    if (password.length < 6) errors.password = 'La contraseÃ±a debe tener al menos 6 caracteres';
+    if (password !== confirmPassword) errors.confirmPassword = 'Las contraseÃ±as no coinciden';
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -102,7 +102,7 @@ function RegisterForm() {
 
       // 2. Provision user + business in DB
       const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No se pudo obtener el token de autenticación');
+      if (!token) throw new Error('No se pudo obtener el token de autenticaciÃ³n');
 
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -114,7 +114,7 @@ function RegisterForm() {
       });
 
       if (!res.ok) {
-        throw new Error('Error al crear el negocio. Inténtalo de nuevo.');
+        throw new Error('Error al crear el negocio. IntÃ©ntalo de nuevo.');
       }
 
       // 3. Load profile + redirect immediately (avoids race condition with isAuthenticated)
@@ -124,11 +124,11 @@ function RegisterForm() {
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setError('Este correo ya está registrado. Verificá tu contraseña.');
+        setError('Este correo ya estÃ¡ registrado. VerificÃ¡ tu contraseÃ±a.');
       } else if (code === 'auth/weak-password') {
-        setError('La contraseña es demasiado débil');
+        setError('La contraseÃ±a es demasiado dÃ©bil');
       } else {
-        setError((err as Error).message || 'Error al crear la cuenta. Inténtalo de nuevo.');
+        setError((err as Error).message || 'Error al crear la cuenta. IntÃ©ntalo de nuevo.');
       }
       console.error(err);
     } finally {
@@ -155,7 +155,7 @@ function RegisterForm() {
             <Image src="/icon-192.png" alt="Tablero de Control" width={48} height={48} className="rounded-xl object-contain" priority />
           </div>
           <CardTitle className="text-2xl">Nuevo Negocio</CardTitle>
-          <CardDescription>Creá un nuevo negocio para gestionar</CardDescription>
+          <CardDescription>CreÃ¡ un nuevo negocio para gestionar</CardDescription>
         </CardHeader>
         <form onSubmit={handleCreateBusiness}>
           <CardContent className="space-y-4">
@@ -203,7 +203,7 @@ function RegisterForm() {
           <Image src="/icon-192.png" alt="Tablero de Control" width={48} height={48} className="rounded-xl object-contain" priority />
         </div>
         <CardTitle className="text-2xl">Crear Cuenta</CardTitle>
-        <CardDescription>Registrá tu negocio para acceder al tablero</CardDescription>
+        <CardDescription>RegistrÃ¡ tu negocio para acceder al tablero</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -219,7 +219,7 @@ function RegisterForm() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Juan García"
+              placeholder="Juan GarcÃ­a"
               required
               maxLength={100}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -256,15 +256,14 @@ function RegisterForm() {
             {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
           </div>
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
-<<<<<<< HEAD
+            <label htmlFor="password" className="text-sm font-medium">ContraseÃ±a</label>
             <div className="relative">
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="MÃ­nimo 6 caracteres"
                 required
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
@@ -273,7 +272,7 @@ function RegisterForm() {
                 onClick={() => setShowPassword((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showPassword ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
               >
                 {showPassword ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -282,29 +281,17 @@ function RegisterForm() {
                 )}
               </button>
             </div>
-=======
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              required
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
           </div>
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Contraseña</label>
-<<<<<<< HEAD
+            <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar ContraseÃ±a</label>
             <div className="relative">
               <input
                 id="confirmPassword"
                 type={showConfirm ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repite la contraseña"
+                placeholder="Repite la contraseÃ±a"
                 required
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
@@ -313,7 +300,7 @@ function RegisterForm() {
                 onClick={() => setShowConfirm((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
-                aria-label={showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showConfirm ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
               >
                 {showConfirm ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -322,17 +309,6 @@ function RegisterForm() {
                 )}
               </button>
             </div>
-=======
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repite la contraseña"
-              required
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
           </div>
         </CardContent>
@@ -341,15 +317,15 @@ function RegisterForm() {
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            Al crear una cuenta aceptás los{' '}
-            <Link href="/terminos" className="underline underline-offset-4 hover:text-foreground transition-colors">Términos y Condiciones</Link>
+            Al crear una cuenta aceptÃ¡s los{' '}
+            <Link href="/terminos" className="underline underline-offset-4 hover:text-foreground transition-colors">TÃ©rminos y Condiciones</Link>
             {' '}y la{' '}
-            <Link href="/privacidad" className="underline underline-offset-4 hover:text-foreground transition-colors">Política de Privacidad</Link>.
+            <Link href="/privacidad" className="underline underline-offset-4 hover:text-foreground transition-colors">PolÃ­tica de Privacidad</Link>.
           </p>
           <p className="text-center text-sm text-muted-foreground">
-            ¿Ya tenés cuenta?{' '}
+            Â¿Ya tenÃ©s cuenta?{' '}
             <Link href="/login" className="text-primary underline hover:text-primary/80">
-              Iniciá sesión
+              IniciÃ¡ sesiÃ³n
             </Link>
           </p>
         </CardFooter>

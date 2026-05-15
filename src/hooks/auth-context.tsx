@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser } from 'firebase/auth';
@@ -45,24 +45,6 @@ async function fetchProfile(fbUser: FirebaseUser): Promise<User | null> {
     return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
   }
   return null;
-<<<<<<< HEAD
-=======
-}
-
-async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {
-  try {
-    const token = await fbUser.getIdToken();
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) return null;
-    const profile = await res.json();
-    return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
-  } catch {
-    return null;
-  }
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 }
 
 async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {
@@ -115,8 +97,8 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
               new URLSearchParams(window.location.search).get('redirect')?.startsWith('/i/'));
 
           if (onRegisterPage || onInvitePage) {
-            // register page llama refreshProfile() después del POST
-            // invite page crea el user vía /api/invites/[token]/accept
+            // register page llama refreshProfile() despuÃ©s del POST
+            // invite page crea el user vÃ­a /api/invites/[token]/accept
           } else {
             // Intentar auto-registrar (mismo comportamiento que /register)
             const registered = await autoRegister(fbUser);

@@ -1,8 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-<<<<<<< HEAD
 import {
   Bot, Calendar, Check, ExternalLink, Loader2, MapPin, Mic,
   Send, Sparkles, Target, Volume2, VolumeX, X,
@@ -21,26 +20,19 @@ import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { TaskPriority, TaskStatus } from '@/types/domain/task';
-=======
-import { Bot, ListTodo, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAssistantChat } from '@/hooks/mutations/use-assistant-chat';
-import { DictateTasksContent } from '@/components/tareas/dictate-tasks-modal';
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
 interface AiAssistantPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-<<<<<<< HEAD
 // Pattern requires at least ~5 chars of description after the keyword
 const CYCLE_PATTERN =
-  /^(crear|nueva?|quiero\s+(crear|hacer)|planificar)\s*(una?\s+)?(planificaci[oó]n|sprint|ciclo|per[ií]odo)[:\-–]\s*(.+)/i;
+  /^(crear|nueva?|quiero\s+(crear|hacer)|planificar)\s*(una?\s+)?(planificaci[oÃ³]n|sprint|ciclo|per[iÃ­]odo)[:\-â€“]\s*(.+)/i;
 const OBJECTIVE_PATTERN =
-  /^(crear|nuevo?|quiero\s+(crear|hacer))\s*(un[ao]?\s+)?(objetivo|[eé]pica|meta)[:\-–]\s*(.+)/i;
+  /^(crear|nuevo?|quiero\s+(crear|hacer))\s*(un[ao]?\s+)?(objetivo|[eÃ©]pica|meta)[:\-â€“]\s*(.+)/i;
 const TASK_PATTERN =
-  /^(crear|nueva?s?|quiero\s+(crear|hacer|agregar|añadir)|agrega?r?|añadir)\s*(una?s?\s+)?(tarea|tareas)[:\-–]?\s*(.{3,})/i;
+  /^(crear|nueva?s?|quiero\s+(crear|hacer|agregar|aÃ±adir)|agrega?r?|aÃ±adir)\s*(una?s?\s+)?(tarea|tareas)[:\-â€“]?\s*(.{3,})/i;
 
 const PRIORITY_BORDER: Record<TaskPriority, string> = {
   low: 'border-l-slate-300', medium: 'border-l-blue-400',
@@ -81,8 +73,8 @@ function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
             </select>
           </div>
         )}
-        {task.dueDate && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">📅 {task.dueDate}</span>}
-        {task.estimatedHours && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">⏱ {task.estimatedHours}h</span>}
+        {task.dueDate && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">ðŸ“… {task.dueDate}</span>}
+        {task.estimatedHours && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">â± {task.estimatedHours}h</span>}
         {members.slice(0, 3).map((m) => {
           const on = task.assigneeIds.includes(m.id);
           return <button key={m.id} type="button" onClick={() => onChange({ ...task, assigneeIds: on ? task.assigneeIds.filter((id) => id !== m.id) : [...task.assigneeIds, m.id] })} className={cn('rounded-full px-1.5 py-0.5 text-[10px] border transition-colors', on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary')}>{m.name.split(' ')[0]}</button>;
@@ -93,10 +85,10 @@ function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
 }
 
 const SUGGESTIONS = [
-  '¿Qué tareas están vencidas?',
+  'Â¿QuÃ© tareas estÃ¡n vencidas?',
   'Crear tarea: revisar el informe mensual',
   'Quiero planificar el lanzamiento de un producto',
-  'Crear planificación: migrar el servidor a la nube',
+  'Crear planificaciÃ³n: migrar el servidor a la nube',
 ];
 
 export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
@@ -116,7 +108,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const prevMsgLenRef = useRef(0);
 
   const {
-    messages, send, addAction, addPreview, confirmPreview, cancelPreview,
+    messages, send, addAction: _addAction, addPreview, confirmPreview, cancelPreview,
     replacePreviewWithAction, addTaskPreview, confirmTaskMessage,
     updateTaskInMessage, removeTaskFromMessage, clear, isPending,
   } = useAssistantChat();
@@ -156,48 +148,6 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     }
     prevMsgLenRef.current = messages.length;
   }, [messages, isMuted]);
-=======
-type Tab = 'assistant' | 'tasks';
-
-const SUGGESTIONS = [
-  '¿Qué tareas están vencidas?',
-  '¿Qué tengo para hoy?',
-  '¿Qué hay en progreso?',
-  '¿Cómo creo un sprint?',
-];
-
-export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
-  const [tab, setTab] = useState<Tab>('assistant');
-  const [input, setInput] = useState('');
-  const [isMuted, setIsMuted] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('ai_panel_muted') === 'true';
-  });
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const prevMsgLenRef = useRef(0);
-  const { messages, send, clear, isPending } = useAssistantChat();
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isPending]);
-
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (
-      tab === 'assistant' &&
-      messages.length > prevMsgLenRef.current &&
-      lastMsg?.role === 'assistant' &&
-      !isMuted
-    ) {
-      const utterance = new SpeechSynthesisUtterance(lastMsg.content);
-      utterance.lang = 'es-AR';
-      utterance.rate = 1.1;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    }
-    prevMsgLenRef.current = messages.length;
-  }, [messages, isMuted, tab]);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   const toggleMute = () => {
     const next = !isMuted;
@@ -206,7 +156,6 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     if (next) window.speechSynthesis.cancel();
   };
 
-<<<<<<< HEAD
   const handleClose = () => {
     if (isLoading || micState === 'recording') return;
     window.speechSynthesis.cancel();
@@ -310,29 +259,10 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
 
   const fmtSec = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
-=======
-  const handleSend = async (text?: string) => {
-    const msg = text ?? input.trim();
-    if (!msg || isPending) return;
-    setInput('');
-    await send(msg);
-  };
-
-  const handleClose = () => {
-    if (isPending) return;
-    window.speechSynthesis.cancel();
-    clear();
-    setInput('');
-    setTab('assistant');
-    onOpenChange(false);
-  };
-
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
         className="max-w-2xl flex flex-col p-0 gap-0 h-[580px]"
-<<<<<<< HEAD
         onInteractOutside={(e) => { if (isLoading) e.preventDefault(); }}
       >
         <DialogHeader className="px-4 pt-3 pb-3 shrink-0 border-b">
@@ -350,8 +280,8 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             <div className="flex flex-col items-center justify-center gap-4 text-center h-full text-muted-foreground">
               <Bot className="h-10 w-10 opacity-15" />
               <div>
-                <p className="text-sm font-medium text-foreground/70">¿En qué puedo ayudarte?</p>
-                <p className="text-xs mt-0.5">Preguntá, usá el 🎤 para dictar tareas, o pedí una planificación</p>
+                <p className="text-sm font-medium text-foreground/70">Â¿En quÃ© puedo ayudarte?</p>
+                <p className="text-xs mt-0.5">PreguntÃ¡, usÃ¡ el ðŸŽ¤ para dictar tareas, o pedÃ­ una planificaciÃ³n</p>
               </div>
               <div className="flex flex-wrap gap-2 justify-center max-w-sm">
                 {SUGGESTIONS.map((s) => (
@@ -366,8 +296,8 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 self-stretch">
               <span className="h-3 w-3 rounded-full bg-red-500 animate-pulse shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">Grabando…</p>
-                <p className="text-xs text-muted-foreground">Hablá con claridad. Pulsá 🎤 para detener.</p>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">Grabandoâ€¦</p>
+                <p className="text-xs text-muted-foreground">HablÃ¡ con claridad. PulsÃ¡ ðŸŽ¤ para detener.</p>
               </div>
               <span className="font-mono text-sm text-red-500 font-semibold">{fmtSec(recSeconds)}</span>
             </div>
@@ -377,14 +307,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           {micState === 'processing' && (
             <div className="flex items-center gap-3 bg-muted rounded-xl px-4 py-3 self-stretch">
               <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-              <p className="text-sm text-muted-foreground">Transcribiendo audio y detectando tareas…</p>
+              <p className="text-sm text-muted-foreground">Transcribiendo audio y detectando tareasâ€¦</p>
             </div>
           )}
 
           {/* Messages */}
           {messages.map((msg: DisplayMessage, i) => {
 
-            /* ── Action card (planificación/objetivo creado) ── */
+            /* â”€â”€ Action card (planificaciÃ³n/objetivo creado) â”€â”€ */
             if (msg.role === 'action') {
               const { action } = msg;
               const isCycle = action.type === 'cycle';
@@ -393,25 +323,25 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                   <div className="max-w-[90%] rounded-2xl rounded-tl-sm bg-primary/10 border border-primary/20 p-3">
                     <div className="flex items-center gap-2 mb-2">
                       {isCycle ? <Calendar className="h-4 w-4 text-primary shrink-0" /> : <Target className="h-4 w-4 text-primary shrink-0" />}
-                      <span className="text-sm font-medium text-primary">{isCycle ? 'Planificación creada' : 'Objetivo creado'}</span>
+                      <span className="text-sm font-medium text-primary">{isCycle ? 'PlanificaciÃ³n creada' : 'Objetivo creado'}</span>
                     </div>
                     <p className="text-sm font-semibold">{action.name}</p>
                     <p className="text-xs text-muted-foreground mt-1">{action.tasksCreated} tarea{action.tasksCreated !== 1 ? 's' : ''} generada{action.tasksCreated !== 1 ? 's' : ''}:</p>
-                    <ul className="mt-1 space-y-0.5">{action.taskTitles.map((t, j) => <li key={j} className="text-xs text-muted-foreground">• {t}</li>)}</ul>
-                    <a href={action.link} onClick={handleClose} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">Ver {isCycle ? 'planificación' : 'objetivo'} <ExternalLink className="h-3 w-3" /></a>
+                    <ul className="mt-1 space-y-0.5">{action.taskTitles.map((t, j) => <li key={j} className="text-xs text-muted-foreground">â€¢ {t}</li>)}</ul>
+                    <a href={action.link} onClick={handleClose} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">Ver {isCycle ? 'planificaciÃ³n' : 'objetivo'} <ExternalLink className="h-3 w-3" /></a>
                   </div>
                 </div>
               );
             }
 
-            /* ── Preview card (pendiente de confirmación) ── */
+            /* â”€â”€ Preview card (pendiente de confirmaciÃ³n) â”€â”€ */
             if (msg.role === 'preview') {
               const isCycle = msg.type === 'cycle';
-              const label = isCycle ? 'planificación' : 'objetivo';
+              const label = isCycle ? 'planificaciÃ³n' : 'objetivo';
               if (msg.state === 'cancelled') {
                 return (
                   <div key={i} className="self-start text-xs text-muted-foreground italic px-1">
-                    Creación cancelada.
+                    CreaciÃ³n cancelada.
                   </div>
                 );
               }
@@ -427,14 +357,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                     <ul className="space-y-0.5 mb-3">
                       {msg.plan.tasks.map((t, j) => (
                         <li key={j} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                          <span className="text-primary mt-0.5">•</span>
+                          <span className="text-primary mt-0.5">â€¢</span>
                           <span>{t.title} {t.estimatedHours && <span className="text-muted-foreground/60">({t.estimatedHours}h)</span>}</span>
                         </li>
                       ))}
                     </ul>
                     {msg.state === 'confirmed' ? (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Creando {label}…
+                        <Loader2 className="h-3 w-3 animate-spin" /> Creando {label}â€¦
                       </div>
                     ) : (
                       <div className="flex gap-2">
@@ -451,13 +381,13 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
               );
             }
 
-            /* ── Tasks preview (desde audio) ── */
+            /* â”€â”€ Tasks preview (desde audio) â”€â”€ */
             if (msg.role === 'tasks') {
               const sorted = [...msg.tasks].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
               return (
                 <div key={i} className="flex flex-col gap-2">
                   <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm self-start max-w-[85%]">
-                    {msg.parseError || msg.tasks.length === 0 ? 'No detecté tareas. ¿Podés ser más específico?' : `Detecté ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
+                    {msg.parseError || msg.tasks.length === 0 ? 'No detectÃ© tareas. Â¿PodÃ©s ser mÃ¡s especÃ­fico?' : `DetectÃ© ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
                   </div>
                   {msg.tasks.length > 0 && (
                     <div className="flex flex-col gap-1.5">
@@ -470,13 +400,13 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                   {msg.tasks.length > 0 && (
                     msg.confirmed
                       ? <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><Check className="h-3.5 w-3.5" />{msg.tasks.length} tarea{msg.tasks.length !== 1 ? 's' : ''} creada{msg.tasks.length !== 1 ? 's' : ''}</div>
-                      : <Button size="sm" className="self-start" onClick={() => handleConfirmTasks(msg.tasks, i)} disabled={confirmingIdx === i}>{confirmingIdx === i ? <><Loader2 className="h-3 w-3 animate-spin mr-1.5" />Creando…</> : `Crear ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}`}</Button>
+                      : <Button size="sm" className="self-start" onClick={() => handleConfirmTasks(msg.tasks, i)} disabled={confirmingIdx === i}>{confirmingIdx === i ? <><Loader2 className="h-3 w-3 animate-spin mr-1.5" />Creandoâ€¦</> : `Crear ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}`}</Button>
                   )}
                 </div>
               );
             }
 
-            /* ── Text message (user / assistant) ── */
+            /* â”€â”€ Text message (user / assistant) â”€â”€ */
             return (
               <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 <div className={cn('max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap', msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm')}>
@@ -507,14 +437,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : 'Preguntá, o escribí "Crear tarea: …" / "Crear planificación: …"'}
+            placeholder={micState === 'recording' ? 'ðŸ”´ Grabandoâ€¦ pulsÃ¡ ðŸŽ¤ para detener' : 'PreguntÃ¡, o escribÃ­ "Crear tarea: â€¦" / "Crear planificaciÃ³n: â€¦"'}
             disabled={isLoading || micState !== 'idle'}
             className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
           />
           <button
             onClick={handleMic}
             disabled={isPending || isGenerating || micState === 'processing'}
-            title={micState === 'recording' ? 'Detener grabación' : 'Dictar tareas por voz'}
+            title={micState === 'recording' ? 'Detener grabaciÃ³n' : 'Dictar tareas por voz'}
             className={cn('h-9 w-9 rounded-full flex items-center justify-center transition-colors shrink-0', micState === 'recording' ? 'bg-red-500 text-white animate-pulse' : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground')}
           >
             {micState === 'processing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
@@ -527,138 +457,6 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             <Send className="h-4 w-4" />
           </button>
         </div>
-=======
-        onInteractOutside={(e) => { if (isPending) e.preventDefault(); }}
-      >
-        <DialogHeader className="px-4 pt-3 pb-0 shrink-0">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-primary shrink-0" />
-            <DialogTitle className="text-base flex-1">Asistente IA</DialogTitle>
-            <button
-              onClick={toggleMute}
-              className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title={isMuted ? 'Activar audio' : 'Silenciar'}
-            >
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b">
-            <button
-              onClick={() => setTab('assistant')}
-              className={cn(
-                'flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                tab === 'assistant'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <Bot className="h-3.5 w-3.5" />
-              Asistente
-            </button>
-            <button
-              onClick={() => setTab('tasks')}
-              className={cn(
-                'flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                tab === 'tasks'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <ListTodo className="h-3.5 w-3.5" />
-              Crear tareas
-            </button>
-          </div>
-        </DialogHeader>
-
-        {/* Tab: Asistente */}
-        {tab === 'assistant' && (
-          <>
-            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3 min-h-0">
-              {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center gap-4 text-center h-full text-muted-foreground">
-                  <Bot className="h-10 w-10 opacity-15" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground/70">¿En qué puedo ayudarte?</p>
-                    <p className="text-xs mt-0.5">Preguntame sobre el sistema, tus tareas o cómo usar cada función</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center max-w-sm">
-                    {SUGGESTIONS.map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => handleSend(s)}
-                        className="rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'flex',
-                    msg.role === 'user' ? 'justify-end' : 'justify-start',
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                        : 'bg-muted text-foreground rounded-tl-sm',
-                    )}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-
-              {isPending && (
-                <div className="flex gap-1 items-center bg-muted rounded-2xl rounded-tl-sm px-3 py-2.5 self-start">
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
-                </div>
-              )}
-
-              <div ref={bottomRef} />
-            </div>
-
-            <div className="border-t px-3 py-2.5 flex items-center gap-2 shrink-0">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Preguntá lo que quieras…"
-                disabled={isPending}
-                className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-              />
-              <button
-                onClick={() => handleSend()}
-                disabled={!input.trim() || isPending}
-                className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Tab: Crear tareas */}
-        {tab === 'tasks' && (
-          <DictateTasksContent onClose={handleClose} />
-        )}
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       </DialogContent>
     </Dialog>
   );

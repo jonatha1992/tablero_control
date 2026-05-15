@@ -1,17 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { teamService } from '@/services/team.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
-<<<<<<< HEAD
 import { can } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 import { sendNotification } from '@/lib/notifications';
-=======
-import { can, assertSameTenant } from '@/lib/permissions';
-import { userRepository, businessRepository } from '@/repositories';
-import { handle } from '@/lib/api/route-handler';
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
 export const PATCH = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -25,27 +19,17 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
+  // Use admin's businessId â€” target.businessId is a cached field that may point to a different active business
   const operatingBusinessId = user.data.businessId;
   if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
 
   const membership = target.memberships?.find((m) => m.businessId === operatingBusinessId);
   if (!membership) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const operatingBusinessId = target.businessId;
-  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
-
   const data = await request.json();
 
   if (data.reactivate === true) {
-<<<<<<< HEAD
     await teamService.reactivateMember(id, operatingBusinessId);
-=======
-    if (!target.businessId) {
-      return NextResponse.json({ error: 'No business' }, { status: 400 });
-    }
-    await teamService.reactivateMember(id, target.businessId);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     await writeAuditLog({
       actorId: user.uid,
       actorRole: user.role,
@@ -62,14 +46,8 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     if (user.role !== 'superadmin' && data.role === 'superadmin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-<<<<<<< HEAD
     await teamService.changeRole(id, operatingBusinessId, data.role);
-    sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambió a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
-=======
-    if (target.businessId) {
-      await teamService.changeRole(id, target.businessId, data.role);
-    }
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+    sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambiÃ³ a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
   }
 
   const member = await teamService.updateMember(id, data);
@@ -99,8 +77,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-<<<<<<< HEAD
-  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
+  // Use admin's businessId â€” target.businessId is a cached field that may point to a different active business
   const operatingBusinessId = user.data.businessId;
   if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
 
@@ -109,30 +86,15 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   // Prevent removing the owner
   const business = await businessRepository.findById(operatingBusinessId);
-=======
-  if (!target.businessId) {
-    return NextResponse.json({ error: 'No business' }, { status: 400 });
-  }
-
-  // Prevent removing the owner
-  const business = await businessRepository.findById(target.businessId);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   if (business?.ownerId === id) {
     return NextResponse.json({ error: 'cannot_remove_owner' }, { status: 403 });
   }
 
-<<<<<<< HEAD
   await teamService.removeMember(id, operatingBusinessId);
   sendNotification({ userId: id, title: 'Acceso al equipo removido', body: 'Fuiste removido del equipo', type: 'info', link: '/dashboard' }).catch(() => {});
 
   if (membership.role === 'admin') {
     await teamService.handleManagerDeletion(id, operatingBusinessId);
-=======
-  await teamService.removeMember(id, target.businessId);
-
-  if (target.role === 'admin' && target.businessId) {
-    await teamService.handleManagerDeletion(id, target.businessId);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   }
 
   void writeAuditLog({

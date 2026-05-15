@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { superadminApi } from '@/lib/api/superadmin';
@@ -253,7 +253,7 @@ export default function UsersPage() {
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="search"
-          placeholder="Buscar por nombre, correo…"
+          placeholder="Buscar por nombre, correoâ€¦"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm bg-background"
@@ -308,7 +308,7 @@ export default function UsersPage() {
 
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
+          <Loader2 className="h-5 w-5 animate-spin" /> Cargandoâ€¦
         </div>
       )}
 
@@ -448,7 +448,7 @@ export default function UsersPage() {
                           Sin negocio
                         </span>
                       ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
+                        <span className="text-muted-foreground text-xs">â€”</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -458,7 +458,7 @@ export default function UsersPage() {
                             'd MMM yyyy',
                             { locale: es }
                           )
-                        : '—'}
+                        : 'â€”'}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -497,11 +497,7 @@ export default function UsersPage() {
         title="Eliminar usuario"
         description={
           singleDelete
-<<<<<<< HEAD
-            ? `¿Eliminar a ${singleDelete.user.name}? Se eliminará su cuenta y acceso al sistema permanentemente. No se puede deshacer.`
-=======
-            ? `¿Eliminar a ${singleDelete.user.name}? Esto borrará su cuenta de Firebase y PostgreSQL permanentemente. No se puede deshacer.`
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+            ? `Â¿Eliminar a ${singleDelete.user.name}? Se eliminarÃ¡ su cuenta y acceso al sistema permanentemente. No se puede deshacer.`
             : ''
         }
         variant="destructive"
@@ -517,7 +513,7 @@ export default function UsersPage() {
               onChange={(e) => setDeleteBusinesses(e.target.checked)}
               className="rounded border-border h-4 w-4"
             />
-            También eliminar los negocios que administra
+            TambiÃ©n eliminar los negocios que administra
           </label>
         )}
         {deleteError && (
@@ -538,11 +534,7 @@ export default function UsersPage() {
           }
         }}
         title={`Eliminar ${selectedIds.size} usuario(s)`}
-<<<<<<< HEAD
-        description="Se eliminarán permanentemente los usuarios seleccionados del sistema. No se puede deshacer."
-=======
-        description="Esta acción eliminará permanentemente los usuarios seleccionados de Firebase y PostgreSQL. No se puede deshacer."
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+        description="Se eliminarÃ¡n permanentemente los usuarios seleccionados del sistema. No se puede deshacer."
         variant="destructive"
         confirmLabel="Eliminar seleccionados"
         onConfirm={handleBulkDeleteConfirm}
@@ -555,7 +547,7 @@ export default function UsersPage() {
             onChange={(e) => setDeleteBusinesses(e.target.checked)}
             className="rounded border-border h-4 w-4"
           />
-          También eliminar los negocios que administran estos usuarios
+          TambiÃ©n eliminar los negocios que administran estos usuarios
         </label>
         {deleteError && (
           <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2 mt-3">

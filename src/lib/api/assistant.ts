@@ -1,4 +1,4 @@
-import { getToken } from '@/lib/firebase/auth';
+﻿import { getToken } from '@/lib/firebase/auth';
 import type { AssistantMessage } from '@/lib/groq/assistant';
 import { ApiError } from './errors';
 
@@ -6,7 +6,6 @@ interface AssistantResponse {
   message: string;
 }
 
-<<<<<<< HEAD
 export interface GeneratePlanResponse {
   type: 'cycle' | 'objective';
   name: string;
@@ -15,8 +14,6 @@ export interface GeneratePlanResponse {
   taskTitles: string[];
 }
 
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers = new Headers(init?.headers);
@@ -33,7 +30,6 @@ export const assistantApi = {
       method: 'POST',
       body: JSON.stringify({ messages }),
     }),
-<<<<<<< HEAD
   extractFromText: (text: string) =>
     fetchJsonAuth<{ tasks: import('@/lib/groq/extract-tasks').ExtractedTask[]; parseError: boolean }>('/api/tasks/from-text', {
       method: 'POST',
@@ -49,6 +45,4 @@ export const assistantApi = {
       method: 'POST',
       body: JSON.stringify({ type, description }),
     }),
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 };

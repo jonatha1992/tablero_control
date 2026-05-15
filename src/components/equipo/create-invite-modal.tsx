@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Copy, Check, Link2, Loader2, Share2, X } from 'lucide-react';
@@ -38,7 +38,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
     const parsedMaxUses = parseInt(maxUses, 10) || 0;
     if (parsedMaxUses < 0) {
-      setError('El límite de usos no puede ser negativo');
+      setError('El lÃ­mite de usos no puede ser negativo');
       return;
     }
 
@@ -56,17 +56,11 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     );
   }
 
-<<<<<<< HEAD
   const inviteLink = data ? `${window.location.origin}/i/${data.id}` : '';
 
   async function handleCopy() {
     if (!inviteLink) return;
     await navigator.clipboard.writeText(inviteLink);
-=======
-  async function handleCopy() {
-    if (!data?.link) return;
-    await navigator.clipboard.writeText(data.link);
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -95,14 +89,10 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                Compartí este link con quienes querés que se unan al equipo. Al ingresar, recibirán el rol <strong>{data.role}</strong>.
+                CompartÃ­ este link con quienes querÃ©s que se unan al equipo. Al ingresar, recibirÃ¡n el rol <strong>{data.role}</strong>.
               </p>
               <div className="flex items-center gap-2">
-<<<<<<< HEAD
                 <Input value={inviteLink} readOnly className="font-mono text-sm" />
-=======
-                <Input value={data.link} readOnly className="font-mono text-sm" />
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                 <Button type="button" variant="outline" size="icon" onClick={handleCopy} title="Copiar">
                   {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -114,13 +104,9 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   variant="outline"
                   className="flex-1 h-10 gap-2"
                   onClick={() => {
-<<<<<<< HEAD
-                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
-=======
-                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${data.link}`;
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+                    const text = `Â¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
                     if (navigator.share) {
-                      navigator.share({ title: 'Invitación a Tablero de Control', text });
+                      navigator.share({ title: 'InvitaciÃ³n a Tablero de Control', text });
                     } else {
                       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                     }
@@ -134,11 +120,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   variant="outline"
                   className="flex-1 h-10 gap-2"
                   onClick={() => {
-<<<<<<< HEAD
-                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
-=======
-                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${data.link}`;
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
+                    const text = `Â¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                   }}
                 >
@@ -149,10 +131,10 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {data.maxUses > 0 ? `Máx ${data.maxUses} usos` : 'Usos ilimitados'} ·{' '}
+                {data.maxUses > 0 ? `MÃ¡x ${data.maxUses} usos` : 'Usos ilimitados'} Â·{' '}
                 {data.expiresAt
                   ? `Expira ${new Date(data.expiresAt).toLocaleDateString('es-AR')}`
-                  : 'Sin expiración'}
+                  : 'Sin expiraciÃ³n'}
               </p>
             </div>
             <DialogFooter>
@@ -167,12 +149,12 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Link2 className="h-5 w-5" />
-                Generar link de invitación
+                Generar link de invitaciÃ³n
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                La persona que ingrese por este link recibirá el rol que elijas. Podés cambiarlo después desde el equipo.
+                La persona que ingrese por este link recibirÃ¡ el rol que elijas. PodÃ©s cambiarlo despuÃ©s desde el equipo.
               </p>
 
               <div className="space-y-1.5">
@@ -186,7 +168,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   <option value="responsable">Responsable</option>
                   <option value="viewer">Solo lectura</option>
                   <option value="admin">Admin</option>
-                  <option value="pending">Pendiente (aprobación manual)</option>
+                  <option value="pending">Pendiente (aprobaciÃ³n manual)</option>
                 </select>
               </div>
 
@@ -208,7 +190,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Límite de usos</label>
+                  <label className="text-sm font-medium">LÃ­mite de usos</label>
                   <Input
                     type="number"
                     min={0}
@@ -220,7 +202,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   <p className="text-xs text-muted-foreground">0 = ilimitado</p>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Expira en (días)</label>
+                  <label className="text-sm font-medium">Expira en (dÃ­as)</label>
                   <Input
                     type="number"
                     min={0}

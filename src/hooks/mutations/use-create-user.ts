@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -9,15 +9,10 @@ import type { CreateUserResult, CreateUserMode } from '@/app/api/users/create/ro
 
 export interface CreateUserInput {
   name: string;
-<<<<<<< HEAD
   email?: string;
   username?: string;
   password?: string;
   mode?: CreateUserMode;
-=======
-  email: string;
-  password?: string;
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   role: UserRole;
   businessId?: string;
   locationId?: string;
@@ -48,8 +43,8 @@ async function createUserViaApi(input: CreateUserInput): Promise<CreateUserResul
     const data = await res.json().catch(() => ({ error: 'unknown' }));
     const { error } = data as { error: string; limit?: number; current?: number; userId?: string };
     if (error === 'email_inactive') throw new EmailInactiveError((data as { userId: string }).userId);
-    if (error === 'username_already_exists') throw new Error('El nombre de usuario ya está en uso');
-    if (error === 'email_already_exists') throw new Error('El email ya está registrado');
+    if (error === 'username_already_exists') throw new Error('El nombre de usuario ya estÃ¡ en uso');
+    if (error === 'email_already_exists') throw new Error('El email ya estÃ¡ registrado');
     if (error === 'forbidden') throw new Error('Sin permisos para crear este tipo de usuario');
     if (error === 'members_limit_exceeded') {
       const err = new Error('members_limit_exceeded') as Error & { limit?: number; current?: number };

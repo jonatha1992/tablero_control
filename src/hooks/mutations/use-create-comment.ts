@@ -1,10 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-<<<<<<< HEAD
 import { toast } from 'sonner';
-=======
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 import { commentsApi } from '@/lib/api/comments';
 import { commentKeys } from '@/hooks/queries/use-comments-query';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
@@ -50,18 +47,11 @@ export function useCreateComment() {
 
       return { previousComments };
     },
-<<<<<<< HEAD
     onError: (err, { taskId }, context) => {
       if (context?.previousComments) {
         queryClient.setQueryData(commentKeys.byTask(taskId), context.previousComments);
       }
       toast.error('Error al enviar comentario', { description: (err as Error).message });
-=======
-    onError: (_err, { taskId }, context) => {
-      if (context?.previousComments) {
-        queryClient.setQueryData(commentKeys.byTask(taskId), context.previousComments);
-      }
->>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     },
     onSettled: (_data, _error, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: commentKeys.byTask(taskId) });
