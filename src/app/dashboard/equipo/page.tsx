@@ -44,7 +44,10 @@ export default function EquipoPage() {
 
   const filtered = members.filter((m) => {
     const matchesRole = roleFilter === 'all' || m.role === roleFilter;
-    const matchesLocation = !locationFilter || m.locationId === locationFilter;
+    const matchesLocation =
+      !locationFilter ||
+      m.locationId === locationFilter ||
+      m.locationAssignments?.some((assignment) => assignment.locationId === locationFilter);
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
     return matchesRole && matchesLocation && matchesSearch;

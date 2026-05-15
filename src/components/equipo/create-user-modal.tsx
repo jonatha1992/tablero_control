@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useCreateUser, EmailInactiveError } from '@/hooks/mutations/use-create-user';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
@@ -54,6 +55,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState(() => generatePassword());
+  const [createAccess, setCreateAccess] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>('miembro');
   const [locationId, setLocationId] = useState<string>('');
@@ -99,7 +101,14 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setLimitInfo(null);
 
     mutate(
-      { name: trimmedName, email: trimmedEmail, password, role, businessId, locationId: locationId || undefined },
+      {
+        name: trimmedName,
+        email: trimmedEmail,
+        password: createAccess ? password : undefined,
+        role,
+        businessId,
+        locationId: locationId || undefined,
+      },
       {
         onSuccess: () => setStep('success'),
         onError: (err) => {
@@ -144,6 +153,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setName('');
     setEmail('');
     setPassword(generatePassword());
+    setCreateAccess(true);
     setRole('miembro');
     setLocationId('');
     setError('');
@@ -194,7 +204,18 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
-              <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Checkbox
+                  checked={createAccess}
+                  onChange={(e) => {
+                    setCreateAccess(e.target.checked);
+                    if (!e.target.checked && !password) setPassword(generatePassword());
+                  }}
+                />
+                Crear acceso con contraseña
+              </label>
+
+              <div className={cn('space-y-1.5', !createAccess && 'hidden')}>
                 <label className="text-sm font-medium">Contraseña inicial</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
@@ -203,8 +224,8 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pr-10 font-mono text-sm"
-                      required
-                      minLength={6}
+                      required={createAccess}
+                      minLength={createAccess ? 6 : undefined}
                     />
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                     <button
@@ -360,9 +381,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
                 El usuario <span className="font-medium text-foreground">{name}</span> fue creado
-                correctamente. Compartile estas credenciales:
+                correctamente.{createAccess ? ' Compartile estas credenciales:' : ''}
               </p>
-              <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
+              <div className={cn('rounded-lg border bg-muted/40 p-4 space-y-2 text-sm', !createAccess && 'hidden')}>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Correo electrónico</span>
                   <span className="font-medium">{email}</span>
@@ -386,7 +407,12 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
+              {!createAccess && (
+                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                  No se generaron credenciales. Podés asignarle tareas desde el tablero.
+                </p>
+              )}
+              <p className={cn('text-xs text-muted-foreground', !createAccess && 'hidden')}>
                 Guardá esta contraseña ahora — no se podrá ver de nuevo.
               </p>
             </div>

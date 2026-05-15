@@ -98,9 +98,29 @@ export class PrismaUserRepository implements IUserRepository {
   async findByBusiness(businessId: string): Promise<User[]> {
     const rows = await prisma.userBusiness.findMany({
       where: { businessId, isActive: true },
-      include: { user: { include } },
+      include: {
+        user: {
+          include: {
+            teams: true,
+            memberships: { include: { business: true } },
+            locationAssignments: {
+              where: { location: { businessId } },
+              include: { location: true },
+            },
+          },
+        },
+      },
     });
-    return rows.map((r) => toDomain(r.user));
+    return rows.map((r) => {
+      const user = toDomain(r.user as unknown as PrismaUser);
+      return {
+        ...user,
+        role: r.role as UserRole,
+        businessId: r.businessId,
+        locationId: r.locationId ?? undefined,
+        isActive: r.isActive,
+      };
+    });
   }
 
   async findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]> {

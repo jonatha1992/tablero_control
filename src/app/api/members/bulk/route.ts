@@ -21,17 +21,39 @@ export const POST = handle(async (request: NextRequest) => {
 
   const targets = await prisma.userBusiness.findMany({
     where: { userId: { in: ids }, businessId: user.businessId },
-    select: { userId: true },
+    select: { userId: true, role: true },
   });
 
   if (targets.length !== ids.length) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  await prisma.userBusiness.updateMany({
-    where: { userId: { in: ids }, businessId: user.businessId },
-    data: { locationId: locationId ?? null },
-  });
+  await prisma.$transaction([
+    prisma.userBusiness.updateMany({
+      where: { userId: { in: ids }, businessId: user.businessId },
+      data: { locationId: locationId ?? null },
+    }),
+    prisma.user.updateMany({
+      where: { id: { in: ids }, businessId: user.businessId },
+      data: { locationId: locationId ?? null },
+    }),
+    prisma.userLocation.deleteMany({
+      where: { userId: { in: ids }, location: { businessId: user.businessId } },
+    }),
+    ...(locationId
+      ? [
+          prisma.userLocation.createMany({
+            data: targets.map((target) => ({
+              userId: target.userId,
+              locationId,
+              role: target.role,
+              customRoleIds: [],
+            })),
+            skipDuplicates: true,
+          }),
+        ]
+      : []),
+  ]);
 
   await writeAuditLog({
     actorId: user.uid,

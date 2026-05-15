@@ -11,7 +11,7 @@ import type { UserRole } from '@/types/domain/user';
 export interface CreateUserBody {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   role: UserRole;
   businessId?: string;
   locationId?: string;
@@ -50,8 +50,11 @@ export const POST = handle(async (req: NextRequest) => {
   const { name, password, role, businessId, locationId } = body;
   const email = body.email?.toLowerCase().trim() ?? '';
 
-  if (!name?.trim() || !email || !password || !role) {
+  if (!name?.trim() || !email || !role) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (password !== undefined && password.length < 6) {
+    return NextResponse.json({ error: 'invalid_password' }, { status: 400 });
   }
 
   const targetBusinessId =
@@ -112,7 +115,7 @@ export const POST = handle(async (req: NextRequest) => {
   try {
     const authUser = await adminAuth.createUser({
       email,
-      password,
+      ...(password !== undefined && { password }),
       displayName: name.trim(),
       emailVerified: true,
     });
@@ -172,11 +175,14 @@ export const POST = handle(async (req: NextRequest) => {
 
   if (targetBusinessId) {
     prisma.business.findUnique({ where: { id: targetBusinessId }, select: { name: true } })
-      .then((biz) => {
+      .then(async (biz) => {
         const teamName = biz?.name ?? 'el equipo';
         const inviterName = authed.data.name ?? authed.data.email ?? 'Un administrador';
         const inviterEmail = authed.data.email;
-        MailService.sendInviteEmail(email, inviterName, teamName, inviterEmail).catch(() => { });
+        const resetLink = password
+          ? undefined
+          : await adminAuth.generatePasswordResetLink(email).catch(() => undefined);
+        MailService.sendInviteEmail(email, inviterName, teamName, inviterEmail, resetLink).catch(() => { });
       })
       .catch(() => { });
   }
