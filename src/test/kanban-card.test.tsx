@@ -42,7 +42,10 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   creatorId: 'user-1',
   tags: [],
   subtaskIds: [],
+<<<<<<< HEAD
   subtasksCompleted: 0,
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   checklist: [],
   attachmentUrls: [],
   commentCount: 0,

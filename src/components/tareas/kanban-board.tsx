@@ -488,8 +488,11 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 isSelectMode={isSelectMode}
                 onSelectAll={selectAllInColumn}
                 onBulkDelete={requestDelete}
+<<<<<<< HEAD
                 onDelete={(taskId) => requestDelete([taskId])}
                 onToggleSelect={handleToggleSelect}
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                 locations={locations}
 
               />

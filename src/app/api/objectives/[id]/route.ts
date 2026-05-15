@@ -5,8 +5,11 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { can } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
+<<<<<<< HEAD
 import { sendNotification } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
 export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -63,6 +66,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       updated = await objectiveService.updateObjective(id, data);
   }
 
+<<<<<<< HEAD
   if (_action === 'complete' || _action === 'archive') {
     const labels: Record<string, string> = { complete: 'fue completado', archive: 'fue archivado' };
     const notifBody = `El objetivo "${objective.name}" ${labels[_action as string]}`;
@@ -75,6 +79,8 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       }).catch(() => {});
   }
 
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   await writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,

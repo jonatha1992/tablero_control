@@ -37,8 +37,12 @@ function toDomain(t: PrismaTask): Task {
     actualHours: t.actualHours ?? undefined,
     recurrence: t.recurrence as unknown as Task['recurrence'],
     checklist: (t.checklist as unknown as Task['checklist']) ?? [],
+<<<<<<< HEAD
     subtaskIds: t.subtasks.map((s) => s.id),
     subtasksCompleted: t.subtasks.filter((s) => s.status === 'done').length,
+=======
+    subtaskIds: t.subtasks.map((s: { id: string }) => s.id),
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     attachmentUrls: t.attachments.map((a: { url: string }) => a.url),
     attachments: t.attachments.map((a) => ({ url: a.url, name: a.filename })),
     commentCount: t.commentCount,

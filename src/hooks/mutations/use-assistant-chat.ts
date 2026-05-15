@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { assistantApi } from '@/lib/api/assistant';
+<<<<<<< HEAD
 import type { GeneratePlanResponse } from '@/lib/api/assistant';
 import type { AssistantMessage } from '@/lib/groq/assistant';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
@@ -32,6 +33,12 @@ export type DisplayMessage = AssistantMessage | ActionMessage | TasksMessage | P
 
 export function useAssistantChat() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
+=======
+import type { AssistantMessage } from '@/lib/groq/assistant';
+
+export function useAssistantChat() {
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   const mutation = useMutation({
     mutationFn: (msgs: AssistantMessage[]) => assistantApi.chat(msgs),
@@ -42,6 +49,7 @@ export function useAssistantChat() {
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
 
+<<<<<<< HEAD
     const textOnly = nextMessages.filter(
       (m): m is AssistantMessage => m.role !== 'action' && m.role !== 'tasks' && m.role !== 'preview'
     );
@@ -49,6 +57,12 @@ export function useAssistantChat() {
     try {
       const result = await mutation.mutateAsync(textOnly);
       setMessages((prev) => [...prev, { role: 'assistant', content: result.message }]);
+=======
+    try {
+      const result = await mutation.mutateAsync(nextMessages);
+      const assistantMsg: AssistantMessage = { role: 'assistant', content: result.message };
+      setMessages((prev) => [...prev, assistantMsg]);
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -57,6 +71,7 @@ export function useAssistantChat() {
     }
   };
 
+<<<<<<< HEAD
   const addAction = (result: GeneratePlanResponse) => {
     const link = result.type === 'cycle' ? '/dashboard/planificacion' : '/dashboard/planificacion/objetivos';
     setMessages((prev) => [...prev, { role: 'action', action: { ...result, link } }]);
@@ -132,4 +147,9 @@ export function useAssistantChat() {
     clear,
     isPending: mutation.isPending,
   };
+=======
+  const clear = () => setMessages([]);
+
+  return { messages, send, clear, isPending: mutation.isPending };
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 }

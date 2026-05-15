@@ -69,6 +69,7 @@ const include = {
 
 export class PrismaUserRepository implements IUserRepository {
   async findById(id: string, businessId?: string): Promise<User | null> {
+<<<<<<< HEAD
     const u = await prisma.user.findUnique({
       where: { id },
       include: {
@@ -81,6 +82,24 @@ export class PrismaUserRepository implements IUserRepository {
       },
     });
     return u ? toDomain(u as unknown as PrismaUser) : null;
+=======
+    if (businessId) {
+      const u = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          teams: true,
+          memberships: { include: { business: true } },
+          locationAssignments: {
+            where: { location: { businessId } },
+            include: { location: true },
+          },
+        },
+      });
+      return u ? toDomain(u as unknown as PrismaUser) : null;
+    }
+    const u = await prisma.user.findUnique({ where: { id }, include });
+    return u ? toDomain(u) : null;
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -107,7 +126,20 @@ export class PrismaUserRepository implements IUserRepository {
         },
       },
     });
+<<<<<<< HEAD
     return rows.map((r) => toDomain(r.user as unknown as PrismaUser));
+=======
+    return rows.map((r) => {
+      const user = toDomain(r.user as unknown as PrismaUser);
+      return {
+        ...user,
+        role: r.role as UserRole,
+        businessId: r.businessId,
+        locationId: r.locationId ?? undefined,
+        isActive: r.isActive,
+      };
+    });
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   }
 
   async findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]> {
@@ -118,6 +150,7 @@ export class PrismaUserRepository implements IUserRepository {
         isActive: true,
         user: { isActive: true, id: { not: excludeId } },
       },
+<<<<<<< HEAD
       include: {
         user: {
           include: {
@@ -132,6 +165,11 @@ export class PrismaUserRepository implements IUserRepository {
       },
     });
     return rows.map((r) => toDomain(r.user as unknown as PrismaUser));
+=======
+      include: { user: { include } },
+    });
+    return rows.map((r) => toDomain(r.user));
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   }
 
   async findMemberships(userId: string): Promise<UserBusiness[]> {

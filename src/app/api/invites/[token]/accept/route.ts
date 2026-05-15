@@ -4,7 +4,10 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
+<<<<<<< HEAD
 import { sendNotification } from '@/lib/notifications';
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
 export const POST = handle(async (request: NextRequest, { params }: { params: Promise<{ token: string }> }) => {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -152,6 +155,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     metadata: { inviteId: inviteToken, role: invite.role },
   });
 
+<<<<<<< HEAD
   const joinerName = updatedUser.name ?? decoded.email ?? 'Un nuevo miembro';
   prisma.userBusiness.findMany({ where: { businessId: invite.businessId, role: 'admin', isActive: true }, select: { userId: true } })
     .then((admins) => {
@@ -161,5 +165,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
       }
     }).catch(() => {});
 
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   return NextResponse.json(updatedUser);
 });

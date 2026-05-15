@@ -85,7 +85,11 @@ export const DELETE = handle(async (
     return NextResponse.json({ error: 'cannot_delete_superadmin' }, { status: 400 });
   }
 
+<<<<<<< HEAD
   const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusinesses') === 'true';
+=======
+  const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusiness') === 'true';
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -143,6 +147,7 @@ export const DELETE = handle(async (
       // 3. Clean up non-cascading FK references
       await tx.comment.deleteMany({ where: { authorId: id } });
       await tx.auditLog.deleteMany({ where: { actorId: id } });
+<<<<<<< HEAD
       // Transfer business ownership (Business.ownerId FK has no onDelete — Restrict by default)
       await tx.business.updateMany({
         where: { ownerId: id },
@@ -150,6 +155,8 @@ export const DELETE = handle(async (
       });
       // Delete calendar events (CalendarEvent.creatorId FK has no onDelete — Restrict by default)
       await tx.calendarEvent.deleteMany({ where: { creatorId: id } });
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       // Disconnect from all assigned tasks
       await tx.user.update({
         where: { id },

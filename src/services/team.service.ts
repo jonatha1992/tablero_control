@@ -78,9 +78,20 @@ class TeamService {
     const updated = await userRepository.update(id, rest);
     if (locationAssignments !== undefined) {
       await userRepository.setLocationAssignments(id, locationAssignments);
+<<<<<<< HEAD
       // Keep User.locationId in sync with primary assignment (first sector, or null)
       const primary = locationAssignments[0]?.locationId ?? null;
       await prisma.user.update({ where: { id }, data: { locationId: primary } });
+=======
+      const primary = locationAssignments[0]?.locationId ?? null;
+      await prisma.user.update({ where: { id }, data: { locationId: primary } });
+      if (updated.businessId) {
+        await prisma.userBusiness.update({
+          where: { userId_businessId: { userId: id, businessId: updated.businessId } },
+          data: { locationId: primary },
+        });
+      }
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       const refreshed = await userRepository.findById(id);
       return refreshed ?? updated;
     }

@@ -4,17 +4,26 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+<<<<<<< HEAD
 import { login, loginWithGoogle, checkGoogleRedirectResult } from '@/lib/firebase/auth';
+=======
+import { login, loginWithGoogle } from '@/lib/firebase/auth';
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
+<<<<<<< HEAD
   const [loginInput, setLoginInput] = useState('');
+=======
+  const [email, setEmail] = useState('');
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited, refreshProfile } = useAuth();
   const router = useRouter();
@@ -53,14 +62,25 @@ function LoginForm() {
     setError('');
     setFieldErrors({});
 
+<<<<<<< HEAD
     const trimmed = loginInput.trim();
     if (!trimmed) {
       setFieldErrors({ login: 'El correo o usuario es obligatorio' });
+=======
+    const trimmedEmail = email.trim();
+    const errors: Record<string, string> = {};
+    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
+    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       return;
     }
 
     setLoading(true);
     try {
+<<<<<<< HEAD
       let firebaseEmail = trimmed;
       if (!trimmed.includes('@')) {
         const res = await fetch(`/api/auth/resolve?login=${encodeURIComponent(trimmed)}`);
@@ -75,6 +95,12 @@ function LoginForm() {
       router.push(redirect);
     } catch (err) {
       setError('Correo, usuario o contraseña incorrectos');
+=======
+      await login(trimmedEmail, password);
+      router.push(redirect);
+    } catch (err) {
+      setError('Correo o contraseña incorrectos');
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       console.error(err);
     } finally {
       setLoading(false);
@@ -86,6 +112,7 @@ function LoginForm() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle();
+<<<<<<< HEAD
       if (!result) return; // redirect flow — onAuthStateChanged handles it
 
       const { token } = result;
@@ -112,6 +139,9 @@ function LoginForm() {
       await refreshProfile();
       const target = redirect !== '/dashboard' ? redirect : '/dashboard';
       router.push(target);
+=======
+      if (result) router.push(redirect);
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/popup-closed-by-user') {
@@ -214,6 +244,7 @@ function LoginForm() {
           {/* Formulario email/password */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
+<<<<<<< HEAD
               <label htmlFor="login" className="text-sm font-medium">Correo o usuario</label>
               <input
                 id="login"
@@ -227,6 +258,20 @@ function LoginForm() {
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               />
               {fieldErrors.login && <p className="text-xs text-destructive mt-1">{fieldErrors.login}</p>}
+=======
+              <label htmlFor="email" className="text-sm font-medium">Correo</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
+                required
+                maxLength={150}
+                className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+              />
+              {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -235,6 +280,7 @@ function LoginForm() {
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
+<<<<<<< HEAD
               <div className="relative">
                 <input
                   id="password"
@@ -258,6 +304,16 @@ function LoginForm() {
                   )}
                 </button>
               </div>
+=======
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+              />
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             </div>
             <Button type="submit" className="w-full h-12 text-base font-medium" disabled={loading}>
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}

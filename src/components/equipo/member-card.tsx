@@ -87,7 +87,11 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
             </div>
 
             {canManage && !isSelectMode && (
+<<<<<<< HEAD
               <div className="flex shrink-0 items-start gap-1 transition-opacity">
+=======
+              <div className="flex shrink-0 items-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
                 <Button
                   variant="ghost"
                   size="icon"

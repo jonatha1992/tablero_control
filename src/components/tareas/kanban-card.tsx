@@ -13,9 +13,12 @@ import {
   ChevronUp,
   Check,
   MapPin,
+<<<<<<< HEAD
   Trash2,
   ListTree,
   ChevronDown,
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
@@ -79,8 +82,11 @@ interface KanbanCardProps {
   onMove: (taskId: string, from: TaskStatus, to: TaskStatus) => void;
   onPriorityChange: (taskId: string, newPriority: TaskPriority) => void;
   onLocationChange?: (taskId: string, locationId: string | null) => void;
+<<<<<<< HEAD
   onDelete?: (taskId: string) => void;
   onToggleSelect?: (taskId: string) => void;
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   onClick: (task: Task) => void;
   isSelected: boolean;
   isSelectMode: boolean;
@@ -89,7 +95,11 @@ interface KanbanCardProps {
   locations?: { id: string; name: string }[];
 }
 
+<<<<<<< HEAD
 export function KanbanCard({ task, column, onPriorityChange, onLocationChange, onDelete, onToggleSelect, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
+=======
+export function KanbanCard({ task, column, onPriorityChange, onLocationChange, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
@@ -136,6 +146,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
 
       {/* Header: checkbox + title + avatars + menú */}
       <div className="flex items-start gap-1.5 mb-1.5">
+<<<<<<< HEAD
         {onToggleSelect && (
           <button
             className={cn(
@@ -149,6 +160,16 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
               'h-4 w-4 rounded border-2 flex items-center justify-center transition-colors',
               isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary/60'
             )}>
+=======
+        {(isSelectMode || isSelected) && (
+          <div className="shrink-0 mt-0.5">
+            <div
+              className={cn(
+                'h-4 w-4 rounded border-2 flex items-center justify-center transition-colors',
+                isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+              )}
+            >
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
               {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
             </div>
           </button>
@@ -182,6 +203,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
           );
         })()}
 
+<<<<<<< HEAD
         {onDelete && !isSelectMode && (
           <button
             className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive mt-0.5 text-muted-foreground"
@@ -191,6 +213,8 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         )}
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -241,6 +265,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
                 </DropdownMenuPortal>
               </DropdownMenuSub>
             )}
+<<<<<<< HEAD
             {onDelete && (
               <>
                 <DropdownMenuSeparator />
@@ -256,6 +281,8 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
                 </DropdownMenuItem>
               </>
             )}
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -339,9 +366,15 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
           </DropdownMenuContent>
         </DropdownMenu>
 
+<<<<<<< HEAD
         {/* Meta: id, comentarios, adjuntos, checklist, subtareas, fecha */}
         <div className="flex items-center gap-2 text-muted-foreground">
           <span className="font-mono text-[10px] text-muted-foreground/40">#{shortId}</span>
+=======
+        {/* Meta: id, comentarios, adjuntos, fecha */}
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="font-mono text-[9px] text-muted-foreground/50">#{shortId}</span>
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
           {task.commentCount > 0 && (
             <div className="flex items-center gap-1 text-xs">
               <MessageSquare className="h-3.5 w-3.5" />
@@ -355,9 +388,21 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
             </div>
           )}
           {task.checklist && task.checklist.length > 0 && (
+<<<<<<< HEAD
             <div className="flex items-center gap-1 text-xs">
               <CheckSquare className="h-3.5 w-3.5" />
               <span>{task.checklist.filter((i) => i.done).length}/{task.checklist.length}</span>
+=======
+            <div className="flex items-center gap-0.5 text-[10px]">
+              <CheckSquare className="h-3 w-3" />
+              <span>{task.checklist.filter((i) => i.done).length}/{task.checklist.length}</span>
+            </div>
+          )}
+          {task.subtaskIds && task.subtaskIds.length > 0 && (
+            <div className="flex items-center gap-0.5 text-[10px]">
+              <CheckSquare className="h-3 w-3" />
+              <span>{task.subtaskIds.length}</span>
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             </div>
           )}
           {hasSubtasks && (
@@ -400,11 +445,14 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
         </div>
 
       </div>
+<<<<<<< HEAD
 
       {/* Subtareas inline expandibles */}
       {hasSubtasks && subtasksExpanded && (
         <SubtaskInlineList taskId={task.id} />
       )}
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     </div>
   );
 }

@@ -158,6 +158,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     }).catch((err: unknown) => console.error('[mail] findMany failed:', (err as Error)?.message ?? err));
   }
 
+<<<<<<< HEAD
   if (data.status && prevTask) {
     const actorName = user.data.name ?? 'Un compañero';
     for (const uid of prevAssigneeIds) {
@@ -166,6 +167,8 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     }
   }
 
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   return NextResponse.json(task);
 });
 
@@ -182,7 +185,10 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+<<<<<<< HEAD
   const deletedTask = await taskService.getTaskById(id);
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   await taskService.deleteTask(id);
 
   await writeAuditLog({

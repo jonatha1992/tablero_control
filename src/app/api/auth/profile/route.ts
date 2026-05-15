@@ -132,11 +132,15 @@ export const GET = handle(async (request: NextRequest) => {
         locationIds: [],
         teamIds: [],
       });
+<<<<<<< HEAD
       user = await userRepository.update(user.id, {
         businessId: business.id,
         role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,
         ...(!user.avatar && decoded.picture ? { avatar: decoded.picture } : {}),
       });
+=======
+      user = await userRepository.update(user.id, { businessId: business.id, role: isSuperadmin ? 'superadmin' : 'admin' as UserRole });
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       await userRepository.addMembership({
         userId: user.id,
         businessId: business.id,
@@ -146,10 +150,13 @@ export const GET = handle(async (request: NextRequest) => {
       user = await userRepository.findById(user.id) ?? user;
     }
 
+<<<<<<< HEAD
     if (!user.avatar && decoded.picture) {
       user = await userRepository.update(user.id, { avatar: decoded.picture });
     }
 
+=======
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
     // Determine if user is owner of active business
     const isOwner = user.businessId
       ? (await businessRepository.findById(user.businessId))?.ownerId === user.id

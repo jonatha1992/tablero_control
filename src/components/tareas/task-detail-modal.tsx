@@ -493,7 +493,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
             {/* Subtareas */}
             <div className="py-3 border-b">
+<<<<<<< HEAD
               <TaskSubtasks task={task} onOpenSubtask={(sub) => setSubtaskOpen(sub)} />
+=======
+              <TaskSubtasks task={task} />
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             </div>
 
             {/* Registro de tiempos */}
@@ -554,11 +558,17 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
 
+<<<<<<< HEAD
         </div>
 
         {/* Save/Cancel footer — outside scroll area, always visible */}
         {editing && (
           <div className="shrink-0 flex gap-2 px-6 py-3 border-t bg-background">
+=======
+        {/* Save/Cancel — always at bottom when editing */}
+        {editing && (
+          <div className="flex gap-2 pt-3 border-t sticky bottom-0 bg-background pb-1">
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             <Button size="sm" onClick={handleSave} disabled={updateTask.isPending} className="gap-1.5">
               <Save className="h-3.5 w-3.5" />
               {updateTask.isPending ? 'Guardando...' : 'Guardar'}

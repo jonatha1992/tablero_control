@@ -45,6 +45,24 @@ async function fetchProfile(fbUser: FirebaseUser): Promise<User | null> {
     return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
   }
   return null;
+<<<<<<< HEAD
+=======
+}
+
+async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {
+  try {
+    const token = await fbUser.getIdToken();
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) return null;
+    const profile = await res.json();
+    return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
+  } catch {
+    return null;
+  }
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 }
 
 async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {

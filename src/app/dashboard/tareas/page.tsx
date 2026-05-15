@@ -171,7 +171,11 @@ export default function TareasPage() {
       </div>
 
       {/* Kanban board — handles its own modals internally */}
+<<<<<<< HEAD
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+=======
+      <div className="flex-1 min-h-0 overflow-hidden">
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
         <KanbanBoard tasks={tasks} />
       </div>
     </div>

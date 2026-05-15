@@ -21,17 +21,50 @@ export const POST = handle(async (request: NextRequest) => {
 
   const targets = await prisma.userBusiness.findMany({
     where: { userId: { in: ids }, businessId: user.businessId },
+<<<<<<< HEAD
     select: { userId: true },
+=======
+    select: { userId: true, role: true },
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
   });
 
   if (targets.length !== ids.length) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+<<<<<<< HEAD
   await prisma.userBusiness.updateMany({
     where: { userId: { in: ids }, businessId: user.businessId },
     data: { locationId: locationId ?? null },
   });
+=======
+  await prisma.$transaction([
+    prisma.userBusiness.updateMany({
+      where: { userId: { in: ids }, businessId: user.businessId },
+      data: { locationId: locationId ?? null },
+    }),
+    prisma.user.updateMany({
+      where: { id: { in: ids }, businessId: user.businessId },
+      data: { locationId: locationId ?? null },
+    }),
+    prisma.userLocation.deleteMany({
+      where: { userId: { in: ids }, location: { businessId: user.businessId } },
+    }),
+    ...(locationId
+      ? [
+          prisma.userLocation.createMany({
+            data: targets.map((target) => ({
+              userId: target.userId,
+              locationId,
+              role: target.role,
+              customRoleIds: [],
+            })),
+            skipDuplicates: true,
+          }),
+        ]
+      : []),
+  ]);
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 
   await writeAuditLog({
     actorId: user.uid,

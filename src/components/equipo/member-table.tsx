@@ -149,7 +149,11 @@ function MemberRow({
 
         {canManage && !isSelectMode && (
           <td className="px-4 py-3">
+<<<<<<< HEAD
             <div className="flex items-center gap-0.5 transition-opacity">
+=======
+            <div className="flex items-center gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
               <Button
                 variant="ghost"
                 size="icon"

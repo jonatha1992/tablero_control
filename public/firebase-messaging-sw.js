@@ -16,6 +16,7 @@ firebase.initializeApp(firebaseConfig);
 // Retrieve firebase messaging
 const messaging = firebase.messaging();
 
+<<<<<<< HEAD
 // Skip waiting so the new SW activates immediately and avoids stale channel issues
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -40,20 +41,52 @@ messaging.onBackgroundMessage((payload) => {
 
   // Return the promise so the compat SDK can wrap it with waitUntil internally
   return self.registration.showNotification(notificationTitle, notificationOptions);
+=======
+// Handle background messages
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  
+  const notificationTitle = payload.notification?.title || 'Nueva Notificación';
+  const notificationOptions = {
+    body: payload.notification?.body || '',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    data: payload.data,
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+<<<<<<< HEAD
 
   const targetUrl = event.notification.data?.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
+=======
+  
+  // You can read the url from event.notification.data.url
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((windowClients) => {
+      // Check if there is already a window/tab open with the target URL
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        // If so, just focus it.
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
         if (client.url === targetUrl && 'focus' in client) {
           return client.focus();
         }
       }
+<<<<<<< HEAD
+=======
+      // If not, then open the target URL in a new window/tab.
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

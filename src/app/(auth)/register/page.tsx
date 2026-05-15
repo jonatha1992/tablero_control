@@ -257,6 +257,7 @@ function RegisterForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
+<<<<<<< HEAD
             <div className="relative">
               <input
                 id="password"
@@ -281,10 +282,22 @@ function RegisterForm() {
                 )}
               </button>
             </div>
+=======
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              required
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Contraseña</label>
+<<<<<<< HEAD
             <div className="relative">
               <input
                 id="confirmPassword"
@@ -309,6 +322,17 @@ function RegisterForm() {
                 )}
               </button>
             </div>
+=======
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repite la contraseña"
+              required
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+>>>>>>> a202b269733a744a9afd9d9fab9b95249e4de8bb
             {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
           </div>
         </CardContent>
