@@ -13,9 +13,13 @@ export const usePushNotifications = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let cleanup: (() => void) | undefined;
+    let isMounted = true;
 
     getMessagingInstance().then((m) => {
-      if (!m) return;
+      // If the component unmounted before the promise resolved, skip registering
+      // the listener to prevent orphaned async message handlers (which cause the
+      // "message channel closed before a response was received" error).
+      if (!m || !isMounted) return;
       cleanup = onMessage(m, (payload) => {
         console.log('Mensaje recibido en foreground: ', payload);
         const title = payload.notification?.title || 'Nueva Notificación';
@@ -37,6 +41,7 @@ export const usePushNotifications = () => {
     });
 
     return () => {
+      isMounted = false;
       cleanup?.();
     };
   }, []);

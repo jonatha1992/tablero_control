@@ -440,7 +440,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
             )}
 
             <DialogFooter className="gap-2 sm:justify-between pt-1">
-              {onRemove && !member?.isOwner && (
+              {onRemove && (
                 <Button
                   type="button"
                   variant="destructive"
@@ -476,7 +476,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
         </DialogContent>
       </Dialog>
 
-      {member && onRemove && !member.isOwner && (
+      {member && onRemove && (
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}

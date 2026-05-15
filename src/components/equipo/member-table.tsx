@@ -168,7 +168,7 @@ function MemberRow({
               >
                 <Mail className="h-3.5 w-3.5" />
               </Button>
-              {onRemove && !member.isOwner && (
+              {onRemove && (
                 <Button
                   variant="ghost"
                   size="icon"

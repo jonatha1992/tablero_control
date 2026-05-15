@@ -43,6 +43,7 @@ interface TaskDetailModalProps {
 }
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
+  const [subtaskOpen, setSubtaskOpen] = useState<Task | null>(null);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -127,6 +128,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
@@ -491,7 +493,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
             {/* Subtareas */}
             <div className="py-3 border-b">
-              <TaskSubtasks task={task} />
+              <TaskSubtasks task={task} onOpenSubtask={(sub) => setSubtaskOpen(sub)} />
             </div>
 
             {/* Registro de tiempos */}
@@ -578,6 +580,14 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         variant="destructive"
         loading={deleteTask.isPending}
       />
-    </Dialog >
+    </Dialog>
+
+    {/* Modal anidado para subtarea */}
+    <TaskDetailModal
+      task={subtaskOpen}
+      open={!!subtaskOpen}
+      onOpenChange={(o) => { if (!o) setSubtaskOpen(null); }}
+    />
+    </>
   );
 }
