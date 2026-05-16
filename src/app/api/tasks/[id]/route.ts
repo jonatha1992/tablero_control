@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -30,6 +30,16 @@ export const GET = handle(async (request: NextRequest, { params }: { params: Pro
   const businessId = await getTaskBusinessId(id);
   assertResourceBelongsToBusiness(user.data, businessId);
 
+  const activeMembership = user.data.memberships?.find(
+    (m) => m.businessId === businessId && m.isActive
+  );
+  const userLocationId = activeMembership?.locationId;
+  if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
+    if (task.locationId && task.locationId !== userLocationId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
   return NextResponse.json(task);
 });
 
@@ -43,6 +53,18 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 
   const businessId = await getTaskBusinessId(id);
   assertResourceBelongsToBusiness(user.data, businessId);
+
+  const activeMembership = user.data.memberships?.find(
+    (m) => m.businessId === businessId && m.isActive
+  );
+  const userLocationId = activeMembership?.locationId;
+  const existingTask = await taskService.getTaskById(id);
+
+  if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
+    if (existingTask?.locationId && existingTask.locationId !== userLocationId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
 
   if (!can(user.data, 'task.update.any')) {
     const taskCheck = await prisma.task.findUnique({ where: { id }, select: { assignees: { select: { id: true } } } });
@@ -178,11 +200,22 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const businessId = await getTaskBusinessId(id);
   assertResourceBelongsToBusiness(user.data, businessId);
 
+  const activeMembership = user.data.memberships?.find(
+    (m) => m.businessId === businessId && m.isActive
+  );
+  const userLocationId = activeMembership?.locationId;
+  const deletedTask = await taskService.getTaskById(id);
+
+  if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
+    if (deletedTask?.locationId && deletedTask.locationId !== userLocationId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
   if (!can(user.data, 'task.delete')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const deletedTask = await taskService.getTaskById(id);
   await taskService.deleteTask(id);
 
   await writeAuditLog({

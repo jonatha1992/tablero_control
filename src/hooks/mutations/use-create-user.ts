@@ -9,10 +9,8 @@ import type { CreateUserResult, CreateUserMode } from '@/app/api/users/create/ro
 
 export interface CreateUserInput {
   name: string;
-  email?: string;
-  username?: string;
+  email: string;
   password?: string;
-  mode?: CreateUserMode;
   role: UserRole;
   businessId?: string;
   locationId?: string;

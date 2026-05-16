@@ -15,6 +15,7 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited, refreshProfile } = useAuth();
   const router = useRouter();

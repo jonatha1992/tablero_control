@@ -33,10 +33,23 @@ export const GET = handle(async (request: NextRequest) => {
   const cycleId = searchParams.get('cycleId');
   const noCycle = searchParams.get('noCycle');
   const search = searchParams.get('search');
+  const activeMembership = user.data.memberships?.find(
+    (m) => m.businessId === businessId && m.isActive
+  );
+  const userLocationId = activeMembership?.locationId;
+
   if (status) { const ids = status.split(',').filter(Boolean); if (ids.length) filters.status = ids as TaskStatus[]; }
   if (priority) { const ids = priority.split(',').filter(Boolean); if (ids.length) filters.priority = ids as TaskPriority[]; }
   if (projectId) { const ids = projectId.split(',').filter(Boolean); if (ids.length) filters.projectId = ids; }
-  if (locationId) { const ids = locationId.split(',').filter(Boolean); if (ids.length) filters.locationId = ids; }
+  
+  // Enforce tenant-level location restriction if user is not admin/superadmin
+  if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
+    filters.locationId = [userLocationId];
+  } else if (locationId) { 
+    const ids = locationId.split(',').filter(Boolean); 
+    if (ids.length) filters.locationId = ids; 
+  }
+
   if (cycleId) { const ids = cycleId.split(',').filter(Boolean); if (ids.length) filters.cycleId = ids; }
   if (noCycle === 'true') filters.noCycle = true;
   if (search) filters.search = search;

@@ -34,13 +34,12 @@
 |---|---|
 | [user-guide.md](user-guide.md) | Guía completa de uso: kanban, agenda, planificación, equipo, billing, ayuda |
 
-## Especificaciones funcionales
+## Especificaciones y planificación
 
 | Documento | Descripción |
 |---|---|
-| [functional/SCOPE_AND_REQUIREMENTS.md](functional/SCOPE_AND_REQUIREMENTS.md) | Alcance y requerimientos funcionales |
-| [functional/GLOSSARY_AND_MODELS.md](functional/GLOSSARY_AND_MODELS.md) | Glosario de términos y modelos de dominio |
-| [functional/TRACEABILITY_MATRIX.md](functional/TRACEABILITY_MATRIX.md) | Trazabilidad RF → código |
+| [requisitos-funcionales.md](requisitos-funcionales.md) | Requerimientos funcionales del sistema (v1.0) |
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Plan de implementación por fases (estado actual) |
 
 ## Archivos pausados / referencia histórica
 
