@@ -12,10 +12,8 @@ export type CreateUserMode = 'email' | 'username' | 'google' | 'ghost';
 
 export interface CreateUserBody {
   name: string;
-  email?: string;
-  username?: string;
+  email: string;
   password?: string;
-  mode?: CreateUserMode;
   role: UserRole;
   businessId?: string;
   locationId?: string;
@@ -56,27 +54,12 @@ export const POST = handle(async (req: NextRequest) => {
   const email = body.email?.toLowerCase().trim() ?? '';
   const username = body.username?.toLowerCase().trim() ?? '';
 
-  if (!name?.trim() || !role) {
+  if (!name?.trim() || !email || !role) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
-  if (mode === 'email' && !email) {
-    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
-  }
-  if (mode === 'username' && (!username || !body.password)) {
-    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
-  }
-  if (mode === 'google' && !email) {
-    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
-  }
-  if (body.password !== undefined && body.password.length < 6) {
+  if (password !== undefined && password.length < 6) {
     return NextResponse.json({ error: 'invalid_password' }, { status: 400 });
   }
-
-  const isGhost = mode === 'ghost';
-  const syntheticEmail = mode === 'username' ? `${username}@tablero.local` : isGhost ? `ghost-${crypto.randomUUID()}@tablero.local` : '';
-  const firebaseEmail = (mode === 'username' || isGhost) ? syntheticEmail : email;
-  const isSyntheticEmail = firebaseEmail.endsWith('@tablero.local');
-  const password = body.password ?? '';
 
   const targetBusinessId =
     authed.role === 'superadmin' ? businessId ?? authed.businessId : authed.businessId;
@@ -149,24 +132,18 @@ export const POST = handle(async (req: NextRequest) => {
 
   const adminAuth = getAdminAuth();
   let uid: string;
-  
-  if (isGhost) {
-    uid = crypto.randomUUID();
-  } else {
-    try {
-      const authUser = await adminAuth.createUser({
-        email: firebaseEmail,
-        ...(password ? { password } : {}),
-        displayName: name.trim(),
-        emailVerified: mode !== 'google',
-      });
-      uid = authUser.uid;
-    } catch (err: unknown) {
-      const code = (err as { code?: string }).code;
-      if (code === 'auth/email-already-exists') {
-        return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
-      }
-      return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
+  try {
+    const authUser = await adminAuth.createUser({
+      email,
+      ...(password !== undefined && { password }),
+      displayName: name.trim(),
+      emailVerified: true,
+    });
+    uid = authUser.uid;
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === 'auth/email-already-exists') {
+      return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
     }
   }
 
@@ -227,8 +204,8 @@ export const POST = handle(async (req: NextRequest) => {
         const inviterEmail = authed.data.email;
         const resetLink = password
           ? undefined
-          : await adminAuth.generatePasswordResetLink(firebaseEmail).catch(() => undefined);
-        MailService.sendInviteEmail(firebaseEmail, inviterName, teamName, inviterEmail, resetLink).catch(() => { });
+          : await adminAuth.generatePasswordResetLink(email).catch(() => undefined);
+        MailService.sendInviteEmail(email, inviterName, teamName, inviterEmail, resetLink).catch(() => { });
       })
       .catch(() => { });
   }

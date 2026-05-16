@@ -131,10 +131,8 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     mutate(
       {
         name: trimmedName,
-        email: mode !== 'username' && mode !== 'ghost' ? trimmedEmail : undefined,
-        username: mode === 'username' ? trimmedUsername : undefined,
-        password: mode === 'username' || (mode === 'email' && createAccess) ? password : undefined,
-        mode,
+        email: trimmedEmail,
+        password: createAccess ? password : undefined,
         role,
         businessId,
         locationId: locationId || undefined,
@@ -249,156 +247,196 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
-              {/* Email (modes: email, google) */}
-              {(mode === 'email' || mode === 'google') && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">
-                    {mode === 'google' ? 'Gmail del usuario' : 'Correo electrónico'}
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder={mode === 'google' ? 'usuario@gmail.com' : 'juan@empresa.com'}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    maxLength={150}
-                  />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                </div>
-              )}
-
-              {/* Username (mode: username) */}
-              {mode === 'username' && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Nombre de usuario</label>
-                  <Input
-                    placeholder="juan.garcia"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
-                    maxLength={30}
-                  />
-                  {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
-                  <p className="text-xs text-muted-foreground">Solo letras, números, puntos, guiones.</p>
-                </div>
-              )}
-
-              {/* Password (modes: email, username) */}
-              {mode === 'email' && (
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Checkbox
-                    checked={createAccess}
-                    onChange={(e) => setCreateAccess(e.target.checked)}
-                  />
-                  Crear acceso con contraseña
-                </label>
-              )}
-
-              {mode === 'username' || (mode === 'email' && createAccess) ? (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Contraseña inicial</label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pr-10 font-mono text-sm"
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <Button type="button" variant="outline" size="icon" onClick={handleGenerate} title="Generar contraseña">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                  <p className="text-xs text-muted-foreground">El usuario podrá cambiarla luego.</p>
-                </div>
-              ) : null}
-
-              {mode === 'google' && (
-                <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
-                  El usuario deberá usar Continuar con Google para ingresar al sistema.
-                </div>
-              )}
-
-              {mode === 'ghost' && (
-                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                  Se crea sin credenciales. Queda disponible para asignarle sector y tareas.
-                </div>
-              )}
-
-              {/* Location */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Asignar Local/Sector (Opcional)</label>
-                <select
-                  value={locationId}
-                  onChange={(e) => setLocationId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="">Sin asignar (Global)</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                </select>
+                <label className="text-sm font-medium">Correo electrónico</label>
+                <Input
+                  type="email"
+                  placeholder="juan@empresa.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  maxLength={150}
+                />
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
-              {/* Role */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Rol</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {roles.map((r) => (
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Checkbox
+                  checked={createAccess}
+                  onChange={(e) => {
+                    setCreateAccess(e.target.checked);
+                    if (!e.target.checked && !password) setPassword(generatePassword());
+                  }}
+                />
+                Crear acceso con contraseña
+              </label>
+
+              <div className={cn('space-y-1.5', !createAccess && 'hidden')}>
+                <label className="text-sm font-medium">Contraseña inicial</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pr-10 font-mono text-sm"
+                      required={createAccess}
+                      minLength={createAccess ? 6 : undefined}
+                    />
+                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                     <button
-                      key={r.value}
                       type="button"
-                      onClick={() => setRole(r.value)}
-                      className={cn(
-                        'rounded-md border p-2.5 text-left text-xs transition-colors',
-                        role === r.value
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-border hover:border-muted-foreground/50'
-                      )}
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      <p className="font-medium">{r.label}</p>
-                      <p className="mt-0.5 text-muted-foreground">{r.description}</p>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {limitInfo && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">
-                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                    <AlertTriangle className="h-4 w-4 shrink-0" />
-                    <p className="text-sm font-medium">Límite de usuarios alcanzado</p>
                   </div>
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    Tu plan permite hasta <strong>{limitInfo.limit}</strong> usuarios y ya tenés <strong>{limitInfo.current}</strong> activos.
-                  </p>
-                  <Link href="/dashboard/billing" onClick={handleClose} className="inline-block text-sm font-medium text-amber-800 dark:text-amber-300 underline underline-offset-2">
-                    Ver planes disponibles
-                  </Link>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleGenerate}
+                    title="Generar contraseña"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
 
-              {error && (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
-              )}
+                {/* Username (mode: username) */}
+                {mode === 'username' && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Nombre de usuario</label>
+                    <Input
+                      placeholder="juan.garcia"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
+                      maxLength={30}
+                    />
+                    {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
+                    <p className="text-xs text-muted-foreground">Solo letras, números, puntos, guiones.</p>
+                  </div>
+                )}
 
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={handleClose} disabled={isPending}>
-                  <X className="mr-1.5 h-4 w-4" />Cancelar
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1.5 h-4 w-4" />}
-                  {isPending ? 'Creando...' : 'Crear usuario'}
-                </Button>
-              </DialogFooter>
+                {/* Password (modes: email, username) */}
+                {mode === 'email' && (
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <Checkbox
+                      checked={createAccess}
+                      onChange={(e) => setCreateAccess(e.target.checked)}
+                    />
+                    Crear acceso con contraseña
+                  </label>
+                )}
+
+                {mode === 'username' || (mode === 'email' && createAccess) ? (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Contraseña inicial</label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="pr-10 font-mono text-sm"
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <Button type="button" variant="outline" size="icon" onClick={handleGenerate} title="Generar contraseña">
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                    <p className="text-xs text-muted-foreground">El usuario podrá cambiarla luego.</p>
+                  </div>
+                ) : null}
+
+                {mode === 'google' && (
+                  <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+                    El usuario deberá usar Continuar con Google para ingresar al sistema.
+                  </div>
+                )}
+
+                {mode === 'ghost' && (
+                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    Se crea sin credenciales. Queda disponible para asignarle sector y tareas.
+                  </div>
+                )}
+
+                {/* Location */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Asignar Local/Sector (Opcional)</label>
+                  <select
+                    value={locationId}
+                    onChange={(e) => setLocationId(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Sin asignar (Global)</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Role */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Rol</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {roles.map((r) => (
+                      <button
+                        key={r.value}
+                        type="button"
+                        onClick={() => setRole(r.value)}
+                        className={cn(
+                          'rounded-md border p-2.5 text-left text-xs transition-colors',
+                          role === r.value
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-border hover:border-muted-foreground/50'
+                        )}
+                      >
+                        <p className="font-medium">{r.label}</p>
+                        <p className="mt-0.5 text-muted-foreground">{r.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {limitInfo && (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      <p className="text-sm font-medium">Límite de usuarios alcanzado</p>
+                    </div>
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      Tu plan permite hasta <strong>{limitInfo.limit}</strong> usuarios y ya tenés <strong>{limitInfo.current}</strong> activos.
+                    </p>
+                    <Link href="/dashboard/billing" onClick={handleClose} className="inline-block text-sm font-medium text-amber-800 dark:text-amber-300 underline underline-offset-2">
+                      Ver planes disponibles
+                    </Link>
+                  </div>
+                )}
+
+                {error && (
+                  <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+                )}
+
+                <DialogFooter>
+                  <Button type="button" variant="ghost" onClick={handleClose} disabled={isPending}>
+                    <X className="mr-1.5 h-4 w-4" />Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1.5 h-4 w-4" />}
+                    {isPending ? 'Creando...' : 'Crear usuario'}
+                  </Button>
+                </DialogFooter>
             </form>
           </>
         ) : step === 'reactivate' ? (
@@ -441,37 +479,41 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                El usuario <span className="font-medium text-foreground">{name}</span> fue creado correctamente.
-                {hasCredentials && ' Compartile estas credenciales:'}
+                El usuario <span className="font-medium text-foreground">{name}</span> fue creado
+                correctamente.{createAccess ? ' Compartile estas credenciales:' : ''}
               </p>
-              {hasCredentials ? (
-                <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{mode === 'username' ? 'Usuario' : 'Correo'}</span>
-                    <span className="font-medium">{successLabel}</span>
+              <div className={cn('rounded-lg border bg-muted/40 p-4 space-y-2 text-sm', !createAccess && 'hidden')}>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Correo electrónico</span>
+                  <span className="font-medium">{email}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Contraseña</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-medium">{password}</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyPassword}
+                      className="text-muted-foreground hover:text-foreground"
+                      title="Copiar contraseña"
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Contraseña</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-medium">{password}</span>
-                      <button type="button" onClick={handleCopyPassword} className="text-muted-foreground hover:text-foreground" title="Copiar contraseña">
-                        {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
                 </div>
-              ) : mode === 'google' ? (
-                <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-                  <p className="text-muted-foreground">El usuario debe ingresar con <strong>Continuar con Google</strong> usando <span className="font-medium text-foreground">{email}</span>.</p>
-                </div>
-              ) : (
-                <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-                  <p className="text-muted-foreground">No se generaron credenciales. Podés asignarle tareas desde el tablero.</p>
-                </div>
+              </div>
+              {!createAccess && (
+                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                  No se generaron credenciales. Podés asignarle tareas desde el tablero.
+                </p>
               )}
-              {hasCredentials && (
-                <p className="text-xs text-muted-foreground">Guardá esta contraseña ahora — no se podrá ver de nuevo.</p>
-              )}
+              <p className={cn('text-xs text-muted-foreground', !createAccess && 'hidden')}>
+                Guardá esta contraseña ahora — no se podrá ver de nuevo.
+              </p>
             </div>
             <DialogFooter>
               <Button onClick={handleClose}>Listo</Button>
