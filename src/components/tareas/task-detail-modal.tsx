@@ -149,7 +149,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           {editing ? (
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">TÃ­tulo</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
                 <input
                   type="text"
                   value={title}
@@ -159,7 +159,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">DescripciÃ³n</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Descripción</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -170,7 +170,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fecha lÃ­mite</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fecha límite</label>
                 <div className="flex gap-2">
                   <input
                     type="date"
@@ -290,19 +290,19 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
                     {frequency === 'weekly' && (
                       <div className="col-span-2">
-                        <label className="text-xs text-muted-foreground mb-1 block">DÃ­a de la semana</label>
+                        <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
                         <select
                           value={dayOfWeek ?? ''}
                           onChange={(e) => setDayOfWeek(e.target.value ? Number(e.target.value) : undefined)}
                           className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                         >
-                          <option value="">Cualquier dÃ­a</option>
+                          <option value="">Cualquier día</option>
                           <option value="1">Lunes</option>
                           <option value="2">Martes</option>
-                          <option value="3">MiÃ©rcoles</option>
+                          <option value="3">Miércoles</option>
                           <option value="4">Jueves</option>
                           <option value="5">Viernes</option>
-                          <option value="6">SÃ¡bado</option>
+                          <option value="6">Sábado</option>
                           <option value="0">Domingo</option>
                         </select>
                       </div>
@@ -310,7 +310,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
                     {frequency === 'monthly' && (
                       <div className="col-span-2">
-                        <label className="text-xs text-muted-foreground mb-1 block">DÃ­a del mes (1-31)</label>
+                        <label className="text-xs text-muted-foreground mb-1 block">Día del mes (1-31)</label>
                         <input
                           type="number"
                           min={1}
@@ -429,10 +429,10 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
           {task.dueDate && (
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Fecha lÃ­mite</p>
+              <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
               <p className="text-sm">
                 {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
-                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">Â· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
+                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
               </p>
             </div>
           )}
@@ -442,11 +442,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <Repeat className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">
                 Se repite cada {task.recurrence.interval > 1 ? `${task.recurrence.interval} ` : ''}
-                {task.recurrence.frequency === 'daily' ? 'dÃ­a' :
+                {task.recurrence.frequency === 'daily' ? 'día' :
                  task.recurrence.frequency === 'weekly' ? 'semana' :
                  task.recurrence.frequency === 'biweekly' ? 'quincena' : 'mes'}
-                {task.recurrence.dayOfWeek !== undefined && ` los ${['domingos', 'lunes', 'martes', 'miÃ©rcoles', 'jueves', 'viernes', 'sÃ¡bados'][task.recurrence.dayOfWeek]}`}
-                {task.recurrence.dayOfMonth !== undefined && ` el dÃ­a ${task.recurrence.dayOfMonth}`}
+                {task.recurrence.dayOfWeek !== undefined && ` los ${['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][task.recurrence.dayOfWeek]}`}
+                {task.recurrence.dayOfMonth !== undefined && ` el día ${task.recurrence.dayOfMonth}`}
               </span>
             </div>
           )}
@@ -550,13 +550,13 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         {/* Meta info */}
         <div className="pt-3 text-xs text-muted-foreground space-y-1">
           <p>Creada: {new Date(task.createdAt).toLocaleString('es')}</p>
-          <p>ActualizaciÃ³n: {new Date(task.updatedAt).toLocaleString('es')}</p>
+          <p>Actualización: {new Date(task.updatedAt).toLocaleString('es')}</p>
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
 
         </div>
 
-        {/* Save/Cancel footer â€” outside scroll area, always visible */}
+        {/* Save/Cancel footer — outside scroll area, always visible */}
         {editing && (
           <div className="shrink-0 flex gap-2 px-6 py-3 border-t bg-background">
             <Button size="sm" onClick={handleSave} disabled={updateTask.isPending} className="gap-1.5">
@@ -574,7 +574,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         open={showConfirmDelete}
         onOpenChange={setShowConfirmDelete}
         title="Eliminar tarea"
-        description={`Â¿EstÃ¡s seguro de eliminar la tarea "${task.title}"? Esta acciÃ³n no se puede deshacer.`}
+        description={`¿Estás seguro de eliminar la tarea "${task.title}"? Esta acción no se puede deshacer.`}
         confirmLabel="Eliminar"
         onConfirm={handleConfirmDelete}
         variant="destructive"

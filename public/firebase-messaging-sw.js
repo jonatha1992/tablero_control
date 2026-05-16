@@ -25,12 +25,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Handle background messages â€” use event.waitUntil via the promise returned
+// Handle background messages — use event.waitUntil via the promise returned
 // by onBackgroundMessage to keep the SW alive until showNotification resolves.
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  const notificationTitle = payload.notification?.title || 'Nueva NotificaciÃ³n';
+  const notificationTitle = payload.notification?.title || 'Nueva Notificación';
   const notificationOptions = {
     body: payload.notification?.body || '',
     icon: '/icon-cropped.png',

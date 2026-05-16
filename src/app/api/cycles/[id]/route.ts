@@ -14,7 +14,7 @@ export const GET = handle(async (request: NextRequest, { params }: { params: Pro
   const { id } = await params;
   const cycle = await cycleService.getCycleById(id);
   if (!cycle) {
-    return NextResponse.json({ error: 'PerÃ­odo no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Período no encontrado' }, { status: 404 });
   }
 
   assertResourceBelongsToBusiness(user.data, cycle.businessId);
@@ -37,7 +37,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 
   const cycle = await cycleService.getCycleById(id);
   if (!cycle) {
-    return NextResponse.json({ error: 'PerÃ­odo no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Período no encontrado' }, { status: 404 });
   }
 
   assertResourceBelongsToBusiness(user.data, cycle.businessId);
@@ -58,13 +58,13 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   }
 
   if (_action === 'start' || _action === 'complete' || _action === 'close') {
-    const labels: Record<string, string> = { start: 'estÃ¡ activo', complete: 'fue completado', close: 'fue cerrado' };
-    const notifBody = `El perÃ­odo "${cycle.name}" ${labels[_action as string]}`;
+    const labels: Record<string, string> = { start: 'está activo', complete: 'fue completado', close: 'fue cerrado' };
+    const notifBody = `El período "${cycle.name}" ${labels[_action as string]}`;
     prisma.userBusiness.findMany({ where: { businessId: cycle.businessId, isActive: true }, select: { userId: true } })
       .then((members) => {
         for (const m of members) {
           if (m.userId === user.uid) continue;
-          sendNotification({ userId: m.userId, title: 'PerÃ­odo actualizado', body: notifBody, type: 'info', link: '/dashboard/planificacion' }).catch(() => {});
+          sendNotification({ userId: m.userId, title: 'Período actualizado', body: notifBody, type: 'info', link: '/dashboard/planificacion' }).catch(() => {});
         }
       }).catch(() => {});
   }
@@ -89,7 +89,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const { id } = await params;
   const cycle = await cycleService.getCycleById(id);
   if (!cycle) {
-    return NextResponse.json({ error: 'PerÃ­odo no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Período no encontrado' }, { status: 404 });
   }
 
   assertResourceBelongsToBusiness(user.data, cycle.businessId);

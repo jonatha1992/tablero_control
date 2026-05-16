@@ -39,7 +39,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
         isOver && 'bg-primary/5 border-primary/30'
       )}
     >
-      {/* Column header â€” static, above scroll area */}
+      {/* Column header — static, above scroll area */}
       <div className="shrink-0 flex items-center justify-between px-2 py-1.5 border-b bg-muted/95 backdrop-blur-sm z-10">
         <div className="flex items-center gap-2 min-w-0">
           {isSelectMode && tasks.length > 0 && (() => {

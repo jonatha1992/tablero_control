@@ -134,7 +134,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
         </div>
       )}
 
-      {/* Header: checkbox + title + avatars + menÃº */}
+      {/* Header: checkbox + title + avatars + menú */}
       <div className="flex items-start gap-1.5 mb-1.5">
         {onToggleSelect && (
           <button
@@ -155,7 +155,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
         )}
         <h4 className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{task.title}</h4>
 
-        {/* Avatares de asignados â€” junto al tÃ­tulo */}
+        {/* Avatares de asignados — junto al título */}
         {(() => {
           if (!task.assigneeIds || task.assigneeIds.length === 0) return null;
           const valid = task.assigneeIds
@@ -260,7 +260,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
         </DropdownMenu>
       </div>
 
-      {/* Location â€” debajo del tÃ­tulo si existe */}
+      {/* Location — debajo del título si existe */}
       {locationName && (
         <div className="flex items-center gap-1 mb-1.5">
           <MapPin className="h-2.5 w-2.5 text-muted-foreground/60 shrink-0" />
@@ -268,7 +268,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
         </div>
       )}
 
-      {/* SecciÃ³n expandible al hacer hover */}
+      {/* Sección expandible al hacer hover */}
       <div className="overflow-hidden max-h-0 group-hover:max-h-40 transition-[max-height] duration-500 ease-in-out delay-75">
         {task.description && (
           <p className="text-[10px] text-muted-foreground line-clamp-3 mb-1.5">{task.description}</p>
@@ -290,7 +290,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
         )}
       </div>
 
-      {/* Footer: prioridad + meta â€” siempre visible */}
+      {/* Footer: prioridad + meta — siempre visible */}
       <div className="flex items-center justify-between mt-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -301,7 +301,7 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
                 priorityConfig.bg,
                 priorityConfig.color
               )}
-              title={`Prioridad: ${TASK_PRIORITY_LABELS[task.priority]} â€” clic para cambiar`}
+              title={`Prioridad: ${TASK_PRIORITY_LABELS[task.priority]} — clic para cambiar`}
             >
               <PriorityIcon className="h-3 w-3" />
               {TASK_PRIORITY_LABELS[task.priority]}

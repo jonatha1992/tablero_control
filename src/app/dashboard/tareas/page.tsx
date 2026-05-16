@@ -44,7 +44,7 @@ export default function TareasPage() {
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="text-sm text-muted-foreground">Cargando tareasâ€¦</p>
+          <p className="text-sm text-muted-foreground">Cargando tareas…</p>
         </div>
       </div>
     );
@@ -61,7 +61,7 @@ export default function TareasPage() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
 
-      {/* Selector de proyecto â€” solo si hay proyectos */}
+      {/* Selector de proyecto — solo si hay proyectos */}
       {projects.length > 0 && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
           <DropdownMenu>
@@ -148,7 +148,7 @@ export default function TareasPage() {
                 )}
               >
                 {sprintMode === 'board' && selectedSprintId && selectedSprintId !== activeCycle?.id
-                  ? (otherCycles.find((c) => c.id === selectedSprintId)?.name ?? 'PerÃ­odo')
+                  ? (otherCycles.find((c) => c.id === selectedSprintId)?.name ?? 'Período')
                   : 'Otros'}
                 <ChevronDown className="h-3 w-3 opacity-70" />
               </button>
@@ -170,7 +170,7 @@ export default function TareasPage() {
         )}
       </div>
 
-      {/* Kanban board â€” handles its own modals internally */}
+      {/* Kanban board — handles its own modals internally */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <KanbanBoard tasks={tasks} />
       </div>

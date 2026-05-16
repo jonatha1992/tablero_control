@@ -22,12 +22,12 @@ export const usePushNotifications = () => {
       if (!m || !isMounted) return;
       cleanup = onMessage(m, (payload) => {
         console.log('Mensaje recibido en foreground: ', payload);
-        const title = payload.notification?.title || 'Nueva NotificaciÃ³n';
+        const title = payload.notification?.title || 'Nueva Notificación';
         const body = payload.notification?.body || '';
 
         toast(title, {
           description: body,
-          icon: 'ðŸ””',
+          icon: '🔔',
           duration: 8000,
         });
 
@@ -51,7 +51,7 @@ export const usePushNotifications = () => {
 
     const m = await getMessagingInstance();
     if (!m) {
-      toast.error('Las notificaciones push no estÃ¡n soportadas en este navegador.');
+      toast.error('Las notificaciones push no están soportadas en este navegador.');
       return;
     }
 
@@ -91,13 +91,13 @@ export const usePushNotifications = () => {
           throw new Error('Error al guardar el token en la base de datos.');
         }
 
-        toast.success('Â¡Notificaciones activadas exitosamente!');
+        toast.success('¡Notificaciones activadas exitosamente!');
       } else {
         toast.error('No se pudo obtener el token de notificaciones.');
       }
     } catch (error) {
       console.error('[PUSH_NOTIFICATIONS_ERROR]', error);
-      toast.error('OcurriÃ³ un error al intentar suscribirse a las notificaciones.');
+      toast.error('Ocurrió un error al intentar suscribirse a las notificaciones.');
     } finally {
       setIsSubscribing(false);
     }

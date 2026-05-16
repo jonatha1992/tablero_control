@@ -38,7 +38,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
     const parsedMaxUses = parseInt(maxUses, 10) || 0;
     if (parsedMaxUses < 0) {
-      setError('El lÃ­mite de usos no puede ser negativo');
+      setError('El límite de usos no puede ser negativo');
       return;
     }
 
@@ -89,7 +89,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             </DialogHeader>
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
-                CompartÃ­ este link con quienes querÃ©s que se unan al equipo. Al ingresar, recibirÃ¡n el rol <strong>{data.role}</strong>.
+                Compartí este link con quienes querés que se unan al equipo. Al ingresar, recibirán el rol <strong>{data.role}</strong>.
               </p>
               <div className="flex items-center gap-2">
                 <Input value={inviteLink} readOnly className="font-mono text-sm" />
@@ -104,9 +104,9 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   variant="outline"
                   className="flex-1 h-10 gap-2"
                   onClick={() => {
-                    const text = `Â¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
+                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
                     if (navigator.share) {
-                      navigator.share({ title: 'InvitaciÃ³n a Tablero de Control', text });
+                      navigator.share({ title: 'Invitación a Tablero de Control', text });
                     } else {
                       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                     }
@@ -120,7 +120,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   variant="outline"
                   className="flex-1 h-10 gap-2"
                   onClick={() => {
-                    const text = `Â¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
+                    const text = `¡Hola! Te invito a unirte a nuestro equipo en Tablero de Control.\n\n${inviteLink}`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                   }}
                 >
@@ -131,10 +131,10 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {data.maxUses > 0 ? `MÃ¡x ${data.maxUses} usos` : 'Usos ilimitados'} Â·{' '}
+                {data.maxUses > 0 ? `Máx ${data.maxUses} usos` : 'Usos ilimitados'} ·{' '}
                 {data.expiresAt
                   ? `Expira ${new Date(data.expiresAt).toLocaleDateString('es-AR')}`
-                  : 'Sin expiraciÃ³n'}
+                  : 'Sin expiración'}
               </p>
             </div>
             <DialogFooter>
@@ -149,12 +149,12 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Link2 className="h-5 w-5" />
-                Generar link de invitaciÃ³n
+                Generar link de invitación
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                La persona que ingrese por este link recibirÃ¡ el rol que elijas. PodÃ©s cambiarlo despuÃ©s desde el equipo.
+                La persona que ingrese por este link recibirá el rol que elijas. Podés cambiarlo después desde el equipo.
               </p>
 
               <div className="space-y-1.5">
@@ -168,7 +168,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   <option value="responsable">Responsable</option>
                   <option value="viewer">Solo lectura</option>
                   <option value="admin">Admin</option>
-                  <option value="pending">Pendiente (aprobaciÃ³n manual)</option>
+                  <option value="pending">Pendiente (aprobación manual)</option>
                 </select>
               </div>
 
@@ -190,7 +190,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">LÃ­mite de usos</label>
+                  <label className="text-sm font-medium">Límite de usos</label>
                   <Input
                     type="number"
                     min={0}
@@ -202,7 +202,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   <p className="text-xs text-muted-foreground">0 = ilimitado</p>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Expira en (dÃ­as)</label>
+                  <label className="text-sm font-medium">Expira en (días)</label>
                   <Input
                     type="number"
                     min={0}

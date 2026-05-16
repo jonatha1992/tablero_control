@@ -68,7 +68,7 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
     });
   }
 
-  // Filtro de bÃºsqueda (usando AND para no pisar el OR de businessId)
+  // Filtro de búsqueda (usando AND para no pisar el OR de businessId)
   if (filters?.search) {
     conditions.push({
       OR: [

@@ -80,10 +80,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     prisma.task.findUnique({ where: { id }, select: { title: true, assignees: { select: { id: true } } } })
       .then((t) => {
         if (!t) return;
-        const actorName = user.data.name ?? 'Un compaÃ±ero';
+        const actorName = user.data.name ?? 'Un compañero';
         for (const a of t.assignees) {
           if (a.id === user.uid) continue;
-          sendNotification({ userId: a.id, title: 'Tarea actualizada', body: `${actorName} moviÃ³ "${t.title}" a ${data.status}`, type: 'task_updated', link: '/dashboard/tareas' }).catch(() => {});
+          sendNotification({ userId: a.id, title: 'Tarea actualizada', body: `${actorName} movió "${t.title}" a ${data.status}`, type: 'task_updated', link: '/dashboard/tareas' }).catch(() => {});
         }
       }).catch(() => {});
 
@@ -137,14 +137,14 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       where: { id: { in: newAssigneeIds }, isActive: true },
       select: { id: true, email: true, preferences: true },
     }).then((assignees) => {
-      const assignerName = user.data.name ?? user.data.email ?? 'Un compaÃ±ero';
+      const assignerName = user.data.name ?? user.data.email ?? 'Un compañero';
       for (const assignee of assignees) {
         if (assignee.id === user.uid) continue;
         const prefs = assignee.preferences as { notifications?: { email?: boolean } } | null;
         sendNotification({
           userId: assignee.id,
           title: 'Nueva tarea asignada',
-          body: `${assignerName} te asignÃ³ la tarea "${task.title}"`,
+          body: `${assignerName} te asignó la tarea "${task.title}"`,
           type: 'task_assigned',
           link: '/dashboard/tareas',
         }).catch(() => {});
@@ -159,10 +159,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   }
 
   if (data.status && prevTask) {
-    const actorName = user.data.name ?? 'Un compaÃ±ero';
+    const actorName = user.data.name ?? 'Un compañero';
     for (const uid of prevAssigneeIds) {
       if (uid === user.uid) continue;
-      sendNotification({ userId: uid, title: 'Tarea actualizada', body: `${actorName} cambiÃ³ el estado de "${task.title}"`, type: 'task_updated', link: '/dashboard/tareas' }).catch(() => {});
+      sendNotification({ userId: uid, title: 'Tarea actualizada', body: `${actorName} cambió el estado de "${task.title}"`, type: 'task_updated', link: '/dashboard/tareas' }).catch(() => {});
     }
   }
 
@@ -195,10 +195,10 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   });
 
   if (deletedTask?.assigneeIds?.length) {
-    const actorName = user.data.name ?? 'Un compaÃ±ero';
+    const actorName = user.data.name ?? 'Un compañero';
     for (const uid of deletedTask.assigneeIds) {
       if (uid === user.uid) continue;
-      sendNotification({ userId: uid, title: 'Tarea eliminada', body: `${actorName} eliminÃ³ la tarea "${deletedTask.title}"`, type: 'info', link: '/dashboard/tareas' }).catch(() => {});
+      sendNotification({ userId: uid, title: 'Tarea eliminada', body: `${actorName} eliminó la tarea "${deletedTask.title}"`, type: 'info', link: '/dashboard/tareas' }).catch(() => {});
     }
   }
 

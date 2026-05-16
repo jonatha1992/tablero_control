@@ -253,7 +253,7 @@ export default function UsersPage() {
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="search"
-          placeholder="Buscar por nombre, correoâ€¦"
+          placeholder="Buscar por nombre, correo…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm w-full max-w-sm bg-background"
@@ -308,7 +308,7 @@ export default function UsersPage() {
 
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" /> Cargandoâ€¦
+          <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
         </div>
       )}
 
@@ -448,7 +448,7 @@ export default function UsersPage() {
                           Sin negocio
                         </span>
                       ) : (
-                        <span className="text-muted-foreground text-xs">â€”</span>
+                        <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -458,7 +458,7 @@ export default function UsersPage() {
                             'd MMM yyyy',
                             { locale: es }
                           )
-                        : 'â€”'}
+                        : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -497,7 +497,7 @@ export default function UsersPage() {
         title="Eliminar usuario"
         description={
           singleDelete
-            ? `Â¿Eliminar a ${singleDelete.user.name}? Se eliminarÃ¡ su cuenta y acceso al sistema permanentemente. No se puede deshacer.`
+            ? `¿Eliminar a ${singleDelete.user.name}? Se eliminará su cuenta y acceso al sistema permanentemente. No se puede deshacer.`
             : ''
         }
         variant="destructive"
@@ -513,7 +513,7 @@ export default function UsersPage() {
               onChange={(e) => setDeleteBusinesses(e.target.checked)}
               className="rounded border-border h-4 w-4"
             />
-            TambiÃ©n eliminar los negocios que administra
+            También eliminar los negocios que administra
           </label>
         )}
         {deleteError && (
@@ -534,7 +534,7 @@ export default function UsersPage() {
           }
         }}
         title={`Eliminar ${selectedIds.size} usuario(s)`}
-        description="Se eliminarÃ¡n permanentemente los usuarios seleccionados del sistema. No se puede deshacer."
+        description="Se eliminarán permanentemente los usuarios seleccionados del sistema. No se puede deshacer."
         variant="destructive"
         confirmLabel="Eliminar seleccionados"
         onConfirm={handleBulkDeleteConfirm}
@@ -547,7 +547,7 @@ export default function UsersPage() {
             onChange={(e) => setDeleteBusinesses(e.target.checked)}
             className="rounded border-border h-4 w-4"
           />
-          TambiÃ©n eliminar los negocios que administran estos usuarios
+          También eliminar los negocios que administran estos usuarios
         </label>
         {deleteError && (
           <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2 mt-3">

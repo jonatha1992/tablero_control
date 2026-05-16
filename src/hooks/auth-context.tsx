@@ -97,8 +97,8 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
               new URLSearchParams(window.location.search).get('redirect')?.startsWith('/i/'));
 
           if (onRegisterPage || onInvitePage) {
-            // register page llama refreshProfile() despuÃ©s del POST
-            // invite page crea el user vÃ­a /api/invites/[token]/accept
+            // register page llama refreshProfile() después del POST
+            // invite page crea el user vía /api/invites/[token]/accept
           } else {
             // Intentar auto-registrar (mismo comportamiento que /register)
             const registered = await autoRegister(fbUser);

@@ -12,10 +12,10 @@ export function useCreateCycle() {
     mutationFn: (data: Parameters<typeof cyclesApi.create>[0]) => cyclesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
-      toast.success('PerÃ­odo creado');
+      toast.success('Período creado');
     },
     onError: (err) => {
-      toast.error('Error al crear perÃ­odo', { description: (err as Error).message });
+      toast.error('Error al crear período', { description: (err as Error).message });
     },
   });
 }

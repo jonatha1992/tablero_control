@@ -31,8 +31,8 @@ const ROLES: {
   icon: React.ElementType;
   color: string;
 }[] = [
-    { value: 'admin', label: 'Administrador', description: 'GestiÃ³n completa de la empresa', icon: Crown, color: 'text-amber-500' },
-    { value: 'responsable', label: 'Responsable', description: 'GestiÃ³n de locales/sectores', icon: Star, color: 'text-blue-500' },
+    { value: 'admin', label: 'Administrador', description: 'Gestión completa de la empresa', icon: Crown, color: 'text-amber-500' },
+    { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores', icon: Star, color: 'text-blue-500' },
     { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas', icon: Users, color: 'text-green-500' },
     { value: 'viewer', label: 'Visualizador', description: 'Solo lectura', icon: Eye, color: 'text-muted-foreground' },
   ];
@@ -220,7 +220,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
                   Editar miembro
                 </DialogTitle>
                 <DialogDescription className="text-xs mt-0.5">
-                  ModificÃ¡ permisos y sectores del miembro.
+                  Modificá permisos y sectores del miembro.
                 </DialogDescription>
               </div>
             </div>
@@ -234,7 +234,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
                 Nombre completo
               </label>
               <Input
-                placeholder="Juan GarcÃ­a"
+                placeholder="Juan García"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -246,7 +246,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
             <div className="space-y-1.5">
               <label className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                 <Mail className="h-3.5 w-3.5" />
-                Correo electrÃ³nico
+                Correo electrónico
               </label>
               <div className="relative">
                 <Input
@@ -306,7 +306,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               <div className="space-y-1.5">
                 {locationAssignments.length === 0 && !addingLocation && (
                   <p className="rounded-md border border-dashed border-input px-3 py-2.5 text-xs text-muted-foreground">
-                    Sin sectores asignados â€” accede a todos segÃºn rol base.
+                    Sin sectores asignados — accede a todos según rol base.
                   </p>
                 )}
 
@@ -328,7 +328,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
                       onChange={(e) => setNewLocationId(e.target.value)}
                       className="flex-1 h-7 appearance-none rounded border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="">Elegir sectorâ€¦</option>
+                      <option value="">Elegir sector…</option>
                       {unassignedLocations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
                           {loc.name}
@@ -472,9 +472,9 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         variant="destructive"
-        title={`Â¿Eliminar a ${member.name}?`}
-        description="El miembro perderÃ¡ el acceso al equipo. Esta acciÃ³n no se puede deshacer."
-        confirmLabel="SÃ­, eliminar"
+        title={`¿Eliminar a ${member.name}?`}
+        description="El miembro perderá el acceso al equipo. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
         onConfirm={() => {
           onRemove(member.id);
           setConfirmDelete(false);

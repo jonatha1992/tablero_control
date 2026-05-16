@@ -19,7 +19,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Use admin's businessId â€” target.businessId is a cached field that may point to a different active business
+  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
   const operatingBusinessId = user.data.businessId;
   if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
 
@@ -47,7 +47,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     await teamService.changeRole(id, operatingBusinessId, data.role);
-    sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambiÃ³ a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
+    sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambió a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
   }
 
   const member = await teamService.updateMember(id, data);
@@ -77,7 +77,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Use admin's businessId â€” target.businessId is a cached field that may point to a different active business
+  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
   const operatingBusinessId = user.data.businessId;
   if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
 

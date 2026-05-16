@@ -289,7 +289,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
         <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent">
           <Filter className="h-4 w-4" />
-          MÃ¡s filtros
+          Más filtros
         </button>
 
         <div className="flex-1" />
@@ -320,7 +320,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* SelecciÃ³n / bulk actions */}
+        {/* Selección / bulk actions */}
         {isSelectMode ? (
           <div className="flex items-center gap-2">
             <div className={cn(
@@ -340,7 +340,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                         className="inline-flex items-center gap-1 h-7 px-2 text-sm rounded hover:bg-muted transition-colors text-foreground disabled:opacity-50"
                         disabled={bulkMove.isPending}
                       >
-                        Mover aâ€¦
+                        Mover a…
                         <svg className="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
                       </button>
                     </DropdownMenuTrigger>
@@ -368,7 +368,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                             disabled={bulkAssignLocation.isPending}
                           >
                             <MapPin className="h-3.5 w-3.5" />
-                            Sectorâ€¦
+                            Sector…
                             <svg className="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
                           </button>
                         </DropdownMenuTrigger>
@@ -421,7 +421,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             <button
               onClick={toggleSelectMode}
               className="inline-flex items-center h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
-              title="Salir del modo selecciÃ³n"
+              title="Salir del modo selección"
             >
               Salir
             </button>
@@ -519,9 +519,9 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
       <Dialog open={pendingDelete !== null} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Â¿Eliminar {pendingDelete?.length ?? 0} tarea{(pendingDelete?.length ?? 0) !== 1 ? 's' : ''}?</DialogTitle>
+            <DialogTitle>¿Eliminar {pendingDelete?.length ?? 0} tarea{(pendingDelete?.length ?? 0) !== 1 ? 's' : ''}?</DialogTitle>
             <DialogDescription>
-              Esta acciÃ³n no se puede deshacer. Las tareas eliminadas no se pueden recuperar.
+              Esta acción no se puede deshacer. Las tareas eliminadas no se pueden recuperar.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -536,7 +536,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               disabled={bulkDelete.isPending}
               className="inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
             >
-              {bulkDelete.isPending ? 'Eliminandoâ€¦' : 'Eliminar'}
+              {bulkDelete.isPending ? 'Eliminando…' : 'Eliminar'}
             </button>
           </DialogFooter>
         </DialogContent>

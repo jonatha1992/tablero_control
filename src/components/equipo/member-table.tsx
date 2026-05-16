@@ -126,13 +126,13 @@ function MemberRow({
                   <MapPin className="h-2.5 w-2.5 shrink-0" />
                   {s.name}
                   {s.role && (
-                    <span className="opacity-60">Â· {s.role}</span>
+                    <span className="opacity-60">· {s.role}</span>
                   )}
                 </span>
               ))}
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground">â€”</span>
+            <span className="text-xs text-muted-foreground">—</span>
           )}
         </td>
 
@@ -188,9 +188,9 @@ function MemberRow({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         variant="destructive"
-        title={`Â¿Eliminar a ${member.name}?`}
-        description="El miembro perderÃ¡ el acceso al equipo. Esta acciÃ³n no se puede deshacer."
-        confirmLabel="SÃ­, eliminar"
+        title={`¿Eliminar a ${member.name}?`}
+        description="El miembro perderá el acceso al equipo. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
         onConfirm={() => {
           onRemove?.(member.id);
           setConfirmOpen(false);

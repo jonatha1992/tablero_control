@@ -61,7 +61,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     }
   }
 
-  // Si todavÃ­a no existe, crearlo (auto-provisionar)
+  // Si todavía no existe, crearlo (auto-provisionar)
   if (!user && decoded.email) {
     user = await prisma.user.create({
       data: {
@@ -127,8 +127,8 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     });
   }
 
-  // Solo actualizar el negocio activo si el usuario no tenÃ­a uno ya (usuario nuevo).
-  // Si ya tenÃ­a otro negocio activo, preservar su contexto â€” el admin lo activarÃ¡ desde su panel.
+  // Solo actualizar el negocio activo si el usuario no tenía uno ya (usuario nuevo).
+  // Si ya tenía otro negocio activo, preservar su contexto — el admin lo activará desde su panel.
   const hadActiveBusiness = !!user.businessId && user.businessId !== invite.businessId;
   const updatedUser = hadActiveBusiness
     ? user
@@ -157,7 +157,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     .then((admins) => {
       for (const a of admins) {
         if (a.userId === decoded.uid) continue;
-        sendNotification({ userId: a.userId, title: 'Nuevo miembro en el equipo', body: `${joinerName} se uniÃ³ al equipo`, type: 'info', link: '/dashboard/equipo' }).catch(() => {});
+        sendNotification({ userId: a.userId, title: 'Nuevo miembro en el equipo', body: `${joinerName} se unió al equipo`, type: 'info', link: '/dashboard/equipo' }).catch(() => {});
       }
     }).catch(() => {});
 

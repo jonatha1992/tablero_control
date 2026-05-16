@@ -28,11 +28,11 @@ interface AiAssistantPanelProps {
 
 // Pattern requires at least ~5 chars of description after the keyword
 const CYCLE_PATTERN =
-  /^(crear|nueva?|quiero\s+(crear|hacer)|planificar)\s*(una?\s+)?(planificaci[oÃ³]n|sprint|ciclo|per[iÃ­]odo)[:\-â€“]\s*(.+)/i;
+  /^(crear|nueva?|quiero\s+(crear|hacer)|planificar)\s*(una?\s+)?(planificaci[oó]n|sprint|ciclo|per[ií]odo)[:\-–]\s*(.+)/i;
 const OBJECTIVE_PATTERN =
-  /^(crear|nuevo?|quiero\s+(crear|hacer))\s*(un[ao]?\s+)?(objetivo|[eÃ©]pica|meta)[:\-â€“]\s*(.+)/i;
+  /^(crear|nuevo?|quiero\s+(crear|hacer))\s*(un[ao]?\s+)?(objetivo|[eé]pica|meta)[:\-–]\s*(.+)/i;
 const TASK_PATTERN =
-  /^(crear|nueva?s?|quiero\s+(crear|hacer|agregar|aÃ±adir)|agrega?r?|aÃ±adir)\s*(una?s?\s+)?(tarea|tareas)[:\-â€“]?\s*(.{3,})/i;
+  /^(crear|nueva?s?|quiero\s+(crear|hacer|agregar|añadir)|agrega?r?|añadir)\s*(una?s?\s+)?(tarea|tareas)[:\-–]?\s*(.{3,})/i;
 
 const PRIORITY_BORDER: Record<TaskPriority, string> = {
   low: 'border-l-slate-300', medium: 'border-l-blue-400',
@@ -73,8 +73,8 @@ function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
             </select>
           </div>
         )}
-        {task.dueDate && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">ðŸ“… {task.dueDate}</span>}
-        {task.estimatedHours && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">â± {task.estimatedHours}h</span>}
+        {task.dueDate && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">📅 {task.dueDate}</span>}
+        {task.estimatedHours && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">⏱ {task.estimatedHours}h</span>}
         {members.slice(0, 3).map((m) => {
           const on = task.assigneeIds.includes(m.id);
           return <button key={m.id} type="button" onClick={() => onChange({ ...task, assigneeIds: on ? task.assigneeIds.filter((id) => id !== m.id) : [...task.assigneeIds, m.id] })} className={cn('rounded-full px-1.5 py-0.5 text-[10px] border transition-colors', on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary')}>{m.name.split(' ')[0]}</button>;
@@ -85,10 +85,10 @@ function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
 }
 
 const SUGGESTIONS = [
-  'Â¿QuÃ© tareas estÃ¡n vencidas?',
+  '¿Qué tareas están vencidas?',
   'Crear tarea: revisar el informe mensual',
   'Quiero planificar el lanzamiento de un producto',
-  'Crear planificaciÃ³n: migrar el servidor a la nube',
+  'Crear planificación: migrar el servidor a la nube',
 ];
 
 export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
@@ -280,8 +280,8 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             <div className="flex flex-col items-center justify-center gap-4 text-center h-full text-muted-foreground">
               <Bot className="h-10 w-10 opacity-15" />
               <div>
-                <p className="text-sm font-medium text-foreground/70">Â¿En quÃ© puedo ayudarte?</p>
-                <p className="text-xs mt-0.5">PreguntÃ¡, usÃ¡ el ðŸŽ¤ para dictar tareas, o pedÃ­ una planificaciÃ³n</p>
+                <p className="text-sm font-medium text-foreground/70">¿En qué puedo ayudarte?</p>
+                <p className="text-xs mt-0.5">Preguntá, usá el 🎤 para dictar tareas, o pedí una planificación</p>
               </div>
               <div className="flex flex-wrap gap-2 justify-center max-w-sm">
                 {SUGGESTIONS.map((s) => (
@@ -296,8 +296,8 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 self-stretch">
               <span className="h-3 w-3 rounded-full bg-red-500 animate-pulse shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">Grabandoâ€¦</p>
-                <p className="text-xs text-muted-foreground">HablÃ¡ con claridad. PulsÃ¡ ðŸŽ¤ para detener.</p>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">Grabando…</p>
+                <p className="text-xs text-muted-foreground">Hablá con claridad. Pulsá 🎤 para detener.</p>
               </div>
               <span className="font-mono text-sm text-red-500 font-semibold">{fmtSec(recSeconds)}</span>
             </div>
@@ -307,14 +307,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           {micState === 'processing' && (
             <div className="flex items-center gap-3 bg-muted rounded-xl px-4 py-3 self-stretch">
               <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-              <p className="text-sm text-muted-foreground">Transcribiendo audio y detectando tareasâ€¦</p>
+              <p className="text-sm text-muted-foreground">Transcribiendo audio y detectando tareas…</p>
             </div>
           )}
 
           {/* Messages */}
           {messages.map((msg: DisplayMessage, i) => {
 
-            /* â”€â”€ Action card (planificaciÃ³n/objetivo creado) â”€â”€ */
+            /* ── Action card (planificación/objetivo creado) ── */
             if (msg.role === 'action') {
               const { action } = msg;
               const isCycle = action.type === 'cycle';
@@ -323,25 +323,25 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                   <div className="max-w-[90%] rounded-2xl rounded-tl-sm bg-primary/10 border border-primary/20 p-3">
                     <div className="flex items-center gap-2 mb-2">
                       {isCycle ? <Calendar className="h-4 w-4 text-primary shrink-0" /> : <Target className="h-4 w-4 text-primary shrink-0" />}
-                      <span className="text-sm font-medium text-primary">{isCycle ? 'PlanificaciÃ³n creada' : 'Objetivo creado'}</span>
+                      <span className="text-sm font-medium text-primary">{isCycle ? 'Planificación creada' : 'Objetivo creado'}</span>
                     </div>
                     <p className="text-sm font-semibold">{action.name}</p>
                     <p className="text-xs text-muted-foreground mt-1">{action.tasksCreated} tarea{action.tasksCreated !== 1 ? 's' : ''} generada{action.tasksCreated !== 1 ? 's' : ''}:</p>
-                    <ul className="mt-1 space-y-0.5">{action.taskTitles.map((t, j) => <li key={j} className="text-xs text-muted-foreground">â€¢ {t}</li>)}</ul>
-                    <a href={action.link} onClick={handleClose} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">Ver {isCycle ? 'planificaciÃ³n' : 'objetivo'} <ExternalLink className="h-3 w-3" /></a>
+                    <ul className="mt-1 space-y-0.5">{action.taskTitles.map((t, j) => <li key={j} className="text-xs text-muted-foreground">• {t}</li>)}</ul>
+                    <a href={action.link} onClick={handleClose} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">Ver {isCycle ? 'planificación' : 'objetivo'} <ExternalLink className="h-3 w-3" /></a>
                   </div>
                 </div>
               );
             }
 
-            /* â”€â”€ Preview card (pendiente de confirmaciÃ³n) â”€â”€ */
+            /* ── Preview card (pendiente de confirmación) ── */
             if (msg.role === 'preview') {
               const isCycle = msg.type === 'cycle';
-              const label = isCycle ? 'planificaciÃ³n' : 'objetivo';
+              const label = isCycle ? 'planificación' : 'objetivo';
               if (msg.state === 'cancelled') {
                 return (
                   <div key={i} className="self-start text-xs text-muted-foreground italic px-1">
-                    CreaciÃ³n cancelada.
+                    Creación cancelada.
                   </div>
                 );
               }
@@ -357,14 +357,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                     <ul className="space-y-0.5 mb-3">
                       {msg.plan.tasks.map((t, j) => (
                         <li key={j} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                          <span className="text-primary mt-0.5">â€¢</span>
+                          <span className="text-primary mt-0.5">•</span>
                           <span>{t.title} {t.estimatedHours && <span className="text-muted-foreground/60">({t.estimatedHours}h)</span>}</span>
                         </li>
                       ))}
                     </ul>
                     {msg.state === 'confirmed' ? (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Creando {label}â€¦
+                        <Loader2 className="h-3 w-3 animate-spin" /> Creando {label}…
                       </div>
                     ) : (
                       <div className="flex gap-2">
@@ -381,13 +381,13 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
               );
             }
 
-            /* â”€â”€ Tasks preview (desde audio) â”€â”€ */
+            /* ── Tasks preview (desde audio) ── */
             if (msg.role === 'tasks') {
               const sorted = [...msg.tasks].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
               return (
                 <div key={i} className="flex flex-col gap-2">
                   <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm self-start max-w-[85%]">
-                    {msg.parseError || msg.tasks.length === 0 ? 'No detectÃ© tareas. Â¿PodÃ©s ser mÃ¡s especÃ­fico?' : `DetectÃ© ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
+                    {msg.parseError || msg.tasks.length === 0 ? 'No detecté tareas. ¿Podés ser más específico?' : `Detecté ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
                   </div>
                   {msg.tasks.length > 0 && (
                     <div className="flex flex-col gap-1.5">
@@ -400,13 +400,13 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                   {msg.tasks.length > 0 && (
                     msg.confirmed
                       ? <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"><Check className="h-3.5 w-3.5" />{msg.tasks.length} tarea{msg.tasks.length !== 1 ? 's' : ''} creada{msg.tasks.length !== 1 ? 's' : ''}</div>
-                      : <Button size="sm" className="self-start" onClick={() => handleConfirmTasks(msg.tasks, i)} disabled={confirmingIdx === i}>{confirmingIdx === i ? <><Loader2 className="h-3 w-3 animate-spin mr-1.5" />Creandoâ€¦</> : `Crear ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}`}</Button>
+                      : <Button size="sm" className="self-start" onClick={() => handleConfirmTasks(msg.tasks, i)} disabled={confirmingIdx === i}>{confirmingIdx === i ? <><Loader2 className="h-3 w-3 animate-spin mr-1.5" />Creando…</> : `Crear ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}`}</Button>
                   )}
                 </div>
               );
             }
 
-            /* â”€â”€ Text message (user / assistant) â”€â”€ */
+            /* ── Text message (user / assistant) ── */
             return (
               <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 <div className={cn('max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap', msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm')}>
@@ -437,14 +437,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={micState === 'recording' ? 'ðŸ”´ Grabandoâ€¦ pulsÃ¡ ðŸŽ¤ para detener' : 'PreguntÃ¡, o escribÃ­ "Crear tarea: â€¦" / "Crear planificaciÃ³n: â€¦"'}
+            placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : 'Preguntá, o escribí "Crear tarea: …" / "Crear planificación: …"'}
             disabled={isLoading || micState !== 'idle'}
             className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
           />
           <button
             onClick={handleMic}
             disabled={isPending || isGenerating || micState === 'processing'}
-            title={micState === 'recording' ? 'Detener grabaciÃ³n' : 'Dictar tareas por voz'}
+            title={micState === 'recording' ? 'Detener grabación' : 'Dictar tareas por voz'}
             className={cn('h-9 w-9 rounded-full flex items-center justify-center transition-colors shrink-0', micState === 'recording' ? 'bg-red-500 text-white animate-pulse' : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground')}
           >
             {micState === 'processing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}

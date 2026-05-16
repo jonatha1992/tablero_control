@@ -14,10 +14,10 @@ export function useRevokeInvite(businessId?: string) {
       if (businessId) {
         queryClient.invalidateQueries({ queryKey: inviteKeys.byBusiness(businessId) });
       }
-      toast.success('InvitaciÃ³n revocada');
+      toast.success('Invitación revocada');
     },
     onError: (err) => {
-      toast.error('Error al revocar invitaciÃ³n', { description: (err as Error).message });
+      toast.error('Error al revocar invitación', { description: (err as Error).message });
     },
   });
 }

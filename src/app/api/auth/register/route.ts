@@ -55,7 +55,7 @@ export const POST = handle(async (request: NextRequest) => {
   const isSuperadmin = superadminEmails.includes(email);
   const role = isSuperadmin ? 'superadmin' : 'admin';
 
-  // User must exist before Business (FK: Business.ownerId â†’ User.id)
+  // User must exist before Business (FK: Business.ownerId → User.id)
   const user = await userRepository.create({
     id: decoded.uid,
     email,
@@ -70,7 +70,7 @@ export const POST = handle(async (request: NextRequest) => {
   } as Parameters<typeof userRepository.create>[0]);
 
   const business = await businessRepository.create({
-    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusiÃ³n (Master)' : `Empresa de ${name}`),
+    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`),
     adminId: decoded.uid,
     ownerId: decoded.uid,
     plan: 'free',

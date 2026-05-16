@@ -62,7 +62,7 @@ export const POST = handle(async (request: NextRequest) => {
 
   const member = await teamService.inviteMember(dto, businessId, firebaseUid);
 
-  // Generar link para establecer contraseÃ±a
+  // Generar link para establecer contraseña
   let resetLink: string | undefined;
   try {
     resetLink = await adminAuth.generatePasswordResetLink(normalizedEmail, {

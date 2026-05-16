@@ -48,7 +48,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 
   const validActions = ['complete', 'archive', undefined];
   if (_action !== undefined && !validActions.includes(_action)) {
-    return NextResponse.json({ error: 'AcciÃ³n invÃ¡lida' }, { status: 400 });
+    return NextResponse.json({ error: 'Acción inválida' }, { status: 400 });
   }
 
   let updated;

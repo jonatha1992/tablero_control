@@ -97,7 +97,7 @@ export const DELETE = handle(async (
         });
 
         for (const biz of businesses) {
-          // Delete location-only tasks first â€” Locationâ†’Task is SetNull (not Cascade),
+          // Delete location-only tasks first — Location→Task is SetNull (not Cascade),
           // so these orphan after business.delete() and block user deletion.
           const locationIds = (await tx.location.findMany({
             where: { businessId: biz.id },
@@ -143,12 +143,12 @@ export const DELETE = handle(async (
       // 3. Clean up non-cascading FK references
       await tx.comment.deleteMany({ where: { authorId: id } });
       await tx.auditLog.deleteMany({ where: { actorId: id } });
-      // Transfer business ownership (Business.ownerId FK has no onDelete â€” Restrict by default)
+      // Transfer business ownership (Business.ownerId FK has no onDelete — Restrict by default)
       await tx.business.updateMany({
         where: { ownerId: id },
         data: { ownerId: user.uid },
       });
-      // Delete calendar events (CalendarEvent.creatorId FK has no onDelete â€” Restrict by default)
+      // Delete calendar events (CalendarEvent.creatorId FK has no onDelete — Restrict by default)
       await tx.calendarEvent.deleteMany({ where: { creatorId: id } });
       // Disconnect from all assigned tasks
       await tx.user.update({

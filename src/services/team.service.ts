@@ -12,7 +12,7 @@ class TeamService {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const existing = await userRepository.findByEmail(normalizedEmail);
     if (existing) {
-      // User already exists â†’ add or update membership
+      // User already exists → add or update membership
       const existingMembership = await prisma.userBusiness.findUnique({
         where: { userId_businessId: { userId: existing.id, businessId } },
       });

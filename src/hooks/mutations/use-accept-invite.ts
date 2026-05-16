@@ -11,10 +11,10 @@ export function useAcceptInvite() {
     mutationFn: (token: string) => invitesApi.accept(token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all });
-      toast.success('InvitaciÃ³n aceptada');
+      toast.success('Invitación aceptada');
     },
     onError: (err) => {
-      toast.error('Error al aceptar invitaciÃ³n', { description: (err as Error).message });
+      toast.error('Error al aceptar invitación', { description: (err as Error).message });
     },
   });
 }

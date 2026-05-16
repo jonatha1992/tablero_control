@@ -12,10 +12,10 @@ export function useCreateInvite() {
     mutationFn: (input: CreateInviteInput) => invitesApi.create(input),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: inviteKeys.byBusiness(variables.businessId) });
-      toast.success('Link de invitaciÃ³n creado');
+      toast.success('Link de invitación creado');
     },
     onError: (err) => {
-      toast.error('Error al crear invitaciÃ³n', { description: (err as Error).message });
+      toast.error('Error al crear invitación', { description: (err as Error).message });
     },
   });
 }

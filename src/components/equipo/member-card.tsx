@@ -123,14 +123,14 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
         </CardContent>
       </Card>
 
-      {/* DiÃ¡logo de confirmaciÃ³n de eliminaciÃ³n */}
+      {/* Diálogo de confirmación de eliminación */}
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         variant="destructive"
-        title={`Â¿Eliminar a ${member.name}?`}
-        description="El miembro perderÃ¡ el acceso al equipo. Esta acciÃ³n no se puede deshacer."
-        confirmLabel="SÃ­, eliminar"
+        title={`¿Eliminar a ${member.name}?`}
+        description="El miembro perderá el acceso al equipo. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
         onConfirm={() => {
           onRemove?.(member.id);
           setConfirmOpen(false);

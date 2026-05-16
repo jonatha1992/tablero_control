@@ -28,7 +28,7 @@ function LoginForm() {
     }
   }, [isAuthenticated, authLoading, user, router]);
 
-  // Handle Google redirect flow (popup blocked â†’ signInWithRedirect)
+  // Handle Google redirect flow (popup blocked → signInWithRedirect)
   useEffect(() => {
     checkGoogleRedirectResult().then(async (result) => {
       if (!result) return;
@@ -74,7 +74,7 @@ function LoginForm() {
       await login(firebaseEmail, password);
       router.push(redirect);
     } catch (err) {
-      setError('Correo, usuario o contraseÃ±a incorrectos');
+      setError('Correo, usuario o contraseña incorrectos');
       console.error(err);
     } finally {
       setLoading(false);
@@ -86,7 +86,7 @@ function LoginForm() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle();
-      if (!result) return; // redirect flow â€” onAuthStateChanged handles it
+      if (!result) return; // redirect flow — onAuthStateChanged handles it
 
       const { token } = result;
 
@@ -96,7 +96,7 @@ function LoginForm() {
       });
 
       if (profileRes.status === 404) {
-        // New user â€” provision account automatically
+        // New user — provision account automatically
         const registerRes = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -117,9 +117,9 @@ function LoginForm() {
       if (code === 'auth/popup-closed-by-user') {
         setError('');
       } else if (code === 'auth/unauthorized-domain') {
-        setError('Inicio de sesiÃ³n con Google no estÃ¡ configurado para este dominio. ContactÃ¡ al administrador.');
+        setError('Inicio de sesión con Google no está configurado para este dominio. Contactá al administrador.');
       } else {
-        setError((err as Error).message || 'Error al iniciar sesiÃ³n con Google');
+        setError((err as Error).message || 'Error al iniciar sesión con Google');
       }
       console.error(err);
     } finally {
@@ -156,7 +156,7 @@ function LoginForm() {
             />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Tablero de Control</h1>
-          <p className="mt-2 text-base text-muted-foreground">IniciÃ¡ sesiÃ³n para continuar</p>
+          <p className="mt-2 text-base text-muted-foreground">Iniciá sesión para continuar</p>
         </div>
 
         {/* Card */}
@@ -164,7 +164,7 @@ function LoginForm() {
           {/* Alerta not_invited */}
           {notInvited && (
             <div className="mb-6 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-              Tu cuenta no estÃ¡ registrada en el sistema. Pedile a tu administrador que te invite.
+              Tu cuenta no está registrada en el sistema. Pedile a tu administrador que te invite.
             </div>
           )}
 
@@ -207,7 +207,7 @@ function LoginForm() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-3 text-muted-foreground tracking-wider">O continuÃ¡ con correo</span>
+              <span className="bg-card px-3 text-muted-foreground tracking-wider">O continuá con correo</span>
             </div>
           </div>
 
@@ -230,9 +230,9 @@ function LoginForm() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium">ContraseÃ±a</label>
+                <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
                 <Link href="/forgot-password" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-primary transition-colors">
-                  Â¿Olvidaste tu contraseÃ±a?
+                  ¿Olvidaste tu contraseña?
                 </Link>
               </div>
               <div className="relative">
@@ -249,7 +249,7 @@ function LoginForm() {
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -260,13 +260,13 @@ function LoginForm() {
               </div>
             </div>
             <Button type="submit" className="w-full h-12 text-base font-medium" disabled={loading}>
-              {loading ? 'Iniciando sesiÃ³n...' : 'Iniciar sesiÃ³n'}
+              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
           </form>
 
           {/* Footer */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Â¿No tenÃ©s cuenta?{' '}
+            ¿No tenés cuenta?{' '}
             <Link href="/register" className="text-primary font-medium underline-offset-4 hover:underline transition-colors">
               Registrate
             </Link>
@@ -274,9 +274,9 @@ function LoginForm() {
 
           <div className="mt-4 flex justify-center gap-3">
             <Link href="/terminos" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors">
-              TÃ©rminos
+              Términos
             </Link>
-            <span className="text-xs text-muted-foreground">Â·</span>
+            <span className="text-xs text-muted-foreground">·</span>
             <Link href="/privacidad" className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors">
               Privacidad
             </Link>

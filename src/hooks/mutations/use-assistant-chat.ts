@@ -52,7 +52,7 @@ export function useAssistantChat() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Lo siento, ocurriÃ³ un error. IntentÃ¡ de nuevo.' },
+        { role: 'assistant', content: 'Lo siento, ocurrió un error. Intentá de nuevo.' },
       ]);
     }
   };

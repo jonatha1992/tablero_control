@@ -45,7 +45,7 @@ export const GET = handle(async (request: NextRequest) => {
       if (superadminEmails.includes(decoded.email)) {
         const name = decoded.name ?? decoded.email.split('@')[0] ?? 'Admin';
         const business = await businessRepository.create({
-          name: 'TecnoFusiÃ³n (Master)',
+          name: 'TecnoFusión (Master)',
           adminId: decoded.uid,
           ownerId: decoded.uid,
           plan: 'free',
@@ -113,7 +113,7 @@ export const GET = handle(async (request: NextRequest) => {
       const isSuperadmin = superadminEmails.includes(email);
 
       const business = await businessRepository.create({
-        name: isSuperadmin ? 'TecnoFusiÃ³n (Master)' : `Empresa de ${name}`,
+        name: isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`,
         adminId: decoded.uid,
         ownerId: decoded.uid,
         plan: 'free',

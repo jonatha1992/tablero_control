@@ -19,7 +19,7 @@ vi.mock('@dnd-kit/utilities', () => ({
   CSS: { Translate: { toString: () => '' } },
 }));
 
-// Mock DropdownMenu â€” en jsdom Radix no abre portales con fireEvent, renderizamos siempre el contenido
+// Mock DropdownMenu — en jsdom Radix no abre portales con fireEvent, renderizamos siempre el contenido
 vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   DropdownMenuTrigger: ({ children, asChild: _asChild }: { children: React.ReactNode; asChild?: boolean }) => <>{children}</>,
@@ -34,7 +34,7 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 const makeTask = (overrides: Partial<Task> = {}): Task => ({
   id: 'task-1',
   title: 'Tarea de prueba',
-  description: 'DescripciÃ³n de prueba',
+  description: 'Descripción de prueba',
   status: 'todo',
   priority: 'medium',
   type: 'task',
@@ -62,25 +62,25 @@ const defaultProps = {
 };
 
 describe('KanbanCard', () => {
-  it('muestra el tÃ­tulo de la tarea', () => {
+  it('muestra el título de la tarea', () => {
     render(<KanbanCard task={makeTask()} {...defaultProps} />);
     expect(screen.getByText('Tarea de prueba')).toBeInTheDocument();
   });
 
-  it('muestra la descripciÃ³n cuando existe', () => {
+  it('muestra la descripción cuando existe', () => {
     render(<KanbanCard task={makeTask()} {...defaultProps} />);
-    expect(screen.getByText('DescripciÃ³n de prueba')).toBeInTheDocument();
+    expect(screen.getByText('Descripción de prueba')).toBeInTheDocument();
   });
 
-  it('no muestra descripciÃ³n si estÃ¡ vacÃ­a', () => {
+  it('no muestra descripción si está vacía', () => {
     render(<KanbanCard task={makeTask({ description: '' })} {...defaultProps} />);
-    expect(screen.queryByText('DescripciÃ³n de prueba')).not.toBeInTheDocument();
+    expect(screen.queryByText('Descripción de prueba')).not.toBeInTheDocument();
   });
 
   it('muestra el badge de prioridad media', () => {
     render(<KanbanCard task={makeTask({ priority: 'medium' })} {...defaultProps} />);
     // Usamos getByTitle porque el mock de DropdownMenu renderiza siempre el contenido
-    // y puede haber mÃºltiples textos "Media" (badge + opciÃ³n del menÃº)
+    // y puede haber múltiples textos "Media" (badge + opción del menú)
     expect(screen.getByTitle(/Prioridad: Media/i)).toBeInTheDocument();
   });
 
@@ -104,7 +104,7 @@ describe('KanbanCard', () => {
     expect(screen.getByText('bug')).toBeInTheDocument();
   });
 
-  it('muestra "+N" cuando hay mÃ¡s de 3 tags', () => {
+  it('muestra "+N" cuando hay más de 3 tags', () => {
     render(
       <KanbanCard
         task={makeTask({ tags: ['a', 'b', 'c', 'd', 'e'] })}
@@ -164,7 +164,7 @@ describe('KanbanCard', () => {
     expect(screen.getByText(/dic/i)).toBeInTheDocument();
   });
 
-  it('muestra fecha en rojo cuando estÃ¡ vencida y no estÃ¡ completada', () => {
+  it('muestra fecha en rojo cuando está vencida y no está completada', () => {
     const dueDate = new Date('2020-01-01'); // pasado
     const { container } = render(
       <KanbanCard task={makeTask({ dueDate, status: 'todo' })} {...defaultProps} />
