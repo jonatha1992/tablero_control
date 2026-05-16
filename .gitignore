@@ -14,6 +14,10 @@
 /test-results
 /playwright-report
 /.playwright-mcp
+/screenshots-review
+
+# session artifacts
+*.txt
 
 # next.js
 /.next/

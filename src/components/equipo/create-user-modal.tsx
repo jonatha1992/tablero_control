@@ -25,8 +25,6 @@ import type { CreateUserMode } from '@/app/api/users/create/route';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const ROLES: { value: UserRole; label: string; description: string }[] = [
   { value: 'admin', label: 'Administrador', description: 'Gestión completa de la empresa' },
   { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores' },
@@ -302,7 +300,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
-              )}
+              </div>
 
                 {/* Username (mode: username) */}
                 {mode === 'username' && (

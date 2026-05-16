@@ -127,15 +127,11 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     });
   }
 
-  // Solo actualizar el negocio activo si el usuario no tenía uno ya (usuario nuevo).
-  // Si ya tenía otro negocio activo, preservar su contexto — el admin lo activará desde su panel.
-  const hadActiveBusiness = !!user.businessId && user.businessId !== invite.businessId;
-  const updatedUser = hadActiveBusiness
-    ? user
-    : await prisma.user.update({
-        where: { id: user.id },
-        data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId },
-      });
+  // Siempre cambiar al negocio invitado — el usuario acaba de aceptar explícitamente.
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId },
+  });
 
   await prisma.businessInvite.update({
     where: { id: inviteToken },

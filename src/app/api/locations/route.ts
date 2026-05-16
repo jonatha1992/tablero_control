@@ -17,10 +17,19 @@ export const GET = handle(async (request: NextRequest) => {
 
   assertSameTenant(user.data, { businessId });
 
+  const activeMembership = user.data.memberships?.find(
+    (m) => m.businessId === businessId && m.isActive
+  );
+  const userLocationId = activeMembership?.locationId;
+
   const status = searchParams.get('status');
-  const locations = status === 'active'
+  let locations = status === 'active'
     ? await locationService.getActiveLocations(businessId)
     : await locationService.getByBusiness(businessId);
+
+  if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
+    locations = locations.filter((l) => l.id === userLocationId);
+  }
 
   return NextResponse.json(locations);
 });

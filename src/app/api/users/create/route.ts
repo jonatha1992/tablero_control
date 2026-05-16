@@ -12,11 +12,13 @@ export type CreateUserMode = 'email' | 'username' | 'google' | 'ghost';
 
 export interface CreateUserBody {
   name: string;
-  email: string;
+  email?: string;
   password?: string;
   role: UserRole;
   businessId?: string;
   locationId?: string;
+  mode?: CreateUserMode;
+  username?: string;
 }
 
 export interface CreateUserResult {
@@ -49,12 +51,21 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { name, role, businessId, locationId } = body;
+  const { name, role, businessId, locationId, password } = body;
   const mode: CreateUserMode = body.mode ?? 'email';
   const email = body.email?.toLowerCase().trim() ?? '';
   const username = body.username?.toLowerCase().trim() ?? '';
+  const isGhost = mode === 'ghost';
+  const isSyntheticEmail = mode === 'username';
+  const firebaseEmail = isSyntheticEmail ? `${username}@guest.local` : email;
 
-  if (!name?.trim() || !email || !role) {
+  if (!name?.trim() || !role) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (mode === 'email' && !email) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (mode === 'username' && !username) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
   if (password !== undefined && password.length < 6) {
@@ -145,6 +156,7 @@ export const POST = handle(async (req: NextRequest) => {
     if (code === 'auth/email-already-exists') {
       return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
     }
+    return NextResponse.json({ error: 'firebase_create_failed' }, { status: 500 });
   }
 
   try {

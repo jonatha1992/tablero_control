@@ -26,9 +26,6 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const membership = target.memberships?.find((m) => m.businessId === operatingBusinessId);
   if (!membership) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const operatingBusinessId = target.businessId;
-  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
-
   const data = await request.json();
 
   if (data.reactivate === true) {
