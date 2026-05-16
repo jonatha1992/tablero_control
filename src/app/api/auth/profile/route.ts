@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
@@ -132,7 +132,11 @@ export const GET = handle(async (request: NextRequest) => {
         locationIds: [],
         teamIds: [],
       });
-      user = await userRepository.update(user.id, { businessId: business.id, role: isSuperadmin ? 'superadmin' : 'admin' as UserRole });
+      user = await userRepository.update(user.id, {
+        businessId: business.id,
+        role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,
+        ...(!user.avatar && decoded.picture ? { avatar: decoded.picture } : {}),
+      });
       await userRepository.addMembership({
         userId: user.id,
         businessId: business.id,
@@ -140,6 +144,10 @@ export const GET = handle(async (request: NextRequest) => {
         isActive: true,
       });
       user = await userRepository.findById(user.id) ?? user;
+    }
+
+    if (!user.avatar && decoded.picture) {
+      user = await userRepository.update(user.id, { avatar: decoded.picture });
     }
 
     // Determine if user is owner of active business

@@ -88,7 +88,7 @@ export async function extractTasksFromTranscription(
   const today = new Date().toISOString().split('T')[0];
 
   const completion = await groq.chat.completions.create({
-    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    model: 'llama-3.3-70b-versatile',
     messages: [
       { role: 'system', content: buildSystemPrompt(members, today) },
       { role: 'user', content: transcription },

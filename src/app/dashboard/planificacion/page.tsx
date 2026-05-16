@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useCreateCycle } from '@/hooks/mutations/use-create-cycle';
-import { useDeleteCycle, useStartCycle, useCompleteCycle } from '@/hooks/mutations/use-update-cycle';
+import { useDeleteCycle, useStartCycle, useCompleteCycle, useUpdateCycle } from '@/hooks/mutations/use-update-cycle';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
-import { Plus, Play, CheckCircle, X, Calendar, Trash2, Lock, ArrowRight, Info } from 'lucide-react';
+import { Plus, Play, CheckCircle, X, Calendar, Trash2, Lock, ArrowRight, Info, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Cycle, CycleStatus } from '@/types/domain/cycle';
@@ -29,6 +29,7 @@ export default function PeriodosPage() {
   const { user } = useAuth();
   const { data: cycles = [], isLoading } = useCyclesQuery(user?.businessId ?? '');
   const createCycle = useCreateCycle();
+  const updateCycle = useUpdateCycle();
   const deleteCycle = useDeleteCycle();
   const startCycle = useStartCycle();
   const completeCycle = useCompleteCycle();
@@ -41,6 +42,7 @@ export default function PeriodosPage() {
   };
 
   const [showModal, setShowModal] = useState(false);
+  const [editingCycle, setEditingCycle] = useState<Cycle | null>(null);
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
   const [startDate, setStartDate] = useState(todayStr);
@@ -50,6 +52,33 @@ export default function PeriodosPage() {
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
 
   const activeCycle = cycles.find((c) => c.status === 'active');
+
+  const resetModal = () => {
+    setShowModal(false);
+    setEditingCycle(null);
+    setName('');
+    setGoal('');
+    setStartDate(todayStr());
+    setEndDate(twoWeeksStr());
+    setDateError('');
+    setServerError('');
+  };
+
+  const openCreate = () => {
+    resetModal();
+    setShowModal(true);
+  };
+
+  const openEdit = (cycle: Cycle) => {
+    setEditingCycle(cycle);
+    setName(cycle.name);
+    setGoal(cycle.goal ?? '');
+    setStartDate(cycle.startDate ? new Date(cycle.startDate).toISOString().split('T')[0] : '');
+    setEndDate(cycle.endDate ? new Date(cycle.endDate).toISOString().split('T')[0] : '');
+    setDateError('');
+    setServerError('');
+    setShowModal(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,19 +90,18 @@ export default function PeriodosPage() {
       setDateError('La fecha de fin debe ser posterior a la de inicio');
       return;
     }
-    createCycle.mutate(
-      { name: trimmedName, goal: goal.trim() || undefined, startDate, endDate },
-      {
-        onSuccess: () => {
-          setShowModal(false);
-          setName('');
-          setGoal('');
-          setStartDate(todayStr());
-          setEndDate(twoWeeksStr());
-        },
-        onError: (err: Error) => setServerError(err.message || 'Error al crear el período'),
-      }
-    );
+    const data = { name: trimmedName, goal: goal.trim() || undefined, startDate, endDate };
+    const options = {
+      onSuccess: resetModal,
+      onError: (err: Error) => setServerError(err.message || (editingCycle ? 'Error al actualizar el período' : 'Error al crear el período')),
+    };
+
+    if (editingCycle) {
+      updateCycle.mutate({ id: editingCycle.id, data }, options);
+      return;
+    }
+
+    createCycle.mutate(data, options);
   };
 
   const handleStart = (id: string) => {
@@ -107,7 +135,7 @@ export default function PeriodosPage() {
             Organizá tareas en bloques de tiempo (semanas, quincenas, meses)
           </p>
         </div>
-        <Button size="sm" onClick={() => setShowModal(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1.5" />
           Nuevo período
         </Button>
@@ -141,6 +169,7 @@ export default function PeriodosPage() {
             cycle={activeCycle}
             onComplete={handleComplete}
             onDelete={(id) => deleteCycle.mutate(id)}
+            onEdit={openEdit}
             actionError={actionErrors[activeCycle.id]}
           />
         </section>
@@ -160,6 +189,7 @@ export default function PeriodosPage() {
                 hasActiveCycle={!!activeCycle}
                 onStart={handleStart}
                 onDelete={(id) => deleteCycle.mutate(id)}
+                onEdit={openEdit}
                 actionError={actionErrors[cycle.id]}
               />
             ))}
@@ -179,6 +209,7 @@ export default function PeriodosPage() {
                 key={cycle.id}
                 cycle={cycle}
                 onDelete={(id) => deleteCycle.mutate(id)}
+                onEdit={openEdit}
                 actionError={actionErrors[cycle.id]}
               />
             ))}
@@ -198,6 +229,7 @@ export default function PeriodosPage() {
                 key={cycle.id}
                 cycle={cycle}
                 onDelete={(id) => deleteCycle.mutate(id)}
+                onEdit={openEdit}
                 actionError={actionErrors[cycle.id]}
               />
             ))}
@@ -212,23 +244,25 @@ export default function PeriodosPage() {
           <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
             Creá un período para planificar qué tareas vas a hacer esta semana o quincena.
           </p>
-          <Button size="sm" className="mt-4" onClick={() => setShowModal(true)}>
+          <Button size="sm" className="mt-4" onClick={openCreate}>
             <Plus className="h-4 w-4 mr-1.5" />
             Crear primer período
           </Button>
         </div>
       )}
 
-      {/* Modal crear */}
+      {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-background rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Nuevo período</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Definí un bloque de tiempo para agrupar tareas</p>
+                <h2 className="text-lg font-semibold">{editingCycle ? 'Editar período' : 'Nuevo período'}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {editingCycle ? 'Ajustá el nombre, meta o fechas del período' : 'Definí un bloque de tiempo para agrupar tareas'}
+                </p>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-muted rounded">
+              <button onClick={resetModal} className="p-1 hover:bg-muted rounded">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -281,11 +315,13 @@ export default function PeriodosPage() {
                 <p className="text-sm text-destructive">{dateError || serverError}</p>
               )}
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowModal(false)}>
+                <Button type="button" variant="outline" size="sm" onClick={resetModal}>
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={createCycle.isPending}>
-                  {createCycle.isPending ? 'Creando...' : 'Crear período'}
+                <Button type="submit" size="sm" disabled={createCycle.isPending || updateCycle.isPending}>
+                  {editingCycle
+                    ? (updateCycle.isPending ? 'Guardando...' : 'Guardar cambios')
+                    : (createCycle.isPending ? 'Creando...' : 'Crear período')}
                 </Button>
               </div>
             </form>
@@ -302,6 +338,7 @@ function CycleCard({
   onStart,
   onComplete,
   onDelete,
+  onEdit,
   actionError,
 }: {
   cycle: Cycle;
@@ -309,6 +346,7 @@ function CycleCard({
   onStart?: (id: string) => void;
   onComplete?: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (cycle: Cycle) => void;
   actionError?: string;
 }) {
   return (
@@ -357,8 +395,15 @@ function CycleCard({
           </Button>
         )}
         <button
+          onClick={() => onEdit(cycle)}
+          className="ml-auto p-1 text-muted-foreground hover:text-foreground transition-colors"
+          title="Editar período"
+        >
+          <Edit2 className="h-3.5 w-3.5" />
+        </button>
+        <button
           onClick={() => { if (confirm('¿Eliminar este período?')) onDelete(cycle.id); }}
-          className="ml-auto p-1 text-muted-foreground hover:text-destructive transition-colors"
+          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
           title="Eliminar período"
         >
           <Trash2 className="h-3.5 w-3.5" />

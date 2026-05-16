@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   collection, doc, setDoc, updateDoc, deleteDoc, serverTimestamp,
 } from 'firebase/firestore';
@@ -46,7 +47,13 @@ export function useSaveRole() {
       }
       return ref.id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['roles', user?.businessId] }),
+    onSuccess: (_data, role) => {
+      qc.invalidateQueries({ queryKey: ['roles', user?.businessId] });
+      toast.success(role.id ? 'Rol actualizado' : 'Rol creado');
+    },
+    onError: (err) => {
+      toast.error('Error al guardar rol', { description: (err as Error).message });
+    },
   });
 }
 
@@ -59,7 +66,13 @@ export function useDeleteRole() {
       if (!user?.businessId) throw new Error('Sin business');
       await deleteDoc(doc(db, 'businesses', user.businessId, 'roles', roleId));
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['roles', user?.businessId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['roles', user?.businessId] });
+      toast.success('Rol eliminado');
+    },
+    onError: (err) => {
+      toast.error('Error al eliminar rol', { description: (err as Error).message });
+    },
   });
 }
 
@@ -74,6 +87,12 @@ export function useToggleRole() {
         isActive, updatedAt: serverTimestamp(),
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['roles', user?.businessId] }),
+    onSuccess: (_data, { isActive }) => {
+      qc.invalidateQueries({ queryKey: ['roles', user?.businessId] });
+      toast.success(isActive ? 'Rol activado' : 'Rol desactivado');
+    },
+    onError: (err) => {
+      toast.error('Error al cambiar estado del rol', { description: (err as Error).message });
+    },
   });
 }

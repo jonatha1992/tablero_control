@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import type { Task, TaskStatus } from '@/types/domain/task';
@@ -30,12 +31,13 @@ export function useMoveTask() {
       return { previousQueries };
     },
     // Si la mutación falla, restauramos cada query a su estado anterior
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       if (context?.previousQueries) {
         context.previousQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      toast.error('Error al mover tarea', { description: (err as Error).message });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });

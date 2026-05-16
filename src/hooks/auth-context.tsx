@@ -1,10 +1,21 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { authService } from '@/services/auth.service';
 import type { User, UserRole } from '@/types';
+
+function isOnRegisterPage(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname === '/register' &&
+    new URLSearchParams(window.location.search).get('newBusiness') !== 'true';
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
+  onSignOut?: () => void;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -51,7 +62,7 @@ async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {
   }
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser && isOnRegisterPage()) {
+        // Clear cached Firebase session so the register form shows fresh
+        await firebaseSignOut(auth);
+        return; // null callback will handle state cleanup
+      }
+
       setFirebaseUser(fbUser);
 
       if (fbUser) {
@@ -133,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await authService.logout();
+    onSignOut?.();
     setUser(null);
     setFirebaseUser(null);
     setNotInvited(false);

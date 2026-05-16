@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -36,15 +36,6 @@ const ROLES: {
     { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas', icon: Users, color: 'text-green-500' },
     { value: 'viewer', label: 'Visualizador', description: 'Solo lectura', icon: Eye, color: 'text-muted-foreground' },
   ];
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  superadmin: 'Superadmin',
-  admin: 'Admin',
-  responsable: 'Responsable',
-  miembro: 'Miembro',
-  viewer: 'Viewer',
-  pending: 'Pendiente',
-};
 
 function MemberAvatar({ name, avatar }: { name: string; avatar?: string | null }) {
   const initials = name
@@ -140,13 +131,16 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
       setNewLocationRole('miembro');
 
       if (member.locationAssignments?.length) {
+        const businessLocationIds = new Set(locations.map((l) => l.id));
         setLocationAssignments(
-          member.locationAssignments.map((a: UserLocationAssignment) => ({
-            locationId: a.locationId,
-            locationName: a.locationName ?? a.locationId,
-            role: a.role,
-            customRoleIds: a.customRoleIds,
-          }))
+          member.locationAssignments
+            .filter((a: UserLocationAssignment) => businessLocationIds.has(a.locationId))
+            .map((a: UserLocationAssignment) => ({
+              locationId: a.locationId,
+              locationName: a.locationName ?? a.locationId,
+              role: a.role,
+              customRoleIds: a.customRoleIds,
+            }))
         );
       } else if (member.locationId) {
         // Migrate legacy single locationId

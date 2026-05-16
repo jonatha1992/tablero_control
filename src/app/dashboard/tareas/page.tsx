@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/tareas/kanban-board';
@@ -171,7 +171,7 @@ export default function TareasPage() {
       </div>
 
       {/* Kanban board — handles its own modals internally */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <KanbanBoard tasks={tasks} />
       </div>
     </div>

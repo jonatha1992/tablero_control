@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -85,7 +85,7 @@ export const DELETE = handle(async (
     return NextResponse.json({ error: 'cannot_delete_superadmin' }, { status: 400 });
   }
 
-  const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusiness') === 'true';
+  const deleteBusinesses = request.nextUrl.searchParams.get('deleteBusinesses') === 'true';
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -143,6 +143,13 @@ export const DELETE = handle(async (
       // 3. Clean up non-cascading FK references
       await tx.comment.deleteMany({ where: { authorId: id } });
       await tx.auditLog.deleteMany({ where: { actorId: id } });
+      // Transfer business ownership (Business.ownerId FK has no onDelete — Restrict by default)
+      await tx.business.updateMany({
+        where: { ownerId: id },
+        data: { ownerId: user.uid },
+      });
+      // Delete calendar events (CalendarEvent.creatorId FK has no onDelete — Restrict by default)
+      await tx.calendarEvent.deleteMany({ where: { creatorId: id } });
       // Disconnect from all assigned tasks
       await tx.user.update({
         where: { id },

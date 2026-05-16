@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useState } from 'react';
 import {
@@ -87,6 +87,11 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
 
   const requestDelete = (taskIds: string[]) => setPendingDelete(taskIds);
+
+  const handleToggleSelect = (taskId: string) => {
+    if (!isSelectMode) toggleSelectMode();
+    toggleTaskSelection(taskId);
+  };
   const confirmDelete = () => {
     if (!pendingDelete) return;
     bulkDelete.mutate(
@@ -423,14 +428,6 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleSelectMode}
-              className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
-              title="Modo selección múltiple"
-            >
-              <CheckSquare className="h-4 w-4" />
-              Selección
-            </button>
             {user?.role !== 'viewer' && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -491,6 +488,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 isSelectMode={isSelectMode}
                 onSelectAll={selectAllInColumn}
                 onBulkDelete={requestDelete}
+                onDelete={(taskId) => requestDelete([taskId])}
+                onToggleSelect={handleToggleSelect}
                 locations={locations}
 
               />

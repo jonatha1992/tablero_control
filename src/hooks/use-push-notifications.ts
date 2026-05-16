@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { getMessagingInstance } from '@/lib/firebase/client';
 import { getToken as getFirebaseAuthToken } from '@/lib/firebase/auth';
@@ -13,9 +13,13 @@ export const usePushNotifications = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let cleanup: (() => void) | undefined;
+    let isMounted = true;
 
     getMessagingInstance().then((m) => {
-      if (!m) return;
+      // If the component unmounted before the promise resolved, skip registering
+      // the listener to prevent orphaned async message handlers (which cause the
+      // "message channel closed before a response was received" error).
+      if (!m || !isMounted) return;
       cleanup = onMessage(m, (payload) => {
         console.log('Mensaje recibido en foreground: ', payload);
         const title = payload.notification?.title || 'Nueva Notificación';
@@ -37,6 +41,7 @@ export const usePushNotifications = () => {
     });
 
     return () => {
+      isMounted = false;
       cleanup?.();
     };
   }, []);
@@ -62,7 +67,14 @@ export const usePushNotifications = () => {
       }
 
       const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-      const currentToken = await getToken(m, { vapidKey });
+      let swReg: ServiceWorkerRegistration | undefined;
+      try {
+        swReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')
+          ?? await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      } catch {
+        // fallback: let Firebase auto-discover
+      }
+      const currentToken = await getToken(m, { vapidKey, serviceWorkerRegistration: swReg });
 
       if (currentToken) {
         const authToken = await getFirebaseAuthToken();

@@ -98,9 +98,11 @@ model User {
   // id = uid de Firebase Auth
   id           String    @id
   email        String    @unique
+  username     String?   @unique
   name         String
   role         UserRole  @default(miembro)
   businessId   String?
+  isGuest      Boolean   @default(false)
   locationId   String?
   customRoleIds String[] @default([])
   avatar       String?

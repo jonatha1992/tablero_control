@@ -1,4 +1,4 @@
-import { userRepository, locationRepository } from '@/repositories';
+﻿import { userRepository, locationRepository } from '@/repositories';
 import { prisma } from '@/lib/prisma';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
@@ -78,9 +78,14 @@ class TeamService {
     const updated = await userRepository.update(id, rest);
     if (locationAssignments !== undefined) {
       await userRepository.setLocationAssignments(id, locationAssignments);
-      // Keep User.locationId in sync with primary assignment (first sector, or null)
       const primary = locationAssignments[0]?.locationId ?? null;
       await prisma.user.update({ where: { id }, data: { locationId: primary } });
+      if (updated.businessId) {
+        await prisma.userBusiness.update({
+          where: { userId_businessId: { userId: id, businessId: updated.businessId } },
+          data: { locationId: primary },
+        });
+      }
       const refreshed = await userRepository.findById(id);
       return refreshed ?? updated;
     }

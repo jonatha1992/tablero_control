@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { objectiveService } from '@/services/objective.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { can } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
+import { sendNotification } from '@/lib/notifications';
+import { prisma } from '@/lib/prisma';
 
 export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -59,6 +61,18 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       break;
     default:
       updated = await objectiveService.updateObjective(id, data);
+  }
+
+  if (_action === 'complete' || _action === 'archive') {
+    const labels: Record<string, string> = { complete: 'fue completado', archive: 'fue archivado' };
+    const notifBody = `El objetivo "${objective.name}" ${labels[_action as string]}`;
+    prisma.userBusiness.findMany({ where: { businessId: objective.businessId, isActive: true }, select: { userId: true } })
+      .then((members) => {
+        for (const m of members) {
+          if (m.userId === user.uid) continue;
+          sendNotification({ userId: m.userId, title: 'Objetivo actualizado', body: notifBody, type: 'info', link: '/dashboard/planificacion/objetivos' }).catch(() => {});
+        }
+      }).catch(() => {});
   }
 
   await writeAuditLog({

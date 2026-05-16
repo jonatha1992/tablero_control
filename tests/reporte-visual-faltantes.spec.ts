@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { loginAsSuperAdmin, gotoAuthenticated } from './helpers/auth';
-import * as fs from 'fs';
 import * as path from 'path';
 
 const REPORT_DIR = 'screenshots-review/reporte-2026-05-06-2243';

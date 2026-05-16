@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -8,10 +8,14 @@ import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
 import type { UserRole } from '@/types/domain/user';
 
+export type CreateUserMode = 'email' | 'username' | 'google' | 'ghost';
+
 export interface CreateUserBody {
   name: string;
-  email: string;
-  password: string;
+  email?: string;
+  username?: string;
+  password?: string;
+  mode?: CreateUserMode;
   role: UserRole;
   businessId?: string;
   locationId?: string;
@@ -47,12 +51,32 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { name, password, role, businessId, locationId } = body;
+  const { name, role, businessId, locationId } = body;
+  const mode: CreateUserMode = body.mode ?? 'email';
   const email = body.email?.toLowerCase().trim() ?? '';
+  const username = body.username?.toLowerCase().trim() ?? '';
 
-  if (!name?.trim() || !email || !password || !role) {
+  if (!name?.trim() || !role) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
+  if (mode === 'email' && !email) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (mode === 'username' && (!username || !body.password)) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (mode === 'google' && !email) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (body.password !== undefined && body.password.length < 6) {
+    return NextResponse.json({ error: 'invalid_password' }, { status: 400 });
+  }
+
+  const isGhost = mode === 'ghost';
+  const syntheticEmail = mode === 'username' ? `${username}@tablero.local` : isGhost ? `ghost-${crypto.randomUUID()}@tablero.local` : '';
+  const firebaseEmail = (mode === 'username' || isGhost) ? syntheticEmail : email;
+  const isSyntheticEmail = firebaseEmail.endsWith('@tablero.local');
+  const password = body.password ?? '';
 
   const targetBusinessId =
     authed.role === 'superadmin' ? businessId ?? authed.businessId : authed.businessId;
@@ -88,41 +112,62 @@ export const POST = handle(async (req: NextRequest) => {
     }
   }
 
-  // Check email in PostgreSQL
-  let existing;
-  try {
-    existing = await prisma.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
-    });
-  } catch {
-    return NextResponse.json({ error: 'db_error' }, { status: 500 });
-  }
-  if (existing) {
-    if (!existing.isActive && existing.businessId === targetBusinessId) {
-      return NextResponse.json(
-        { error: 'email_inactive', userId: existing.id },
-        { status: 409 }
-      );
+  // Check username uniqueness for username mode
+  if (mode === 'username') {
+    try {
+      const existingByUsername = await prisma.user.findFirst({
+        where: { username: { equals: username, mode: 'insensitive' } },
+      });
+      if (existingByUsername) {
+        return NextResponse.json({ error: 'username_already_exists' }, { status: 409 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'db_error' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
+  }
+
+  // Check email in PostgreSQL (for email and google modes)
+  if (mode !== 'username' && !isGhost) {
+    let existing;
+    try {
+      existing = await prisma.user.findFirst({
+        where: { email: { equals: firebaseEmail, mode: 'insensitive' } },
+      });
+    } catch {
+      return NextResponse.json({ error: 'db_error' }, { status: 500 });
+    }
+    if (existing) {
+      if (!existing.isActive && existing.businessId === targetBusinessId) {
+        return NextResponse.json(
+          { error: 'email_inactive', userId: existing.id },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
+    }
   }
 
   const adminAuth = getAdminAuth();
   let uid: string;
-  try {
-    const authUser = await adminAuth.createUser({
-      email,
-      password,
-      displayName: name.trim(),
-      emailVerified: true,
-    });
-    uid = authUser.uid;
-  } catch (err: unknown) {
-    const code = (err as { code?: string }).code;
-    if (code === 'auth/email-already-exists') {
-      return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
+  
+  if (isGhost) {
+    uid = crypto.randomUUID();
+  } else {
+    try {
+      const authUser = await adminAuth.createUser({
+        email: firebaseEmail,
+        ...(password ? { password } : {}),
+        displayName: name.trim(),
+        emailVerified: mode !== 'google',
+      });
+      uid = authUser.uid;
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/email-already-exists') {
+        return NextResponse.json({ error: 'email_already_exists' }, { status: 409 });
+      }
+      return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'auth_creation_failed' }, { status: 500 });
   }
 
   try {
@@ -130,12 +175,14 @@ export const POST = handle(async (req: NextRequest) => {
       data: {
         id: uid,
         name: name.trim(),
-        email,
+        email: firebaseEmail,
+        username: mode === 'username' ? username : undefined,
         role,
         businessId: targetBusinessId ?? null,
         locationId: locationId ?? null,
         preferences: DEFAULT_PREFERENCES,
         isActive: true,
+        isGuest: isGhost,
       },
     });
     if (targetBusinessId) {
@@ -150,14 +197,16 @@ export const POST = handle(async (req: NextRequest) => {
       });
     }
   } catch {
-    await adminAuth.deleteUser(uid).catch(() => { });
+    if (!isGhost) await adminAuth.deleteUser(uid).catch(() => { });
     return NextResponse.json({ error: 'db_write_failed' }, { status: 500 });
   }
 
-  try {
-    await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
-  } catch (err) {
-    console.error('[create-user] setCustomUserClaims failed (non-fatal):', err);
+  if (!isGhost) {
+    try {
+      await adminAuth.setCustomUserClaims(uid, { role, businessId: targetBusinessId ?? null });
+    } catch (err) {
+      console.error('[create-user] setCustomUserClaims failed (non-fatal):', err);
+    }
   }
 
   await writeAuditLog({
@@ -167,22 +216,33 @@ export const POST = handle(async (req: NextRequest) => {
     action: 'user.create',
     targetType: 'USER',
     targetId: uid,
-    metadata: { email, role, locationId },
+    metadata: { email: isSyntheticEmail ? undefined : firebaseEmail, username: mode === 'username' ? username : undefined, mode, role, locationId },
   });
 
-  if (targetBusinessId) {
+  if (targetBusinessId && !isSyntheticEmail && mode !== 'google') {
     prisma.business.findUnique({ where: { id: targetBusinessId }, select: { name: true } })
-      .then((biz) => {
+      .then(async (biz) => {
         const teamName = biz?.name ?? 'el equipo';
         const inviterName = authed.data.name ?? authed.data.email ?? 'Un administrador';
         const inviterEmail = authed.data.email;
-        MailService.sendInviteEmail(email, inviterName, teamName, inviterEmail).catch(() => { });
+        const resetLink = password
+          ? undefined
+          : await adminAuth.generatePasswordResetLink(firebaseEmail).catch(() => undefined);
+        MailService.sendInviteEmail(firebaseEmail, inviterName, teamName, inviterEmail, resetLink).catch(() => { });
       })
       .catch(() => { });
   }
 
   return NextResponse.json(
-    { uid, name: name.trim(), email, role, businessId: targetBusinessId },
+    {
+      uid,
+      name: name.trim(),
+      email: isSyntheticEmail ? undefined : firebaseEmail,
+      username: mode === 'username' ? username : undefined,
+      mode,
+      role,
+      businessId: targetBusinessId,
+    },
     { status: 201 }
   );
 });

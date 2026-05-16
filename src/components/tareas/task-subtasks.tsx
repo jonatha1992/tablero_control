@@ -1,23 +1,28 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { useSubtasksQuery } from '@/hooks/queries/use-subtasks-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSubtasksQuery, subtaskKeys } from '@/hooks/queries/use-subtasks-query';
 import { useCreateSubtask } from '@/hooks/mutations/use-create-subtask';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
+import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, ListTree } from 'lucide-react';
+import { Plus, ListTree, Trash2, ExternalLink } from 'lucide-react';
 import type { Task } from '@/types';
 
 interface TaskSubtasksProps {
   task: Task;
+  onOpenSubtask?: (subtask: Task) => void;
 }
 
-export function TaskSubtasks({ task }: TaskSubtasksProps) {
+export function TaskSubtasks({ task, onOpenSubtask }: TaskSubtasksProps) {
   const [newTitle, setNewTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const { data: subtasks = [], isLoading } = useSubtasksQuery(task.id);
   const createSubtask = useCreateSubtask();
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
+  const queryClient = useQueryClient();
 
   const completedCount = subtasks.filter((s) => s.status === 'done').length;
   const progress = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
@@ -67,18 +72,40 @@ export function TaskSubtasks({ task }: TaskSubtasksProps) {
         {subtasks.map((subtask) => (
           <div
             key={subtask.id}
-            className="flex items-center gap-2 rounded-md hover:bg-muted/50 px-1.5 py-1"
+            className="group/sub flex items-center gap-2 rounded-md hover:bg-muted/50 px-1.5 py-1"
           >
             <Checkbox
               checked={subtask.status === 'done'}
               onChange={() => handleToggle(subtask)}
               className="h-4 w-4 shrink-0"
             />
-            <span
-              className={`text-sm flex-1 ${subtask.status === 'done' ? 'line-through text-muted-foreground' : ''}`}
+            <button
+              onClick={() => onOpenSubtask?.(subtask)}
+              className={`text-sm flex-1 text-left leading-tight transition-colors hover:text-primary ${subtask.status === 'done' ? 'line-through text-muted-foreground' : ''}`}
+              title="Abrir subtarea"
             >
               {subtask.title}
-            </span>
+            </button>
+            {onOpenSubtask && (
+              <button
+                onClick={() => onOpenSubtask(subtask)}
+                className="opacity-0 group-hover/sub:opacity-100 transition-opacity p-0.5 rounded hover:text-primary text-muted-foreground"
+                title="Abrir subtarea"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <button
+              onClick={() =>
+                deleteTask.mutate(subtask.id, {
+                  onSettled: () => queryClient.invalidateQueries({ queryKey: subtaskKeys.byTask(task.id) }),
+                })
+              }
+              className="opacity-0 group-hover/sub:opacity-100 transition-opacity p-0.5 rounded hover:text-destructive text-muted-foreground"
+              title="Eliminar subtarea"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
         ))}
       </div>

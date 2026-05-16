@@ -48,6 +48,7 @@ export interface Task {
   recurrence?: RecurrenceConfig;
   checklist: ChecklistItem[];
   subtaskIds: string[];
+  subtasksCompleted: number;
   attachmentUrls: string[];
   attachments?: { url: string; name: string }[];
   commentCount: number;

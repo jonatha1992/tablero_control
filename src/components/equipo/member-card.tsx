@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -87,7 +87,7 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
             </div>
 
             {canManage && !isSelectMode && (
-              <div className="flex shrink-0 items-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="flex shrink-0 items-start gap-1 transition-opacity">
                 <Button
                   variant="ghost"
                   size="icon"

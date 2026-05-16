@@ -9,9 +9,11 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-/test-results
 # testing
 /coverage
+/test-results
+/playwright-report
+/.playwright-mcp
 
 # next.js
 /.next/
@@ -47,5 +49,3 @@ key.json
 
 # debug/test output logs
 .claude/settings.local.json
-
-/test-results

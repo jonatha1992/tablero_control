@@ -1,15 +1,18 @@
-'use client';
+﻿'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { getToken } from '@/lib/firebase/auth';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UserRole } from '@/types/domain/user';
-import type { CreateUserResult } from '@/app/api/users/create/route';
+import type { CreateUserResult, CreateUserMode } from '@/app/api/users/create/route';
 
 export interface CreateUserInput {
   name: string;
-  email: string;
-  password: string;
+  email?: string;
+  username?: string;
+  password?: string;
+  mode?: CreateUserMode;
   role: UserRole;
   businessId?: string;
   locationId?: string;
@@ -40,6 +43,7 @@ async function createUserViaApi(input: CreateUserInput): Promise<CreateUserResul
     const data = await res.json().catch(() => ({ error: 'unknown' }));
     const { error } = data as { error: string; limit?: number; current?: number; userId?: string };
     if (error === 'email_inactive') throw new EmailInactiveError((data as { userId: string }).userId);
+    if (error === 'username_already_exists') throw new Error('El nombre de usuario ya está en uso');
     if (error === 'email_already_exists') throw new Error('El email ya está registrado');
     if (error === 'forbidden') throw new Error('Sin permisos para crear este tipo de usuario');
     if (error === 'members_limit_exceeded') {
@@ -61,6 +65,13 @@ export function useCreateUser() {
     mutationFn: createUserViaApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      toast.success('Usuario creado');
+    },
+    onError: (err) => {
+      const msg = (err as Error).message;
+      if (msg !== 'members_limit_exceeded') {
+        toast.error('Error al crear usuario', { description: msg });
+      }
     },
   });
 }

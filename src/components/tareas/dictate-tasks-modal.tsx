@@ -170,7 +170,7 @@ function TaskPreviewCard({
 
 /* ─── Shared inner logic ─── */
 
-function DictateTasksInner({ onClose }: { onClose?: () => void }) {
+function DictateTasksInner({ onClose: _onClose }: { onClose?: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -287,8 +287,6 @@ function DictateTasksInner({ onClose }: { onClose?: () => void }) {
       })
     );
   };
-
-  const isLocked = isProcessing || micState !== 'idle';
 
   return (
     <>

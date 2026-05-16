@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { cyclesApi } from '@/lib/api/cycles';
 import { cycleKeys } from '@/hooks/queries/use-cycles-query';
 
@@ -13,6 +14,10 @@ export function useUpdateCycle() {
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
       queryClient.invalidateQueries({ queryKey: cycleKeys.detail(id) });
+      toast.success('Período actualizado');
+    },
+    onError: (err) => {
+      toast.error('Error al actualizar período', { description: (err as Error).message });
     },
   });
 }
@@ -24,6 +29,10 @@ export function useDeleteCycle() {
     mutationFn: (id: string) => cyclesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
+      toast.success('Período eliminado');
+    },
+    onError: (err) => {
+      toast.error('Error al eliminar período', { description: (err as Error).message });
     },
   });
 }
@@ -36,6 +45,10 @@ export function useStartCycle() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
       queryClient.invalidateQueries({ queryKey: cycleKeys.detail(id) });
+      toast.success('Período iniciado');
+    },
+    onError: (err) => {
+      toast.error('Error al iniciar período', { description: (err as Error).message });
     },
   });
 }
@@ -48,6 +61,10 @@ export function useCompleteCycle() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: cycleKeys.all });
       queryClient.invalidateQueries({ queryKey: cycleKeys.detail(id) });
+      toast.success('Período completado');
+    },
+    onError: (err) => {
+      toast.error('Error al completar período', { description: (err as Error).message });
     },
   });
 }

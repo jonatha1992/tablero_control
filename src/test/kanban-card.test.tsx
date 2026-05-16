@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+﻿import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { KanbanCard } from '@/components/tareas/kanban-card';
@@ -42,6 +42,7 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   creatorId: 'user-1',
   tags: [],
   subtaskIds: [],
+  subtasksCompleted: 0,
   checklist: [],
   attachmentUrls: [],
   commentCount: 0,

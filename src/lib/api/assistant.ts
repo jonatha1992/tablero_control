@@ -1,9 +1,17 @@
-import { getToken } from '@/lib/firebase/auth';
+﻿import { getToken } from '@/lib/firebase/auth';
 import type { AssistantMessage } from '@/lib/groq/assistant';
 import { ApiError } from './errors';
 
 interface AssistantResponse {
   message: string;
+}
+
+export interface GeneratePlanResponse {
+  type: 'cycle' | 'objective';
+  name: string;
+  id: string;
+  tasksCreated: number;
+  taskTitles: string[];
 }
 
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
@@ -21,5 +29,20 @@ export const assistantApi = {
     fetchJsonAuth<AssistantResponse>('/api/assistant/chat', {
       method: 'POST',
       body: JSON.stringify({ messages }),
+    }),
+  extractFromText: (text: string) =>
+    fetchJsonAuth<{ tasks: import('@/lib/groq/extract-tasks').ExtractedTask[]; parseError: boolean }>('/api/tasks/from-text', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }),
+  generatePlan: (type: 'cycle' | 'objective', description: string) =>
+    fetchJsonAuth<GeneratePlanResponse>('/api/assistant/generate-plan', {
+      method: 'POST',
+      body: JSON.stringify({ type, description }),
+    }),
+  previewPlan: (type: 'cycle' | 'objective', description: string) =>
+    fetchJsonAuth<{ type: 'cycle' | 'objective'; description: string; plan: import('@/lib/groq/generate-plan').GeneratedPlan }>('/api/assistant/preview-plan', {
+      method: 'POST',
+      body: JSON.stringify({ type, description }),
     }),
 };

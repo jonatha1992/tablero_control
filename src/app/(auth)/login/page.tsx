@@ -1,22 +1,23 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { login, loginWithGoogle } from '@/lib/firebase/auth';
+import { login, loginWithGoogle, checkGoogleRedirectResult } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { isAuthenticated, loading: authLoading, user, notInvited } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, notInvited, refreshProfile } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
@@ -28,27 +29,53 @@ function LoginForm() {
     }
   }, [isAuthenticated, authLoading, user, router]);
 
+  // Handle Google redirect flow (popup blocked → signInWithRedirect)
+  useEffect(() => {
+    checkGoogleRedirectResult().then(async (result) => {
+      if (!result) return;
+      const { token } = result;
+      const profileRes = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (profileRes.status === 404) {
+        await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+      }
+      await refreshProfile();
+      router.push(redirect !== '/dashboard' ? redirect : '/dashboard');
+    }).catch(() => { });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setFieldErrors({});
 
-    const trimmedEmail = email.trim();
-    const errors: Record<string, string> = {};
-    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
-    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    const trimmed = loginInput.trim();
+    if (!trimmed) {
+      setFieldErrors({ login: 'El correo o usuario es obligatorio' });
       return;
     }
 
     setLoading(true);
     try {
-      await login(trimmedEmail, password);
+      let firebaseEmail = trimmed;
+      if (!trimmed.includes('@')) {
+        const res = await fetch(`/api/auth/resolve?login=${encodeURIComponent(trimmed)}`);
+        if (!res.ok) {
+          setError('Usuario no encontrado');
+          return;
+        }
+        const data = await res.json();
+        firebaseEmail = data.email;
+      }
+      await login(firebaseEmail, password);
       router.push(redirect);
     } catch (err) {
-      setError('Correo o contraseña incorrectos');
+      setError('Correo, usuario o contraseña incorrectos');
       console.error(err);
     } finally {
       setLoading(false);
@@ -60,7 +87,32 @@ function LoginForm() {
     setGoogleLoading(true);
     try {
       const result = await loginWithGoogle();
-      if (result) router.push(redirect);
+      if (!result) return; // redirect flow — onAuthStateChanged handles it
+
+      const { token } = result;
+
+      // Check if user exists in PostgreSQL
+      const profileRes = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (profileRes.status === 404) {
+        // New user — provision account automatically
+        const registerRes = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        if (!registerRes.ok) {
+          const data = await registerRes.json().catch(() => ({ error: 'unknown' }));
+          throw new Error((data as { error?: string }).error || 'Error al registrar usuario');
+        }
+      } else if (!profileRes.ok) {
+        throw new Error('Error al cargar el perfil');
+      }
+
+      await refreshProfile();
+      const target = redirect !== '/dashboard' ? redirect : '/dashboard';
+      router.push(target);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/popup-closed-by-user') {
@@ -68,7 +120,7 @@ function LoginForm() {
       } else if (code === 'auth/unauthorized-domain') {
         setError('Inicio de sesión con Google no está configurado para este dominio. Contactá al administrador.');
       } else {
-        setError('Error al iniciar sesión con Google');
+        setError((err as Error).message || 'Error al iniciar sesión con Google');
       }
       console.error(err);
     } finally {
@@ -163,18 +215,19 @@ function LoginForm() {
           {/* Formulario email/password */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">Correo</label>
+              <label htmlFor="login" className="text-sm font-medium">Correo o usuario</label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
+                id="login"
+                type="text"
+                value={loginInput}
+                onChange={(e) => setLoginInput(e.target.value)}
+                placeholder="tu@correo.com o nombre_usuario"
                 required
                 maxLength={150}
+                autoComplete="username"
                 className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               />
-              {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
+              {fieldErrors.login && <p className="text-xs text-destructive mt-1">{fieldErrors.login}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -183,14 +236,29 @@ function LoginForm() {
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 pr-11 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full h-12 text-base font-medium" disabled={loading}>
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}

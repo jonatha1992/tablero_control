@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -149,7 +149,7 @@ function MemberRow({
 
         {canManage && !isSelectMode && (
           <td className="px-4 py-3">
-            <div className="flex items-center gap-0.5 opacity-0 group-hover/row:opacity-100 transition-opacity">
+            <div className="flex items-center gap-0.5 transition-opacity">
               <Button
                 variant="ghost"
                 size="icon"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import type { Task } from '@/types/domain/task';
@@ -20,10 +21,15 @@ export function useBulkDeleteTasks() {
       });
       return { previousQueries };
     },
-    onError: (_err, _vars, context) => {
+    onSuccess: (_data, { taskIds }) => {
+      const n = taskIds.length;
+      toast.success(`${n} tarea${n !== 1 ? 's' : ''} eliminada${n !== 1 ? 's' : ''}`);
+    },
+    onError: (err, _vars, context) => {
       context?.previousQueries.forEach(([queryKey, data]) => {
         queryClient.setQueryData(queryKey, data);
       });
+      toast.error('Error al eliminar', { description: (err as Error).message });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
