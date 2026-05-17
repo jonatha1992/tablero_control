@@ -13,6 +13,7 @@ export const STATUS_OPTIONS: SelectOption<TaskStatus>[] = [
   { value: 'in_review',   label: 'En revisión',  dot: 'bg-cyan-500' },
   { value: 'done',        label: 'Finalizado',   dot: 'bg-green-500' },
   { value: 'blocked',     label: 'Bloqueada',    dot: 'bg-red-500' },
+  { value: 'archived',    label: 'Archivada',    dot: 'bg-gray-400' },
 ];
 
 export const PRIORITY_OPTIONS: SelectOption<TaskPriority>[] = [

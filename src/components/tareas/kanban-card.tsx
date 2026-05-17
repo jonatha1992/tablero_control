@@ -16,6 +16,7 @@ import {
   Trash2,
   ListTree,
   ChevronDown,
+  Archive,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
@@ -89,7 +90,7 @@ interface KanbanCardProps {
   locations?: { id: string; name: string }[];
 }
 
-export function KanbanCard({ task, column, onPriorityChange, onLocationChange, onDelete, onToggleSelect, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
+export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationChange, onDelete, onToggleSelect, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
@@ -240,6 +241,17 @@ export function KanbanCard({ task, column, onPriorityChange, onLocationChange, o
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
+            )}
+            {task.status === 'done' && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove(task.id, column, 'archived');
+                }}
+              >
+                <Archive className="h-3.5 w-3.5 mr-2" />
+                Archivar
+              </DropdownMenuItem>
             )}
             {onDelete && (
               <>

@@ -1,4 +1,4 @@
-export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'in_review' | 'done' | 'blocked';
+export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'in_review' | 'done' | 'blocked' | 'archived';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskType = 'feature' | 'bug' | 'improvement' | 'task' | 'documentation';
 
@@ -79,6 +79,7 @@ export interface Comment {
 
 export interface TaskFilters {
   status?: TaskStatus[];
+  excludeStatus?: TaskStatus[];
   priority?: TaskPriority[];
   assigneeId?: string[];
   projectId?: string[];

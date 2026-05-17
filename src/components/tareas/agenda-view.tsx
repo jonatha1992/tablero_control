@@ -43,6 +43,7 @@ const STATUS_SCORE: Record<TaskStatus, number> = {
   backlog: 50,
   blocked: 25,
   done: -9999,
+  archived: -9999,
 };
 
 function scoreTask(task: Task, userId: string, now: Date): number {
@@ -100,6 +101,7 @@ const STATUS_CONFIG: Record<TaskStatus, { label: string; dot: string }> = {
   in_review: { label: 'En revisión', dot: 'bg-purple-500' },
   blocked: { label: 'Bloqueada', dot: 'bg-red-500' },
   done: { label: 'Finalizado', dot: 'bg-green-500' },
+  archived: { label: 'Archivada', dot: 'bg-gray-400' },
 };
 
 const ALL_STATUSES: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'blocked', 'done'];

@@ -81,6 +81,7 @@ function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhere
   const where: Prisma.TaskWhereInput = conditions.length > 0 ? { AND: conditions } : {};
 
   if (filters?.status?.length) where.status = { in: filters.status };
+  else if (filters?.excludeStatus?.length) where.status = { notIn: filters.excludeStatus };
   if (filters?.priority?.length) where.priority = { in: filters.priority };
   if (filters?.locationId?.length) where.locationId = { in: filters.locationId };
   if (filters?.assigneeId?.length) {

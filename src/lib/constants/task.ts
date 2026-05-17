@@ -7,6 +7,7 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   in_review: 'En revisión',
   done: 'Finalizado',
   blocked: 'Bloqueada',
+  archived: 'Archivada',
 };
 
 export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {

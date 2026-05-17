@@ -119,6 +119,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
       in_review: [],
       done: [],
       blocked: [],
+      archived: [],
     };
 
     for (const task of tasks) {

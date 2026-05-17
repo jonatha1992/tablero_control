@@ -20,7 +20,7 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
 import { TaskComments } from './task-comments';
@@ -353,6 +353,17 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               >
                 Editar
               </Button>
+              {task.status === 'done' && (
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-9 w-9"
+                  onClick={() => moveTask.mutate({ taskId: task.id, newStatus: 'archived' })}
+                  title="Archivar tarea"
+                >
+                  <Archive className="h-4 w-4" />
+                </Button>
+              )}
               <Button size="icon" variant="destructive" className="h-9 w-9" onClick={handleDelete} disabled={deleteTask.isPending}>
                 <Trash className="h-4 w-4" />
               </Button>

@@ -38,7 +38,9 @@ export const GET = handle(async (request: NextRequest) => {
   );
   const userLocationId = activeMembership?.locationId;
 
+  const includeArchived = searchParams.get('includeArchived') === 'true';
   if (status) { const ids = status.split(',').filter(Boolean); if (ids.length) filters.status = ids as TaskStatus[]; }
+  else if (!includeArchived) { filters.excludeStatus = ['archived']; }
   if (priority) { const ids = priority.split(',').filter(Boolean); if (ids.length) filters.priority = ids as TaskPriority[]; }
   if (projectId) { const ids = projectId.split(',').filter(Boolean); if (ids.length) filters.projectId = ids; }
   

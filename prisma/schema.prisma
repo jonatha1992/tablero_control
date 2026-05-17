@@ -46,6 +46,7 @@ enum TaskStatus {
   in_review
   done
   blocked
+  archived
 }
 
 enum TaskPriority {
