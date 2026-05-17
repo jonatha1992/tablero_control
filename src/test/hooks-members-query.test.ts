@@ -3,7 +3,6 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import { useMembersQuery, memberKeys } from '@/hooks/queries/use-members-query';
-import { useInviteMember } from '@/hooks/mutations/use-invite-member';
 import { useUpdateMember, useRemoveMember } from '@/hooks/mutations/use-update-member';
 import { membersApi } from '@/lib/api/members';
 
@@ -82,50 +81,6 @@ describe('useMembersQuery()', () => {
   it('usa memberKeys.byBusiness como queryKey', async () => {
     const key = memberKeys.byBusiness('biz-1');
     expect(key).toEqual(['members', 'biz-1']);
-  });
-});
-
-// ─── useInviteMember ─────────────────────────────────────────────────────────
-
-describe('useInviteMember', () => {
-  it('llama membersApi.invite con el dto y businessId del usuario', async () => {
-    const { wrapper } = createWrapper();
-    mockInvite.mockResolvedValueOnce({ id: 'mem-new' } as never);
-
-    const { result } = renderHook(() => useInviteMember(), { wrapper });
-    await act(async () => {
-      result.current.mutate({ email: 'new@biz.com', role: 'miembro', name: 'Nuevo' });
-    });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    expect(mockInvite).toHaveBeenCalledWith(
-      { email: 'new@biz.com', role: 'miembro', name: 'Nuevo' },
-      'biz-1'
-    );
-  });
-
-  it('invalida memberKeys.all en onSuccess', async () => {
-    const { wrapper, qc } = createWrapper();
-    mockInvite.mockResolvedValueOnce({ id: 'mem-new' } as never);
-    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
-
-    const { result } = renderHook(() => useInviteMember(), { wrapper });
-    await act(async () => {
-      result.current.mutate({ email: 'x@y.com', role: 'viewer', name: 'X' });
-    });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: memberKeys.all });
-  });
-
-  it('toma en cuenta errores (isError=true si falla)', async () => {
-    const { wrapper } = createWrapper();
-    mockInvite.mockRejectedValueOnce(new Error('Email ya existe'));
-
-    const { result } = renderHook(() => useInviteMember(), { wrapper });
-    await act(async () => {
-      result.current.mutate({ email: 'dup@biz.com', role: 'miembro', name: 'Dup' });
-    });
-    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 

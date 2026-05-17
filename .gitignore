@@ -53,3 +53,5 @@ key.json
 
 # debug/test output logs
 .claude/settings.local.json
+kimi-export-*.md
+/.claude/launch.json

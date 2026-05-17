@@ -23,9 +23,8 @@ const config: KnipConfig = {
     'src/components/ui/dialog.tsx',
     'src/components/ui/dropdown-menu.tsx',
     'src/components/ui/input.tsx',
-    // Domain types (declared for future use / public API)
+    // Domain types used by re-export barrel
     'src/types/domain/*.ts',
-    'src/types/ui/*.ts',
     'src/types/dto/*.ts',
     'src/types/api/*.ts',
     // Test helpers
