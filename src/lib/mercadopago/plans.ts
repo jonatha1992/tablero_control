@@ -30,7 +30,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: 'basic',
     name: 'Basic',
     priceMonthly: 15,
-    priceYearly: 15,
+    priceYearly: 12,
     currency: 'ARS',
     limits: { users: 10, locations: 3, projects: 10, attachmentsPerMonth: -1 },
     features: ['Todo en Free', '10 usuarios', '3 locales', 'Adjuntos ilimitados', 'Reportes básicos'],
@@ -39,7 +39,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     id: 'pro',
     name: 'Pro',
     priceMonthly: 30,
-    priceYearly: 30,
+    priceYearly: 25,
     currency: 'ARS',
     limits: { users: 50, locations: 10, projects: -1, attachmentsPerMonth: -1 },
     features: [
