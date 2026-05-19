@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getPlan, planAllowsUnlimited, planLimit, PLANS } from '@/lib/mercadopago/plans';
+import { parseExternalReference } from '@/lib/mercadopago/preapproval';
+import { parseExternalReference as parseFromPreference } from '@/lib/mercadopago/preference';
 
 // ─── getPlan ─────────────────────────────────────────────────────────────────
 
@@ -19,6 +21,7 @@ describe('getPlan()', () => {
     const plan = getPlan('basic');
     expect(plan.id).toBe('basic');
     expect(plan.priceMonthly).toBe(15);
+    expect(plan.priceYearly).toBe(12);
     expect(plan.limits.users).toBe(10);
     expect(plan.limits.locations).toBe(3);
   });
@@ -27,6 +30,7 @@ describe('getPlan()', () => {
     const plan = getPlan('pro');
     expect(plan.id).toBe('pro');
     expect(plan.priceMonthly).toBe(30);
+    expect(plan.priceYearly).toBe(25);
     expect(plan.highlight).toBe(true);
     expect(plan.limits.users).toBe(50);
     expect(plan.limits.locations).toBe(10);
@@ -116,32 +120,58 @@ describe('planLimit()', () => {
   });
 });
 
-// ─── parseExternalReference (si existe) ──────────────────────────────────────
-// Si plans.ts no exporta parseExternalReference, estos tests se omiten.
-// Se importa dinámicamente para no fallar si no existe.
+// ─── Yearly pricing validation ───────────────────────────────────────────────
 
-describe('parseExternalReference (si se implementa)', () => {
-  it('parsea formato "biz:id:plan:frequency"', async () => {
-    try {
-      const mod = await import('@/lib/mercadopago/plans') as Record<string, unknown>;
-      const parseExternalReference = mod.parseExternalReference;
-      if (typeof parseExternalReference !== 'function') return;
-      const result = (parseExternalReference as (ref: string) => unknown)('biz:biz-123:pro:monthly');
-      expect(result).toMatchObject({ businessId: 'biz-123', plan: 'pro', frequency: 'monthly' });
-    } catch {
-      // función no existe todavía — skip
+describe('yearly pricing discount', () => {
+  it('planes pagos tienen priceYearly < priceMonthly', () => {
+    const paidPlans: Array<'basic' | 'pro'> = ['basic', 'pro'];
+    for (const id of paidPlans) {
+      const plan = getPlan(id);
+      expect(plan.priceYearly).toBeLessThan(plan.priceMonthly);
     }
   });
 
-  it('retorna null para formato inválido', async () => {
-    try {
-      const mod = await import('@/lib/mercadopago/plans') as Record<string, unknown>;
-      const parseExternalReference = mod.parseExternalReference;
-      if (typeof parseExternalReference !== 'function') return;
-      expect((parseExternalReference as (ref: string) => unknown)('invalid')).toBeNull();
-      expect((parseExternalReference as (ref: string) => unknown)('')).toBeNull();
-    } catch {
-      // skip
-    }
+  it('free tiene precio 0 en ambas frecuencias', () => {
+    const plan = getPlan('free');
+    expect(plan.priceMonthly).toBe(0);
+    expect(plan.priceYearly).toBe(0);
+  });
+
+  it('enterprise tiene -1 en ambas frecuencias', () => {
+    const plan = getPlan('enterprise');
+    expect(plan.priceMonthly).toBe(-1);
+    expect(plan.priceYearly).toBe(-1);
+  });
+});
+
+// ─── parseExternalReference ──────────────────────────────────────────────────
+
+describe('parseExternalReference', () => {
+  it('parsea formato "biz:id:plan:frequency"', () => {
+    const result = parseExternalReference('biz:biz-123:pro:monthly');
+    expect(result).toEqual({ businessId: 'biz-123', plan: 'pro', frequency: 'monthly' });
+  });
+
+  it('parsea yearly frequency', () => {
+    const result = parseExternalReference('biz:abc:basic:yearly');
+    expect(result).toEqual({ businessId: 'abc', plan: 'basic', frequency: 'yearly' });
+  });
+
+  it('retorna null para formato inválido', () => {
+    expect(parseExternalReference('invalid')).toBeNull();
+    expect(parseExternalReference('')).toBeNull();
+    expect(parseExternalReference(undefined)).toBeNull();
+  });
+
+  it('retorna null para plan inválido', () => {
+    expect(parseExternalReference('biz:id:gold:monthly')).toBeNull();
+  });
+
+  it('retorna null para frequency inválida', () => {
+    expect(parseExternalReference('biz:id:pro:weekly')).toBeNull();
+  });
+
+  it('preference re-exporta misma función', () => {
+    expect(parseFromPreference).toBe(parseExternalReference);
   });
 });

@@ -10,7 +10,7 @@ export function useRecoverSubscription(businessId?: string) {
     mutationFn: () => billingApi.recoverSubscription(businessId ?? ''),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['subscription', businessId] });
-      qc.invalidateQueries({ queryKey: ['invoices'] });
+      qc.invalidateQueries({ queryKey: ['invoices', businessId] });
       toast.success('Suscripción reactivada');
     },
     onError: (err) => {
