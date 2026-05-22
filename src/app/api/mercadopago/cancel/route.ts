@@ -25,7 +25,11 @@ export const POST = handle(async (req: NextRequest) => {
   }
 
   if (sub.mpPreferenceId) {
-    try { await cancelPreapproval(sub.mpPreferenceId); } catch { /* MP may already be cancelled */ }
+    try {
+      await cancelPreapproval(sub.mpPreferenceId);
+    } catch (err) {
+      console.warn('[cancel] cancelPreapproval failed (may already be cancelled):', sub.mpPreferenceId, err);
+    }
   }
 
   await prisma.subscription.update({
@@ -43,5 +47,5 @@ export const POST = handle(async (req: NextRequest) => {
     ip: req.headers.get('x-forwarded-for') ?? undefined,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ success: true });
 });

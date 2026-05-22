@@ -1,5 +1,6 @@
 import { mpFetch } from './client';
 import { PLANS } from './plans';
+import { getEffectivePlanConfig } from './plan-config';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
 
 export interface MpPreapproval {
@@ -27,9 +28,12 @@ interface CreateArgs {
 }
 
 export async function createPreapproval(args: CreateArgs): Promise<MpPreapproval> {
-  const def = PLANS[args.plan];
+  if (args.plan === 'free' || args.plan === 'enterprise') {
+    throw new Error(`Plan ${args.plan} no es facturable vía Mercado Pago`);
+  }
+  const def = await getEffectivePlanConfig(args.plan);
   const amount = args.frequency === 'monthly' ? def.priceMonthly : def.priceYearly;
-  if (amount <= 0) throw new Error(`Plan ${args.plan} no es facturable vía Mercado Pago`);
+  if (amount <= 0) throw new Error(`Plan ${args.plan} no tiene precio configurado`);
 
   return mpFetch<MpPreapproval>('/preapproval', {
     method: 'POST',

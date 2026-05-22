@@ -1,5 +1,6 @@
 import { mpFetch } from './client';
 import { PLANS } from './plans';
+import { getEffectivePlanConfig } from './plan-config';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
 
 export interface MpPreference {
@@ -25,9 +26,12 @@ export function buildExternalReference(businessId: string, plan: PlanId, frequen
 export { parseExternalReference } from './preapproval';
 
 export async function createCheckoutPreference(args: CreateArgs): Promise<MpPreference> {
-  const def = PLANS[args.plan];
+  if (args.plan === 'free' || args.plan === 'enterprise') {
+    throw new Error(`Plan ${args.plan} no es facturable`);
+  }
+  const def = await getEffectivePlanConfig(args.plan);
   const amount = args.frequency === 'monthly' ? def.priceMonthly : def.priceYearly;
-  if (amount <= 0) throw new Error(`Plan ${args.plan} no es facturable`);
+  if (amount <= 0) throw new Error(`Plan ${args.plan} no tiene precio configurado`);
 
   const label = args.frequency === 'monthly' ? 'mensual' : 'anual';
   const webhookBase = process.env.MP_WEBHOOK_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';

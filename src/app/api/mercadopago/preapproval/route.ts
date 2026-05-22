@@ -22,16 +22,20 @@ export const POST = handle(async (req: NextRequest) => {
   if (user.role === 'admin' && user.businessId !== businessId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
-  const origin = process.env.MP_CALLBACK_URL
-    ?? (process.env.NEXT_PUBLIC_APP_URL?.startsWith('http://localhost') ? null : process.env.NEXT_PUBLIC_APP_URL)
-    ?? req.headers.get('origin')
-    ?? 'http://localhost:3000';
+  const origin = process.env.MP_CALLBACK_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+  if (!origin) {
+    return NextResponse.json({ error: 'MP_CALLBACK_URL o NEXT_PUBLIC_APP_URL no configurado' }, { status: 500 });
+  }
   const backUrl = `${origin}/dashboard/billing?status=pending`;
 
   // Cancel existing preapproval in MP before creating a new one (best effort)
   const existing = await prisma.subscription.findUnique({ where: { businessId } });
   if (existing?.mpPreferenceId) {
-    try { await cancelPreapproval(existing.mpPreferenceId); } catch { /* MP may already be cancelled */ }
+    try {
+      await cancelPreapproval(existing.mpPreferenceId);
+    } catch (err) {
+      console.warn('[preapproval] cancelPreapproval failed (may already be cancelled):', existing.mpPreferenceId, err);
+    }
   }
 
   let preapproval;

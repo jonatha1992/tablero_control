@@ -3,6 +3,7 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { createCheckoutPreference } from '@/lib/mercadopago/preference';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
+import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
 import { handle } from '@/lib/api/route-handler';
 
@@ -24,6 +25,9 @@ export const POST = handle(async (req: NextRequest) => {
   }
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get('origin') ?? 'http://localhost:3000';
 
+  const planDef = await getEffectivePlanConfig(plan);
+  const amount = frequency === 'monthly' ? planDef.priceMonthly : planDef.priceYearly;
+
   const preference = await createCheckoutPreference({
     plan,
     frequency,
@@ -41,7 +45,7 @@ export const POST = handle(async (req: NextRequest) => {
       plan,
       status: 'pending',
       mpPreferenceId: preference.id,
-      amount: 0,
+      amount,
       currency: 'ARS',
       frequency,
       cancelAtPeriodEnd: false,
