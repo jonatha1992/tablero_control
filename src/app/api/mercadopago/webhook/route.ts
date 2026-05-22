@@ -164,8 +164,7 @@ export const POST = handle(async (req: NextRequest) => {
 
       const mpPayerIdStr = preapproval.payer_id != null ? String(preapproval.payer_id) : null;
 
-      // FIX #8: Use update (businessId is @unique on Subscription) instead of updateMany
-      await prisma.subscription.updateMany({
+      await prisma.subscription.update({
         where: { businessId: ref.businessId },
         data: { status, mpPayerId: mpPayerIdStr, ...periodData },
       });

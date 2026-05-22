@@ -59,7 +59,7 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="border rounded-xl overflow-hidden divide-y">
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlan;
           const price = frequency === 'monthly' ? plan.priceMonthly : plan.priceYearly;
@@ -69,56 +69,66 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
             <div
               key={plan.id}
               className={cn(
-                'border rounded-xl p-5 flex flex-col gap-4 relative',
-                plan.highlight && 'border-primary shadow-md',
-                isCurrent && 'bg-primary/5 border-primary/20'
+                'flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-5 py-4',
+                plan.highlight && 'bg-primary/5',
+                isCurrent && 'bg-primary/5'
               )}
             >
-              {plan.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> Recomendado
-                </span>
-              )}
-              <div>
+              <div className="sm:w-32 shrink-0 flex items-center gap-2">
                 <p className="font-semibold text-base">{plan.name}</p>
-                {price > 0 ? (
-                  <p className="text-2xl font-bold mt-1">
-                    ${price.toLocaleString('es-AR')}
-                    <span className="text-sm font-normal text-muted-foreground">/{frequency === 'monthly' ? 'mes' : 'año'}</span>
-                  </p>
-                ) : price === 0 ? (
-                  <p className="text-2xl font-bold mt-1">Gratis</p>
-                ) : (
-                  <p className="text-base font-medium mt-1 text-muted-foreground">A convenir</p>
+                {plan.highlight && (
+                  <span className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                  </span>
+                )}
+                {isCurrent && (
+                  <span className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-full">Actual</span>
                 )}
               </div>
 
-              <ul className="flex-1 space-y-1.5">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-1.5 text-sm text-muted-foreground">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => handleUpgrade(plan.id)}
-                disabled={isCurrent || isLoading || plan.id === 'free'}
-                className={cn(
-                  'w-full py-2 rounded-lg text-sm font-medium transition-colors',
-                  isCurrent
-                    ? 'bg-muted text-muted-foreground cursor-default'
-                    : plan.highlight
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : 'border hover:bg-muted',
-                  'disabled:opacity-60 disabled:cursor-not-allowed'
+              <div className="sm:w-36 shrink-0">
+                {price > 0 ? (
+                  <p className="text-lg font-bold">
+                    ${price.toLocaleString('es-AR')}
+                    <span className="text-xs font-normal text-muted-foreground">/{frequency === 'monthly' ? 'mes' : 'año'}</span>
+                  </p>
+                ) : price === 0 ? (
+                  <p className="text-lg font-bold">Gratis</p>
+                ) : (
+                  <p className="text-sm font-medium text-muted-foreground">A convenir</p>
                 )}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
-                ) : isCurrent ? 'Plan actual' : plan.id === 'enterprise' ? 'Contactar ventas' : `Elegir ${plan.name}`}
-              </button>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {plan.features.map((f) => (
+                    <span key={f} className="flex items-center gap-1 text-sm text-muted-foreground whitespace-nowrap">
+                      <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sm:w-40 shrink-0">
+                <button
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={isCurrent || isLoading || plan.id === 'free'}
+                  className={cn(
+                    'w-full py-2 rounded-lg text-sm font-medium transition-colors',
+                    isCurrent
+                      ? 'bg-muted text-muted-foreground cursor-default'
+                      : plan.highlight
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'border hover:bg-muted',
+                    'disabled:opacity-60 disabled:cursor-not-allowed'
+                  )}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
+                  ) : isCurrent ? 'Plan actual' : plan.id === 'enterprise' ? 'Contactar ventas' : `Elegir ${plan.name}`}
+                </button>
+              </div>
             </div>
           );
         })}
