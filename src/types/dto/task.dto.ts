@@ -14,6 +14,7 @@ export interface CreateTaskDTO {
   dueDate?: Date;
   estimatedHours?: number;
   recurrence?: RecurrenceConfig;
+  checklist?: ChecklistItem[];
 }
 
 export type UpdateTaskDTO = Partial<Omit<CreateTaskDTO, 'locationId' | 'projectId'>> & {

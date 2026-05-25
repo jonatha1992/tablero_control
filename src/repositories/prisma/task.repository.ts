@@ -182,13 +182,14 @@ export class PrismaTaskRepository implements ITaskRepository {
   async create(
     data: CreateTaskDTO & { creatorId: string; businessId: string }
   ): Promise<Task> {
-    const { assigneeIds, businessId: _businessId, creatorId, ...rest } = data;
+    const { assigneeIds, businessId: _businessId, creatorId, checklist, ...rest } = data;
     const t = await prisma.task.create({
       data: {
         ...rest,
         creatorId,
         position: Math.floor(Date.now() / 1000),
         recurrence: rest.recurrence as Prisma.InputJsonValue | undefined,
+        checklist: checklist as Prisma.InputJsonValue | undefined,
         assignees: assigneeIds?.length
           ? { connect: assigneeIds.map((id) => ({ id })) }
           : undefined,

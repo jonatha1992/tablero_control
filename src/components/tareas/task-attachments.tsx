@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { auth } from '@/lib/firebase/client';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import type { Task } from '@/types';
 import { Paperclip, Upload, Trash2, FileText, Image, Loader2, File } from 'lucide-react';
@@ -32,6 +33,7 @@ export function TaskAttachments({ task }: Props) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
+  const [pendingDeleteUrl, setPendingDeleteUrl] = useState<string | null>(null);
   const updateTask = useUpdateTask();
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -73,10 +75,13 @@ export function TaskAttachments({ task }: Props) {
     for (const file of Array.from(files)) void uploadFile(file);
   }
 
-  function handleDelete(url: string) {
-    if (!confirm('¿Eliminar este adjunto?')) return;
-    const updated = (task.attachmentUrls ?? []).filter((u) => u !== url);
-    updateTask.mutate({ id: task.id, data: { attachmentUrls: updated } });
+  function handleDelete() {
+    if (!pendingDeleteUrl) return;
+    const updated = (task.attachmentUrls ?? []).filter((u) => u !== pendingDeleteUrl);
+    updateTask.mutate(
+      { id: task.id, data: { attachmentUrls: updated } },
+      { onSuccess: () => setPendingDeleteUrl(null) }
+    );
   }
 
 
@@ -142,7 +147,7 @@ export function TaskAttachments({ task }: Props) {
                   {name}
                 </a>
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleDelete(url); }}
+                  onClick={(e) => { e.stopPropagation(); setPendingDeleteUrl(url); }}
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-600 shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -158,6 +163,16 @@ export function TaskAttachments({ task }: Props) {
           <Paperclip className="h-3.5 w-3.5" /> Sin adjuntos
         </p>
       )}
+      <ConfirmDialog
+        open={pendingDeleteUrl !== null}
+        onOpenChange={(open) => { if (!open) setPendingDeleteUrl(null); }}
+        title="Eliminar adjunto"
+        description="El archivo se quitará de esta tarea."
+        confirmLabel="Eliminar"
+        variant="destructive"
+        loading={updateTask.isPending}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

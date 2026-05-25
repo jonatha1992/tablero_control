@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import type { CustomRole } from '@/types/domain/custom-role';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import { Users, Pencil, Trash2, Lock } from 'lucide-react';
 import { useToggleRole, useDeleteRole } from '@/hooks/mutations/use-save-role';
@@ -13,17 +15,19 @@ interface Props {
 export function RoleCard({ role, onEdit }: Props) {
   const toggle = useToggleRole();
   const remove = useDeleteRole();
+  const [blockedOpen, setBlockedOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   function handleDelete() {
     if (role.userCount > 0) {
-      alert(`No se puede eliminar: ${role.userCount} usuario(s) tienen este rol. Reasignalos primero.`);
+      setBlockedOpen(true);
       return;
     }
-    if (!confirm(`¿Eliminar el rol "${role.name}"?`)) return;
-    remove.mutate(role.id);
+    setDeleteOpen(true);
   }
 
   return (
+    <>
     <div className={cn('border bg-card rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-all', !role.isActive && 'opacity-60')}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
@@ -82,5 +86,25 @@ export function RoleCard({ role, onEdit }: Props) {
         )}
       </div>
     </div>
+    <ConfirmDialog
+      open={blockedOpen}
+      onOpenChange={setBlockedOpen}
+      title="No se puede eliminar este rol"
+      description={`${role.userCount} usuario${role.userCount !== 1 ? 's' : ''} tienen este rol. Reasignalos primero.`}
+      confirmLabel="Entendido"
+      hideCancel
+      onConfirm={() => setBlockedOpen(false)}
+    />
+    <ConfirmDialog
+      open={deleteOpen}
+      onOpenChange={setDeleteOpen}
+      title="Eliminar rol"
+      description={`El rol "${role.name}" se eliminará de forma permanente.`}
+      confirmLabel="Eliminar"
+      variant="destructive"
+      loading={remove.isPending}
+      onConfirm={() => remove.mutate(role.id, { onSuccess: () => setDeleteOpen(false) })}
+    />
+    </>
   );
 }
