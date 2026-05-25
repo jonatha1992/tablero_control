@@ -6,6 +6,8 @@ import { requireUser } from '@/lib/api/auth-helpers';
 
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
+  requireRole: vi.fn().mockReturnValue(null),
+  requireActiveSubscription: vi.fn().mockReturnValue(null),
 }));
 
 const mockRequireUser = vi.mocked(requireUser);

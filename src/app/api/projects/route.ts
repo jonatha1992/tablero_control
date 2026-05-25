@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { projectService, ProjectLimitError } from '@/services/project.service';
-import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { requireUser, requireRole, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
@@ -29,6 +29,9 @@ export const POST = handle(async (request: NextRequest) => {
 
   const denied = requireRole(user, ['superadmin', 'admin']);
   if (denied) return denied;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const body = await request.json();
   const { name, description, teamId, businessId, startDate, endDate } = body;

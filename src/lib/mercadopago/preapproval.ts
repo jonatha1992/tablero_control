@@ -41,6 +41,7 @@ export async function createPreapproval(args: CreateArgs): Promise<MpPreapproval
       reason: `Suscripción Tablero de Control — ${def.name}`,
       external_reference: `biz:${args.businessId}:${args.plan}:${args.frequency}`,
       back_url: args.backUrl,
+      payer_email: args.payerEmail,
       auto_recurring: {
         frequency: args.frequency === 'monthly' ? 1 : 12,
         frequency_type: 'months',

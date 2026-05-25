@@ -7,6 +7,7 @@ export interface AuthedUser {
   uid: string;
   role: UserRole;
   businessId?: string;
+  businessStatus?: string;
   email?: string;
   data: User;
 }
@@ -92,13 +93,36 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     updatedAt: row.updatedAt,
   };
 
+  let businessStatus: string | undefined;
+  if (effectiveBusinessId) {
+    const biz = await prisma.business.findUnique({
+      where: { id: effectiveBusinessId },
+      select: { status: true },
+    });
+    businessStatus = biz?.status ?? undefined;
+  }
+
   return {
     uid: decoded.uid,
     role: effectiveRole,
     businessId: effectiveBusinessId,
+    businessStatus,
     email: decoded.email,
     data,
   };
+}
+
+export function requireActiveSubscription(user: AuthedUser, req: NextRequest): NextResponse | null {
+  if (user.role === 'superadmin') return null;
+  const method = req.method.toUpperCase();
+  if (method === 'GET' || method === 'HEAD') return null;
+  if (user.businessStatus === 'suspended') {
+    return NextResponse.json(
+      { error: 'subscription_required', detail: 'Suscripción vencida. Renovar en /dashboard/billing' },
+      { status: 403 }
+    );
+  }
+  return null;
 }
 
 export function requireRole(user: AuthedUser, roles: UserRole[]): NextResponse | null {

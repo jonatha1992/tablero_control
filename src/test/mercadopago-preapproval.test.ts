@@ -45,7 +45,7 @@ describe('createPreapproval', () => {
     });
   });
 
-  it('no envia payer_email para permitir pago con cualquier cuenta MP', async () => {
+  it('envia payer_email porque MP lo requiere para identificar al pagador', async () => {
     await createPreapproval({
       plan: 'pro',
       frequency: 'monthly',
@@ -71,6 +71,6 @@ describe('createPreapproval', () => {
       },
       status: 'pending',
     });
-    expect(body).not.toHaveProperty('payer_email');
+    expect(body).toHaveProperty('payer_email', 'admin@test.com');
   });
 });

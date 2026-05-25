@@ -26,20 +26,62 @@ updatedBy
 Seed: `npx tsx prisma/seed-plan-config.ts`
 Superadmin edita desde `/superadmin/planes`.
 
-## Flujo completo
+## Flujo de pago (Checkout Pro)
+
+El sistema usa **Checkout Pro** de MP — no preapproval. Cualquier cuenta MP puede pagar. La renovación es manual: el sistema muestra el botón de renovar cuando vence el período.
 
 ```
 Admin → /dashboard/billing → "Elegir Pro"
-  → POST /api/mercadopago/preapproval { plan, frequency, businessId }
-    ⚠️  NO enviar payer_email (ver decisions/001)
-  → MP crea preapproval → devuelve init_point
-  → redirect a checkout de MP
+  → POST /api/mercadopago/checkout { plan, frequency, businessId }
+  → MP crea preference → devuelve init_point
+  → redirect a checkout de MP (cualquier cuenta puede pagar)
   → usuario completa pago
-  → MP hace POST /api/mercadopago/webhook
-  → se actualiza subscription.status = 'active'
-  → business.plan = 'pro', business.featureFlags actualizado
+  → MP hace POST /api/mercadopago/webhook (notificationUrl = MP_CALLBACK_URL)
+  → webhook activa subscription.status = 'active'
+  → business.plan = 'pro', currentPeriodEnd = now + 30/365 días
   → admin vuelve a /dashboard/billing?status=success
 ```
+
+### Por qué Checkout Pro y no preapproval
+
+La API de preapproval de MP requiere `payer_email` obligatorio (400 si se omite). Cuando se especifica `payer_email`, MP restringe el pago a esa cuenta específica — rompe el flujo cuando quien paga es diferente a quien inició el checkout. Checkout Pro no tiene esa restricción.
+
+Ver `docs/decisions/001-no-payer-email-mp.md` (estado: superseded).
+
+### Renovación manual
+
+MP ya no maneja la recurrencia. Cuando `currentPeriodEnd` vence:
+1. Cron `subscription-expiry` marca `status = 'past_due'` → `business.status = 'suspended'`
+2. Las APIs de escritura devuelven 403 `subscription_required`
+3. El usuario ve el aviso en `/dashboard/billing` y vuelve a pagar
+
+## Lifecycle de suscripción
+
+### Estados de Subscription
+
+| Estado | Descripción |
+|--------|-------------|
+| `pending` | Checkout iniciado, pago no completado |
+| `active` | Pago aprobado, período vigente |
+| `past_due` | Período vencido, business suspendido |
+| `cancelled` | Cancelado (manual o `cancelAtPeriodEnd`) |
+| `paused` | Pausa temporal |
+| `trialing` | Período de prueba |
+
+### Enforcement de acceso
+
+`requireActiveSubscription(user, req)` en `src/lib/api/auth-helpers.ts`:
+- Solo bloquea mutaciones (POST/PUT/PATCH/DELETE)
+- GET siempre pasa — el usuario puede leer datos y acceder a billing
+- Superadmin nunca bloqueado
+- Retorna 403 `{ error: 'subscription_required' }` si `business.status === 'suspended'`
+
+Aplicado en routes de: tasks, projects, members, locations, users/create.
+**NO aplicado en**: `/api/mercadopago/**`, `/api/business/subscription`, `/api/planes`.
+
+### cancelAtPeriodEnd
+
+Cuando `cancelAtPeriodEnd = true`, el cron de vencimientos cancela la suscripción al vencer el período (`status → 'cancelled'`, `business.status → 'cancelled'`). Lo setea `POST /api/mercadopago/cancel`.
 
 ## Planes y precios (dinámicos)
 
@@ -66,13 +108,20 @@ Estos valores son defaults del seed — superadmin puede cambiarlos.
 src/lib/mercadopago/
   plans.ts         ← definición estática de planes (fallback)
   plan-config.ts   ← getEffectivePlanConfig, getAllEffectivePlanConfigs
-  preapproval.ts   ← suscripciones recurrentes
+  preapproval.ts   ← getPreapproval, cancelPreapproval (solo para compat. webhooks viejos)
+  preference.ts    ← createCheckoutPreference (Checkout Pro)
 
-src/lib/api/billing.ts        ← billingApi (cliente HTTP)
-src/app/api/mercadopago/      ← endpoints MP
-src/app/api/business/         ← /config, /subscription, /invoices
-src/app/api/planes/           ← GET / (público)
-src/app/api/cron/subscription-expiry ← cron de vencimientos
+src/lib/api/
+  auth-helpers.ts  ← requireUser, requireRole, requireActiveSubscription
+
+src/lib/api/billing.ts                    ← billingApi (cliente HTTP)
+src/app/api/mercadopago/checkout/         ← endpoint principal de checkout
+src/app/api/mercadopago/recover/          ← reintenta checkout pendiente
+src/app/api/mercadopago/webhook/          ← recibe notificaciones MP
+src/app/api/mercadopago/cancel/           ← cancela suscripción
+src/app/api/mercadopago/sync/             ← sincroniza estado local
+src/app/api/mercadopago/preapproval/      ← DEPRECATED: devuelve 410 Gone
+src/app/api/cron/subscription-expiry/     ← cron de vencimientos
 ```
 
 ## API routes de billing
@@ -82,8 +131,9 @@ src/app/api/cron/subscription-expiry ← cron de vencimientos
 | `GET /api/planes` | Pública | Planes efectivos desde DB |
 | `GET /api/superadmin/planes` | superadmin | Planes para panel admin |
 | `PATCH /api/superadmin/planes` | superadmin | Editar precio/límite de un plan |
-| `POST /api/mercadopago/preapproval` | admin | Inicia checkout en MP |
-| `POST /api/mercadopago/recover` | admin | Cancela preapprovals pendientes + crea nueva |
+| `POST /api/mercadopago/checkout` | admin | Inicia Checkout Pro en MP |
+| `POST /api/mercadopago/preapproval` | — | **DEPRECATED** — devuelve 410 |
+| `POST /api/mercadopago/recover` | admin | Crea nuevo checkout si pago pendiente |
 | `POST /api/mercadopago/webhook` | MP (HMAC) | Recibe notificaciones de MP |
 | `POST /api/mercadopago/cancel` | admin | Cancela suscripción |
 | `POST /api/mercadopago/sync` | admin | Sincroniza estado con MP |
@@ -104,33 +154,43 @@ Al crear usuario (`POST /api/users/create`):
 
 `limitProjects` y `limitAttachments` definidos en PlanConfig pero sin enforcement activo aún.
 
-## Cron de vencimientos
+## Cron de vencimientos (`/api/cron/subscription-expiry`)
 
-`POST /api/cron/subscription-expiry` — verifica suscripciones vencidas + envía emails.
-Requiere header `CRON_SECRET`. Se programa en `instrumentation.ts` al iniciar.
+Requiere header `Authorization: Bearer {CRON_SECRET}`.
+
+Lo que hace por orden:
+1. **Trials vencidos** → `business.status = 'suspended'`
+2. **Suscripciones vencidas** → `subscription.status = 'past_due'` + `business.status = 'suspended'`
+3. **cancelAtPeriodEnd** → si `currentPeriodEnd < now && cancelAtPeriodEnd = true` → `status = 'cancelled'`
+4. **Emails de aviso** → 7 días antes del vencimiento al admin del business
+
+Respuesta: `{ ok, markedPastDue, trialExpired, cancelledAtPeriodEnd, emailsSent }`
 
 ## Variables de entorno
 
 ```
-MP_ACCESS_TOKEN=APP_USR-...           # Credencial del vendedor
-MP_WEBHOOK_SECRET=...                 # Para validar firma HMAC
-NEXT_PUBLIC_MP_PUBLIC_KEY=APP_USR-... # Solo si usás Bricks
+MP_ACCESS_TOKEN=APP_USR-...    # Credencial del vendedor (real: APP_USR-, sandbox: TEST-)
+MP_PUBLIC_KEY=APP_USR-...      # Clave pública MP
+MP_WEBHOOK_SECRET=...          # Para validar firma HMAC del webhook
+MP_CALLBACK_URL=https://...    # URL pública para webhooks y back_urls (Railway en prod)
+MP_ENV=production              # 'production' con credenciales reales / 'test' con TEST- token
+MP_TEST_PAYER_EMAIL=...        # Solo en MP_ENV=test (debe ser test_user_...@testuser.com)
+CRON_SECRET=...                # Bearer token para el cron
 ```
+
+### MP_ENV y credenciales
+
+Con `MP_ENV=production` + `APP_USR-` token: usa email real del admin como `payer_email`.  
+Con `MP_ENV=test` + `TEST-` token: usa `MP_TEST_PAYER_EMAIL` (debe ser cuenta test de MP).  
+**Nunca mezclar**: `APP_USR-` (real) + `MP_ENV=test` → MP rechaza con "Both payer and collector must be real or test users".
 
 ## Configurar webhook en MP
 
 1. Ir a MP Developers → Webhooks.
 2. Agregar URL: `https://tu-dominio.com/api/mercadopago/webhook`.
-3. Eventos: `subscription_preapproval`, `payment`.
+3. Eventos: `payment`.
 4. Copiar el secret → `MP_WEBHOOK_SECRET`.
 
-### Testing local con ngrok
+### Desarrollo local con Railway DB
 
-```bash
-ngrok http 3000
-# Copiar URL https de ngrok al panel de MP como webhook URL
-```
-
-## Sandbox
-
-MP provee credenciales de prueba en el panel de developers. Usar `APP_USR-...` del entorno **Test** para `MP_ACCESS_TOKEN`.
+El checkout crea la preference en MP → `notificationUrl` apunta a `MP_CALLBACK_URL` (Railway), no a localhost. El pago sucede en MP. Railway recibe el webhook y actualiza el DB compartido. Localhost lee el mismo DB → funciona sin ngrok.

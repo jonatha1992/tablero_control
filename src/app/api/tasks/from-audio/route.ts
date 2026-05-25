@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { teamService } from '@/services/team.service';
 import { transcribeAudio } from '@/lib/groq/transcribe';
 import { extractTasksFromTranscription } from '@/lib/groq/extract-tasks';
@@ -12,6 +12,9 @@ const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   let formData: FormData;
   try {

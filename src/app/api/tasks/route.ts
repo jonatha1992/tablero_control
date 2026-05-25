@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
@@ -75,6 +75,9 @@ export const GET = handle(async (request: NextRequest) => {
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   let body: { dto: import('@/types/dto/task.dto').CreateTaskDTO; creatorId?: string; businessId?: string };
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }

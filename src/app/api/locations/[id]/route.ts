@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { locationService } from '@/services/location.service';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { can } from '@/lib/permissions/matrix';
@@ -30,6 +30,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
   if (!can(user.data, 'business.locations.crud')) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   try {
     const { id } = await params;
@@ -66,6 +69,9 @@ export const DELETE = handle(async (request: NextRequest, { params }: Props) => 
   if (!can(user.data, 'business.locations.crud')) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   try {
     const { id } = await params;

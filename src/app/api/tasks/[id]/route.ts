@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { taskService } from '@/services/task.service';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { can, assertResourceBelongsToBusiness } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
@@ -35,6 +35,9 @@ export const GET = handle(async (request: NextRequest, { params }: { params: Pro
 export const PATCH = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id } = await params;
   const body = await request.json();
@@ -183,6 +186,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id } = await params;
 

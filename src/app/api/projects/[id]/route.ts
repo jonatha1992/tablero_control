@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { projectService } from '@/services/project.service';
-import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { requireUser, requireRole, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
@@ -25,6 +25,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 
   const denied = requireRole(user, ['superadmin', 'admin']);
   if (denied) return denied;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id } = await params;
   const project = await projectService.getById(id);
@@ -64,6 +67,9 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   const denied = requireRole(user, ['superadmin', 'admin']);
   if (denied) return denied;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id } = await params;
   const project = await projectService.getById(id);

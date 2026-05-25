@@ -7,6 +7,8 @@ import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
+  requireRole: vi.fn().mockReturnValue(null),
+  requireActiveSubscription: vi.fn().mockReturnValue(null),
 }));
 
 const mockRequireUser = vi.mocked(requireUser);

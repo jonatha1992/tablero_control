@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { teamService } from '@/services/team.service';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { can } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
@@ -14,6 +14,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (!can(user.data, 'business.users.crud')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id } = await params;
   const target = await userRepository.findById(id);
@@ -72,6 +75,9 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   if (!can(user.data, 'business.users.crud')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id } = await params;
 
