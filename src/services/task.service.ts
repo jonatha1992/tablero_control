@@ -55,11 +55,21 @@ class TaskService {
 
     // Lógica de recurrencia
     if (newStatus === 'done' && task.recurrence) {
+      if (this.isRecurrenceExhausted(task.recurrence)) return null;
       const nextTask = await this.createNextOccurrence(task);
       return nextTask;
     }
 
     return null;
+  }
+
+  private isRecurrenceExhausted(recurrence: Record<string, unknown>): boolean {
+    if (recurrence.endDate) {
+      const end = new Date(recurrence.endDate as string);
+      if (end < new Date()) return true;
+    }
+    if (typeof recurrence.count === 'number' && recurrence.count <= 0) return true;
+    return false;
   }
 
   private async createNextOccurrence(task: Task): Promise<Task> {
@@ -76,7 +86,7 @@ class TaskService {
       locationId: task.locationId,
       tags: task.tags,
       dueDate: nextDueDate,
-      recurrence: task.recurrence, // Mantener la regla en la nueva tarea
+      recurrence: this.decrementRecurrenceCount(task.recurrence!),
     };
 
     // Obtenemos el businessId del creador original para asegurar consistencia
@@ -84,6 +94,13 @@ class TaskService {
     const businessId = task.businessId || ''; // Si no tiene, el repo lo inferirá o fallará según lógica
 
     return this.createTask(dto, task.creatorId, businessId);
+  }
+
+  private decrementRecurrenceCount(recurrence: Record<string, unknown>): Record<string, unknown> {
+    if (typeof recurrence.count === 'number') {
+      return { ...recurrence, count: recurrence.count - 1 };
+    }
+    return recurrence;
   }
 
   private calculateNextDate(current: Date, config: { interval?: number; frequency?: string; dayOfWeek?: number; dayOfMonth?: number }): Date {

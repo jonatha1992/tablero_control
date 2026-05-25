@@ -94,27 +94,30 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     if (existingMembership.isActive) {
       return NextResponse.json({ error: 'already_member' }, { status: 409 });
     }
+  }
+
+  // Plan limit check for both new and reactivated members
+  const planConfig = await getEffectivePlanConfig(invite.business.plan);
+  const limit = planConfig.limits.users;
+  if (limit !== -1) {
+    const current = await prisma.userBusiness.count({
+      where: { businessId: invite.businessId, isActive: true },
+    });
+    if (current >= limit) {
+      return NextResponse.json(
+        { error: 'members_limit_exceeded', limit, current },
+        { status: 429 }
+      );
+    }
+  }
+
+  if (existingMembership) {
     // Reactivate membership
     await prisma.userBusiness.update({
       where: { userId_businessId: { userId: user.id, businessId: invite.businessId } },
       data: { isActive: true, role: invite.role, locationId: invite.locationId },
     });
   } else {
-    // Plan limit check (only for new members)
-    const planConfig = await getEffectivePlanConfig(invite.business.plan);
-    const limit = planConfig.limits.users;
-    if (limit !== -1) {
-      const current = await prisma.userBusiness.count({
-        where: { businessId: invite.businessId, isActive: true },
-      });
-      if (current >= limit) {
-        return NextResponse.json(
-          { error: 'members_limit_exceeded', limit, current },
-          { status: 429 }
-        );
-      }
-    }
-
     // Create membership
     await prisma.userBusiness.create({
       data: {
@@ -127,10 +130,10 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     });
   }
 
-  // Siempre cambiar al negocio invitado — el usuario acaba de aceptar explícitamente.
+  // Switch to invited business — but don't overwrite global role if user has higher role in another business
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
-    data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId },
+    data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId, customRoleIds: [] },
   });
 
   await prisma.businessInvite.update({

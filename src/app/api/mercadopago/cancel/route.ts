@@ -34,7 +34,7 @@ export const POST = handle(async (req: NextRequest) => {
 
   await prisma.subscription.update({
     where: { id: subscriptionId },
-    data: { status: 'cancelled', cancelAtPeriodEnd: false },
+    data: { cancelAtPeriodEnd: true },
   });
 
   await writeAuditLog({

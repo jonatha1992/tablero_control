@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
+import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
 
 export const POST = handle(async (request: NextRequest) => {
@@ -28,8 +29,19 @@ export const POST = handle(async (request: NextRequest) => {
       businessId: membership.businessId,
       role: membership.role,
       locationId: membership.locationId,
+      customRoleIds: [],
     },
     include: { teams: true, memberships: true },
+  });
+
+  await writeAuditLog({
+    actorId: user.uid,
+    actorRole: updated.role,
+    businessId: membership.businessId,
+    action: 'user.switch_business',
+    targetType: 'USER',
+    targetId: user.uid,
+    metadata: { fromBusinessId: user.businessId, toBusinessId: membership.businessId },
   });
 
   return NextResponse.json(updated);

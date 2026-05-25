@@ -1,0 +1,132 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getTaskBusinessId } from '@/lib/api/task-business';
+import { prisma } from '@/lib/prisma';
+
+const mockFindUnique = vi.mocked(prisma.task.findUnique);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('getTaskBusinessId', () => {
+  it('returns project.businessId when task has a project', async () => {
+    mockFindUnique.mockResolvedValue({
+      project: { businessId: 'biz-from-project' },
+      location: { businessId: 'biz-from-location' },
+      creator: { businessId: 'biz-from-creator', memberships: [] },
+    } as never);
+
+    const result = await getTaskBusinessId('task-1');
+
+    expect(result).toBe('biz-from-project');
+  });
+
+  it('returns location.businessId when task has no project but has location', async () => {
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: { businessId: 'biz-from-location' },
+      creator: { businessId: 'biz-from-creator', memberships: [] },
+    } as never);
+
+    const result = await getTaskBusinessId('task-1');
+
+    expect(result).toBe('biz-from-location');
+  });
+
+  it('returns creator.businessId when task has no project or location', async () => {
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: null,
+      creator: { businessId: 'biz-from-creator', memberships: [] },
+    } as never);
+
+    const result = await getTaskBusinessId('task-1');
+
+    expect(result).toBe('biz-from-creator');
+  });
+
+  it("returns creator's active membership businessId when creator.businessId is null", async () => {
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: null,
+      creator: {
+        businessId: null,
+        memberships: [{ businessId: 'biz-from-membership' }],
+      },
+    } as never);
+
+    const result = await getTaskBusinessId('task-1');
+
+    expect(result).toBe('biz-from-membership');
+  });
+
+  it('returns null when task is not found', async () => {
+    mockFindUnique.mockResolvedValue(null as never);
+
+    const result = await getTaskBusinessId('nonexistent-task');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null when task has no project, no location, creator has no businessId and no active memberships', async () => {
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: null,
+      creator: { businessId: null, memberships: [] },
+    } as never);
+
+    const result = await getTaskBusinessId('task-1');
+
+    expect(result).toBeNull();
+  });
+
+  it('respects priority order: project > location > creator.businessId > membership', async () => {
+    // All sources present — project should win
+    mockFindUnique.mockResolvedValue({
+      project: { businessId: 'biz-project' },
+      location: { businessId: 'biz-location' },
+      creator: {
+        businessId: 'biz-creator',
+        memberships: [{ businessId: 'biz-membership' }],
+      },
+    } as never);
+
+    expect(await getTaskBusinessId('task-1')).toBe('biz-project');
+
+    // No project — location wins
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: { businessId: 'biz-location' },
+      creator: {
+        businessId: 'biz-creator',
+        memberships: [{ businessId: 'biz-membership' }],
+      },
+    } as never);
+
+    expect(await getTaskBusinessId('task-1')).toBe('biz-location');
+
+    // No project, no location — creator.businessId wins
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: null,
+      creator: {
+        businessId: 'biz-creator',
+        memberships: [{ businessId: 'biz-membership' }],
+      },
+    } as never);
+
+    expect(await getTaskBusinessId('task-1')).toBe('biz-creator');
+
+    // No project, no location, no creator.businessId — membership wins
+    mockFindUnique.mockResolvedValue({
+      project: null,
+      location: null,
+      creator: {
+        businessId: null,
+        memberships: [{ businessId: 'biz-membership' }],
+      },
+    } as never);
+
+    expect(await getTaskBusinessId('task-1')).toBe('biz-membership');
+  });
+});

@@ -38,7 +38,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 
   const { id } = await params;
   const body = await request.json();
-  const { _move, ...data } = body;
+  const { _move, creatorId: _creatorId, ...data } = body;
 
   const businessId = await getTaskBusinessId(id);
   assertResourceBelongsToBusiness(user.data, businessId);

@@ -41,8 +41,8 @@ export const GET = handle(async (request: NextRequest) => {
     }
 
     if (!user && decoded.email) {
-      const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
-      if (superadminEmails.includes(decoded.email)) {
+      const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (decodedEmail && superadminEmails.includes(decodedEmail)) {
         const name = decoded.name ?? decoded.email.split('@')[0] ?? 'Admin';
         const business = await businessRepository.create({
           name: 'TecnoFusión (Master)',

@@ -74,6 +74,11 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   }
 
   const { id } = await params;
+
+  if (id === user.uid) {
+    return NextResponse.json({ error: 'cannot_remove_self' }, { status: 400 });
+  }
+
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
