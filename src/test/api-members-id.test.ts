@@ -7,6 +7,8 @@ import { userRepository, businessRepository } from '@/repositories';
 
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
+  requireRole: vi.fn().mockReturnValue(null),
+  requireActiveSubscription: vi.fn().mockReturnValue(null),
 }));
 
 vi.mock('@/services/team.service', () => ({

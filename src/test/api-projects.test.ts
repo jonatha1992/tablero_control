@@ -7,7 +7,8 @@ import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
-  requireRole: vi.fn(() => null),
+  requireRole: vi.fn().mockReturnValue(null),
+  requireActiveSubscription: vi.fn().mockReturnValue(null),
 }));
 vi.mock('@/lib/api/audit', () => ({ writeAuditLog: vi.fn() }));
 vi.mock('@/services/project.service', async (importOriginal) => {

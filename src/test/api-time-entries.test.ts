@@ -5,7 +5,11 @@ import { timeEntryService } from '@/services/time-entry.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 
-vi.mock('@/lib/api/auth-helpers', () => ({ requireUser: vi.fn() }));
+vi.mock('@/lib/api/auth-helpers', () => ({
+  requireUser: vi.fn(),
+  requireRole: vi.fn().mockReturnValue(null),
+  requireActiveSubscription: vi.fn().mockReturnValue(null),
+}));
 vi.mock('@/services/time-entry.service', () => ({
   timeEntryService: {
     getByTask: vi.fn(),

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timeEntryService } from '@/services/time-entry.service';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
@@ -21,6 +21,9 @@ export const GET = handle(async (request: NextRequest, { params }: { params: Pro
 export const POST = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { id: taskId } = await params;
   const body = await request.json();

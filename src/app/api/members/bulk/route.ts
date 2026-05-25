@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { can } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
@@ -12,6 +12,9 @@ export const POST = handle(async (request: NextRequest) => {
   if (!can(user.data, 'business.users.crud')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { ids, locationId } = await request.json() as { ids: string[]; locationId: string | null };
 

@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { teamService } from '@/services/team.service';
-import { requireUser } from '@/lib/api/auth-helpers';
+import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { can } from '@/lib/permissions';
@@ -37,6 +37,9 @@ export const POST = handle(async (request: NextRequest) => {
   if (!can(user.data, 'business.users.crud')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const subDenied = requireActiveSubscription(user, request);
+  if (subDenied) return subDenied;
 
   const { dto, businessId } = await request.json();
   assertSameTenant(user.data, { businessId });

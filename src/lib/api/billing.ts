@@ -25,8 +25,8 @@ export const billingApi = {
     return fetchJsonAuth<Invoice[]>(`/api/business/invoices${params}`);
   },
 
-  createPreapproval: (plan: PlanId, frequency: BillingFrequency, businessId: string) =>
-    fetchJsonAuth<{ initPoint: string }>('/api/mercadopago/preapproval', {
+  createCheckout: (plan: PlanId, frequency: BillingFrequency, businessId: string) =>
+    fetchJsonAuth<{ initPoint: string }>('/api/mercadopago/checkout', {
       method: 'POST',
       body: JSON.stringify({ plan, frequency, businessId }),
     }),

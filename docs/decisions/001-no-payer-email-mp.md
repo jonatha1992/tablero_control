@@ -1,7 +1,8 @@
 # ADR-001: No enviar payer_email en MercadoPago preapproval
 
-**Estado:** accepted  
-**Fecha:** 2026-05-25
+**Estado:** superseded  
+**Fecha:** 2026-05-25  
+**Supersedido:** 2026-05-25 — MP cambió su API y ahora `payer_email` es obligatorio (400 si se omite). `payer_email` se envía desde entonces. La restricción de cuenta sigue siendo una limitación conocida.
 
 ## Contexto
 

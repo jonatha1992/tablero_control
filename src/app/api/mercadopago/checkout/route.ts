@@ -24,6 +24,7 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get('origin') ?? 'http://localhost:3000';
+  const callbackOrigin = process.env.MP_CALLBACK_URL ?? origin;
 
   const planDef = await getEffectivePlanConfig(plan);
   const amount = frequency === 'monthly' ? planDef.priceMonthly : planDef.priceYearly;
@@ -35,7 +36,7 @@ export const POST = handle(async (req: NextRequest) => {
     successUrl: `${origin}/dashboard/billing?status=success`,
     failureUrl: `${origin}/dashboard/billing?status=failure`,
     pendingUrl: `${origin}/dashboard/billing?status=pending`,
-    notificationUrl: `${origin}/api/mercadopago/webhook`,
+    notificationUrl: `${callbackOrigin}/api/mercadopago/webhook`,
   });
 
   const sub = await prisma.subscription.upsert({

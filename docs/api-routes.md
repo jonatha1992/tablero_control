@@ -121,13 +121,17 @@ GET    /api/superadmin/metrics
 
 ## MercadoPago
 ```
-POST   /api/mercadopago/checkout
-POST   /api/mercadopago/preapproval   ← NO enviar payer_email (ver decisions/001)
-POST   /api/mercadopago/recover       ← cancela pendientes + crea nueva
+POST   /api/mercadopago/checkout      ← Checkout Pro (flujo principal)
+POST   /api/mercadopago/preapproval   ← DEPRECATED: devuelve 410 Gone
+POST   /api/mercadopago/recover       ← crea nuevo checkout si pago pendiente
 POST   /api/mercadopago/cancel
 POST   /api/mercadopago/sync
 POST   /api/mercadopago/webhook
 ```
+
+## Enforcement de suscripción
+
+`requireActiveSubscription(user, req)` en `auth-helpers.ts` — bloquea mutaciones (POST/PUT/PATCH/DELETE) con 403 `subscription_required` si `business.status === 'suspended'`. GET siempre pasa. Superadmin siempre pasa. Aplicado en: tasks, projects, members, locations, users/create.
 
 ## Upload / Cron / Test
 ```

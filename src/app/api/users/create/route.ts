@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase/admin';
-import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { requireUser, requireRole, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
@@ -43,6 +43,9 @@ export const POST = handle(async (req: NextRequest) => {
 
   const denied = requireRole(authed, ['superadmin', 'admin']);
   if (denied) return denied;
+
+  const subDenied = requireActiveSubscription(authed, req);
+  if (subDenied) return subDenied;
 
   let body: CreateUserBody;
   try {

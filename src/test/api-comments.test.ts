@@ -4,7 +4,11 @@ import { GET, POST } from '@/app/api/tasks/[id]/comments/route';
 import { commentService } from '@/services/comment.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 
-vi.mock('@/lib/api/auth-helpers', () => ({ requireUser: vi.fn() }));
+vi.mock('@/lib/api/auth-helpers', () => ({
+  requireUser: vi.fn(),
+  requireRole: vi.fn().mockReturnValue(null),
+  requireActiveSubscription: vi.fn().mockReturnValue(null),
+}));
 vi.mock('@/lib/api/audit', () => ({ writeAuditLog: vi.fn() }));
 vi.mock('@/lib/notifications', () => ({ sendNotification: vi.fn() }));
 vi.mock('@/services/comment.service', () => ({

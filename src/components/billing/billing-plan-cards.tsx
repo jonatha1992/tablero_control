@@ -35,7 +35,7 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
     }
     setLoading(plan);
     try {
-      const { initPoint } = await billingApi.createPreapproval(plan, frequency, businessId);
+      const { initPoint } = await billingApi.createCheckout(plan, frequency, businessId);
       window.location.href = initPoint;
     } catch (err) {
       setPaymentError(`Error al iniciar el pago: ${(err as Error).message}`);

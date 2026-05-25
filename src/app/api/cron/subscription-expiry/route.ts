@@ -63,6 +63,26 @@ export const GET = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'db_error', message: String(err) }, { status: 500 });
   }
 
+  // Cancelar suscripciones con cancelAtPeriodEnd=true que ya vencieron
+  let cancelledAtPeriodEnd = 0;
+  try {
+    const toCancel = await prisma.subscription.findMany({
+      where: {
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: { lt: now },
+        status: { in: ['active', 'past_due'] },
+      },
+      select: { id: true, businessId: true },
+    });
+    for (const sub of toCancel) {
+      await prisma.subscription.update({ where: { id: sub.id }, data: { status: 'cancelled' } });
+      await prisma.business.update({ where: { id: sub.businessId }, data: { status: 'cancelled' } });
+      cancelledAtPeriodEnd++;
+    }
+  } catch (err) {
+    console.error('[cron/subscription-expiry] error processing cancelAtPeriodEnd:', err);
+  }
+
   // FIX #6/#7: Expiry warning emails — errors are logged and counted, not silently swallowed
   try {
     const expiring = await prisma.subscription.findMany({
@@ -127,6 +147,7 @@ export const GET = handle(async (req: NextRequest) => {
     ok: true,
     markedPastDue,
     trialExpired,
+    cancelledAtPeriodEnd,
     emailsSent,
     ...(emailErrors.length > 0 ? { emailErrors } : {}),
   });
