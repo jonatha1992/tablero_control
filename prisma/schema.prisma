@@ -486,10 +486,10 @@ model PlanConfig {
 }
 
 model BusinessInvite {
-  id         String   @id @default(cuid())
-  businessId String
-  role       UserRole @default(miembro)
-  locationId String?
+  id          String   @id @default(cuid())
+  businessId  String
+  role        UserRole @default(miembro)
+  locationIds String[] @default([])
   maxUses    Int      @default(0)
   usedCount  Int      @default(0)
   expiresAt  DateTime?

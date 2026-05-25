@@ -14,7 +14,7 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
 export interface CreateInviteInput {
   businessId: string;
   role?: string;
-  locationId?: string;
+  locationIds?: string[];
   maxUses?: number;
   expiresInDays?: number;
 }

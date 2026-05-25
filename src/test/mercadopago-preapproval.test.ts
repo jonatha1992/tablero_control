@@ -45,7 +45,7 @@ describe('createPreapproval', () => {
     });
   });
 
-  it('envia payer_email al crear una suscripcion recurrente', async () => {
+  it('no envia payer_email para permitir pago con cualquier cuenta MP', async () => {
     await createPreapproval({
       plan: 'pro',
       frequency: 'monthly',
@@ -59,9 +59,9 @@ describe('createPreapproval', () => {
     }));
     const [, init] = mockMpFetch.mock.calls[0];
     if (!init) throw new Error('mpFetch init no fue informado');
-    expect(JSON.parse(init.body as string)).toMatchObject({
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
       external_reference: 'biz:biz-1:pro:monthly',
-      payer_email: 'admin@test.com',
       back_url: 'https://app.test/dashboard/billing?status=pending',
       auto_recurring: {
         frequency: 1,
@@ -71,5 +71,6 @@ describe('createPreapproval', () => {
       },
       status: 'pending',
     });
+    expect(body).not.toHaveProperty('payer_email');
   });
 });

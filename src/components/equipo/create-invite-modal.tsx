@@ -21,7 +21,7 @@ interface Props {
 }
 
 export function CreateInviteModal({ open, onClose, businessId }: Props) {
-  const [locationId, setLocationId] = useState<string>('');
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [role, setRole] = useState<string>('miembro');
   const [maxUses, setMaxUses] = useState('0');
   const [expiresInDays, setExpiresInDays] = useState('7');
@@ -46,7 +46,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
       {
         businessId,
         role,
-        locationId: locationId || undefined,
+        locationIds: selectedLocationIds.length > 0 ? selectedLocationIds : undefined,
         maxUses: parsedMaxUses,
         expiresInDays: parseInt(expiresInDays, 10) || 0,
       },
@@ -67,7 +67,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
   function handleClose() {
     if (isPending) return;
-    setLocationId('');
+    setSelectedLocationIds([]);
     setRole('miembro');
     setMaxUses('0');
     setExpiresInDays('7');
@@ -173,19 +173,35 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Local/Sector (opcional)</label>
-                <select
-                  value={locationId}
-                  onChange={(e) => setLocationId(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="">Sin asignar</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-sm font-medium">Sectores (opcional)</label>
+                {locations.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No hay sectores creados</p>
+                ) : (
+                  <div className="max-h-36 overflow-y-auto rounded-md border border-input bg-background p-2 space-y-1">
+                    {locations.map((loc) => (
+                      <label key={loc.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedLocationIds.includes(loc.id)}
+                          onChange={(e) => {
+                            setSelectedLocationIds((prev) =>
+                              e.target.checked
+                                ? [...prev, loc.id]
+                                : prev.filter((id) => id !== loc.id)
+                            );
+                          }}
+                          className="rounded border-input"
+                        />
+                        {loc.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {selectedLocationIds.length > 0
+                    ? `${selectedLocationIds.length} sector(es) seleccionado(s)`
+                    : 'El invitado podrá ser asignado después'}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

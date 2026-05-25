@@ -115,7 +115,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     // Reactivate membership
     await prisma.userBusiness.update({
       where: { userId_businessId: { userId: user.id, businessId: invite.businessId } },
-      data: { isActive: true, role: invite.role, locationId: invite.locationId },
+      data: { isActive: true, role: invite.role, locationId: invite.locationIds[0] ?? null },
     });
   } else {
     // Create membership
@@ -124,7 +124,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
         userId: user.id,
         businessId: invite.businessId,
         role: invite.role,
-        locationId: invite.locationId,
+        locationId: invite.locationIds[0] ?? null,
         isActive: true,
       },
     });
@@ -133,7 +133,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
   // Switch to invited business — but don't overwrite global role if user has higher role in another business
   const updatedUser = await prisma.user.update({
     where: { id: user.id },
-    data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationId, customRoleIds: [] },
+    data: { businessId: invite.businessId, role: invite.role, locationId: invite.locationIds[0] ?? null, customRoleIds: [] },
   });
 
   await prisma.businessInvite.update({

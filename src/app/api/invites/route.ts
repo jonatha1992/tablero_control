@@ -39,7 +39,7 @@ export const POST = handle(async (request: NextRequest) => {
   let body: {
     businessId: string;
     role?: string;
-    locationId?: string;
+    locationIds?: string[];
     maxUses?: number;
     expiresInDays?: number;
   };
@@ -49,7 +49,7 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { businessId, locationId, maxUses = 0, expiresInDays = 7, role: bodyRole } = body;
+  const { businessId, locationIds = [], maxUses = 0, expiresInDays = 7, role: bodyRole } = body;
   if (!businessId) {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
   }
@@ -67,7 +67,7 @@ export const POST = handle(async (request: NextRequest) => {
     data: {
       businessId,
       role: inviteRole,
-      locationId: locationId || null,
+      locationIds: Array.isArray(locationIds) ? locationIds : [],
       maxUses: Math.max(0, maxUses),
       expiresAt,
       createdBy: user.uid,

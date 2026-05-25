@@ -40,7 +40,6 @@ export async function createPreapproval(args: CreateArgs): Promise<MpPreapproval
     body: JSON.stringify({
       reason: `Suscripción Tablero de Control — ${def.name}`,
       external_reference: `biz:${args.businessId}:${args.plan}:${args.frequency}`,
-      payer_email: args.payerEmail,
       back_url: args.backUrl,
       auto_recurring: {
         frequency: args.frequency === 'monthly' ? 1 : 12,

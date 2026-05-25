@@ -103,7 +103,7 @@ const mockInvite = {
   id: 'inv-1',
   businessId: 'biz-1',
   role: 'miembro',
-  locationId: null,
+  locationIds: [],
   maxUses: 0,
   usedCount: 0,
   expiresAt: null,
