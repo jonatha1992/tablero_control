@@ -121,40 +121,40 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
   const assignedLocationIds = new Set(locationAssignments.map((a) => a.locationId));
   const unassignedLocations = locations.filter((l) => !assignedLocationIds.has(l.id));
 
+  const memberId = member?.id;
   useEffect(() => {
-    if (member) {
-      setName(member.name);
-      setRole(member.role);
-      setCustomRoleIds(member.customRoleIds ?? []);
-      setAddingLocation(false);
-      setNewLocationId('');
-      setNewLocationRole('miembro');
+    if (!member || !open) return;
+    setName(member.name);
+    setRole(member.role);
+    setCustomRoleIds(member.customRoleIds ?? []);
+    setAddingLocation(false);
+    setNewLocationId('');
+    setNewLocationRole('miembro');
 
-      if (member.locationAssignments?.length) {
-        const businessLocationIds = new Set(locations.map((l) => l.id));
-        setLocationAssignments(
-          member.locationAssignments
-            .filter((a: UserLocationAssignment) => businessLocationIds.has(a.locationId))
-            .map((a: UserLocationAssignment) => ({
-              locationId: a.locationId,
-              locationName: a.locationName ?? a.locationId,
-              role: a.role,
-              customRoleIds: a.customRoleIds,
-            }))
-        );
-      } else if (member.locationId) {
-        // Migrate legacy single locationId
-        const loc = locations.find((l) => l.id === member.locationId);
-        if (loc) {
-          setLocationAssignments([{ locationId: loc.id, locationName: loc.name, role: member.role }]);
-        } else {
-          setLocationAssignments([]);
-        }
+    if (member.locationAssignments?.length) {
+      const businessLocationIds = new Set(locations.map((l) => l.id));
+      setLocationAssignments(
+        member.locationAssignments
+          .filter((a: UserLocationAssignment) => businessLocationIds.has(a.locationId))
+          .map((a: UserLocationAssignment) => ({
+            locationId: a.locationId,
+            locationName: a.locationName ?? a.locationId,
+            role: a.role,
+            customRoleIds: a.customRoleIds,
+          }))
+      );
+    } else if (member.locationId) {
+      const loc = locations.find((l) => l.id === member.locationId);
+      if (loc) {
+        setLocationAssignments([{ locationId: loc.id, locationName: loc.name, role: member.role }]);
       } else {
         setLocationAssignments([]);
       }
+    } else {
+      setLocationAssignments([]);
     }
-  }, [member, open, locations]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId, open]);
 
   function addLocation() {
     if (!newLocationId) return;

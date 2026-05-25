@@ -137,12 +137,14 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
         }}
       />
 
-      <EditMemberModal
-        member={member}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        onRemove={onRemove}
-      />
+      {editOpen && (
+        <EditMemberModal
+          member={member}
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          onRemove={onRemove}
+        />
+      )}
     </>
   );
 }
