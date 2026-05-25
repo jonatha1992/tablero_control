@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useQueryClient } from '@tanstack/react-query';
-import { db } from '@/lib/firebase/client';
+import { getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
 import { useRolesQuery } from '@/hooks/queries/use-roles-query';
 import { RoleCard } from '@/components/roles/role-card';
@@ -11,12 +11,6 @@ import { RoleEditorDrawer } from '@/components/roles/role-editor-drawer';
 import type { CustomRole } from '@/types/domain/custom-role';
 import { Plus, Loader2, ShieldCheck } from 'lucide-react';
 
-const SYSTEM_ROLES_DEFAULT = [
-  { id: 'role-admin',       name: 'Admin',       slug: 'admin',       baseRole: 'responsable' as const, color: '#6366f1' },
-  { id: 'role-responsable', name: 'Responsable', slug: 'responsable', baseRole: 'responsable' as const, color: '#8b5cf6' },
-  { id: 'role-miembro',     name: 'Miembro',     slug: 'miembro',     baseRole: 'miembro'     as const, color: '#22c55e' },
-  { id: 'role-viewer',      name: 'Viewer',      slug: 'viewer',      baseRole: 'viewer'      as const, color: '#64748b' },
-];
 
 export default function EquipoRolesPage() {
   const { user } = useAuth();
@@ -33,23 +27,11 @@ export default function EquipoRolesPage() {
     const hasSystem = roles.some((r) => r.isSystem);
     if (hasSystem) return;
     initDone.current = true;
-    const colRef = collection(db, 'businesses', user.businessId, 'roles');
-    Promise.all(
-      SYSTEM_ROLES_DEFAULT.map((r) =>
-        setDoc(doc(colRef, r.id), {
-          ...r,
-          businessId: user.businessId,
-          description: '',
-          scope: { type: 'business' },
-          permissions: {},
-          isActive: true,
-          isSystem: true,
-          userCount: 0,
-          createdBy: 'system',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
-      )
+    getAuth(app).currentUser?.getIdToken().then((token) =>
+      fetch('/api/roles/init-system', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
     ).then(() => {
       qc.invalidateQueries({ queryKey: ['roles', user.businessId] });
     }).catch((err) => {
