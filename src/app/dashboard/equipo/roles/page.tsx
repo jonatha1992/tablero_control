@@ -1,16 +1,48 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { getAuth } from 'firebase/auth';
-import { app } from '@/lib/firebase/client';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import { useRolesQuery } from '@/hooks/queries/use-roles-query';
 import { RoleCard } from '@/components/roles/role-card';
+import { SystemRoleCard } from '@/components/roles/system-role-card';
 import { RoleEditorDrawer } from '@/components/roles/role-editor-drawer';
 import type { CustomRole } from '@/types/domain/custom-role';
 import { Plus, Loader2, ShieldCheck } from 'lucide-react';
 
+const SYSTEM_ROLES = [
+  {
+    id: 'role-admin',
+    name: 'Admin',
+    slug: 'admin',
+    color: '#6366f1',
+    description: 'Acceso completo al negocio: usuarios, roles, facturación, reportes y todas las tareas.',
+    permissions: ['Gestión de usuarios y roles', 'Configuración del negocio', 'Facturación y suscripción', 'Crear/editar/eliminar cualquier tarea', 'Gestión de sectores y equipos', 'Exportar reportes'],
+  },
+  {
+    id: 'role-responsable',
+    name: 'Responsable',
+    slug: 'responsable',
+    color: '#8b5cf6',
+    description: 'Gestiona tareas y sectores asignados. Sin acceso a configuración del negocio.',
+    permissions: ['Crear/editar/eliminar tareas', 'Asignar tareas', 'Comentar y adjuntar archivos', 'Ver reportes', 'Eliminar adjuntos'],
+  },
+  {
+    id: 'role-miembro',
+    name: 'Miembro',
+    slug: 'miembro',
+    color: '#22c55e',
+    description: 'Trabaja en tareas asignadas. No puede crear ni eliminar.',
+    permissions: ['Ver tareas', 'Actualizar tareas asignadas', 'Comentar', 'Subir archivos'],
+  },
+  {
+    id: 'role-viewer',
+    name: 'Viewer',
+    slug: 'viewer',
+    color: '#64748b',
+    description: 'Solo lectura. No puede crear ni modificar nada.',
+    permissions: ['Ver tareas', 'Ver reportes'],
+  },
+] as const;
 
 export default function EquipoRolesPage() {
   const { user } = useAuth();
@@ -19,26 +51,7 @@ export default function EquipoRolesPage() {
   const [editing, setEditing] = useState<CustomRole | null>(null);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-  const qc = useQueryClient();
-  const initDone = useRef(false);
-
-  useEffect(() => {
-    if (isLoading || initDone.current || !user?.businessId) return;
-    const hasSystem = roles.some((r) => r.isSystem);
-    if (hasSystem) return;
-    initDone.current = true;
-    getAuth(app).currentUser?.getIdToken().then((token) =>
-      fetch('/api/roles/init-system', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    ).then(() => {
-      qc.invalidateQueries({ queryKey: ['roles', user.businessId] });
-    }).catch((err) => {
-      console.error('[roles] init system roles failed:', err);
-      initDone.current = false;
-    });
-  }, [isLoading, roles, user?.businessId, qc]);
+  const customRoles = roles.filter((r) => !r.isSystem);
 
   function openCreate() {
     setEditing(null);
@@ -50,12 +63,8 @@ export default function EquipoRolesPage() {
     setDrawerOpen(true);
   }
 
-  const systemRoles = roles.filter((r) => r.isSystem);
-  const customRoles = roles.filter((r) => !r.isSystem);
-
   return (
     <div className="max-w-4xl space-y-8 h-full overflow-auto">
-      {/* Actions header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Diseñá roles personalizados para tu equipo. Los roles del sistema no se pueden editar.
@@ -70,55 +79,54 @@ export default function EquipoRolesPage() {
         )}
       </div>
 
-      {isLoading && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" /> Cargando roles…
+      <section>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+          Roles del sistema
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+          {SYSTEM_ROLES.map((r) => (
+            <SystemRoleCard key={r.id} role={r} />
+          ))}
         </div>
-      )}
+      </section>
 
-      {!isLoading && systemRoles.length > 0 && (
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-            Roles del sistema
-          </h2>
+      <section>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+          Roles personalizados{customRoles.length > 0 && ` (${customRoles.length})`}
+        </h2>
+
+        {isLoading && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" /> Cargando roles…
+          </div>
+        )}
+
+        {!isLoading && customRoles.length === 0 && (
+          <div className="border-2 border-dashed rounded-xl p-10 text-center">
+            <ShieldCheck className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+            <p className="font-medium">Todavía no creaste roles personalizados</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
+              Cloná un rol base y ajustá los permisos exactos que necesita tu equipo.
+            </p>
+            {isAdmin && (
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"
+              >
+                Crear primer rol
+              </button>
+            )}
+          </div>
+        )}
+
+        {!isLoading && customRoles.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {systemRoles.map((r) => (
+            {customRoles.map((r) => (
               <RoleCard key={r.id} role={r} onEdit={openEdit} />
             ))}
           </div>
-        </section>
-      )}
-
-      {!isLoading && (
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-            Roles personalizados{customRoles.length > 0 && ` (${customRoles.length})`}
-          </h2>
-          {customRoles.length === 0 ? (
-            <div className="border-2 border-dashed rounded-xl p-10 text-center">
-              <ShieldCheck className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-              <p className="font-medium">Todavía no creaste roles personalizados</p>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">
-                Cloná un rol base y ajustá los permisos exactos que necesita tu equipo.
-              </p>
-              {isAdmin && (
-                <button
-                  onClick={openCreate}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"
-                >
-                  Crear primer rol
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {customRoles.map((r) => (
-                <RoleCard key={r.id} role={r} onEdit={openEdit} />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+        )}
+      </section>
 
       <RoleEditorDrawer
         open={drawerOpen}
