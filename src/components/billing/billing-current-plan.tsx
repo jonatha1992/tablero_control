@@ -4,7 +4,7 @@ import { PLANS } from '@/lib/mercadopago/plans';
 import type { Subscription } from '@/types/domain/subscription';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Loader2, ExternalLink } from 'lucide-react';
 import { useCancelSubscription } from '@/hooks/mutations/use-cancel-subscription';
 import { useSyncSubscription } from '@/hooks/mutations/use-sync-subscription';
 import { useRecoverSubscription } from '@/hooks/mutations/use-recover-subscription';
@@ -85,12 +85,26 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
                 <p className="text-xs text-red-600 mt-1">{(recover.error as Error).message}</p>
               )}
               {recover.isSuccess && (
-                <p className="text-xs mt-1">
-                  {recover.data.recovered > 0
-                    ? <span className="text-green-600">Se recuperaron {recover.data.recovered} pago{recover.data.recovered !== 1 ? 's' : ''}. Recargando…</span>
-                    : <span className="text-muted-foreground">No se encontraron pagos aprobados en Mercado Pago.</span>
-                  }
-                </p>
+                <div className="text-xs mt-1">
+                  {(recover.data.recovered > 0 || recover.data.preapprovalActivated) ? (
+                    <span className="text-green-600">Pago verificado correctamente. Recargando…</span>
+                  ) : recover.data.initPoint ? (
+                    <div className="flex flex-col gap-2">
+                      <span className="text-yellow-600">No se encontró pago. Podés completar el pago desde Mercado Pago.</span>
+                      <a
+                        href={recover.data.initPoint}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Ir a pagar en Mercado Pago
+                      </a>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">No se encontraron pagos aprobados en Mercado Pago.</span>
+                  )}
+                </div>
               )}
             </div>
           )}

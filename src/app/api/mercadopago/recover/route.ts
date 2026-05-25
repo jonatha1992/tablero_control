@@ -135,6 +135,29 @@ export const POST = handle(async (req: NextRequest) => {
   }
   // --- End preapproval status check ---
 
+  // If preapproval was activated above, we're done — no need to search payments
+  if (preapprovalActivated > 0) {
+    return NextResponse.json({ preapprovalActivated, recovered: 0 });
+  }
+
+  // If preapproval is still pending, return the init_point so the user can retry payment
+  if (sub.mpPreferenceId && sub.status === 'pending') {
+    try {
+      const preapproval = await getPreapproval(sub.mpPreferenceId);
+      if (preapproval.status === 'pending' && preapproval.init_point) {
+        return NextResponse.json({
+          preapprovalActivated: 0,
+          recovered: 0,
+          status: 'pending',
+          initPoint: preapproval.init_point,
+          message: 'Suscripción pendiente de pago',
+        });
+      }
+    } catch {
+      // fall through to payment search
+    }
+  }
+
   let payments: MpPayment[] = [];
 
   if (body.paymentId) {
@@ -147,22 +170,12 @@ export const POST = handle(async (req: NextRequest) => {
   } else if (sub.mpPreferenceId) {
     try {
       const result = await mpFetch<MpSearchResult>(
-        `/v1/payments/search?preference_id=${sub.mpPreferenceId}&status=approved&limit=20`
+        `/preapproval/search?preapproval_id=${sub.mpPreferenceId}&status=authorized&limit=5`
       );
       payments = result.results ?? [];
     } catch {
-      return NextResponse.json({ error: 'mp_search_failed' }, { status: 502 });
-    }
-  } else {
-    // Fallback: search by external_reference when no mpPreferenceId saved
-    try {
-      const extRef = encodeURIComponent(`biz:${businessId}:${sub.plan}:${sub.frequency}`);
-      const result = await mpFetch<MpSearchResult>(
-        `/v1/payments/search?external_reference=${extRef}&status=approved&limit=20`
-      );
-      payments = result.results ?? [];
-    } catch {
-      return NextResponse.json({ error: 'mp_search_failed' }, { status: 502 });
+      // Preapproval search may not return payments — not fatal
+      payments = [];
     }
   }
 
