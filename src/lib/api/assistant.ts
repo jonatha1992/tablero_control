@@ -1,5 +1,5 @@
 ﻿import { getToken } from '@/lib/firebase/auth';
-import type { AssistantMessage } from '@/lib/groq/assistant';
+import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
 import { ApiError } from './errors';
 
 interface AssistantResponse {
@@ -25,11 +25,22 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const assistantApi = {
-  chat: (messages: AssistantMessage[]) =>
+  chat: (messages: AssistantMessage[], mode: AssistantMode = 'assistant') =>
     fetchJsonAuth<AssistantResponse>('/api/assistant/chat', {
       method: 'POST',
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, mode }),
     }),
+  transcribeAudio: async (file: File): Promise<string> => {
+    const token = await (await import('@/lib/firebase/auth')).getToken();
+    const form = new FormData();
+    form.append('audio', file);
+    const headers = new Headers();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const res = await fetch('/api/assistant/transcribe', { method: 'POST', headers, body: form });
+    if (!res.ok) throw new ApiError(await res.text(), res.status);
+    const data = await res.json();
+    return data.text;
+  },
   extractFromText: (text: string) =>
     fetchJsonAuth<{ tasks: import('@/lib/groq/extract-tasks').ExtractedTask[]; parseError: boolean }>('/api/tasks/from-text', {
       method: 'POST',

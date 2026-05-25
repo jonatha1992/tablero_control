@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { handle } from '@/lib/api/route-handler';
 import { chatWithAssistant } from '@/lib/groq/assistant';
-import type { AssistantMessage, AssistantContext, TaskSummary } from '@/lib/groq/assistant';
+import type { AssistantMessage, AssistantContext, AssistantMode, TaskSummary } from '@/lib/groq/assistant';
 import { taskRepository, cycleRepository } from '@/repositories/index';
 
 export const maxDuration = 30;
@@ -11,7 +11,7 @@ export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  let body: { messages?: AssistantMessage[] };
+  let body: { messages?: AssistantMessage[]; mode?: AssistantMode };
   try {
     body = await request.json();
   } catch {
@@ -79,7 +79,8 @@ export const POST = handle(async (request: NextRequest) => {
 
   let result: Awaited<ReturnType<typeof chatWithAssistant>>;
   try {
-    result = await chatWithAssistant(messages, ctx);
+    const mode: AssistantMode = body.mode === 'planner' ? 'planner' : 'assistant';
+    result = await chatWithAssistant(messages, ctx, mode);
   } catch (err) {
     console.error('[assistant/chat] Error:', err);
     return NextResponse.json({ error: 'ai_error' }, { status: 500 });

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { assistantApi } from '@/lib/api/assistant';
 import type { GeneratePlanResponse } from '@/lib/api/assistant';
-import type { AssistantMessage } from '@/lib/groq/assistant';
+import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { GeneratedPlan } from '@/lib/groq/generate-plan';
 
@@ -30,11 +30,11 @@ export interface PreviewMessage {
 
 export type DisplayMessage = AssistantMessage | ActionMessage | TasksMessage | PreviewMessage;
 
-export function useAssistantChat() {
+export function useAssistantChat(mode: AssistantMode = 'assistant') {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
 
   const mutation = useMutation({
-    mutationFn: (msgs: AssistantMessage[]) => assistantApi.chat(msgs),
+    mutationFn: (msgs: AssistantMessage[]) => assistantApi.chat(msgs, mode),
   });
 
   const send = async (userText: string) => {

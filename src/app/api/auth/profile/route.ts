@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
+import { initSystemRoles } from '@/lib/firebase/init-system-roles';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 import type { UserRole } from '@/types/domain/user';
@@ -132,6 +133,7 @@ export const GET = handle(async (request: NextRequest) => {
         locationIds: [],
         teamIds: [],
       });
+      await initSystemRoles(business.id);
       user = await userRepository.update(user.id, {
         businessId: business.id,
         role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,

@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
+import { initSystemRoles } from '@/lib/firebase/init-system-roles';
 import { userRepository, businessRepository } from '@/repositories';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
@@ -91,6 +92,7 @@ export const POST = handle(async (request: NextRequest) => {
   });
 
   await userRepository.update(decoded.uid, { businessId: business.id });
+  await initSystemRoles(business.id);
 
   await userRepository.addMembership({
     userId: user.id,

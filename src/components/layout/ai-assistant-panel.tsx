@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Bot, Calendar, Check, ExternalLink, Loader2, MapPin, Mic,
   Send, Sparkles, Target, Volume2, VolumeX, X,
@@ -21,12 +22,13 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { TaskPriority, TaskStatus } from '@/types/domain/task';
 
+type AgentTab = 'assistant' | 'planner';
+
 interface AiAssistantPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Pattern requires at least ~5 chars of description after the keyword
 const CYCLE_PATTERN =
   /^(crear|nueva?|quiero\s+(crear|hacer)|planificar)\s*(una?\s+)?(planificaci[oó]n|sprint|ciclo|per[ií]odo)[:\-–]\s*(.+)/i;
 const OBJECTIVE_PATTERN =
@@ -42,6 +44,36 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: 'Baja', medium: 'Media', high: 'Alta', urgent: 'Urgente',
 };
 const STATUS_LABELS: Record<string, string> = { todo: 'Por hacer', in_progress: 'En progreso' };
+
+const ASSISTANT_SUGGESTIONS = [
+  '¿Qué tareas están vencidas?',
+  '¿Qué tengo para esta semana?',
+  'Resumen del estado general',
+  '¿Cómo funciona la vista Agenda?',
+];
+
+const PLANNER_SUGGESTIONS = [
+  'Crear tarea: revisar el informe mensual',
+  'Crear planificación: migrar servidor a la nube',
+  'Crear objetivo: mejorar retención de clientes',
+  'Dictar tareas por voz 🎤',
+];
+
+const EMPTY_STATE: Record<AgentTab, { title: string; subtitle: string }> = {
+  assistant: {
+    title: '¿Qué necesitás saber?',
+    subtitle: 'Preguntá sobre tus tareas, estado del trabajo, o cómo usar el sistema',
+  },
+  planner: {
+    title: '¿Qué querés crear?',
+    subtitle: 'Creá tareas, planificaciones y objetivos. Usá el 🎤 para dictar.',
+  },
+};
+
+const PLACEHOLDER: Record<AgentTab, string> = {
+  assistant: 'Preguntá sobre tareas, estado, o el sistema…',
+  planner: 'Crear tarea: … / Crear planificación: … / dictá por voz',
+};
 
 function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
   task: ExtractedTask;
@@ -84,14 +116,8 @@ function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
   );
 }
 
-const SUGGESTIONS = [
-  '¿Qué tareas están vencidas?',
-  'Crear tarea: revisar el informe mensual',
-  'Quiero planificar el lanzamiento de un producto',
-  'Crear planificación: migrar el servidor a la nube',
-];
-
 export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
+  const [activeTab, setActiveTab] = useState<AgentTab>('assistant');
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
@@ -105,13 +131,17 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const prevMsgLenRef = useRef(0);
+  const prevMsgLenRef = useRef<Record<AgentTab, number>>({ assistant: 0, planner: 0 });
+
+  const assistantChat = useAssistantChat('assistant');
+  const plannerChat = useAssistantChat('planner');
+  const chat = activeTab === 'assistant' ? assistantChat : plannerChat;
 
   const {
-    messages, send, addAction: _addAction, addPreview, confirmPreview, cancelPreview,
+    messages, send, addPreview, confirmPreview, cancelPreview,
     replacePreviewWithAction, addTaskPreview, confirmTaskMessage,
-    updateTaskInMessage, removeTaskFromMessage, clear, isPending,
-  } = useAssistantChat();
+    updateTaskInMessage, removeTaskFromMessage, clear: clearChat, isPending,
+  } = chat;
 
   const uploadMutation = useDictateTasksUpload();
   const confirmMutation = useConfirmDictatedTasks();
@@ -125,7 +155,6 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading, micState]);
 
-  // Timer for recording duration
   useEffect(() => {
     if (micState === 'recording') {
       setRecSeconds(0);
@@ -137,17 +166,17 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [micState]);
 
-  // TTS for assistant messages
   useEffect(() => {
     const lastMsg = messages[messages.length - 1];
-    if (messages.length > prevMsgLenRef.current && lastMsg?.role === 'assistant' && !isMuted) {
+    const prevLen = prevMsgLenRef.current[activeTab];
+    if (messages.length > prevLen && lastMsg?.role === 'assistant' && !isMuted) {
       const utt = new SpeechSynthesisUtterance(lastMsg.content);
       utt.lang = 'es-AR'; utt.rate = 1.1;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utt);
     }
-    prevMsgLenRef.current = messages.length;
-  }, [messages, isMuted]);
+    prevMsgLenRef.current[activeTab] = messages.length;
+  }, [messages, isMuted, activeTab]);
 
   const toggleMute = () => {
     const next = !isMuted;
@@ -159,7 +188,10 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const handleClose = () => {
     if (isLoading || micState === 'recording') return;
     window.speechSynthesis.cancel();
-    clear(); setInput(''); onOpenChange(false);
+    assistantChat.clear();
+    plannerChat.clear();
+    setInput('');
+    onOpenChange(false);
   };
 
   const handleSend = async (text?: string) => {
@@ -167,38 +199,39 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     if (!msg || isLoading || micState !== 'idle') return;
     setInput('');
 
-    const cycleMatch = msg.match(CYCLE_PATTERN);
-    const objMatch = msg.match(OBJECTIVE_PATTERN);
-    const taskMatch = msg.match(TASK_PATTERN);
+    if (activeTab === 'planner') {
+      const cycleMatch = msg.match(CYCLE_PATTERN);
+      const objMatch = msg.match(OBJECTIVE_PATTERN);
+      const taskMatch = msg.match(TASK_PATTERN);
 
-    if (cycleMatch || objMatch) {
-      const type = cycleMatch ? 'cycle' : 'objective';
-      // extract description from capture group 5
-      const description = (cycleMatch ?? objMatch)![5]?.trim() ?? msg;
-      setIsGenerating(true);
-      try {
-        const result = await assistantApi.previewPlan(type, description);
-        addPreview(result.type, result.description, result.plan);
-      } catch {
-        await send(msg);
-      } finally {
-        setIsGenerating(false);
+      if (cycleMatch || objMatch) {
+        const type = cycleMatch ? 'cycle' : 'objective';
+        const description = (cycleMatch ?? objMatch)![5]?.trim() ?? msg;
+        setIsGenerating(true);
+        try {
+          const result = await assistantApi.previewPlan(type, description);
+          addPreview(result.type, result.description, result.plan);
+        } catch {
+          await send(msg);
+        } finally {
+          setIsGenerating(false);
+        }
+        return;
       }
-      return;
-    }
 
-    if (taskMatch) {
-      const description = taskMatch[5]?.trim() ?? msg;
-      setIsGenerating(true);
-      try {
-        const result = await assistantApi.extractFromText(description);
-        addTaskPreview(result.tasks, result.parseError);
-      } catch {
-        await send(msg);
-      } finally {
-        setIsGenerating(false);
+      if (taskMatch) {
+        const description = taskMatch[5]?.trim() ?? msg;
+        setIsGenerating(true);
+        try {
+          const result = await assistantApi.extractFromText(description);
+          addTaskPreview(result.tasks, result.parseError);
+        } catch {
+          await send(msg);
+        } finally {
+          setIsGenerating(false);
+        }
+        return;
       }
-      return;
     }
 
     await send(msg);
@@ -217,6 +250,30 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     }
   };
 
+  const processAudioBlob = useCallback((blob: Blob) => {
+    const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
+    setMicState('processing');
+
+    if (activeTab === 'assistant') {
+      assistantApi.transcribeAudio(file).then((text) => {
+        setMicState('idle');
+        if (text.trim()) {
+          send(text.trim());
+        }
+      }).catch(() => {
+        setMicState('idle');
+      });
+    } else {
+      uploadMutation.mutate(file, {
+        onSuccess: (data) => {
+          setMicState('idle');
+          addTaskPreview(data.tasks, data.parseError);
+        },
+        onError: () => setMicState('idle'),
+      });
+    }
+  }, [activeTab, send, uploadMutation, addTaskPreview]);
+
   const handleMic = async () => {
     if (micState === 'idle') {
       try {
@@ -228,15 +285,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
         mr.onstop = () => {
           stream.getTracks().forEach((t) => t.stop());
           const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-          const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
-          setMicState('processing');
-          uploadMutation.mutate(file, {
-            onSuccess: (data) => {
-              setMicState('idle');
-              addTaskPreview(data.tasks, data.parseError);
-            },
-            onError: () => setMicState('idle'),
-          });
+          processAudioBlob(blob);
         };
         mr.start();
         setMicState('recording');
@@ -259,16 +308,32 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
 
   const fmtSec = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const suggestions = activeTab === 'assistant' ? ASSISTANT_SUGGESTIONS : PLANNER_SUGGESTIONS;
+  const emptyState = EMPTY_STATE[activeTab];
+  const processingLabel = activeTab === 'assistant'
+    ? 'Transcribiendo audio…'
+    : 'Transcribiendo audio y detectando tareas…';
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
         className="max-w-2xl flex flex-col p-0 gap-0 h-[580px]"
         onInteractOutside={(e) => { if (isLoading) e.preventDefault(); }}
       >
-        <DialogHeader className="px-4 pt-3 pb-3 shrink-0 border-b">
+        <DialogHeader className="px-4 pt-3 pb-2 shrink-0 border-b">
           <div className="flex items-center gap-2 pr-8">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
-            <DialogTitle className="text-base">Asistente IA</DialogTitle>
+            <DialogTitle className="text-base sr-only">Asistente IA</DialogTitle>
+            <Tabs value={activeTab} onValueChange={(v) => { if (micState === 'idle') setActiveTab(v as AgentTab); }}>
+              <TabsList className="h-8">
+                <TabsTrigger value="assistant" className="text-xs gap-1.5 px-3" disabled={micState !== 'idle'}>
+                  <Bot className="h-3.5 w-3.5" /> Asistente
+                </TabsTrigger>
+                <TabsTrigger value="planner" className="text-xs gap-1.5 px-3" disabled={micState !== 'idle'}>
+                  <Sparkles className="h-3.5 w-3.5" /> Planificador
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </DialogHeader>
 
@@ -278,13 +343,16 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           {/* Empty state */}
           {messages.length === 0 && micState === 'idle' && (
             <div className="flex flex-col items-center justify-center gap-4 text-center h-full text-muted-foreground">
-              <Bot className="h-10 w-10 opacity-15" />
+              {activeTab === 'assistant'
+                ? <Bot className="h-10 w-10 opacity-15" />
+                : <Sparkles className="h-10 w-10 opacity-15" />
+              }
               <div>
-                <p className="text-sm font-medium text-foreground/70">¿En qué puedo ayudarte?</p>
-                <p className="text-xs mt-0.5">Preguntá, usá el 🎤 para dictar tareas, o pedí una planificación</p>
+                <p className="text-sm font-medium text-foreground/70">{emptyState.title}</p>
+                <p className="text-xs mt-0.5">{emptyState.subtitle}</p>
               </div>
               <div className="flex flex-wrap gap-2 justify-center max-w-sm">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground/70 hover:bg-muted hover:text-foreground transition-colors">{s}</button>
                 ))}
               </div>
@@ -307,7 +375,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           {micState === 'processing' && (
             <div className="flex items-center gap-3 bg-muted rounded-xl px-4 py-3 self-stretch">
               <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-              <p className="text-sm text-muted-foreground">Transcribiendo audio y detectando tareas…</p>
+              <p className="text-sm text-muted-foreground">{processingLabel}</p>
             </div>
           )}
 
@@ -381,7 +449,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
               );
             }
 
-            /* ── Tasks preview (desde audio) ── */
+            /* ── Tasks preview (desde audio o texto) ── */
             if (msg.role === 'tasks') {
               const sorted = [...msg.tasks].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
               return (
@@ -437,14 +505,14 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : 'Preguntá, o escribí "Crear tarea: …" / "Crear planificación: …"'}
+            placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : PLACEHOLDER[activeTab]}
             disabled={isLoading || micState !== 'idle'}
             className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
           />
           <button
             onClick={handleMic}
             disabled={isPending || isGenerating || micState === 'processing'}
-            title={micState === 'recording' ? 'Detener grabación' : 'Dictar tareas por voz'}
+            title={micState === 'recording' ? 'Detener grabación' : activeTab === 'assistant' ? 'Preguntar por voz' : 'Dictar tareas por voz'}
             className={cn('h-9 w-9 rounded-full flex items-center justify-center transition-colors shrink-0', micState === 'recording' ? 'bg-red-500 text-white animate-pulse' : 'bg-muted hover:bg-muted-foreground/20 text-muted-foreground')}
           >
             {micState === 'processing' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
