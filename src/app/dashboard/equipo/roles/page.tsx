@@ -64,17 +64,17 @@ export default function EquipoRolesPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-8 h-full overflow-auto">
+    <div className="w-full space-y-8 h-full overflow-auto pb-8">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Diseñá roles personalizados para tu equipo. Los roles del sistema no se pueden editar.
         </p>
-        {isAdmin && customRoles.length > 0 && (
+        {isAdmin && (
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 shrink-0"
           >
-            <Plus className="h-4 w-4" /> Nuevo rol
+            <Plus className="h-4 w-4" /> {customRoles.length > 0 ? 'Nuevo rol' : 'Crear primer rol'}
           </button>
         )}
       </div>
@@ -83,7 +83,7 @@ export default function EquipoRolesPage() {
         <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
           Roles del sistema
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {SYSTEM_ROLES.map((r) => (
             <SystemRoleCard key={r.id} role={r} />
           ))}
@@ -102,25 +102,17 @@ export default function EquipoRolesPage() {
         )}
 
         {!isLoading && customRoles.length === 0 && (
-          <div className="border-2 border-dashed rounded-xl p-10 text-center">
+          <div className="border-2 border-dashed rounded-xl p-10 text-center bg-card/30">
             <ShieldCheck className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="font-medium">Todavía no creaste roles personalizados</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">
+            <p className="text-sm text-muted-foreground mt-1">
               Cloná un rol base y ajustá los permisos exactos que necesita tu equipo.
             </p>
-            {isAdmin && (
-              <button
-                onClick={openCreate}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"
-              >
-                Crear primer rol
-              </button>
-            )}
           </div>
         )}
 
         {!isLoading && customRoles.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {customRoles.map((r) => (
               <RoleCard key={r.id} role={r} onEdit={openEdit} />
             ))}

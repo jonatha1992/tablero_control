@@ -24,7 +24,7 @@ export function RoleCard({ role, onEdit }: Props) {
   }
 
   return (
-    <div className={cn('border rounded-xl p-4 flex flex-col gap-3', !role.isActive && 'opacity-60')}>
+    <div className={cn('border bg-card rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-all', !role.isActive && 'opacity-60')}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center" style={{ backgroundColor: role.color }}>

@@ -17,7 +17,7 @@ interface Props {
 
 export function SystemRoleCard({ role }: Props) {
   return (
-    <div className="border rounded-xl p-4 flex flex-col gap-3">
+    <div className="border bg-card rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <div
