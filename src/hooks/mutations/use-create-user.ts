@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { getToken } from '@/lib/firebase/auth';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UserRole } from '@/types/domain/user';
-import type { CreateUserResult, CreateUserMode } from '@/app/api/users/create/route';
+import type { CreateUserResult } from '@/app/api/users/create/route';
 
 export interface CreateUserInput {
   name: string;

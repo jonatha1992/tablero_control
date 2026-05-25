@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   UserCog, Trash2, X, Save, Loader2,
   Mail, Lock, MapPin, Shield, Crown, Users, Eye, Star, Check, Plus,
@@ -46,9 +47,12 @@ function MemberAvatar({ name, avatar }: { name: string; avatar?: string | null }
     .toUpperCase();
   if (avatar) {
     return (
-      <img
+      <Image
         src={avatar}
         alt={name}
+        width={40}
+        height={40}
+        unoptimized
         className="h-10 w-10 rounded-full object-cover ring-2 ring-border"
       />
     );

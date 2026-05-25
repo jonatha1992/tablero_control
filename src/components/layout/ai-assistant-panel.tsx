@@ -140,7 +140,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const {
     messages, send, addPreview, confirmPreview, cancelPreview,
     replacePreviewWithAction, addTaskPreview, confirmTaskMessage,
-    updateTaskInMessage, removeTaskFromMessage, clear: clearChat, isPending,
+    updateTaskInMessage, removeTaskFromMessage, isPending,
   } = chat;
 
   const uploadMutation = useDictateTasksUpload();

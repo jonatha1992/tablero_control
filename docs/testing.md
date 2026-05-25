@@ -26,6 +26,9 @@ npm run test:ui
 npm run test:coverage
 ```
 
+Los reportes generados por Playwright (`playwright-report/` y `test-results/`) son artefactos locales.
+No deben versionarse; si se necesitan para depurar, compartirlos fuera del commit.
+
 ## Nomenclatura de archivos
 
 | Patrón | Qué testea |

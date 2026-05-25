@@ -15,6 +15,7 @@
 /playwright-report
 /.playwright-mcp
 /screenshots-review
+/scripts/manual/artifacts
 
 # session artifacts
 *.txt

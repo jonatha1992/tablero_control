@@ -24,6 +24,12 @@ npx prisma generate
 | `npm run type:check` | TypeScript sin compilar |
 | `npm run check` | lint + typecheck + tests (pre-commit) |
 
+## Scripts manuales
+
+Los scripts de soporte que no forman parte del flujo normal viven en `scripts/manual/`.
+Ejecutarlos solo para diagnostico puntual, por ejemplo `node scripts/manual/test-mp-flow.js`.
+Las capturas generadas por esos scripts se guardan en `scripts/manual/artifacts/`.
+
 ## Firebase Emulators
 
 Solo se usan para **Firebase Auth** en desarrollo. No hay Firestore.

@@ -12,23 +12,10 @@ const config: KnipConfig = {
   ],
   project: ['src/**/*.{ts,tsx}', 'tests/**/*.ts', 'scripts/**/*.ts'],
   ignore: [
-    // Artifacts
-    'playwright-report/**',
-    'test-results/**',
-    '.next/**',
-    // Playwright auth state
-    'tests/.auth/**',
-    // shadcn/ui subcomponents (exported for compound component pattern)
-    'src/components/ui/badge.tsx',
-    'src/components/ui/dialog.tsx',
-    'src/components/ui/dropdown-menu.tsx',
-    'src/components/ui/input.tsx',
     // Domain types used by re-export barrel
     'src/types/domain/*.ts',
     'src/types/dto/*.ts',
     'src/types/api/*.ts',
-    // Test helpers
-    'tests/helpers/*.ts',
     // Email templates (dual export pattern for React Email)
     'src/lib/mail/templates/*.tsx',
   ],

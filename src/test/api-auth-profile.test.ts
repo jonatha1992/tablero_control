@@ -8,6 +8,13 @@ vi.mock('@/lib/firebase/admin', () => ({
   verifyToken: vi.fn(),
   getAdminApp: vi.fn(),
   getAdminAuth: vi.fn(),
+  getAdminFirestore: vi.fn(() => ({
+    batch: () => ({
+      set: vi.fn(),
+      commit: vi.fn().mockResolvedValue(undefined),
+    }),
+    doc: vi.fn((path: string) => ({ path })),
+  })),
 }));
 
 vi.mock('@/repositories', () => ({

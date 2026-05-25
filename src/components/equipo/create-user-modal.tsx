@@ -192,9 +192,6 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     onClose();
   }
 
-  const successLabel = mode === 'username' ? username : email;
-  const hasCredentials = mode === 'username' || (mode === 'email' && createAccess);
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { if (isPending || reactivating) e.preventDefault(); }}>

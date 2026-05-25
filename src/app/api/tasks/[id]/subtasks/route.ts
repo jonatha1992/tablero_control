@@ -5,7 +5,6 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 import { getTaskBusinessId } from '@/lib/api/task-business';
-import { prisma } from '@/lib/prisma';
 
 export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);

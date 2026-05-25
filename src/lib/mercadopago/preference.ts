@@ -1,5 +1,4 @@
 import { mpFetch } from './client';
-import { PLANS } from './plans';
 import { getEffectivePlanConfig } from './plan-config';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
 

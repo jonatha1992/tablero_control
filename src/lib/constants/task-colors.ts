@@ -30,11 +30,3 @@ export const TYPE_OPTIONS: SelectOption<TaskType>[] = [
   { value: 'improvement',   label: 'Mejora',        dot: 'bg-purple-500' },
   { value: 'documentation', label: 'Documentación', dot: 'bg-slate-400' },
 ];
-
-export const STATUS_DOT: Record<TaskStatus, string> = Object.fromEntries(
-  STATUS_OPTIONS.map((o) => [o.value, o.dot])
-) as Record<TaskStatus, string>;
-
-export const PRIORITY_DOT: Record<TaskPriority, string> = Object.fromEntries(
-  PRIORITY_OPTIONS.map((o) => [o.value, o.dot])
-) as Record<TaskPriority, string>;

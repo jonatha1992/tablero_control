@@ -35,7 +35,6 @@ vi.mock('sonner', () => ({
 }));
 
 const mockGetByBusiness = vi.mocked(membersApi.getByBusiness);
-const mockInvite = vi.mocked(membersApi.invite);
 const mockUpdate = vi.mocked(membersApi.update);
 const mockRemove = vi.mocked(membersApi.remove);
 

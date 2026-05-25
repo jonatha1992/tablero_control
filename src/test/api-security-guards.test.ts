@@ -38,6 +38,11 @@ const mockGetCycle = vi.mocked(cycleService.getCycleById);
 const mockGetLocation = vi.mocked(locationService.getById);
 const mockCommentFindUnique = vi.mocked(prisma.comment.findUnique);
 
+type RouteHandler = (
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) => Promise<Response>;
+
 function makeUser(role: string, uid = 'user-1') {
   return {
     uid,
@@ -56,7 +61,7 @@ beforeEach(() => {
 // ─── Cycles PATCH/DELETE role guard ─────────────────────────────────────────
 
 describe('Cycles [id] role guards', () => {
-  let PATCH: Function, DELETE: Function;
+  let PATCH: RouteHandler, DELETE: RouteHandler;
 
   beforeEach(async () => {
     const mod = await import('@/app/api/cycles/[id]/route');
@@ -123,7 +128,7 @@ describe('Cycles [id] role guards', () => {
 // ─── Locations PATCH/DELETE role guard ───────────────────────────────────────
 
 describe('Locations [id] role guards', () => {
-  let PATCH: Function, DELETE: Function;
+  let PATCH: RouteHandler, DELETE: RouteHandler;
 
   beforeEach(async () => {
     const mod = await import('@/app/api/locations/[id]/route');
@@ -174,7 +179,7 @@ describe('Locations [id] role guards', () => {
 // ─── Comments DELETE ownership guard ────────────────────────────────────────
 
 describe('Comments [id] DELETE ownership guard', () => {
-  let DELETE: Function;
+  let DELETE: RouteHandler;
 
   beforeEach(async () => {
     const mod = await import('@/app/api/comments/[id]/route');

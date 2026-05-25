@@ -15,7 +15,6 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const [googleLoading, setGoogleLoading] = useState(false);
   const { isAuthenticated, loading: authLoading, user, notInvited, refreshProfile } = useAuth();
   const router = useRouter();
@@ -27,7 +26,7 @@ function LoginForm() {
       const target = redirect !== '/dashboard' ? redirect : (user.role === 'superadmin' ? '/superadmin' : '/dashboard');
       router.push(target);
     }
-  }, [isAuthenticated, authLoading, user, router]);
+  }, [isAuthenticated, authLoading, user, router, redirect]);
 
   // Handle Google redirect flow (popup blocked → signInWithRedirect)
   useEffect(() => {
