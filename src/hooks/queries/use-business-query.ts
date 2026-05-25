@@ -1,14 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
 import type { Business } from '@/types/domain/business';
 
 async function fetchBusiness(businessId: string): Promise<Business | null> {
-  const snap = await getDoc(doc(db, 'businesses', businessId));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...(snap.data() as Omit<Business, 'id'>) };
+  const res = await fetch('/api/business/config');
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export function useBusinessQuery(businessId?: string) {
