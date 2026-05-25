@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useQueryClient } from '@tanstack/react-query';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
 import { useRolesQuery } from '@/hooks/queries/use-roles-query';
@@ -24,6 +25,7 @@ export default function EquipoRolesPage() {
   const [editing, setEditing] = useState<CustomRole | null>(null);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const qc = useQueryClient();
   const initDone = useRef(false);
 
   useEffect(() => {
@@ -48,8 +50,13 @@ export default function EquipoRolesPage() {
           updatedAt: serverTimestamp(),
         })
       )
-    ).catch(() => { });
-  }, [isLoading, roles, user?.businessId]);
+    ).then(() => {
+      qc.invalidateQueries({ queryKey: ['roles', user.businessId] });
+    }).catch((err) => {
+      console.error('[roles] init system roles failed:', err);
+      initDone.current = false;
+    });
+  }, [isLoading, roles, user?.businessId, qc]);
 
   function openCreate() {
     setEditing(null);
