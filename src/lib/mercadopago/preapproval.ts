@@ -1,5 +1,4 @@
 import { mpFetch } from './client';
-import { PLANS } from './plans';
 import { getEffectivePlanConfig } from './plan-config';
 import type { BillingFrequency, PlanId } from '@/types/domain/subscription';
 
@@ -25,6 +24,7 @@ interface CreateArgs {
   frequency: BillingFrequency;
   businessId: string;
   backUrl: string;
+  payerEmail: string;
 }
 
 export async function createPreapproval(args: CreateArgs): Promise<MpPreapproval> {
@@ -40,6 +40,7 @@ export async function createPreapproval(args: CreateArgs): Promise<MpPreapproval
     body: JSON.stringify({
       reason: `Suscripción Tablero de Control — ${def.name}`,
       external_reference: `biz:${args.businessId}:${args.plan}:${args.frequency}`,
+      payer_email: args.payerEmail,
       back_url: args.backUrl,
       auto_recurring: {
         frequency: args.frequency === 'monthly' ? 1 : 12,

@@ -26,6 +26,20 @@ export const POST = handle(async (req: NextRequest) => {
   if (!origin) {
     return NextResponse.json({ error: 'MP_CALLBACK_URL o NEXT_PUBLIC_APP_URL no configurado' }, { status: 500 });
   }
+  const isMpTestMode = process.env.MP_ENV === 'test';
+  const payerEmail = (
+    isMpTestMode
+      ? process.env.MP_TEST_PAYER_EMAIL
+      : user.email ?? user.data.email
+  )?.trim().toLowerCase() ?? '';
+  if (!payerEmail.includes('@')) {
+    return NextResponse.json({
+      error: 'payer_email_required',
+      detail: isMpTestMode
+        ? 'MP_TEST_PAYER_EMAIL requerido cuando MP_ENV=test'
+        : 'El usuario autenticado no tiene email válido',
+    }, { status: 400 });
+  }
   const backUrl = `${origin}/dashboard/billing?status=pending`;
 
   // Cancel existing preapproval in MP before creating a new one (best effort)
@@ -45,6 +59,7 @@ export const POST = handle(async (req: NextRequest) => {
       frequency,
       businessId,
       backUrl,
+      payerEmail,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

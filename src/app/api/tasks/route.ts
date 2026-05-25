@@ -8,6 +8,8 @@ import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications';
 import type { TaskFilters, TaskStatus, TaskPriority } from '@/types/domain/task';
 
+export const maxDuration = 30;
+
 export const GET = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
