@@ -11,18 +11,44 @@
 - `miembro` — opera tareas asignadas.
 - `viewer` — solo lectura.
 
-## Matriz de permisos (base)
+`ROLE_LEVEL` exportado desde `src/types/index.ts` — usar para comparación numérica de roles.
 
-Ver tabla completa en `src/lib/permissions/matrix.ts`.
+## Archivos
 
-## Roles custom por cliente
+```
+src/lib/permissions/
+  matrix.ts       ← RBAC por rol (qué puede hacer cada rol)
+  resolve.ts      ← resuelve custom roles con PermissionSet
+  tenant-guard.ts ← assertSameTenant / assertResourceBelongsToBusiness
+  index.ts        ← re-exporta todo
+```
 
-Los admins pueden crear roles custom dentro de su business en `/dashboard/equipo/roles`.
+## requireUser()
 
-- Heredan de un rol base (`responsable`, `miembro` o `viewer`).
-- Permiten ajustar permisos por módulo con granularidad fine-grained (tasks/locations/teams/users/reports/billing/attachments).
-- No pueden otorgar permisos de facturación ni permisos reservados a superadmin.
-- Validados por `src/lib/permissions/validate-role.ts` antes de guardar.
+`src/lib/api/auth-helpers.ts` — verifica Firebase token + carga User de PostgreSQL.
+
+```typescript
+const userOrRes = await requireUser(req);
+if (userOrRes instanceof NextResponse) return userOrRes; // retornar inmediatamente si falla
+const user = userOrRes;
+// user.uid, user.role, user.businessId, user.data (User completo de PostgreSQL)
+```
+
+`user.data` siempre tiene `{ id, role, businessId }` — nunca asumir que está vacío.
+
+## Guards multi-tenant
+
+```typescript
+import { assertSameTenant, assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
+
+// En GET que filtran por businessId:
+assertSameTenant(user.data, { businessId });
+
+// En GET/PATCH/DELETE de recurso individual:
+assertResourceBelongsToBusiness(user.data, resource.businessId);
+```
+
+Ambos lanzan `TenantMismatchError` → 403.
 
 ## Uso en código
 
@@ -40,24 +66,38 @@ const perms = resolvePermissions(user, customRole);
 if (perms.tasks.delete) { /* mostrar botón eliminar */ }
 ```
 
-```typescript
-import { assertSameTenant, assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
+## Roles custom por cliente
 
-// En API route — verifica que user y resource son del mismo business
-assertSameTenant(user, { businessId: resource.businessId }); // lanza TenantMismatchError (403) si no coincide
+Admins crean roles custom en `/dashboard/equipo/roles`.
+- Heredan de un rol base (`responsable`, `miembro` o `viewer`).
+- Permisos granulares por módulo: `tasks/locations/teams/users/reports/billing/attachments`.
+- No pueden otorgar permisos de facturación ni permisos de superadmin.
+- Validados por `src/lib/permissions/validate-role.ts` antes de guardar.
+- Resueltos en `src/lib/permissions/resolve.ts`.
 
-// Para recursos que pertenecen a un business via join (ej: tarea dentro de ciclo)
-assertResourceBelongsToBusiness(resource, user.businessId); // mismo efecto
+⚠️ **CustomRole se almacena en Firestore** (`businesses/{businessId}/roles`), NO en PostgreSQL/Prisma.
+- Read: `src/hooks/queries/use-roles-query.ts`
+- Write: `src/hooks/mutations/use-save-role.ts` (save, delete, toggle)
+- Por eso `firebase.json`, `firestore.rules` y `firestore.indexes.json` son necesarios.
+
+## Audit Log
+
+`src/lib/api/audit.ts` → `writeAuditLog()`. **Obligatorio después de CREATE/UPDATE/DELETE.**
+
+Acciones auditadas:
+```
+business.* | user.* | role.* | subscription.* | invoice.*
+task.* | attachment.* | plan_config.* | cycle.* | objective.*
+project.* | comment.* | time_entry.* | invite_link.*
 ```
 
 ## Defensa en profundidad
 
 1. **UI** — `can()` oculta elementos.
-2. **API routes** — `requireUser()` + `assertSameTenant()` + `can()`. Todo rol verificado aquí antes de llegar al service.
-3. **Cross-tenant injection** — rutas que aceptan arrays de IDs (`taskIds`, etc.) deben validar que todos los recursos pertenecen al mismo `businessId` antes de ejecutar operaciones masivas. Ver patrón:
+2. **API routes** — `requireUser()` + `assertSameTenant()` + `can()`.
+3. **Cross-tenant injection** — arrays de IDs deben validarse antes de operaciones masivas:
 
 ```typescript
-// Validar que todas las tareas pertenecen al business del ciclo
 const count = await prisma.task.count({
   where: { id: { in: taskIds }, businessId: cycle.businessId },
 });
@@ -69,6 +109,15 @@ if (count !== taskIds.length) {
 Implementado en:
 - `src/app/api/cycles/[id]/tasks/route.ts`
 - `src/app/api/objectives/[id]/tasks/route.ts`
+
+Ver decisions/003 para detalle.
+
+## Role guards específicos en API routes
+
+- Cycles POST/PATCH/DELETE: `task.create` / `task.update.any` / `task.delete`
+- Locations PATCH/DELETE: `business.locations.crud`
+- Comments DELETE: verifica ownership (miembro solo borra propios; admin/responsable borra cualquiera)
+- POST /tasks con `creatorId` distinto: solo `admin` o `superadmin`
 
 ## Custom claims en Firebase Auth
 
@@ -84,15 +133,9 @@ Al cambiar rol de un usuario:
 2. Llamar `auth.setCustomUserClaims(uid, { role, businessId })` con Admin SDK.
 3. El token del usuario se invalida al próximo refresh (forzar con `getIdToken(true)`).
 
-## AuthedUser
+## Acceso superadmin
 
-`requireUser()` devuelve `AuthedUser | NextResponse`. Si es `NextResponse`, retornarlo inmediatamente:
-
-```typescript
-const userOrRes = await requireUser(req);
-if (userOrRes instanceof NextResponse) return userOrRes;
-const user = userOrRes;
-// user.uid, user.role, user.businessId, user.data (User completo de PostgreSQL)
-```
-
-`user.data` siempre tiene `{ id, role, businessId }` — nunca asumir que está vacío.
+1. `.env.local`: `SUPERADMIN_EMAILS=email@ejemplo.com`
+2. Registrarse en `/register` con ese email
+3. `GET /api/auth/profile` auto-provisiona con `role: 'superadmin'`
+4. Login redirige a `/superadmin`; otros roles → `/dashboard`
