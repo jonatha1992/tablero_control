@@ -18,6 +18,7 @@ interface Props {
 export function BillingPlanCards({ currentPlan, businessId }: Props) {
   const [frequency, setFrequency] = useState<BillingFrequency>('monthly');
   const [loading, setLoading] = useState<PlanId | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const { data: plansData } = useQuery({
     queryKey: ['plans'],
     queryFn: () => billingApi.getPlans(),
@@ -27,6 +28,7 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
 
   async function handleUpgrade(plan: PlanId) {
     if (plan === 'free' || plan === currentPlan) return;
+    setPaymentError(null);
     if (plan === 'enterprise') {
       window.open('mailto:ventas@tecnofusion.io?subject=Enterprise', '_blank');
       return;
@@ -36,7 +38,7 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
       const { initPoint } = await billingApi.createPreapproval(plan, frequency, businessId);
       window.location.href = initPoint;
     } catch (err) {
-      alert(`Error al iniciar el pago: ${(err as Error).message}`);
+      setPaymentError(`Error al iniciar el pago: ${(err as Error).message}`);
     } finally {
       setLoading(null);
     }
@@ -58,6 +60,12 @@ export function BillingPlanCards({ currentPlan, businessId }: Props) {
           Anual <span className="text-green-600 font-medium">-17%</span>
         </button>
       </div>
+
+      {paymentError && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {paymentError}
+        </p>
+      )}
 
       <div className="border rounded-xl overflow-hidden divide-y">
         {plans.map((plan) => {

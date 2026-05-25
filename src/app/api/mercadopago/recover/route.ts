@@ -31,6 +31,53 @@ interface SubSnapshot {
   frequency: BillingFrequency;
 }
 
+interface PendingSubForRecovery {
+  id: string;
+  plan: string;
+  frequency: string;
+  mpPreferenceId: string | null;
+}
+
+async function createRecoveryPreapproval(sub: PendingSubForRecovery, businessId: string) {
+  if (sub.plan === 'free' || sub.plan === 'enterprise') {
+    throw new Error(`Plan ${sub.plan} no permite checkout automático`);
+  }
+
+  const origin = process.env.MP_CALLBACK_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+  if (!origin) {
+    throw new Error('MP_CALLBACK_URL o NEXT_PUBLIC_APP_URL no configurado');
+  }
+
+  if (sub.mpPreferenceId) {
+    try {
+      await cancelPreapproval(sub.mpPreferenceId);
+    } catch {
+      // Best effort: the previous preapproval may already be cancelled or expired.
+    }
+  }
+
+  const newPreapproval = await createPreapproval({
+    plan: sub.plan as PlanId,
+    frequency: sub.frequency as BillingFrequency,
+    businessId,
+    backUrl: `${origin}/dashboard/billing?status=pending`,
+    payerEmail: '',
+  });
+
+  await prisma.subscription.update({
+    where: { id: sub.id },
+    data: { mpPreferenceId: newPreapproval.id },
+  });
+
+  return {
+    preapprovalActivated: 0,
+    recovered: 0,
+    status: 'pending',
+    initPoint: newPreapproval.init_point,
+    message: 'Nueva suscripción creada. Completá el pago.',
+  };
+}
+
 async function processApprovedPayment(payment: MpPayment, sub: SubSnapshot, plan: PlanId) {
   const now = new Date();
   const periodDays = sub.frequency === 'yearly' ? 365 : 30;
@@ -145,30 +192,7 @@ export const POST = handle(async (req: NextRequest) => {
     try {
       const preapproval = await getPreapproval(sub.mpPreferenceId);
       if (preapproval.status === 'pending') {
-        // Cancel old preapproval (may have payer_email restriction)
-        try { await cancelPreapproval(sub.mpPreferenceId); } catch { /* best effort */ }
-
-        const origin = process.env.MP_CALLBACK_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
-        const newPreapproval = await createPreapproval({
-          plan: sub.plan as PlanId,
-          frequency: sub.frequency as BillingFrequency,
-          businessId,
-          backUrl: `${origin}/dashboard/billing?status=pending`,
-          payerEmail: '',
-        });
-
-        await prisma.subscription.update({
-          where: { id: sub.id },
-          data: { mpPreferenceId: newPreapproval.id },
-        });
-
-        return NextResponse.json({
-          preapprovalActivated: 0,
-          recovered: 0,
-          status: 'pending',
-          initPoint: newPreapproval.init_point,
-          message: 'Nueva suscripción creada — completá el pago',
-        });
+        return NextResponse.json(await createRecoveryPreapproval(sub, businessId));
       }
     } catch (err) {
       console.error('[recover] recreate preapproval failed:', err);
@@ -198,6 +222,16 @@ export const POST = handle(async (req: NextRequest) => {
   }
 
   if (payments.length === 0) {
+    if (sub.status === 'pending') {
+      try {
+        return NextResponse.json(await createRecoveryPreapproval(sub, businessId));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[recover] create recovery preapproval failed:', msg);
+        return NextResponse.json({ error: 'mp_recovery_checkout_failed', detail: msg }, { status: 502 });
+      }
+    }
+
     return NextResponse.json({ preapprovalActivated, recovered: 0, message: 'No approved payments found in MP' });
   }
 

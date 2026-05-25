@@ -131,10 +131,11 @@ function TaskRow({ task, showDate, overdueLabel, onClick, onStatusChange }: Task
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 px-4 py-2.5 rounded-lg border-l-2 bg-card',
-        'hover:bg-accent/40 transition-colors cursor-pointer select-none',
+        'group flex items-center gap-3 px-4 py-2.5 rounded-r-lg border-l-4 border-y border-r border-y-border/35 border-r-border/35 bg-card/70 shadow-sm',
+        'hover:border-y-border/70 hover:border-r-border/70 hover:bg-accent/35 hover:shadow transition-all cursor-pointer select-none',
+        'dark:border-y-border/45 dark:border-r-border/45 dark:bg-muted/10 dark:hover:bg-muted/25',
         PRIORITY_BORDER[task.priority],
-        isDone && 'opacity-50'
+        isDone && 'bg-muted/25 text-muted-foreground opacity-75 dark:bg-muted/10'
       )}
       onClick={() => onClick(task)}
     >
@@ -377,7 +378,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         {sections.focus.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Zap} label="Foco del día" count={sections.focus.length} color="text-amber-500" />
-            <div className="space-y-1 pl-6">
+            <div className="space-y-2 pl-6">
               {sections.focus.map((task) => {
                 const isOverdue = task.dueDate ? new Date(task.dueDate) < todayStart : false;
                 return (
@@ -399,7 +400,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         {sections.overdue.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={AlertTriangle} label="Vencidas" count={sections.overdue.length} color="text-red-500" />
-            <div className="space-y-1 pl-6">
+            <div className="space-y-2 pl-6">
               {sections.overdue.map((task) => (
                 <TaskRow
                   key={task.id}
@@ -417,7 +418,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         {sections.todayTimed.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Clock} label="Hoy — con hora" count={sections.todayTimed.length} color="text-blue-500" />
-            <div className="space-y-1 pl-6">
+            <div className="space-y-2 pl-6">
               {sections.todayTimed.map((task) => (
                 <TaskRow
                   key={task.id}
@@ -434,7 +435,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         {sections.todayAllDay.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Target} label="Para hoy" count={sections.todayAllDay.length} color="text-emerald-500" />
-            <div className="space-y-1 pl-6">
+            <div className="space-y-2 pl-6">
               {sections.todayAllDay.map((task) => (
                 <TaskRow
                   key={task.id}
@@ -451,7 +452,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         {sections.thisWeek.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Calendar} label="Esta semana" count={sections.thisWeek.length} />
-            <div className="space-y-1 pl-6">
+            <div className="space-y-2 pl-6">
               {sections.thisWeek.map((task) => (
                 <TaskRow
                   key={task.id}
@@ -476,7 +477,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
               onToggle={() => setShowLater((v) => !v)}
             />
             {showLater && (
-              <div className="space-y-1 pl-6">
+              <div className="space-y-2 pl-6">
                 {sections.later.map((task) => (
                   <TaskRow
                     key={task.id}
@@ -502,7 +503,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
               onToggle={() => setShowNoDate((v) => !v)}
             />
             {showNoDate && (
-              <div className="space-y-1 pl-6">
+              <div className="space-y-2 pl-6">
                 {sections.noDate.map((task) => (
                   <TaskRow
                     key={task.id}
@@ -528,7 +529,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
               onToggle={() => setShowDone((v) => !v)}
             />
             {showDone && (
-              <div className="space-y-1 pl-6">
+              <div className="space-y-2 pl-6">
                 {sections.done.slice(0, 30).map((task) => (
                   <TaskRow
                     key={task.id}

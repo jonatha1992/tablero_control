@@ -24,6 +24,7 @@ interface ConfirmDialogProps {
   variant?: Variant;
   onConfirm: () => void;
   loading?: boolean;
+  hideCancel?: boolean;
   children?: React.ReactNode;
 }
 
@@ -55,6 +56,7 @@ export function ConfirmDialog({
   variant = 'default',
   onConfirm,
   loading = false,
+  hideCancel = false,
   children,
 }: ConfirmDialogProps) {
   const { icon: Icon, iconColor, confirmClass } = variantConfig[variant];
@@ -78,9 +80,11 @@ export function ConfirmDialog({
         </DialogHeader>
         {children}
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            {cancelLabel}
-          </Button>
+          {!hideCancel && (
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              {cancelLabel}
+            </Button>
+          )}
           <Button
             onClick={onConfirm}
             disabled={loading}

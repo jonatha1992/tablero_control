@@ -6,6 +6,7 @@ import { useCreateCycle } from '@/hooks/mutations/use-create-cycle';
 import { useDeleteCycle, useStartCycle, useCompleteCycle, useUpdateCycle } from '@/hooks/mutations/use-update-cycle';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Plus, Play, CheckCircle, X, Calendar, Trash2, Lock, ArrowRight, Info, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -349,7 +350,10 @@ function CycleCard({
   onEdit: (cycle: Cycle) => void;
   actionError?: string;
 }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   return (
+    <>
     <div className={`rounded-lg border bg-card p-4 space-y-3 ${cycle.status === 'active' ? 'border-blue-300 dark:border-blue-700 shadow-sm' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -402,7 +406,7 @@ function CycleCard({
           <Edit2 className="h-3.5 w-3.5" />
         </button>
         <button
-          onClick={() => { if (confirm('¿Eliminar este período?')) onDelete(cycle.id); }}
+          onClick={() => setDeleteOpen(true)}
           className="p-1 text-muted-foreground hover:text-destructive transition-colors"
           title="Eliminar período"
         >
@@ -410,5 +414,18 @@ function CycleCard({
         </button>
       </div>
     </div>
+    <ConfirmDialog
+      open={deleteOpen}
+      onOpenChange={setDeleteOpen}
+      title="Eliminar período"
+      description={`El período "${cycle.name}" se eliminará de forma permanente.`}
+      confirmLabel="Eliminar"
+      variant="destructive"
+      onConfirm={() => {
+        onDelete(cycle.id);
+        setDeleteOpen(false);
+      }}
+    />
+    </>
   );
 }

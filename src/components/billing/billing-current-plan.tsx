@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { PLANS } from '@/lib/mercadopago/plans';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Subscription } from '@/types/domain/subscription';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -37,6 +39,7 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
   const cancel = useCancelSubscription(subscription?.businessId);
   const _sync = useSyncSubscription(subscription?.businessId);
   const recover = useRecoverSubscription(subscription?.businessId);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   if (isLoading) {
     return (
       <div className="border rounded-lg p-6 flex items-center gap-3">
@@ -48,6 +51,7 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
 
   const plan = PLANS[subscription?.plan ?? 'free'];
   const status = subscription ? STATUS_LABEL[subscription.status] : null;
+  const isPendingSubscription = subscription?.status === 'pending';
 
   return (
     <div className="border rounded-lg p-6">
@@ -81,20 +85,24 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
       {subscription && (subscription.status === 'active' || subscription.status === 'pending') && (
         <div className="mt-5 pt-4 border-t flex flex-col gap-3">
           {subscription.status === 'pending' && (
-            <div className="rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800 p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <MercadoPagoLogo className="h-8 w-8 shrink-0" />
+            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 shadow-sm dark:border-amber-900/70 dark:bg-amber-950/20">
+              <div className="mb-4 flex items-start gap-3">
+                <MercadoPagoLogo className="h-9 w-9 shrink-0 rounded-lg shadow-sm" />
                 <div>
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Pago pendiente</p>
-                  <p className="text-xs text-yellow-600 dark:text-yellow-400">Tu suscripción está esperando confirmación de pago.</p>
+                  <p className="text-sm font-semibold text-foreground">Pago pendiente</p>
+                  <p className="text-sm text-muted-foreground">Tu suscripción está esperando confirmación de pago.</p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
-                  onClick={() => recover.mutate()}
+                  onClick={() => recover.mutate(undefined, {
+                    onSuccess: (data) => {
+                      if (data.initPoint) window.location.assign(data.initPoint);
+                    },
+                  })}
                   disabled={recover.isPending}
-                  className="inline-flex items-center gap-2 rounded-md bg-[#009EE3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0087c4] transition-colors disabled:opacity-60"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                 >
                   {recover.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Verificar pago
@@ -116,7 +124,7 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
                         href={recover.data.initPoint}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-md bg-[#009EE3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0087c4] transition-colors w-fit"
+                        className="inline-flex w-fit items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                       >
                         <MercadoPagoLogo className="h-5 w-5" />
                         Ir a pagar en Mercado Pago
@@ -130,15 +138,9 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
             </div>
           )}
           <button
-            onClick={() => {
-              const msg = subscription.status === 'pending'
-                ? '¿Cancelar suscripción pendiente?'
-                : '¿Cancelar suscripción? El plan cambiará a Free al final del período.';
-              if (!confirm(msg)) return;
-              cancel.mutate(subscription.id);
-            }}
+            onClick={() => setCancelDialogOpen(true)}
             disabled={cancel.isPending}
-            className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 disabled:opacity-60"
+            className="inline-flex h-9 w-fit items-center gap-2 rounded-md border border-destructive/30 px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
           >
             {cancel.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
             Cancelar suscripción
@@ -146,6 +148,20 @@ export function BillingCurrentPlan({ subscription, isLoading }: Props) {
           {cancel.isError && (
             <p className="text-xs text-red-600 mt-1">{(cancel.error as Error).message}</p>
           )}
+          <ConfirmDialog
+            open={cancelDialogOpen}
+            onOpenChange={setCancelDialogOpen}
+            title={isPendingSubscription ? 'Cancelar suscripción pendiente' : 'Cancelar suscripción'}
+            description={
+              isPendingSubscription
+                ? 'Se cancelará el intento de pago pendiente. Podrás iniciar otro checkout cuando quieras.'
+                : 'El plan seguirá activo hasta el final del período y luego cambiará a Free.'
+            }
+            confirmLabel={isPendingSubscription ? 'Cancelar pendiente' : 'Cancelar suscripción'}
+            variant="destructive"
+            loading={cancel.isPending}
+            onConfirm={() => cancel.mutate(subscription.id, { onSuccess: () => setCancelDialogOpen(false) })}
+          />
         </div>
       )}
     </div>
