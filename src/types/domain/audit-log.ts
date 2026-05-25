@@ -39,6 +39,7 @@ export type AuditAction =
   | 'invite_link.create'
   | 'invite_link.revoke'
   | 'user.join_via_invite'
+  | 'user.switch_business'
   | 'comment.create'
   | 'comment.delete'
   | 'cycle.create'
