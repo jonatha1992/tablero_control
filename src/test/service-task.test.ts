@@ -260,7 +260,7 @@ describe('TaskService.moveTask', () => {
 
       const createCall = mockRepo.create.mock.calls[0][0];
       const expectedDate = new Date('2026-06-12');
-      expect(createCall.dueDate.toDateString()).toBe(expectedDate.toDateString());
+      expect(createCall.dueDate!.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it('calcula correctamente la fecha siguiente con frecuencia weekly', async () => {
@@ -278,7 +278,7 @@ describe('TaskService.moveTask', () => {
 
       const createCall = mockRepo.create.mock.calls[0][0];
       const expectedDate = new Date('2026-06-08');
-      expect(createCall.dueDate.toDateString()).toBe(expectedDate.toDateString());
+      expect(createCall.dueDate!.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it('calcula correctamente la fecha siguiente con frecuencia biweekly', async () => {
@@ -296,7 +296,7 @@ describe('TaskService.moveTask', () => {
 
       const createCall = mockRepo.create.mock.calls[0][0];
       const expectedDate = new Date('2026-06-15');
-      expect(createCall.dueDate.toDateString()).toBe(expectedDate.toDateString());
+      expect(createCall.dueDate!.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it('calcula correctamente la fecha siguiente con frecuencia monthly', async () => {
@@ -315,7 +315,7 @@ describe('TaskService.moveTask', () => {
       const createCall = mockRepo.create.mock.calls[0][0];
       // July 1 2026 — build locally to avoid UTC/local timezone off-by-one
       const expectedDate = new Date(2026, 6, 1);
-      expect(createCall.dueDate.toDateString()).toBe(expectedDate.toDateString());
+      expect(createCall.dueDate!.toDateString()).toBe(expectedDate.toDateString());
     });
 
     it('usa new Date() como fallback cuando la tarea no tiene dueDate', async () => {

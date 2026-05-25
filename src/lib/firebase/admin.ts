@@ -67,6 +67,18 @@ export async function verifyToken(token: string) {
   return auth.verifyIdToken(token);
 }
 
+let fcmAvailable: boolean | null = null;
+
+export function isFcmAvailable(): boolean {
+  if (fcmAvailable !== null) return fcmAvailable;
+  const sa = loadServiceAccount();
+  fcmAvailable = sa !== null;
+  if (!fcmAvailable) {
+    console.warn('[fcm] Firebase service account not configured — push notifications disabled');
+  }
+  return fcmAvailable;
+}
+
 export function getAdminMessaging() {
   return getMessaging(getAdminApp());
 }

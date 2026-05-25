@@ -113,4 +113,32 @@ describe('POST /api/cycles', () => {
     const res = await POST(req);
     expect(res.status).toBe(500);
   });
+
+  it('retorna 403 si viewer intenta crear ciclo', async () => {
+    mockRequireUser.mockResolvedValueOnce({
+      ...authedUser,
+      role: 'viewer',
+      data: { id: 'user-1', role: 'viewer', businessId: 'biz-1' },
+    } as never);
+    const req = new NextRequest('http://localhost/api/cycles', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Sprint' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+  });
+
+  it('retorna 403 si miembro intenta crear ciclo', async () => {
+    mockRequireUser.mockResolvedValueOnce({
+      ...authedUser,
+      role: 'miembro',
+      data: { id: 'user-1', role: 'miembro', businessId: 'biz-1' },
+    } as never);
+    const req = new NextRequest('http://localhost/api/cycles', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Sprint' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+  });
 });

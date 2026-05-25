@@ -3,6 +3,7 @@ import { cycleService } from '@/services/cycle.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
+import { can } from '@/lib/permissions/matrix';
 import { handle } from '@/lib/api/route-handler';
 import { sendNotification } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
@@ -26,6 +27,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   if (user instanceof NextResponse) return user;
 
   const { id } = await params;
+  if (!can(user.data, 'task.update.any')) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const { _action, ...data } = body;
@@ -85,6 +90,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  if (!can(user.data, 'task.delete')) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   const { id } = await params;
   const cycle = await cycleService.getCycleById(id);

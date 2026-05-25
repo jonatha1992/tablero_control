@@ -3,6 +3,7 @@ import { locationService } from '@/services/location.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { can } from '@/lib/permissions/matrix';
 import { handle } from '@/lib/api/route-handler';
 
 interface Props {
@@ -25,6 +26,10 @@ export const GET = handle(async (request: NextRequest, { params }: Props) => {
 export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  if (!can(user.data, 'business.locations.crud')) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   try {
     const { id } = await params;
@@ -57,6 +62,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
 export const DELETE = handle(async (request: NextRequest, { params }: Props) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  if (!can(user.data, 'business.locations.crud')) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   try {
     const { id } = await params;

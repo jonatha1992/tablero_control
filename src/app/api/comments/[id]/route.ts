@@ -6,10 +6,11 @@ import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard'
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
 
-async function getCommentBusinessId(commentId: string): Promise<string | null> {
+async function getCommentWithBusinessId(commentId: string) {
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
     select: {
+      authorId: true,
       task: {
         select: {
           project: { select: { businessId: true } },
@@ -19,7 +20,9 @@ async function getCommentBusinessId(commentId: string): Promise<string | null> {
       },
     },
   });
-  return comment?.task?.project?.businessId ?? comment?.task?.location?.businessId ?? comment?.task?.creator?.businessId ?? null;
+  if (!comment) return null;
+  const businessId = comment.task?.project?.businessId ?? comment.task?.location?.businessId ?? comment.task?.creator?.businessId ?? null;
+  return { authorId: comment.authorId, businessId };
 }
 
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -28,8 +31,17 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   const { id } = await params;
 
-  const businessId = await getCommentBusinessId(id);
-  assertResourceBelongsToBusiness(user.data, businessId);
+  const comment = await getCommentWithBusinessId(id);
+  if (!comment) {
+    return NextResponse.json({ error: 'Comentario no encontrado' }, { status: 404 });
+  }
+  assertResourceBelongsToBusiness(user.data, comment.businessId);
+
+  const isOwner = comment.authorId === user.uid;
+  const canDeleteAny = user.role === 'admin' || user.role === 'superadmin' || user.role === 'responsable';
+  if (!isOwner && !canDeleteAny) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   await commentService.removeComment(id);
 

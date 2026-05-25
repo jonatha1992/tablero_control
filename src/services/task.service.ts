@@ -1,5 +1,5 @@
 import { taskRepository } from '@/repositories';
-import type { Task, TaskFilters, TaskStatus } from '@/types/domain/task';
+import type { Task, TaskFilters, TaskStatus, RecurrenceConfig } from '@/types/domain/task';
 import type { CreateTaskDTO, UpdateTaskDTO, ReorderKanbanDTO } from '@/types/dto/task.dto';
 import type { PaginatedResponse } from '@/types/api/responses';
 
@@ -63,9 +63,9 @@ class TaskService {
     return null;
   }
 
-  private isRecurrenceExhausted(recurrence: Record<string, unknown>): boolean {
+  private isRecurrenceExhausted(recurrence: RecurrenceConfig): boolean {
     if (recurrence.endDate) {
-      const end = new Date(recurrence.endDate as string);
+      const end = new Date(recurrence.endDate);
       if (end < new Date()) return true;
     }
     if (typeof recurrence.count === 'number' && recurrence.count <= 0) return true;
@@ -86,7 +86,7 @@ class TaskService {
       locationId: task.locationId,
       tags: task.tags,
       dueDate: nextDueDate,
-      recurrence: this.decrementRecurrenceCount(task.recurrence!),
+      recurrence: this.decrementRecurrenceCount(task.recurrence!) as RecurrenceConfig,
     };
 
     // Obtenemos el businessId del creador original para asegurar consistencia
@@ -96,7 +96,7 @@ class TaskService {
     return this.createTask(dto, task.creatorId, businessId);
   }
 
-  private decrementRecurrenceCount(recurrence: Record<string, unknown>): Record<string, unknown> {
+  private decrementRecurrenceCount(recurrence: RecurrenceConfig): RecurrenceConfig {
     if (typeof recurrence.count === 'number') {
       return { ...recurrence, count: recurrence.count - 1 };
     }

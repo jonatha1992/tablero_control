@@ -3,6 +3,7 @@ import { cycleService } from '@/services/cycle.service';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { can } from '@/lib/permissions/matrix';
 import { handle } from '@/lib/api/route-handler';
 
 export const GET = handle(async (request: NextRequest) => {
@@ -30,6 +31,10 @@ function toDateTime(d: string | undefined | null): Date | undefined {
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
+
+  if (!can(user.data, 'task.create')) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }

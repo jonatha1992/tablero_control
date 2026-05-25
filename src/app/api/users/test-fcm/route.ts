@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
-import { getAdminMessaging } from '@/lib/firebase/admin';
+import { getAdminMessaging, isFcmAvailable } from '@/lib/firebase/admin';
 
 export async function POST(req: import('next/server').NextRequest) {
   try {
@@ -20,6 +20,13 @@ export async function POST(req: import('next/server').NextRequest) {
       return NextResponse.json(
         { error: 'No tienes ningún dispositivo registrado para recibir notificaciones.' },
         { status: 400 }
+      );
+    }
+
+    if (!isFcmAvailable()) {
+      return NextResponse.json(
+        { error: 'Push notifications no disponibles — Firebase service account no configurado.' },
+        { status: 503 }
       );
     }
 

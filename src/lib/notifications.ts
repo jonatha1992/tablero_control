@@ -4,7 +4,7 @@
  * dispara un push FCM a todos los dispositivos del usuario.
  */
 import { prisma } from '@/lib/prisma';
-import { getAdminMessaging } from '@/lib/firebase/admin';
+import { getAdminMessaging, isFcmAvailable } from '@/lib/firebase/admin';
 
 interface SendNotificationOptions {
   userId: string;
@@ -23,6 +23,8 @@ export async function sendNotification(opts: SendNotificationOptions) {
   });
 
   // 2. Push FCM (fire-and-forget — no bloquea la respuesta HTTP)
+  if (!isFcmAvailable()) return;
+
   prisma.user.findUnique({
     where: { id: userId },
     select: { fcmTokens: true },
