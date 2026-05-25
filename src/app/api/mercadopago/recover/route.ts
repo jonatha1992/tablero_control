@@ -3,7 +3,7 @@ import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { mpFetch } from '@/lib/mercadopago/client';
 import { parseExternalReference } from '@/lib/mercadopago/preference';
-import { getPreapproval } from '@/lib/mercadopago/preapproval';
+import { getPreapproval, cancelPreapproval, createPreapproval } from '@/lib/mercadopago/preapproval';
 import { writeAuditLog } from '@/lib/api/audit';
 import type { PlanId, BillingFrequency } from '@/types/domain/subscription';
 import { handle } from '@/lib/api/route-handler';
@@ -140,20 +140,38 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ preapprovalActivated, recovered: 0 });
   }
 
-  // If preapproval is still pending, return the init_point so the user can retry payment
+  // If preapproval is still pending, cancel old and create new one (without payer_email restriction)
   if (sub.mpPreferenceId && sub.status === 'pending') {
     try {
       const preapproval = await getPreapproval(sub.mpPreferenceId);
-      if (preapproval.status === 'pending' && preapproval.init_point) {
+      if (preapproval.status === 'pending') {
+        // Cancel old preapproval (may have payer_email restriction)
+        try { await cancelPreapproval(sub.mpPreferenceId); } catch { /* best effort */ }
+
+        const origin = process.env.MP_CALLBACK_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
+        const newPreapproval = await createPreapproval({
+          plan: sub.plan as PlanId,
+          frequency: sub.frequency as BillingFrequency,
+          businessId,
+          backUrl: `${origin}/dashboard/billing?status=pending`,
+          payerEmail: '',
+        });
+
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: { mpPreferenceId: newPreapproval.id },
+        });
+
         return NextResponse.json({
           preapprovalActivated: 0,
           recovered: 0,
           status: 'pending',
-          initPoint: preapproval.init_point,
-          message: 'Suscripción pendiente de pago',
+          initPoint: newPreapproval.init_point,
+          message: 'Nueva suscripción creada — completá el pago',
         });
       }
-    } catch {
+    } catch (err) {
+      console.error('[recover] recreate preapproval failed:', err);
       // fall through to payment search
     }
   }
