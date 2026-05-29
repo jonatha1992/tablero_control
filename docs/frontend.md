@@ -88,6 +88,13 @@ src/app/
 
 ## Flujo de invitación
 
-`src/app/i/[token]/invite-client.tsx`: después de `accept.mutateAsync()` + `refreshProfile()`, **NO redirigir automáticamente**. Dejar que `accept.isSuccess` muestre CheckCircle + botón "Ir al dashboard". El usuario navega manualmente.
+Ruta pública: `/i/[token]` (`invite-client.tsx`).
+
+1. Usuario no autenticado: puede usar **Google**, **login** o **registro** con `?redirect=/i/{token}`.
+2. **No** llamar `POST /api/auth/register` en flujos con redirect a `/i/…` — ese endpoint crea un negocio propio. El alta en PostgreSQL ocurre en `POST /api/invites/{token}/accept`.
+3. Tras Firebase Auth sin perfil PG, login/registro redirigen de vuelta al link de invitación; el usuario pulsa **Unirme al equipo**.
+4. `auth-context` no debe cerrar sesión en `/register` durante el alta (rompe `getIdToken`).
+
+Después de `accept.mutateAsync()` + `refreshProfile()`, **NO redirigir automáticamente**. Dejar que `accept.isSuccess` muestre CheckCircle + botón "Ir al dashboard". El usuario navega manualmente.
 
 Ver decisions/004 para detalle de `locationIds` en BusinessInvite.

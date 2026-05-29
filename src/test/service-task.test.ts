@@ -207,6 +207,22 @@ describe('TaskService.moveTask', () => {
     expect(mockRepo.create).not.toHaveBeenCalled();
   });
 
+  it('no crea otra ocurrencia si la tarea ya estaba en done (re-finalizar)', async () => {
+    const taskAlreadyDone = {
+      ...baseTask,
+      status: 'done' as const,
+      dueDate: new Date('2026-05-29'),
+      recurrence: { frequency: 'daily' as const, interval: 1 },
+    };
+    mockRepo.findById.mockResolvedValueOnce(taskAlreadyDone as never);
+    mockRepo.update.mockResolvedValueOnce({ ...taskAlreadyDone, status: 'done' } as never);
+
+    const result = await taskService.moveTask('task-1', 'done');
+
+    expect(mockRepo.create).not.toHaveBeenCalled();
+    expect(result).toBeNull();
+  });
+
   it('retorna null cuando status no es done aunque haya recurrencia', async () => {
     const taskWithRecurrence = {
       ...baseTask,
@@ -227,6 +243,7 @@ describe('TaskService.moveTask', () => {
       const taskWithRecurrence = {
         ...baseTask,
         dueDate,
+        checklist: [{ id: 'c1', text: 'Paso 1', done: true }],
         recurrence: { frequency: 'daily' as const, interval: 1 },
       };
       const nextTask = { ...baseTask, id: 'task-next', title: baseTask.title };
@@ -242,6 +259,7 @@ describe('TaskService.moveTask', () => {
       expect(createCall.status).toBe('todo');
       expect(createCall.title).toBe(baseTask.title);
       expect(createCall.recurrence).toEqual(taskWithRecurrence.recurrence);
+      expect(createCall.checklist).toEqual([{ id: 'c1', text: 'Paso 1', done: false }]);
       expect(result?.id).toBe('task-next');
     });
 

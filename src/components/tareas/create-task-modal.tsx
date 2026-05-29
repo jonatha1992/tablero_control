@@ -451,9 +451,9 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               <label className="text-sm font-medium mb-1 block">Horas est.</label>
               <input
                 type="number"
-                min={0.5}
+                min={0}
                 max={99}
-                step={0.5}
+                step={0.25}
                 value={estimatedHours ?? ''}
                 onChange={(e) => setEstimatedHours(e.target.value ? Number(e.target.value) : undefined)}
                 placeholder="ej: 3"

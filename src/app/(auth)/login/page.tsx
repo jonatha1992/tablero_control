@@ -20,6 +20,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
+  const isInviteRedirect = redirect.startsWith('/i/');
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
@@ -27,6 +28,13 @@ function LoginForm() {
       router.push(target);
     }
   }, [isAuthenticated, authLoading, user, router, redirect]);
+
+  // Invitación: autenticado en Firebase sin perfil PG → volver al link (accept provisiona el usuario)
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !user && isInviteRedirect) {
+      router.push(redirect);
+    }
+  }, [authLoading, isAuthenticated, user, isInviteRedirect, redirect, router]);
 
   // Handle Google redirect flow (popup blocked → signInWithRedirect)
   useEffect(() => {
@@ -37,6 +45,10 @@ function LoginForm() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (profileRes.status === 404) {
+        if (isInviteRedirect) {
+          router.push(redirect);
+          return;
+        }
         await fetch('/api/auth/register', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -96,7 +108,10 @@ function LoginForm() {
       });
 
       if (profileRes.status === 404) {
-        // New user — provision account automatically
+        if (isInviteRedirect) {
+          router.push(redirect);
+          return;
+        }
         const registerRes = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -138,7 +153,7 @@ function LoginForm() {
     );
   }
 
-  if (isAuthenticated) return null;
+  if (isAuthenticated && user) return null;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background px-4 py-8">
@@ -267,7 +282,10 @@ function LoginForm() {
           {/* Footer */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             ¿No tenés cuenta?{' '}
-            <Link href="/register" className="text-primary font-medium underline-offset-4 hover:underline transition-colors">
+            <Link
+              href={isInviteRedirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'}
+              className="text-primary font-medium underline-offset-4 hover:underline transition-colors"
+            >
               Registrate
             </Link>
           </p>

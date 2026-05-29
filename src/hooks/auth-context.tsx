@@ -6,10 +6,8 @@ import { auth } from '@/lib/firebase/client';
 import { authService } from '@/services/auth.service';
 import type { User, UserRole } from '@/types';
 
-function isOnRegisterPage(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.location.pathname === '/register' &&
-    new URLSearchParams(window.location.search).get('newBusiness') !== 'true';
+function isInviteRedirectPath(path: string | null | undefined): boolean {
+  return !!path && path.startsWith('/i/');
 }
 
 interface AuthProviderProps {
@@ -70,12 +68,6 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser && isOnRegisterPage()) {
-        // Clear cached Firebase session so the register form shows fresh
-        await firebaseSignOut(auth);
-        return; // null callback will handle state cleanup
-      }
-
       setFirebaseUser(fbUser);
 
       if (fbUser) {
@@ -92,9 +84,13 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
           const onRegisterPage = typeof window !== 'undefined' &&
             window.location.pathname.startsWith('/register');
           // Invite pages handle user creation themselves via accept-invite API
-          const onInvitePage = typeof window !== 'undefined' &&
-            (window.location.pathname.startsWith('/i/') ||
-              new URLSearchParams(window.location.search).get('redirect')?.startsWith('/i/'));
+          const redirectParam =
+            typeof window !== 'undefined'
+              ? new URLSearchParams(window.location.search).get('redirect')
+              : null;
+          const onInvitePage =
+            typeof window !== 'undefined' &&
+            (window.location.pathname.startsWith('/i/') || isInviteRedirectPath(redirectParam));
 
           if (onRegisterPage || onInvitePage) {
             // register page llama refreshProfile() después del POST

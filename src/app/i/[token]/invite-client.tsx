@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/auth-context';
 import { useAcceptInvite } from '@/hooks/mutations/use-accept-invite';
+import { loginWithGoogle } from '@/lib/firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Users, ArrowRight, Loader2, CheckCircle, AlertTriangle, LogIn } from 'lucide-react';
 interface Props {
@@ -19,6 +20,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
   const router = useRouter();
   const accept = useAcceptInvite();
   const [error, setError] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleJoin() {
     setError('');
@@ -42,6 +44,38 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
   }
 
   const redirectParam = encodeURIComponent(`/i/${token}`);
+  const invitePath = `/i/${token}`;
+
+  async function handleGoogleSignIn() {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const result = await loginWithGoogle();
+      if (!result) return;
+
+      const profileRes = await fetch('/api/auth/profile', {
+        headers: { Authorization: `Bearer ${result.token}` },
+      });
+
+      if (profileRes.status === 404) {
+        router.push(invitePath);
+        return;
+      }
+      if (!profileRes.ok) {
+        throw new Error('Error al cargar el perfil');
+      }
+
+      await refreshProfile();
+      router.push(invitePath);
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code !== 'auth/popup-closed-by-user') {
+        setError((err as Error).message || 'Error al iniciar sesión con Google');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 bg-gradient-to-br from-background via-muted/20 to-background">
@@ -117,6 +151,22 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
             <p className="text-sm text-center text-muted-foreground">
               Para unirte, necesitás iniciar sesión o crear una cuenta.
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+            >
+              {googleLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Conectando con Google...
+                </>
+              ) : (
+                'Continuar con Google'
+              )}
+            </Button>
             <Link href={`/login?redirect=${redirectParam}`} className="block">
               <Button variant="default" className="w-full h-11">
                 <LogIn className="mr-2 h-4 w-4" />

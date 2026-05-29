@@ -139,3 +139,9 @@ Al cambiar rol de un usuario:
 2. Registrarse en `/register` con ese email
 3. `GET /api/auth/profile` auto-provisiona con `role: 'superadmin'`
 4. Login redirige a `/superadmin`; otros roles → `/dashboard`
+
+## Invitación por link (`/i/[token]`)
+
+- Alta en Firebase (email, Google o registro) **sin** `POST /api/auth/register` cuando el redirect apunta a `/i/…`.
+- `POST /api/invites/{token}/accept` crea o vincula el usuario en PostgreSQL y asigna `businessId` + rol del invite.
+- Audit: `user.join_via_invite`, `invite_link.create` (ver `docs/frontend.md`).
