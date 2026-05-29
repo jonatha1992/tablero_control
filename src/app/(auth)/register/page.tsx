@@ -27,6 +27,7 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
   const isNewBusiness = searchParams.get('newBusiness') === 'true';
+  const isInviteRedirect = redirect.startsWith('/i/');
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user && !isNewBusiness) {
@@ -34,6 +35,13 @@ function RegisterForm() {
       router.push(target);
     }
   }, [isAuthenticated, authLoading, user, router, isNewBusiness, redirect]);
+
+  // Invitación: Firebase autenticado pero sin perfil PG → volver al link para aceptar
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !user && isInviteRedirect) {
+      router.push(redirect);
+    }
+  }, [authLoading, isAuthenticated, user, isInviteRedirect, redirect, router]);
 
   const handleCreateBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +83,7 @@ function RegisterForm() {
     if (!trimmedName) errors.name = 'El nombre es obligatorio';
     if (!trimmedEmail) errors.email = 'El correo es obligatorio';
     else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
-    if (!trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
+    if (!isInviteRedirect && !trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
     if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
     if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
 
@@ -88,22 +96,26 @@ function RegisterForm() {
 
     try {
       // 1. Create Firebase user (or sign in if already exists)
+      let token: string;
       try {
-        await register(trimmedEmail, password, trimmedName, 'miembro');
+        const result = await register(trimmedEmail, password, trimmedName, 'miembro');
+        token = result.token;
       } catch (err: unknown) {
         const code = (err as { code?: string }).code;
         if (code === 'auth/email-already-in-use') {
-          await login(email, password);
+          const result = await login(trimmedEmail, password);
+          token = result.token;
         } else {
           throw err;
         }
       }
-      // onAuthStateChanged fires but won't sign out (we're on /register)
 
-      // 2. Provision user + business in DB
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error('No se pudo obtener el token de autenticación');
+      if (isInviteRedirect) {
+        router.push(redirect);
+        return;
+      }
 
+      // 2. Provision user + business in DB (flujo negocio nuevo)
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -117,7 +129,7 @@ function RegisterForm() {
         throw new Error('Error al crear el negocio. Inténtalo de nuevo.');
       }
 
-      // 3. Load profile + redirect immediately (avoids race condition with isAuthenticated)
+      // 3. Load profile + redirect
       await refreshProfile();
       const target = redirect && redirect !== '/dashboard' ? redirect : '/dashboard';
       router.push(target);
@@ -194,7 +206,7 @@ function RegisterForm() {
     );
   }
 
-  if (isAuthenticated) return null;
+  if (isAuthenticated && user) return null;
 
   return (
     <Card className="w-full max-w-md">
@@ -203,7 +215,11 @@ function RegisterForm() {
           <Image src="/icon-192.png" alt="Tablero de Control" width={48} height={48} className="rounded-xl object-contain" priority />
         </div>
         <CardTitle className="text-2xl">Crear Cuenta</CardTitle>
-        <CardDescription>Registrá tu negocio para acceder al tablero</CardDescription>
+        <CardDescription>
+          {isInviteRedirect
+            ? 'Creá tu cuenta para unirte al equipo'
+            : 'Registrá tu negocio para acceder al tablero'}
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -226,21 +242,23 @@ function RegisterForm() {
             />
             {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
-          <div className="space-y-2">
-            <label htmlFor="businessName" className="text-sm font-medium">
-              Nombre del negocio <span className="text-muted-foreground font-normal">(opcional)</span>
-            </label>
-            <input
-              id="businessName"
-              type="text"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="Mi Empresa S.A."
-              maxLength={100}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-            {fieldErrors.businessName && <p className="text-xs text-destructive">{fieldErrors.businessName}</p>}
-          </div>
+          {!isInviteRedirect && (
+            <div className="space-y-2">
+              <label htmlFor="businessName" className="text-sm font-medium">
+                Nombre del negocio <span className="text-muted-foreground font-normal">(opcional)</span>
+              </label>
+              <input
+                id="businessName"
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Mi Empresa S.A."
+                maxLength={100}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              {fieldErrors.businessName && <p className="text-xs text-destructive">{fieldErrors.businessName}</p>}
+            </div>
+          )}
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">Correo</label>
             <input
@@ -324,7 +342,10 @@ function RegisterForm() {
           </p>
           <p className="text-center text-sm text-muted-foreground">
             ¿Ya tenés cuenta?{' '}
-            <Link href="/login" className="text-primary underline hover:text-primary/80">
+            <Link
+              href={isInviteRedirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'}
+              className="text-primary underline hover:text-primary/80"
+            >
               Iniciá sesión
             </Link>
           </p>

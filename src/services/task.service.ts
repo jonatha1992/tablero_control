@@ -46,15 +46,16 @@ class TaskService {
     const task = await taskRepository.findById(taskId);
     if (!task) throw new Error('Tarea no encontrada');
 
+    const wasAlreadyDone = task.status === 'done';
     const updates: UpdateTaskDTO = { status: newStatus };
     if (newStatus === 'done') {
       updates.completedDate = new Date();
     }
-    
+
     await taskRepository.update(taskId, updates);
 
-    // Lógica de recurrencia
-    if (newStatus === 'done' && task.recurrence) {
+    // Lógica de recurrencia — solo al pasar a done por primera vez (evita duplicados al re-finalizar)
+    if (newStatus === 'done' && !wasAlreadyDone && task.recurrence) {
       if (this.isRecurrenceExhausted(task.recurrence)) return null;
       const nextTask = await this.createNextOccurrence(task);
       return nextTask;
@@ -75,6 +76,8 @@ class TaskService {
   private async createNextOccurrence(task: Task): Promise<Task> {
     const nextDueDate = this.calculateNextDate(task.dueDate || new Date(), task.recurrence!);
     
+    const resetChecklist = (task.checklist ?? []).map((item) => ({ ...item, done: false }));
+
     const dto: CreateTaskDTO = {
       title: task.title,
       description: task.description,
@@ -87,6 +90,7 @@ class TaskService {
       tags: task.tags,
       dueDate: nextDueDate,
       recurrence: this.decrementRecurrenceCount(task.recurrence!) as RecurrenceConfig,
+      checklist: resetChecklist.length > 0 ? resetChecklist : undefined,
     };
 
     // Obtenemos el businessId del creador original para asegurar consistencia

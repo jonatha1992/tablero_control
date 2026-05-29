@@ -38,7 +38,7 @@ Hora se muestra en kanban card y detail modal **solo si ≠ medianoche local**. 
 
 ## Recurrencia
 
-`TaskService.moveTask()` crea automáticamente la siguiente ocurrencia cuando una tarea con `recurrence` se mueve a `done`. **No crear ocurrencias manualmente.**
+`TaskService.moveTask()` crea automáticamente la siguiente ocurrencia cuando una tarea con `recurrence` pasa a `done` **por primera vez** (si ya estaba en `done`, no vuelve a crear — evita duplicados al reabrir/re-finalizar). La nueva ocurrencia copia el checklist con ítems en `done: false`. **No crear ocurrencias manualmente.**
 
 Para cambios de status, **siempre usar `useMoveTask`** (no `useUpdateTask`) — garantiza que `moveTask()` se ejecute en backend. Ver decisions/002.
 

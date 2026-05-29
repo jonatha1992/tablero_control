@@ -138,7 +138,7 @@ function TaskPreviewCard({
         <label className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
           ⏱
           <input
-            type="number" min={0.5} max={99} step={0.5}
+            type="number" min={0} max={99} step={0.25}
             value={task.estimatedHours ?? ''}
             onChange={(e) => onChange({ ...task, estimatedHours: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="h"
