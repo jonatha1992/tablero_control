@@ -1,5 +1,7 @@
 export type UserRole = 'superadmin' | 'admin' | 'responsable' | 'miembro' | 'viewer' | 'pending';
 
+export type AccountIntent = 'collaborator' | 'owner';
+
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   locale: string;
@@ -11,6 +13,8 @@ export interface UserPreferences {
     agentAlerts: boolean;
   };
   dashboardLayout: string[];
+  accountIntent?: AccountIntent;
+  joinedViaInviteAt?: string;
 }
 
 export interface UserLocationAssignment {
@@ -48,6 +52,8 @@ export interface User {
   memberships?: UserBusiness[];
   locationAssignments?: UserLocationAssignment[];
   isOwner?: boolean;
+  hasOwnedBusiness?: boolean;
+  canCreateOwnBusiness?: boolean;
   preferences: UserPreferences;
   isActive: boolean;
   lastLogin?: Date;

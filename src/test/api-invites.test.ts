@@ -60,6 +60,7 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       count: vi.fn(),
     },
+    business: { create: vi.fn() },
     auditLog: { create: vi.fn() },
   },
 }));
@@ -705,9 +706,14 @@ describe('POST /api/invites/[token]/accept', () => {
           id: 'firebase-uid',
           email: 'member@example.com',
           role: 'pending',
+          preferences: expect.objectContaining({
+            accountIntent: 'collaborator',
+            joinedViaInviteAt: expect.any(String),
+          }),
         }),
       })
     );
+    expect(prisma.business.create).not.toHaveBeenCalled();
   });
 
   it('incrementa usedCount de la invitación al aceptar', async () => {

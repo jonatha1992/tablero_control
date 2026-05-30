@@ -142,6 +142,39 @@ Al cambiar rol de un usuario:
 
 ## Invitación por link (`/i/[token]`)
 
+Resumen ampliado: [`docs/invites-and-accounts.md`](invites-and-accounts.md).
+
+### Reglas de alta
+
 - Alta en Firebase (email, Google o registro) **sin** `POST /api/auth/register` cuando el redirect apunta a `/i/…`.
-- `POST /api/invites/{token}/accept` crea o vincula el usuario en PostgreSQL y asigna `businessId` + rol del invite.
-- Audit: `user.join_via_invite`, `invite_link.create` (ver `docs/frontend.md`).
+- `POST /api/invites/{token}/accept` (`src/app/api/invites/[token]/accept/route.ts`) crea o vincula el usuario en PostgreSQL y asigna `businessId` + rol del invite. **No** crea un `Business` propio; usuarios nuevos reciben `preferences.accountIntent: 'collaborator'` y `joinedViaInviteAt`.
+- `GET /api/auth/profile` (`src/app/api/auth/profile/route.ts`) **no** auto-crea negocios para colaboradores: si hay membresías activas, solo reasigna `businessId` desde la primera; sin membresías → `404 not_invited`.
+- Dueño de negocio propio: registro en `/register`, `POST /api/auth/register` (`accountIntent: 'owner'`), o opt-in en Config → **Armar tu negocio** (`POST /api/businesses`).
+- Login sin perfil PG y sin invitación: `notInvited` en `src/hooks/auth-context.tsx` (sin auto-registro silencioso en login Google).
+- Audit: `user.join_via_invite`, `invite_link.create`.
+
+### Componentes UI
+
+| Componente | Ruta | Rol |
+|------------|------|-----|
+| Pantalla de invitación | `src/app/i/[token]/invite-client.tsx` | Solo unirse; copy anti-negocio-fantasma |
+| Login | `src/app/(auth)/login/page.tsx` | Redirect a `/i/…`; sin register silencioso |
+| Registro | `src/app/(auth)/register/page.tsx` | Omite negocio si `redirect` es `/i/…` |
+| Auth provider | `src/hooks/auth-context.tsx` | Profile 404 → `notInvited` (fuera de register/invite) |
+| Ruta protegida | `src/hooks/protected-route.tsx` | Exige `user` PG además de Firebase |
+| Armar tu negocio | `src/components/config/create-own-business-card.tsx` | Primer negocio propio (Config) |
+| Selector header | `src/components/business-switcher.tsx` | Atajo a Config o register según `hasOwnedBusiness` |
+| Onboarding | `src/components/layout/onboarding-tour.tsx` | Sin pasos Equipo/Facturación si `!isOwner` |
+
+### Limpieza de negocios fantasma (datos legacy)
+
+Antes del fix, algunos invitados quedaron con un negocio **"Empresa de {nombre}"** auto-creado. Script de mantenimiento:
+
+```bash
+npm run cleanup:invite-phantom-businesses              # dry-run
+npx tsx --env-file=.env.local scripts/cleanup-invite-phantom-businesses.ts --execute
+```
+
+Criterios: usuario con señal de invitación (`user.join_via_invite` o `accountIntent: collaborator`), dueño de negocio con nombre `Empresa de …`, único miembro activo de ese negocio, y membresía activa en otro negocio. Detalle en [`docs/development.md`](development.md#limpieza-de-negocios-fantasma-por-invitación).
+
+Ver también [`docs/frontend.md`](frontend.md), ADR [`docs/decisions/006-collaborator-vs-owner-account.md`](decisions/006-collaborator-vs-owner-account.md).

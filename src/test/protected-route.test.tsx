@@ -16,6 +16,8 @@ vi.mock('@/hooks/auth-context', () => ({
 }));
 
 describe('ProtectedRoute', () => {
+
+const mockUser = { id: 'user-1', email: 'test@example.com' };
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -59,7 +61,7 @@ describe('ProtectedRoute', () => {
   });
 
   it('renderiza children cuando está autenticado sin requiredRole', () => {
-    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'miembro' });
+    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'miembro', user: mockUser });
 
     render(
       <ProtectedRoute>
@@ -71,7 +73,7 @@ describe('ProtectedRoute', () => {
   });
 
   it('renderiza children cuando el rol del usuario cumple el requerido', () => {
-    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'admin' });
+    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'admin', user: mockUser });
 
     render(
       <ProtectedRoute requiredRole="responsable">
@@ -83,7 +85,7 @@ describe('ProtectedRoute', () => {
   });
 
   it('no renderiza children cuando el rol es insuficiente', () => {
-    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'viewer' });
+    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'viewer', user: mockUser });
 
     render(
       <ProtectedRoute requiredRole="admin">
@@ -95,7 +97,7 @@ describe('ProtectedRoute', () => {
   });
 
   it('redirige a / cuando el rol es insuficiente', () => {
-    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'miembro' });
+    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'miembro', user: mockUser });
 
     render(
       <ProtectedRoute requiredRole="admin">
@@ -107,7 +109,7 @@ describe('ProtectedRoute', () => {
   });
 
   it('superadmin puede acceder a cualquier ruta protegida', () => {
-    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'superadmin' });
+    mockUseAuth.mockReturnValue({ loading: false, isAuthenticated: true, role: 'superadmin', user: mockUser });
 
     render(
       <ProtectedRoute requiredRole="admin">
@@ -118,3 +120,4 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Solo admin')).toBeInTheDocument();
   });
 });
+

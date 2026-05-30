@@ -5,15 +5,17 @@ import { toast } from 'sonner';
 import { getToken } from '@/lib/firebase/auth';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UserRole } from '@/types/domain/user';
-import type { CreateUserResult } from '@/app/api/users/create/route';
+import type { CreateUserMode, CreateUserResult } from '@/app/api/users/create/route';
 
 export interface CreateUserInput {
   name: string;
-  email: string;
+  email?: string;
+  username?: string;
   password?: string;
   role: UserRole;
   businessId?: string;
   locationId?: string;
+  mode?: CreateUserMode;
 }
 
 export class EmailInactiveError extends Error {

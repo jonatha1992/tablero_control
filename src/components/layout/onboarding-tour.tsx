@@ -95,11 +95,13 @@ export function OnboardingTour() {
     if (!user) return;
     let driverObj: ReturnType<typeof import('driver.js')['driver']> | null = null;
     const key = TOUR_KEY(user.id);
+    const skipForCollaborator = new Set(['#tour-nav-billing', '#tour-nav-equipo']);
 
     import('driver.js').then(({ driver }) => {
-      const availableSteps = STEPS.filter(
-        (s) => !s.element || document.querySelector(s.element)
-      );
+      const availableSteps = STEPS.filter((s) => {
+        if (!user.isOwner && s.element && skipForCollaborator.has(s.element)) return false;
+        return !s.element || document.querySelector(s.element);
+      });
       driverObj = driver({
         showProgress: true,
         progressText: '{{current}} de {{total}}',

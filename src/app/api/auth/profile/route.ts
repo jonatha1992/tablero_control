@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
-import { initSystemRoles } from '@/lib/firebase/init-system-roles';
 import { userRepository, businessRepository } from '@/repositories';
+import { prisma } from '@/lib/prisma';
 import { handle } from '@/lib/api/route-handler';
 import type { UserRole } from '@/types/domain/user';
 
@@ -91,73 +91,39 @@ export const GET = handle(async (request: NextRequest) => {
       return NextResponse.json({ error: 'not_invited' }, { status: 404 });
     }
 
-    // Validate active business membership
     const memberships = user.memberships ?? [];
-    const activeMembership = memberships.find((m) => m.businessId === user?.businessId && m.isActive);
+    const activeMemberships = memberships.filter((m) => m.isActive);
 
-    if (user.businessId && !activeMembership) {
-      // Try to fallback to another active membership
-      const fallback = memberships.find((m) => m.isActive);
-      if (fallback) {
-        user = await userRepository.update(user.id, {
-          businessId: fallback.businessId,
-          role: fallback.role,
-        });
-      }
+    if (activeMemberships.length === 0) {
+      return NextResponse.json({ error: 'not_invited' }, { status: 404 });
     }
 
-    // Fix for existing users without businessId or without any membership
-    if (!user.businessId || memberships.length === 0) {
-      const email = decodedEmail ?? decoded.email ?? '';
-      const name = decoded.name ?? email.split('@')[0] ?? 'Usuario';
-      const superadminEmails = (process.env.SUPERADMIN_EMAILS ?? '').split(',').map(e => e.trim());
-      const isSuperadmin = superadminEmails.includes(email);
+    const activeMembership = activeMemberships.find((m) => m.businessId === user?.businessId);
 
-      const business = await businessRepository.create({
-        name: isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`,
-        adminId: decoded.uid,
-        ownerId: decoded.uid,
-        plan: 'free',
-        status: 'active',
-        settings: {
-          maxLocations: 1,
-          maxUsers: 5,
-          theme: 'system',
-          language: 'es',
-          timezone: 'America/Argentina/Buenos_Aires',
-          notifications: { email: true },
-          features: { customBranding: false, advancedReports: false, apiAccess: false },
-          localeTypes: [],
-        },
-        featureFlags: {},
-        locationIds: [],
-        teamIds: [],
-      });
-      await initSystemRoles(business.id);
+    if (!activeMembership) {
+      const fallback = activeMemberships[0];
       user = await userRepository.update(user.id, {
-        businessId: business.id,
-        role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,
+        businessId: fallback.businessId,
+        role: fallback.role,
         ...(!user.avatar && decoded.picture ? { avatar: decoded.picture } : {}),
       });
-      await userRepository.addMembership({
-        userId: user.id,
-        businessId: business.id,
-        role: isSuperadmin ? 'superadmin' : 'admin' as UserRole,
-        isActive: true,
-      });
       user = await userRepository.findById(user.id) ?? user;
-    }
-
-    if (!user.avatar && decoded.picture) {
+    } else if (!user.avatar && decoded.picture) {
       user = await userRepository.update(user.id, { avatar: decoded.picture });
     }
 
-    // Determine if user is owner of active business
+    const ownedCount = await prisma.business.count({ where: { ownerId: user.id } });
+    const hasOwnedBusiness = ownedCount > 0;
     const isOwner = user.businessId
       ? (await businessRepository.findById(user.businessId))?.ownerId === user.id
       : false;
 
-    return NextResponse.json({ ...user, isOwner });
+    return NextResponse.json({
+      ...user,
+      isOwner,
+      hasOwnedBusiness,
+      canCreateOwnBusiness: true,
+    });
   } catch (error) {
     console.error('Profile fetch error:', error);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

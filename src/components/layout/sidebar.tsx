@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
 import { can } from '@/lib/permissions';
+import { APP_VERSION, BUILD_DATE } from '@/config/version';
 
 interface ChildItem {
   href: string;
@@ -256,7 +257,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
       {/* Footer */}
       {!collapsed && (
         <div className="border-t p-4 text-xs text-muted-foreground">
-          <p>v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_GIT_HASH}</p>
+          <p>v{APP_VERSION} · {BUILD_DATE}</p>
         </div>
       )}
     </div>

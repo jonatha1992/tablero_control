@@ -47,11 +47,15 @@ avatar?, phone?, isActive (Boolean), lastLogin?
 preferences (JSON): {
   theme, locale, timezone,
   notifications: { email, push, agentReports, agentAlerts },
-  dashboardLayout[]
+  dashboardLayout[],
+  accountIntent?: 'collaborator' | 'owner',   ← collaborator: alta por /i/…/accept
+  joinedViaInviteAt?: string                  ← ISO8601, solo en usuarios nuevos por invite
 }
 fcmTokens (String[])        ← tokens FCM para push notifications
 memberships (Membership[])  ← historial de negocios del usuario
 ```
+
+Campos calculados en `GET /api/auth/profile` (no persistidos en User): `isOwner`, `hasOwnedBusiness`, `canCreateOwnBusiness`.
 
 ## Business
 

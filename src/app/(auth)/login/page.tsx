@@ -49,10 +49,7 @@ function LoginForm() {
           router.push(redirect);
           return;
         }
-        await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
+        return;
       }
       await refreshProfile();
       router.push(redirect !== '/dashboard' ? redirect : '/dashboard');
@@ -112,15 +109,10 @@ function LoginForm() {
           router.push(redirect);
           return;
         }
-        const registerRes = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        if (!registerRes.ok) {
-          const data = await registerRes.json().catch(() => ({ error: 'unknown' }));
-          throw new Error((data as { error?: string }).error || 'Error al registrar usuario');
-        }
-      } else if (!profileRes.ok) {
+        setError('Tu cuenta no está registrada. Pedí una invitación a tu equipo o creá tu negocio desde Registrate.');
+        return;
+      }
+      if (!profileRes.ok) {
         throw new Error('Error al cargar el perfil');
       }
 
@@ -179,7 +171,11 @@ function LoginForm() {
           {/* Alerta not_invited */}
           {notInvited && (
             <div className="mb-6 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-              Tu cuenta no está registrada en el sistema. Pedile a tu administrador que te invite.
+              Tu cuenta no está registrada. Pedí una invitación a tu equipo o{' '}
+              <Link href="/register" className="font-medium underline">
+                creá tu negocio
+              </Link>
+              .
             </div>
           )}
 

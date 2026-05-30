@@ -4,9 +4,18 @@ Base: `src/app/api/`
 
 ## Auth
 ```
-POST /api/auth/register
+POST /api/auth/register         ← dueño SaaS: crea User + Business + membership (accountIntent: owner)
 POST /api/auth/forgot-password
-GET  /api/auth/profile          ← auto-provisiona superadmin si email en SUPERADMIN_EMAILS
+GET  /api/auth/profile          ← superadmin auto-provision si SUPERADMIN_EMAILS; colaboradores: reasigna businessId desde memberships; sin membresías → 404 not_invited. Respuesta: hasOwnedBusiness, canCreateOwnBusiness, isOwner
+```
+
+## Invites (público con token Firebase)
+```
+GET    /api/invites/[token]           ← metadata del link (público)
+POST   /api/invites/[token]/accept    ← membresía al negocio invitador; NO crea Business; usuario nuevo → accountIntent: collaborator
+GET    /api/invites                   ← listar links (admin)
+POST   /api/invites                   ← crear link
+DELETE /api/invites/[token]           ← revocar
 ```
 
 ## Tasks
@@ -90,6 +99,7 @@ PATCH  /api/notifications/[id]  ← marca como leída
 
 ## Business
 ```
+POST   /api/businesses              ← opt-in: segundo negocio propio o primer negocio de colaborador (ownerId = uid, membership admin)
 GET    /api/business/config
 GET    /api/business/subscription
 POST   /api/business/subscription

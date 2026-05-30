@@ -61,7 +61,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     }
   }
 
-  // Si todavía no existe, crearlo (auto-provisionar)
+  // Si todavía no existe, crearlo sin negocio propio (solo membresía al aceptar)
   if (!user && decoded.email) {
     user = await prisma.user.create({
       data: {
@@ -75,6 +75,8 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
           timezone: 'America/Argentina/Buenos_Aires',
           notifications: { email: true, push: false, agentReports: false, agentAlerts: false },
           dashboardLayout: [],
+          accountIntent: 'collaborator',
+          joinedViaInviteAt: new Date().toISOString(),
         },
         isActive: true,
       },
