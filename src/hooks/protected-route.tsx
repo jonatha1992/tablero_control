@@ -16,15 +16,19 @@ export function ProtectedRoute({
   requiredRole,
   redirectTo = '/login',
 }: ProtectedRouteProps) {
-  const { isAuthenticated, loading, role } = useAuth();
+  const { isAuthenticated, loading, role, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     if (loading) return;
 
-    // Not authenticated → redirect to login
     if (!isAuthenticated) {
+      router.push(redirectTo);
+      return;
+    }
+
+    if (!user) {
       router.push(redirectTo);
       return;
     }
@@ -57,7 +61,7 @@ export function ProtectedRoute({
     if (role === 'pending' && pathname !== '/pending') {
       router.push('/pending');
     }
-  }, [isAuthenticated, loading, role, requiredRole, router, redirectTo, pathname]);
+  }, [isAuthenticated, loading, role, user, requiredRole, router, redirectTo, pathname]);
 
   // Show loading state
   if (loading) {
@@ -71,8 +75,7 @@ export function ProtectedRoute({
     );
   }
 
-  // Not authenticated — don't render children
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return null;
   }
 

@@ -18,6 +18,8 @@ npx prisma generate
 | `npm run dev` | Solo Next.js |
 | `npm run emulators` | Solo Firebase Emulators |
 | `npm run seed:pg` | Datos de prueba en PostgreSQL |
+| `npm run seed:demo-user` | Usuario demo (Firebase + negocio + tareas) para QA manual |
+| `npm run cleanup:invite-phantom-businesses` | Lista/elimina negocios `Empresa de …` creados por error en usuarios de invitación (dry-run; agregar `--execute` al script para borrar) |
 | `npm run test:run` | Tests sin watch |
 | `npm run test:ui` | Tests con UI visual |
 | `npm run test:coverage` | Tests con cobertura |
@@ -42,7 +44,7 @@ Activar con `NEXT_PUBLIC_USE_EMULATOR=true` en `.env.local`.
 
 ## PostgreSQL
 
-En desarrollo usar una instancia local o Railway.
+**Desarrollo y test comparten la misma base:** `.env.local` apunta a PostgreSQL en **Railway** (`DATABASE_URL`). No hay instancia Postgres local separada en el flujo habitual del equipo.
 
 ```bash
 # Sincronizar schema con la base de datos (usar db push en Railway)
@@ -58,6 +60,61 @@ npx prisma generate
 npm run seed:pg
 npm run seed:superadmin
 ```
+
+## Limpieza de negocios fantasma por invitación
+
+Script: [`scripts/cleanup-invite-phantom-businesses.ts`](../scripts/cleanup-invite-phantom-businesses.ts)
+
+Antes del fix de colaborador vs. dueño (mayo 2026), `GET /api/auth/profile` y el auto-registro en login creaban negocios **"Empresa de {nombre}"** para usuarios que en realidad entraron por link de invitación. Eso generaba dos equipos en el selector del header.
+
+### Cuándo usarlo
+
+- Tras migrar el código que elimina auto-provision.
+- Si un colaborador reporta un negocio propio que no creó a propósito.
+- Mantenimiento puntual en Railway (misma DB que dev).
+
+### Criterios de detección
+
+Un negocio se marca candidato a eliminar si **todas** aplican:
+
+1. El usuario tiene señal de invitación: audit `user.join_via_invite` **o** `preferences.accountIntent === 'collaborator'`.
+2. Es **dueño** (`ownerId`) de un negocio cuyo nombre coincide con `Empresa de {nombre}`.
+3. Es el **único miembro activo** de ese negocio.
+4. Tiene **membresía activa en otro negocio** (el del invite).
+
+Se excluyen negocios cuyo nombre contiene `TecnoFusión`.
+
+### Comandos
+
+```bash
+# Solo listar candidatos (default)
+npm run cleanup:invite-phantom-businesses
+
+# Eliminar y reasignar businessId al negocio del invite
+npx tsx --env-file=.env.local scripts/cleanup-invite-phantom-businesses.ts --execute
+```
+
+### Ejemplo de salida (Railway, mayo 2026)
+
+Dry-run detectó 2 candidatos; `--execute` los eliminó. Segunda corrida: 0 candidatos.
+
+```
+Negocios fantasma candidatos: 2
+
+- [cmp77k76k000f2hna3trkr1fq] "Empresa de celina perez"
+  usuario: celina perez <celinamacarenape@gmail.com>
+  mantener contexto en: cmosmm8th00002hqkbpipcw16
+
+- [cmp77l7r9000k2hnap34mbgfm] "Empresa de Evelin Diaz"
+  usuario: Evelin Diaz <eveylonchi10@gmail.com>
+  mantener contexto en: cmosmm8th00002hqkbpipcw16
+
+Eliminados: 2/2
+```
+
+El script reasigna `user.businessId` al negocio invitador si apuntaba al fantasma. Usuarios afectados pueden necesitar cerrar sesión y volver a entrar para refrescar el perfil.
+
+Documentación: [`docs/permissions.md`](permissions.md), [`docs/invites-and-accounts.md`](invites-and-accounts.md), ADR 006.
 
 ## Acceso superadmin
 
@@ -75,6 +132,24 @@ npm run seed:superadmin
 | `responsable@test.com` | `test123` | responsable |
 | `miembro@test.com` | `test123` | miembro |
 | `viewer@test.com` | `test123` | viewer |
+
+## Usuario demo QA (`seed:demo-user`)
+
+Crea un admin con negocio propio en Firebase + PostgreSQL (idempotente):
+
+```bash
+npm run seed:demo-user
+```
+
+| Campo | Valor por defecto |
+|-------|-------------------|
+| Email | `demo@tablerocontrol.test` |
+| Password | `DemoTablero2026!` |
+| Negocio | `Negocio Demo QA` |
+
+Variables opcionales: `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD`, `DEMO_USER_NAME`, `DEMO_BUSINESS_NAME`.
+
+Incluye local demo + 4 tareas (hoy, futura, recurrente, backlog). Requiere `DATABASE_URL` y credenciales Firebase Admin en `.env.local`.
 
 ## Ramas
 

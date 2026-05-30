@@ -8,6 +8,16 @@ push a dev → merge a test → Railway rebuilds automáticamente
 
 Branch `test` está conectado a Railway (`tablerocontrol-production`). Cada merge a `test` dispara un redeploy.
 
+## Versionado
+
+Cada `npm run build` (incluido el build de Railway vía Dockerfile) ejecuta `prebuild` → `scripts/bump-version.ts`, que incrementa el patch semver y actualiza la fecha de build en:
+
+- `src/config/version.ts` — fuente de verdad (`APP_VERSION`, `BUILD_DATE`)
+- `package.json` — campo `version` sincronizado
+- `public/version.json` — consulta externa opcional (`version`, `buildDate`)
+
+El footer del sidebar muestra `vX.Y.Z · YYYY-MM-DD` (sin hash de git). Para verificar la versión desplegada en test: abrir la app y mirar el pie del sidebar, o `GET /version.json`.
+
 ## start.sh
 
 ```bash

@@ -143,6 +143,9 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
                     </>
                   )}
                 </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  No vas a crear un negocio nuevo; te sumás al equipo de <strong>{businessName}</strong>.
+                </p>
               </>
             )}
           </div>

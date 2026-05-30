@@ -20,7 +20,7 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Métricas principales',
-        description: 'Resumen de tareas activas, completadas, bloqueadas y urgentes del equipo. Se actualiza en tiempo real.',
+        description: 'Resumen de tareas no finalizadas, completadas, bloqueadas y urgentes del equipo. Incluye tareas en Backlog y tareas programadas para fechas futuras. Para ver solo lo accionable hoy, usá la vista Agenda.',
       },
       {
         title: 'Actividad reciente',
@@ -59,7 +59,19 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Sprint tabs',
-        description: 'Barra secundaria sobre el kanban para filtrar por ciclo: Todas | Backlog | [Ciclo activo] | Otros. El ciclo activo se destaca con un punto verde.',
+        description: 'Barra secundaria sobre el kanban: Todas | Backlog | [Ciclo activo] | Otros. El tab "Backlog" muestra tareas sin período/sprint asignado (de cualquier estado), no solo las de la columna Backlog. Para filtrar por estado, usá las columnas del tablero o los filtros del kanban.',
+      },
+      {
+        title: 'Checklist',
+        description: 'Cada tarea puede tener una lista de pasos con casillas. El progreso se ve en el detalle de la tarea. Al finalizar, el checklist de esa tarea se conserva. En tareas repetitivas, la próxima ocurrencia hereda el mismo checklist con todos los ítems sin marcar.',
+      },
+      {
+        title: 'Tareas repetitivas',
+        description: 'Al crear una tarea, activá "Tarea repetitiva" y elegí frecuencia (diaria, semanal, quincenal o mensual). Cuando la marcás Finalizado, el sistema crea automáticamente la siguiente ocurrencia con la nueva fecha. No hace falta crearla a mano. Si reabrís una tarea ya finalizada (por ejemplo, la movés a En progreso para revisar algo) y la volvés a finalizar, no se duplica la próxima ocurrencia.',
+      },
+      {
+        title: 'Horas estimadas',
+        description: 'Campo opcional al crear o editar una tarea. Podés dejarlo vacío o usar valores desde 0 h en adelante (incrementos de 0,25 h). Sirve para el registro de tiempo y la vista de cronograma.',
       },
     ],
   },
@@ -109,7 +121,19 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Miembros',
-        description: 'Lista de todos los usuarios de la empresa. Podés invitar nuevos miembros por email o generar un link de invitación reutilizable con fecha de vencimiento.',
+        description: 'Lista de todos los usuarios de la empresa. Podés invitar nuevos miembros por email o generar un link de invitación reutilizable con fecha de vencimiento y límite de usos.',
+      },
+      {
+        title: 'Link de invitación — cómo funciona',
+        description: 'El admin genera un link desde Equipo → Invitar. Quien lo abre ve una pantalla para unirse al equipo. Puede crear cuenta con email, iniciar sesión si ya tiene una, o usar "Continuar con Google". Importante: al entrar por link de invitación no se crea un negocio nuevo; el usuario queda en el equipo que lo invitó. Después de autenticarse, debe pulsar "Unirme al equipo" para completar el alta. Verás el mensaje: "No vas a crear un negocio nuevo; te sumás al equipo de …".',
+      },
+      {
+        title: 'Link de invitación — negocio propio después',
+        description: 'Si más adelante querés gestionar tu propio equipo (aparte del que te invitaron), andá a Configuración → Mi perfil → "Armar tu negocio". También podés usar el menú del nombre de empresa en la barra superior: "Armar tu negocio" te lleva a Configuración. No hace falta crear otro usuario.',
+      },
+      {
+        title: 'Link de invitación — problemas frecuentes',
+        description: 'Si Google queda cargando: probá cerrar la pestaña y volver a abrir el link, o usá email/contraseña. Si dice que el link expiró o no tiene usos: pedile al admin un link nuevo. Si ya pertenecés a otro equipo, el sistema no permite unirte a uno distinto con el mismo usuario.',
       },
       {
         title: 'Sectores',
@@ -167,6 +191,14 @@ const SECTIONS: Section[] = [
       {
         title: 'Perfil personal',
         description: 'Avatar, nombre, email y preferencias de idioma y tema (claro/oscuro).',
+      },
+      {
+        title: 'Armar tu negocio',
+        description: 'Si entraste por invitación y solo trabajás en el equipo de otra persona, verás una tarjeta "Armar tu negocio" arriba de tu perfil. Ahí podés crear tu propio negocio sin dejar el equipo al que te invitaron. Después cambiás de contexto con el selector de empresa en la barra superior.',
+      },
+      {
+        title: 'Selector de empresa (barra superior)',
+        description: 'Muestra el nombre del negocio o equipo activo. Desde el menú podés cambiar entre negocios donde tenés membresía. Si aún no tenés negocio propio, la opción "Armar tu negocio" abre Configuración. Si ya sos dueño de al menos uno, "Armar otro negocio" crea un negocio adicional.',
       },
     ],
   },

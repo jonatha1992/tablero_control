@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/profile/route';
 import { verifyToken } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/prisma';
 import { userRepository, businessRepository } from '@/repositories';
 
 vi.mock('@/lib/firebase/admin', () => ({
@@ -15,6 +16,12 @@ vi.mock('@/lib/firebase/admin', () => ({
     }),
     doc: vi.fn((path: string) => ({ path })),
   })),
+}));
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    business: { count: vi.fn() },
+  },
 }));
 
 vi.mock('@/repositories', () => ({
@@ -40,6 +47,7 @@ const mockUpdate = vi.mocked(userRepository.update);
 const mockUserCreate = vi.mocked(userRepository.create);
 const mockBusinessCreate = vi.mocked(businessRepository.create);
 const mockBusinessFindById = vi.mocked(businessRepository.findById);
+const mockBusinessCount = vi.mocked(prisma.business.count);
 
 const baseDecoded = { uid: 'uid-real', email: 'user@test.com', name: 'Test User', picture: undefined };
 const dbUser = {
@@ -58,6 +66,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('SUPERADMIN_EMAILS', 'superadmin@test.com');
   mockBusinessFindById.mockResolvedValue({ id: 'biz-1', ownerId: 'other-user' } as never);
+  mockBusinessCount.mockResolvedValue(0 as never);
 });
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -190,21 +199,42 @@ describe('GET /api/auth/profile — not_invited', () => {
 // ─── businessId missing ───────────────────────────────────────────────────────
 
 describe('GET /api/auth/profile — usuario sin businessId', () => {
-  it('crea business y lo asigna si el usuario no tiene businessId', async () => {
-    const userNoBiz = { ...dbUser, businessId: null };
-    const mockBiz = { id: 'biz-new' };
-    const updatedUser = { ...dbUser, businessId: 'biz-new' };
+  it('reasigna businessId desde membresía activa sin crear negocio', async () => {
+    const userNoBiz = {
+      ...dbUser,
+      businessId: undefined,
+      memberships: [{ businessId: 'biz-1', role: 'miembro', isActive: true }],
+    };
+    const updatedUser = { ...dbUser, businessId: 'biz-1', role: 'miembro' };
 
     mockVerifyToken.mockResolvedValueOnce(baseDecoded as never);
-    mockFindById.mockResolvedValueOnce(userNoBiz as never);
-    mockBusinessCreate.mockResolvedValueOnce(mockBiz as never);
+    mockFindById
+      .mockResolvedValueOnce(userNoBiz as never)
+      .mockResolvedValueOnce(updatedUser as never);
     mockUpdate.mockResolvedValueOnce(updatedUser as never);
+    mockBusinessCount.mockResolvedValueOnce(0 as never);
 
     const res = await GET(makeRequest('valid-token'));
     expect(res.status).toBe(200);
-    expect(mockBusinessCreate).toHaveBeenCalledOnce();
-    expect(mockUpdate).toHaveBeenCalledWith('uid-real', { businessId: 'biz-new', role: 'admin' });
+    expect(mockBusinessCreate).not.toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith('uid-real', {
+      businessId: 'biz-1',
+      role: 'miembro',
+    });
     const body = await res.json();
-    expect(body.businessId).toBe('biz-new');
+    expect(body.businessId).toBe('biz-1');
+    expect(body.hasOwnedBusiness).toBe(false);
+    expect(body.canCreateOwnBusiness).toBe(true);
+  });
+
+  it('retorna 404 si el usuario no tiene membresías activas', async () => {
+    const userOrphan = { ...dbUser, businessId: undefined, memberships: [] };
+
+    mockVerifyToken.mockResolvedValueOnce(baseDecoded as never);
+    mockFindById.mockResolvedValueOnce(userOrphan as never);
+
+    const res = await GET(makeRequest('valid-token'));
+    expect(res.status).toBe(404);
+    expect(mockBusinessCreate).not.toHaveBeenCalled();
   });
 });

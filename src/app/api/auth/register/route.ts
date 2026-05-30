@@ -12,6 +12,7 @@ const DEFAULT_PREFERENCES = {
   timezone: 'America/Argentina/Buenos_Aires',
   notifications: { email: true, push: true, agentReports: true, agentAlerts: true },
   dashboardLayout: [],
+  accountIntent: 'owner' as const,
 };
 
 export const POST = handle(async (request: NextRequest) => {

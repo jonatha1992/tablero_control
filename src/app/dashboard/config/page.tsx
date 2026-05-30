@@ -19,6 +19,7 @@ import { BillingPlanCards } from '@/components/billing/billing-plan-cards';
 import { BillingCurrentPlan } from '@/components/billing/billing-current-plan';
 import { BillingInvoices } from '@/components/billing/billing-invoices';
 import { useSubscriptionQuery } from '@/hooks/queries/use-subscription-query';
+import { CreateOwnBusinessCard } from '@/components/config/create-own-business-card';
 
 export default function ConfigPage() {
   const { user } = useAuth();
@@ -145,6 +146,11 @@ export default function ConfigPage() {
         <div className="flex-1 overflow-y-auto">
           {/* PERFIL */}
           <TabsContent value="perfil" className="mt-0 space-y-4 outline-none">
+            <CreateOwnBusinessCard
+              activeTeamName={
+                user?.memberships?.find((m) => m.businessId === user.businessId && m.isActive)?.businessName
+              }
+            />
             <Card className="border-border/50 shadow-sm glass">
               <CardHeader>
                 <CardTitle className="text-base font-semibold">Información Personal</CardTitle>

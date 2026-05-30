@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { authService } from '@/services/auth.service';
 import type { User, UserRole } from '@/types';
@@ -45,21 +45,6 @@ async function fetchProfile(fbUser: FirebaseUser): Promise<User | null> {
   return null;
 }
 
-async function autoRegister(fbUser: FirebaseUser): Promise<User | null> {
-  try {
-    const token = await fbUser.getIdToken();
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) return null;
-    const profile = await res.json();
-    return { ...profile, avatar: profile.avatar || fbUser.photoURL || undefined };
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -93,18 +78,13 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
             (window.location.pathname.startsWith('/i/') || isInviteRedirectPath(redirectParam));
 
           if (onRegisterPage || onInvitePage) {
-            // register page llama refreshProfile() después del POST
-            // invite page crea el user vía /api/invites/[token]/accept
+            // register: refreshProfile tras POST /api/auth/register
+            // invite: usuario se provisiona en POST /api/invites/[token]/accept
+            setUser(null);
+            setNotInvited(false);
           } else {
-            // Intentar auto-registrar (mismo comportamiento que /register)
-            const registered = await autoRegister(fbUser);
-            if (registered) {
-              setUser(registered);
-              setNotInvited(false);
-            } else {
-              setNotInvited(true);
-              await firebaseSignOut(auth);
-            }
+            setUser(null);
+            setNotInvited(true);
           }
         }
       } else {

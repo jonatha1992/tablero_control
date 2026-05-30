@@ -85,7 +85,7 @@ describe('GET /api/tasks', () => {
 
 ### Fixtures de usuario con memberships
 
-Los fixtures de usuario deben incluir `memberships` para evitar que la ruta de auto-provisioning entre a crear un nuevo business:
+Los fixtures de usuario deben incluir `memberships` activas: `GET /api/auth/profile` devuelve `404 not_invited` si no hay ninguna, y reasigna `businessId` desde la primera membresía si falta (ya no crea `Business` automáticamente):
 
 ```typescript
 const dbUser = {
@@ -97,6 +97,8 @@ const dbUser = {
   memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }], // requerido
 };
 ```
+
+Tests relacionados: `src/test/api-auth-profile.test.ts` (reasignación sin `businessCreate`), `src/test/api-invites.test.ts` (`accountIntent: collaborator`, sin `business.create` en accept).
 
 ### Componentes
 

@@ -50,10 +50,10 @@ Tablero principal con drag & drop. Columnas de izquierda a derecha:
 - Estado: Backlog → Hecho / Bloqueado
 - Asignados (múltiples), sector, proyecto, ciclo, objetivo
 - Fecha límite con hora opcional
-- Subtareas, adjuntos, comentarios, registro de tiempo
+- Subtareas, checklist (lista de pasos con progreso), adjuntos, comentarios, registro de tiempo
 - Recurrencia: diaria / semanal / quincenal / mensual / personalizada
 
-**Recurrencia:** al completar una tarea recurrente, el sistema crea automáticamente la siguiente ocurrencia. No hace falta crearlo a mano.
+**Recurrencia:** al completar una tarea recurrente por primera vez, el sistema crea automáticamente la siguiente ocurrencia con el checklist reseteado (ítems sin marcar). No hace falta crearlo a mano. Si reabrís una tarea ya finalizada y la volvés a marcar Finalizado, no se duplica la próxima ocurrencia.
 
 ---
 
@@ -151,7 +151,7 @@ Gestión de miembros del negocio.
 - Límite de usos opcional
 - El link se puede compartir por WhatsApp, Slack, etc.
 
-Al acceder al link, el usuario ve una pantalla de confirmación. Después de aceptar, aparece el mensaje de éxito y el botón para ir al dashboard.
+Al acceder al link (`/i/{token}`), el usuario puede crear cuenta, iniciar sesión o continuar con Google. **No** se crea un negocio propio en este flujo: el alta en el equipo ocurre al pulsar **Unirme al equipo** (`POST /api/invites/{token}/accept`). Después de aceptar, aparece el mensaje de éxito y el botón para ir al dashboard.
 
 ### Gestionar miembros
 - Ver lista con rol, sector asignado y estado (activo / inactivo)
@@ -226,7 +226,7 @@ Los precios los configura el superadmin desde `/superadmin/planes`.
 
 ## Ayuda (`/dashboard/ayuda`)
 
-Centro de ayuda con documentación de cada sección en formato acordeón. Incluye el botón **"Ver tour"** que lanza el tour guiado interactivo desde cualquier página.
+Centro de ayuda con documentación de cada sección en formato acordeón. Incluye guías de tareas repetitivas, checklist, sprint tabs, link de invitación y troubleshooting. Incluye el botón **"Ver tour"** que lanza el tour guiado interactivo desde cualquier página.
 
 El tour también se puede iniciar desde cualquier parte de la app importando:
 ```ts

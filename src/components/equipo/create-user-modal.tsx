@@ -22,6 +22,7 @@ import { memberKeys } from '@/hooks/queries/use-members-query';
 import { getToken } from '@/lib/firebase/auth';
 import type { UserRole } from '@/types/domain/user';
 import type { CreateUserMode } from '@/app/api/users/create/route';
+import { createUserFormFields } from '@/components/equipo/create-user-form-fields';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -81,6 +82,8 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const queryClient = useQueryClient();
 
   const roles = isSuperAdmin ? SUPERADMIN_ROLES : ROLES;
+  const fields = createUserFormFields(mode);
+  const showPasswordField = mode === 'username' || (mode === 'email' && createAccess);
 
   function handleGenerate() {
     setPassword(generatePassword());
@@ -129,8 +132,15 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     mutate(
       {
         name: trimmedName,
-        email: trimmedEmail,
-        password: createAccess ? password : undefined,
+        email: mode === 'username' || mode === 'ghost' ? undefined : trimmedEmail,
+        username: mode === 'username' ? trimmedUsername : undefined,
+        password:
+          mode === 'username'
+            ? password
+            : mode === 'email' && createAccess
+              ? password
+              : undefined,
+        mode,
         role,
         businessId,
         locationId: locationId || undefined,
@@ -213,7 +223,15 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                   <button
                     key={m.value}
                     type="button"
-                    onClick={() => { setMode(m.value); setErrors({}); setError(''); }}
+                    onClick={() => {
+                      setMode(m.value);
+                      setErrors({});
+                      setError('');
+                      if (m.value === 'email') setCreateAccess(true);
+                      if (m.value === 'username' || m.value === 'google' || m.value === 'ghost') {
+                        setCreateAccess(false);
+                      }
+                    }}
                     className={cn(
                       'flex flex-col items-center gap-1 rounded-md px-2 py-2 text-xs font-medium transition-colors',
                       mode === m.value
@@ -242,131 +260,95 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Correo electrónico</label>
-                <Input
-                  type="email"
-                  placeholder="juan@empresa.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  maxLength={150}
-                />
-                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-              </div>
-
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Checkbox
-                  checked={createAccess}
-                  onChange={(e) => {
-                    setCreateAccess(e.target.checked);
-                    if (!e.target.checked && !password) setPassword(generatePassword());
-                  }}
-                />
-                Crear acceso con contraseña
-              </label>
-
-              <div className={cn('space-y-1.5', !createAccess && 'hidden')}>
-                <label className="text-sm font-medium">Contraseña inicial</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pr-10 font-mono text-sm"
-                      required={createAccess}
-                      minLength={createAccess ? 6 : undefined}
-                    />
-                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleGenerate}
-                    title="Generar contraseña"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
+              {fields.showEmail && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">{fields.emailLabel}</label>
+                  <Input
+                    type="email"
+                    placeholder={fields.emailPlaceholder}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    maxLength={150}
+                  />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
-              </div>
+              )}
 
-                {/* Username (mode: username) */}
-                {mode === 'username' && (
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Nombre de usuario</label>
-                    <Input
-                      placeholder="juan.garcia"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
-                      maxLength={30}
-                    />
-                    {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
-                    <p className="text-xs text-muted-foreground">Solo letras, números, puntos, guiones.</p>
-                  </div>
-                )}
+              {fields.showUsername && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Nombre de usuario</label>
+                  <Input
+                    placeholder="juan.garcia"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
+                    maxLength={30}
+                  />
+                  {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
+                  <p className="text-xs text-muted-foreground">Solo letras, números, puntos, guiones.</p>
+                </div>
+              )}
 
-                {/* Password (modes: email, username) */}
-                {mode === 'email' && (
-                  <label className="flex items-center gap-2 text-sm font-medium">
-                    <Checkbox
-                      checked={createAccess}
-                      onChange={(e) => setCreateAccess(e.target.checked)}
-                    />
-                    Crear acceso con contraseña
-                  </label>
-                )}
+              {fields.showPasswordToggle && (
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Checkbox
+                    checked={createAccess}
+                    onChange={(e) => {
+                      setCreateAccess(e.target.checked);
+                      if (!e.target.checked && !password) setPassword(generatePassword());
+                    }}
+                  />
+                  Crear acceso con contraseña
+                </label>
+              )}
 
-                {mode === 'username' || (mode === 'email' && createAccess) ? (
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Contraseña inicial</label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pr-10 font-mono text-sm"
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((v) => !v)}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      <Button type="button" variant="outline" size="icon" onClick={handleGenerate} title="Generar contraseña">
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
+              {showPasswordField && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Contraseña inicial</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pr-10 font-mono text-sm"
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
-                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                    <p className="text-xs text-muted-foreground">El usuario podrá cambiarla luego.</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleGenerate}
+                      title="Generar contraseña"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
                   </div>
-                ) : null}
+                  {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                  <p className="text-xs text-muted-foreground">El usuario podrá cambiarla luego.</p>
+                </div>
+              )}
 
-                {mode === 'google' && (
-                  <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
-                    El usuario deberá usar Continuar con Google para ingresar al sistema.
-                  </div>
-                )}
+              {mode === 'google' && (
+                <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+                  El usuario deberá usar Continuar con Google para ingresar al sistema.
+                </div>
+              )}
 
-                {mode === 'ghost' && (
-                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                    Se crea sin credenciales. Queda disponible para asignarle sector y tareas.
-                  </div>
-                )}
+              {mode === 'ghost' && (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                  Se crea sin credenciales. Queda disponible para asignarle sector y tareas.
+                </div>
+              )}
 
-                {/* Location */}
+              {/* Location */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Asignar Local/Sector (Opcional)</label>
                   <select
@@ -475,38 +457,51 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             <div className="space-y-4 py-2">
               <p className="text-sm text-muted-foreground">
                 El usuario <span className="font-medium text-foreground">{name}</span> fue creado
-                correctamente.{createAccess ? ' Compartile estas credenciales:' : ''}
+                correctamente.
+                {showPasswordField || mode === 'google' ? ' Compartile estas credenciales:' : ''}
               </p>
-              <div className={cn('rounded-lg border bg-muted/40 p-4 space-y-2 text-sm', !createAccess && 'hidden')}>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Correo electrónico</span>
-                  <span className="font-medium">{email}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Contraseña</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-medium">{password}</span>
-                    <button
-                      type="button"
-                      onClick={handleCopyPassword}
-                      className="text-muted-foreground hover:text-foreground"
-                      title="Copiar contraseña"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </button>
+              <div className={cn('rounded-lg border bg-muted/40 p-4 space-y-2 text-sm', !(showPasswordField || mode === 'google') && 'hidden')}>
+                {mode === 'username' ? (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Usuario</span>
+                    <span className="font-medium">{username}</span>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Correo electrónico</span>
+                    <span className="font-medium">{email}</span>
+                  </div>
+                )}
+                {showPasswordField && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Contraseña</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-medium">{password}</span>
+                      <button
+                        type="button"
+                        onClick={handleCopyPassword}
+                        className="text-muted-foreground hover:text-foreground"
+                        title="Copiar contraseña"
+                      >
+                        {copied ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {mode === 'google' && (
+                  <p className="text-xs text-muted-foreground">Debe ingresar con Continuar con Google.</p>
+                )}
               </div>
-              {!createAccess && (
+              {mode === 'ghost' && (
                 <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
                   No se generaron credenciales. Podés asignarle tareas desde el tablero.
                 </p>
               )}
-              <p className={cn('text-xs text-muted-foreground', !createAccess && 'hidden')}>
+              <p className={cn('text-xs text-muted-foreground', !showPasswordField && 'hidden')}>
                 Guardá esta contraseña ahora — no se podrá ver de nuevo.
               </p>
             </div>
