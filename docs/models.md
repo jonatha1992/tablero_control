@@ -63,12 +63,14 @@ Campos calculados en `GET /api/auth/profile` (no persistidos en User): `isOwner`
 id, name, plan (PlanId), status (BusinessStatus)
 logo?, adminId
 featureFlags (JSON)
-settings (JSON): { maxLocations, maxUsers, features, localeTypes }
+settings (JSON): { maxLocations, maxUsers, multipleBoards, features, localeTypes }
 trialEndsAt?, suspendedAt?, suspendedReason?
 ```
 
 Roles: `PlanId = free | basic | pro | enterprise`
 `BusinessStatus = active | suspended | trial | cancelled`
+
+**Mapeo UI ↔ Prisma:** Espacio = `Business`, Sede = `Location`, Tablero = `Project`. Ver `docs/functional/GLOSSARY_AND_MODELS.md`.
 
 ## Subscription
 

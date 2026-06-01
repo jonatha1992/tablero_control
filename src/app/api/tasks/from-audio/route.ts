@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
-import { teamService } from '@/services/team.service';
 import { transcribeAudio } from '@/lib/groq/transcribe';
 import { extractTasksFromTranscription } from '@/lib/groq/extract-tasks';
+import { loadExtractContext, type ExtractContext } from '@/lib/groq/extract-context';
 import { handle } from '@/lib/api/route-handler';
 
 export const maxDuration = 60;
@@ -32,11 +32,18 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'file_too_large' }, { status: 413 });
   }
 
-  const members: { id: string; name: string }[] = [];
+  let extractCtx: ExtractContext = {
+    members: [],
+    locations: [],
+    projects: [],
+    cycles: [],
+    objectives: [],
+    siteLabel: 'Sede',
+    today: new Date().toISOString().split('T')[0],
+  };
   if (user.businessId) {
     try {
-      const allMembers = await teamService.getMembersByBusiness(user.businessId);
-      members.push(...allMembers.map((m) => ({ id: m.id, name: m.name })));
+      extractCtx = await loadExtractContext(user.businessId);
     } catch {
       // non-fatal
     }
@@ -54,7 +61,7 @@ export const POST = handle(async (request: NextRequest) => {
   let tasks: Awaited<ReturnType<typeof extractTasksFromTranscription>>;
   let parseError = false;
   try {
-    tasks = await extractTasksFromTranscription(transcription, members);
+    tasks = await extractTasksFromTranscription(transcription, extractCtx);
   } catch (err) {
     console.error('[from-audio] Task extraction failed', err);
     tasks = [];

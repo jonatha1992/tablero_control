@@ -35,7 +35,7 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Kanban',
-        description: 'Tablero con columnas por estado: Backlog, Pendiente, En progreso, En revisión, Hecho y Bloqueado. Arrastrá y soltá para cambiar el estado. Podés filtrar por proyecto, prioridad o miembro.',
+        description: 'Tablero con columnas por estado: Backlog, Pendiente, En progreso, En revisión, Hecho y Bloqueado. Arrastrá y soltá para cambiar el estado. Podés filtrar por tablero (si tenés varios), prioridad o miembro.',
       },
       {
         title: 'Agenda',
@@ -51,7 +51,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Eventos',
-        description: 'Eventos del calendario del negocio: reuniones, hitos y recordatorios que no son tareas de trabajo.',
+        description: 'Eventos del calendario del espacio: reuniones, hitos y recordatorios que no son tareas de trabajo.',
       },
       {
         title: 'Crear tarea con IA',
@@ -125,19 +125,19 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Link de invitación — cómo funciona',
-        description: 'El admin genera un link desde Equipo → Invitar. Quien lo abre ve una pantalla para unirse al equipo. Puede crear cuenta con email, iniciar sesión si ya tiene una, o usar "Continuar con Google". Importante: al entrar por link de invitación no se crea un negocio nuevo; el usuario queda en el equipo que lo invitó. Después de autenticarse, debe pulsar "Unirme al equipo" para completar el alta. Verás el mensaje: "No vas a crear un negocio nuevo; te sumás al equipo de …".',
+        description: 'El admin genera un link desde Equipo → Invitar. Quien lo abre ve una pantalla para unirse al equipo. Puede crear cuenta con email, iniciar sesión si ya tiene una, o usar "Continuar con Google". Importante: al entrar por link de invitación no se crea un espacio nuevo; el usuario queda en el equipo que lo invitó. Después de autenticarse, debe pulsar "Unirme al equipo" para completar el alta. Verás el mensaje: "No vas a crear un espacio nuevo; te sumás al equipo de …".',
       },
       {
-        title: 'Link de invitación — negocio propio después',
-        description: 'Si más adelante querés gestionar tu propio equipo (aparte del que te invitaron), andá a Configuración → Mi perfil → "Armar tu negocio". También podés usar el menú del nombre de empresa en la barra superior: "Armar tu negocio" te lleva a Configuración. No hace falta crear otro usuario.',
+        title: 'Link de invitación — espacio propio después',
+        description: 'Si más adelante querés gestionar tu propio equipo (aparte del que te invitaron), andá a Configuración → Mi perfil → "Armar tu espacio". También podés usar el menú del nombre en la barra superior: "Armar tu espacio" te lleva a Configuración. No hace falta crear otro usuario.',
       },
       {
         title: 'Link de invitación — problemas frecuentes',
         description: 'Si Google queda cargando: probá cerrar la pestaña y volver a abrir el link, o usá email/contraseña. Si dice que el link expiró o no tiene usos: pedile al admin un link nuevo. Si ya pertenecés a otro equipo, el sistema no permite unirte a uno distinto con el mismo usuario.',
       },
       {
-        title: 'Sectores',
-        description: 'Locales, sucursales o áreas de la empresa. Cada tarea puede pertenecer a un sector. Los responsables de sector tienen permisos especiales en sus tareas.',
+        title: 'Sedes',
+        description: 'Sucursales, locales o áreas del espacio. Cada tarea puede pertenecer a una sede. Los responsables de sede tienen permisos especiales en sus tareas.',
       },
       {
         title: 'Roles',
@@ -163,7 +163,7 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Plan actual',
-        description: 'Mostrá el plan contratado (Free, Basic, Pro, Enterprise) con los límites de usuarios, sectores y proyectos.',
+        description: 'Mostrá el plan contratado (Free, Basic, Pro, Enterprise) con los límites de usuarios, sedes y tableros.',
       },
       {
         title: 'Historial de pagos',
@@ -181,8 +181,8 @@ const SECTIONS: Section[] = [
     emoji: '⚙️',
     subsections: [
       {
-        title: 'Datos de la empresa',
-        description: 'Nombre, logo, zona horaria y configuración general de la cuenta.',
+        title: 'Datos del espacio',
+        description: 'Nombre, logo, zona horaria y configuración general del espacio.',
       },
       {
         title: 'Notificaciones',
@@ -193,12 +193,12 @@ const SECTIONS: Section[] = [
         description: 'Avatar, nombre, email y preferencias de idioma y tema (claro/oscuro).',
       },
       {
-        title: 'Armar tu negocio',
-        description: 'Si entraste por invitación y solo trabajás en el equipo de otra persona, verás una tarjeta "Armar tu negocio" arriba de tu perfil. Ahí podés crear tu propio negocio sin dejar el equipo al que te invitaron. Después cambiás de contexto con el selector de empresa en la barra superior.',
+        title: 'Armar tu espacio',
+        description: 'Si entraste por invitación y solo trabajás en el equipo de otra persona, verás una tarjeta "Armar tu espacio" arriba de tu perfil. Ahí podés crear tu propio espacio sin dejar el equipo al que te invitaron. Después cambiás de contexto con el selector en la barra superior.',
       },
       {
-        title: 'Selector de empresa (barra superior)',
-        description: 'Muestra el nombre del negocio o equipo activo. Desde el menú podés cambiar entre negocios donde tenés membresía. Si aún no tenés negocio propio, la opción "Armar tu negocio" abre Configuración. Si ya sos dueño de al menos uno, "Armar otro negocio" crea un negocio adicional.',
+        title: 'Selector de espacio (barra superior)',
+        description: 'Muestra el nombre del espacio activo. Desde el menú podés cambiar entre espacios donde tenés membresía. Si aún no tenés espacio propio, la opción "Armar tu espacio" abre Configuración. Si ya sos dueño de al menos uno, "Crear otro espacio" crea un espacio adicional.',
       },
     ],
   },

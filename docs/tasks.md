@@ -103,3 +103,43 @@ Gestionados en `/dashboard/planificacion/objetivos`.
 **Asignación de tareas:** `POST /api/cycles/[id]/tasks` o `POST /api/objectives/[id]/tasks`.
 Body: `{ taskIds: string[], action?: 'assign' | 'remove' }`.
 El endpoint valida cross-tenant antes de asignar — ver decisions/003.
+
+## Creación por chat / voz (Planificador)
+
+UI principal: panel **Asistente IA → tab Planificador** (`src/components/layout/ai-assistant-panel.tsx`).
+Modal legacy de dictado: `dictate-tasks-modal.tsx` (misma preview compartida).
+
+### Flujo Planificador (lenguaje natural)
+
+1. Usuario describe tareas en español (texto o 🎤).
+2. `POST /api/assistant/planner` → `runPlannerAgent` (intent + pipeline).
+3. Respuesta estructurada:
+   - `clarify` — pregunta + chips opcionales (assignee, fecha, sprint, etc.)
+   - `preview_tasks` — tarjetas editables (`TaskPreviewCard`)
+   - `preview_plan` — planificación de sprint/objetivo antes de confirmar
+   - `message` — texto informativo
+4. Usuario confirma → `useConfirmDictatedTasks` → `POST /api/tasks` (+ subtareas vía `POST /api/tasks/[id]/subtasks`).
+5. **Editar en formulario** — prellena `CreateTaskModal` vía `openCreateModalWithDraft` (`CreateTaskDraft` en `kanban-ui.store`).
+
+### Extracción directa (fast-path)
+
+- `POST /api/tasks/from-text` — texto → `extractTasksFromTranscription`
+- `POST /api/tasks/from-audio` — Whisper → extracción
+
+Contexto inyectado server-side (`loadExtractContext`): miembros, sedes, tableros, ciclos, objetivos, defaults (tablero Principal, sprint activo), etiqueta de espacio (`siteLabel`).
+
+### Campos soportados en extracción / confirmación
+
+Título, descripción, status, prioridad, tipo, tags, fecha+hora, assignees, location, project, cycle, objective, checklist, subtareas, recurrencia (`weekly`, `biweekly`, `monthly`, etc.).
+
+Defaults al confirmar: si falta `projectId` → tablero Principal; si falta `cycleId` → sprint seleccionado en UI (`useTaskPreviewContext.confirmOptions`).
+
+### Componentes clave
+
+| Archivo | Rol |
+|---------|-----|
+| `src/lib/groq/extract-tasks.ts` | Schema `ExtractedTask` + prompt LLM |
+| `src/lib/groq/planner-intent.ts` | Clasificación de intención |
+| `src/lib/groq/planner-tools.ts` | Pipeline intent → clarify / preview |
+| `src/components/tareas/task-preview-card.tsx` | Preview editable unificada |
+| `src/hooks/mutations/use-dictate-tasks.ts` | Confirmación → DTO completo |

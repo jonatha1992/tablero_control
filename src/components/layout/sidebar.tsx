@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { can } from '@/lib/permissions';
 import { APP_VERSION, BUILD_DATE } from '@/config/version';
 
@@ -81,7 +82,7 @@ const navItems: NavItem[] = [
     tourId: 'tour-nav-equipo',
     children: [
       { href: '/dashboard/equipo',          label: 'Miembros',        icon: Users,       exact: true },
-      { href: '/dashboard/equipo/sectores', label: 'Sectores',        icon: Building2,   adminOnly: true },
+      { href: '/dashboard/equipo/sectores', label: '__SITES__', icon: Building2, adminOnly: true },
       { href: '/dashboard/equipo/roles',    label: 'Roles',           icon: ShieldCheck, adminOnly: true },
     ],
   },
@@ -93,7 +94,7 @@ const navItems: NavItem[] = [
 
 const superAdminItems = [
   { href: '/superadmin',               label: 'Plataforma',    icon: ShieldCheck,       exact: true },
-  { href: '/superadmin/businesses',    label: 'Negocios',      icon: Building2,         exact: false },
+  { href: '/superadmin/businesses',    label: 'Espacios',      icon: Building2,         exact: false },
   { href: '/superadmin/users',         label: 'Usuarios',      icon: Users,             exact: false },
   { href: '/superadmin/subscriptions', label: 'Suscripciones', icon: CreditCard,        exact: false },
   { href: '/superadmin/planes',        label: 'Planes',        icon: SlidersHorizontal, exact: false },
@@ -111,6 +112,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   const setMobileOpen = (val: boolean) => onMobileOpenChange?.(val);
   const pathname = usePathname();
   const { isSuperAdmin, user, isAdmin } = useAuth();
+  const labels = useSpaceLabels();
 
   function isItemVisible(item: NavItem): boolean {
     if (!user) return false;
@@ -144,7 +146,14 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     return child.exact ? pathname === child.href : pathname.startsWith(child.href);
   }
 
-  const visibleItems = navItems.filter(isItemVisible);
+  const visibleItems = navItems
+    .filter(isItemVisible)
+    .map((item) => ({
+      ...item,
+      children: item.children?.map((child) =>
+        child.label === '__SITES__' ? { ...child, label: labels.sites } : child
+      ),
+    }));
 
   const sidebarContent = (
     <div className="flex h-full flex-col">

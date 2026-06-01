@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { KanbanDragState, KanbanUIFilters } from '@/types/ui/kanban.ui';
 import type { TaskStatus } from '@/types/domain/task';
+import type { CreateTaskDraft } from '@/types/ui/create-task-draft';
 
 interface KanbanUIStore {
   // Drag & drop — efímero, solo existe durante el gesto
@@ -15,7 +16,10 @@ interface KanbanUIStore {
   isDictateModalOpen: boolean;
   isAiPanelOpen: boolean;
   selectedTaskId: string | null;
+  createTaskDraft: CreateTaskDraft | null;
   openCreateModal: () => void;
+  openCreateModalWithDraft: (draft: CreateTaskDraft) => void;
+  clearCreateTaskDraft: () => void;
   closeCreateModal: () => void;
   openDictateModal: () => void;
   closeDictateModal: () => void;
@@ -69,8 +73,11 @@ export const useKanbanUIStore = create<KanbanUIStore>((set) => ({
   isDictateModalOpen: false,
   isAiPanelOpen: false,
   selectedTaskId: null,
-  openCreateModal: () => set({ isCreateModalOpen: true }),
-  closeCreateModal: () => set({ isCreateModalOpen: false }),
+  createTaskDraft: null,
+  openCreateModal: () => set({ isCreateModalOpen: true, createTaskDraft: null }),
+  openCreateModalWithDraft: (draft) => set({ isCreateModalOpen: true, createTaskDraft: draft }),
+  clearCreateTaskDraft: () => set({ createTaskDraft: null }),
+  closeCreateModal: () => set({ isCreateModalOpen: false, createTaskDraft: null }),
   openDictateModal: () => set({ isDictateModalOpen: true }),
   closeDictateModal: () => set({ isDictateModalOpen: false }),
   openAiPanel: () => set({ isAiPanelOpen: true }),

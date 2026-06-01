@@ -11,6 +11,7 @@ import { SectorModal } from '@/components/sectores/sector-modal';
 import { SectorDetailModal } from '@/components/sectores/sector-detail-modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Location } from '@/types/domain/location';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
 
 export default function SectoresPage() {
   const { user, loading: authLoading } = useAuth();
@@ -19,6 +20,8 @@ export default function SectoresPage() {
   const { data: sectors = [], isLoading: queryLoading } = useLocationsQuery();
   const isLoading = authLoading || queryLoading;
   const deleteMutation = useDeleteLocation();
+  const labels = useSpaceLabels();
+  const site = labels.site;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<Location | undefined>();
@@ -54,7 +57,7 @@ export default function SectoresPage() {
         <div className="flex justify-end">
           <Button onClick={handleCreate} className="shadow-sm">
             <Plus className="mr-2 h-4 w-4" />
-            Nuevo Sector
+            Nueva {site}
           </Button>
         </div>
       )}
@@ -85,7 +88,7 @@ export default function SectoresPage() {
       <ConfirmDialog
         open={!!sectorToDelete}
         onOpenChange={(open) => { if (!open) setSectorToDelete(null); }}
-        title="Eliminar sector"
+        title={`Eliminar ${site.toLowerCase()}`}
         description={`¿Estás seguro de eliminar "${sectorToDelete?.name}"? Esta acción no se puede deshacer.`}
         confirmLabel="Eliminar"
         onConfirm={handleDeleteConfirm}

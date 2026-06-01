@@ -4,19 +4,7 @@ import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
 import { prisma } from '@/lib/prisma';
-
-function validateInvite(invite: import('@prisma/client').BusinessInvite | null) {
-  if (!invite || !invite.isActive) {
-    return { valid: false, reason: 'revoked' as const };
-  }
-  if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
-    return { valid: false, reason: 'expired' as const };
-  }
-  if (invite.maxUses > 0 && invite.usedCount >= invite.maxUses) {
-    return { valid: false, reason: 'max_uses' as const };
-  }
-  return { valid: true as const };
-}
+import { validateInvite } from '@/lib/invites/validate-invite';
 
 export const GET = handle(async (_request: NextRequest, { params }: { params: Promise<{ token: string }> }) => {
   const { token } = await params;

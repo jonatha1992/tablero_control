@@ -3,6 +3,9 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { businessRepository, userRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 import { writeAuditLog } from '@/lib/api/audit';
+import { DEFAULT_BUSINESS_SETTINGS } from '@/lib/business-defaults';
+import { ensureDefaultBoard } from '@/lib/default-board';
+import { defaultSpaceName } from '@/lib/terminology';
 import type { UserRole } from '@/types/domain/user';
 
 export const POST = handle(async (request: NextRequest) => {
@@ -10,7 +13,7 @@ export const POST = handle(async (request: NextRequest) => {
   if (user instanceof NextResponse) return user;
 
   const body = await request.json() as { name?: string };
-  const name = body.name?.trim() || `Empresa de ${user.data.name}`;
+  const name = body.name?.trim() || defaultSpaceName(user.data.name);
 
   const business = await businessRepository.create({
     name,
@@ -18,20 +21,13 @@ export const POST = handle(async (request: NextRequest) => {
     ownerId: user.uid,
     plan: 'free',
     status: 'active',
-    settings: {
-      maxLocations: 1,
-      maxUsers: 5,
-      theme: 'system',
-      language: 'es',
-      timezone: 'America/Argentina/Buenos_Aires',
-      notifications: { email: true },
-      features: { customBranding: false, advancedReports: false, apiAccess: false },
-      localeTypes: [],
-    },
+    settings: { ...DEFAULT_BUSINESS_SETTINGS },
     featureFlags: {},
     locationIds: [],
     teamIds: [],
   });
+
+  await ensureDefaultBoard(business.id);
 
   await userRepository.addMembership({
     userId: user.uid,

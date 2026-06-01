@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tasksApi } from '@/lib/api/tasks';
+import { subtasksApi } from '@/lib/api/subtasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import { useAuth } from '@/hooks/auth-context';
 import { getToken } from '@/lib/firebase/auth';
@@ -18,6 +19,42 @@ export interface FromAudioResult {
 export interface FromTextResult {
   tasks: ExtractedTask[];
   parseError: boolean;
+}
+
+export interface ConfirmTasksOptions {
+  /** Override when task has no projectId */
+  defaultProjectId?: string;
+  /** Override when task has no cycleId */
+  defaultCycleId?: string;
+}
+
+function toCreateDto(t: ExtractedTask, opts: ConfirmTasksOptions): CreateTaskDTO {
+  return {
+    title: t.title,
+    description: t.description,
+    status: t.status,
+    priority: t.priority,
+    type: t.type,
+    assigneeIds: t.assigneeIds,
+    tags: t.tags,
+    estimatedHours: t.estimatedHours,
+    locationId: t.locationId,
+    projectId: t.projectId ?? opts.defaultProjectId,
+    cycleId: t.cycleId ?? opts.defaultCycleId,
+    objectiveId: t.objectiveId,
+    checklist: t.checklist?.length ? t.checklist : undefined,
+    dueDate: t.dueDate
+      ? new Date(`${t.dueDate}T${t.dueTime ?? '00:00'}`)
+      : undefined,
+    recurrence: t.recurrence
+      ? {
+          frequency: t.recurrence.frequency,
+          interval: t.recurrence.interval,
+          dayOfWeek: t.recurrence.dayOfWeek,
+          dayOfMonth: t.recurrence.dayOfMonth,
+        }
+      : undefined,
+  };
 }
 
 export function useDictateTasksUpload() {
@@ -49,29 +86,23 @@ export function useConfirmDictatedTasks() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (tasks: ExtractedTask[]) => {
+    mutationFn: async ({
+      tasks,
+      options = {},
+    }: {
+      tasks: ExtractedTask[];
+      options?: ConfirmTasksOptions;
+    }) => {
       const results = [];
       for (const t of tasks) {
-        const dto: CreateTaskDTO = {
-          title: t.title,
-          description: t.description,
-          status: t.status,
-          priority: t.priority,
-          type: t.type,
-          assigneeIds: t.assigneeIds,
-          tags: t.tags,
-          estimatedHours: t.estimatedHours,
-          locationId: t.locationId,
-          dueDate: t.dueDate
-            ? new Date(`${t.dueDate}T${t.dueTime ?? '00:00'}`)
-            : undefined,
-          recurrence: t.recurrence ? {
-            frequency: t.recurrence.frequency,
-            interval: t.recurrence.interval,
-            dayOfWeek: t.recurrence.dayOfWeek,
-          } : undefined,
-        };
-        results.push(await tasksApi.create(dto, user!.id, user?.businessId ?? ''));
+        const dto = toCreateDto(t, options);
+        const created = await tasksApi.create(dto, user!.id, user?.businessId ?? '');
+        if (t.subtasks?.length) {
+          for (const subTitle of t.subtasks) {
+            await subtasksApi.create(created.id, subTitle);
+          }
+        }
+        results.push(created);
       }
       return results;
     },

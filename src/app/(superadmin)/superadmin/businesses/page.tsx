@@ -21,7 +21,7 @@ async function fetchBusinesses(): Promise<Business[]> {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Error al cargar negocios');
+  if (!res.ok) throw new Error('Error al cargar espacios');
   const data = await res.json() as { businesses: Business[] };
   return data.businesses;
 }
@@ -33,7 +33,7 @@ async function patchBusiness(args: { businessId: string; action: 'suspend' | 're
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(args),
   });
-  if (!res.ok) throw new Error('Error al actualizar negocio');
+  if (!res.ok) throw new Error('Error al actualizar espacio');
 }
 
 const STATUS_UI: Record<BusinessStatus, { label: string; icon: React.ReactNode; color: string }> = {
@@ -95,7 +95,7 @@ export default function BusinessesPage() {
     if (failures.length === 0) {
       setBulkDeleteOpen(false);
     } else {
-      setDeleteError(`${failures.length} negocio(s) no pudieron eliminarse.`);
+      setDeleteError(`${failures.length} espacio(s) no pudieron eliminarse.`);
     }
   }
 
@@ -243,7 +243,7 @@ export default function BusinessesPage() {
                   <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleSelectAll} aria-label="Seleccionar todos" />
                 </th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('name')}>
-                  <span className="inline-flex items-center">Negocio {sortIcon('name')}</span>
+                  <span className="inline-flex items-center">Espacio {sortIcon('name')}</span>
                 </th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('plan')}>
                   <span className="inline-flex items-center">Plan {sortIcon('plan')}</span>
@@ -309,7 +309,7 @@ export default function BusinessesPage() {
                           onClick={() => { setDeleteError(''); setDeleteTarget(biz); }}
                           disabled={mutation.isPending}
                           className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30"
-                          title="Eliminar negocio"
+                          title="Eliminar espacio"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -329,8 +329,8 @@ export default function BusinessesPage() {
       <ConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={(open) => { if (!open && !deleting) { setBulkDeleteOpen(false); setDeleteError(''); } }}
-        title={`Eliminar ${selectedIds.size} negocio(s)`}
-        description="Se eliminarán permanentemente los negocios seleccionados con todos sus locales, equipos, proyectos y tareas. Los usuarios quedarán sin negocio asignado. No se puede deshacer."
+        title={`Eliminar ${selectedIds.size} espacio(s)`}
+        description="Se eliminarán permanentemente los espacios seleccionados con todas sus sedes, equipos, tableros y tareas. Los usuarios quedarán sin espacio asignado. No se puede deshacer."
         variant="destructive"
         confirmLabel="Eliminar seleccionados"
         onConfirm={handleBulkDeleteConfirm}
@@ -344,10 +344,10 @@ export default function BusinessesPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open && !deleting) { setDeleteTarget(null); setDeleteError(''); } }}
-        title="Eliminar negocio"
-        description={deleteTarget ? `¿Eliminar "${deleteTarget.name}" permanentemente? Se borrarán todos sus locales, equipos, proyectos y tareas. Los usuarios quedarán sin negocio asignado. Esta acción no se puede deshacer.` : ''}
+        title="Eliminar espacio"
+        description={deleteTarget ? `¿Eliminar "${deleteTarget.name}" permanentemente? Se borrarán todas sus sedes, equipos, tableros y tareas. Los usuarios quedarán sin espacio asignado. Esta acción no se puede deshacer.` : ''}
         variant="destructive"
-        confirmLabel="Eliminar negocio"
+        confirmLabel="Eliminar espacio"
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       >

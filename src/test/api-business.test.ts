@@ -120,6 +120,7 @@ describe('PATCH /api/business/config', () => {
   });
 
   it('actualiza el negocio y retorna success', async () => {
+    mockFindById.mockResolvedValueOnce(mockBusiness as never);
     mockUpdate.mockResolvedValueOnce(undefined as never);
     const req = new NextRequest('http://localhost/api/business/config', {
       method: 'PATCH',
@@ -133,6 +134,7 @@ describe('PATCH /api/business/config', () => {
   });
 
   it('escribe audit log después de actualizar', async () => {
+    mockFindById.mockResolvedValueOnce(mockBusiness as never);
     mockUpdate.mockResolvedValueOnce(undefined as never);
     const req = new NextRequest('http://localhost/api/business/config', {
       method: 'PATCH',

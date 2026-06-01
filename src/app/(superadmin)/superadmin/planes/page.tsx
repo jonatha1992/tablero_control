@@ -239,10 +239,10 @@ export default function PlanesPage() {
                   <span className="inline-flex items-center">Usuarios {sortIcon('users')}</span>
                 </th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('locations')}>
-                  <span className="inline-flex items-center">Locales {sortIcon('locations')}</span>
+                  <span className="inline-flex items-center">Sedes {sortIcon('locations')}</span>
                 </th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('projects')}>
-                  <span className="inline-flex items-center">Proyectos {sortIcon('projects')}</span>
+                  <span className="inline-flex items-center">Tableros {sortIcon('projects')}</span>
                 </th>
                 <th className="text-left px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort('attachments')}>
                   <span className="inline-flex items-center">Adjuntos/mes {sortIcon('attachments')}</span>
@@ -313,7 +313,7 @@ export default function PlanesPage() {
                   {fieldErrors.limitUsers && <p className="text-xs text-destructive">{fieldErrors.limitUsers}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Máx. locales</label>
+                  <label className="text-xs font-medium text-muted-foreground">Máx. sedes</label>
                   <Input
                     type="number"
                     value={form.limitLocations}
@@ -322,7 +322,7 @@ export default function PlanesPage() {
                   {fieldErrors.limitLocations && <p className="text-xs text-destructive">{fieldErrors.limitLocations}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Máx. proyectos</label>
+                  <label className="text-xs font-medium text-muted-foreground">Máx. tableros</label>
                   <Input
                     type="number"
                     value={form.limitProjects}

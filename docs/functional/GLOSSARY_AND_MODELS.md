@@ -5,11 +5,11 @@ Este documento centraliza las definiciones de negocio y los modelos visuales que
 ## 1. Glosario de Términos
 
 ### 1.1 Términos de Negocio (Dominio)
-- **Negocio (Business)**: Entidad raíz. Representa la empresa o cliente que contrata el sistema (ej. "Cadena de Restaurantes X"). Es el contenedor de más alto nivel para el multi-tenancy.
-- **Local / Sede (Location)**: Una unidad física o lógica del negocio. Puede ser una sucursal, un depósito o un área operativa.
-- **Equipo / Sector (Team)**: Grupo de usuarios dentro de un Local que comparten tareas y proyectos.
+- **Espacio (Business)**: Entidad raíz en UI; modelo Prisma `Business`. Representa la empresa, proyecto o workspace del cliente (ej. "Cadena de Restaurantes X" o "App mobile v2"). Contenedor de multi-tenancy y facturación.
+- **Sede (Location)**: Unidad física o lógica del espacio: sucursal, depósito u oficina. En UI reemplaza el término ambiguo "sector" para locations.
+- **Equipo (Team)**: Grupo de usuarios que comparten tareas y tableros.
 - **Tarea (Task)**: La unidad mínima de trabajo. Posee estado, prioridad, tipo y responsables.
-- **Tablero (Project/Board)**: Contenedor visual que agrupa tareas. Cada negocio puede tener múltiples tableros (uno por local, equipo, área, etc.). Reutiliza el modelo `Project` internamente.
+- **Tablero (Project)**: Contenedor visual Kanban que agrupa tareas. Por defecto cada espacio tiene un tablero "Principal" (`settings.multipleBoards = false` oculta el selector). Modelo Prisma: `Project`.
 - **Ciclo / Período (Cycle)**: Período de tiempo definido (ej. semana, quincena, mes, temporada) donde un equipo planifica y ejecuta un set de tareas. Reemplaza el concepto de "Sprint" con terminología genérica.
 - **Objetivo / Iniciativa (Objective)**: Agrupador de tareas con meta común. Ejemplos: "Apertura Sucursal Palermo", "Campaña Black Friday", "Renovación Local Centro".
 - **Responsable**: Usuario con autoridad sobre un Local o Equipo.
@@ -31,10 +31,10 @@ El sistema sigue una estructura piramidal para la gestión de permisos y datos.
 
 ```mermaid
 graph TD
-    SA[Superadmin - TecnoFusión] --> B[Negocio / Business]
-    B --> AD[Admin - Dueño Negocio]
-    AD --> L1[Local A]
-    AD --> L2[Local B]
+    SA[Superadmin - TecnoFusión] --> B[Espacio / Business]
+    B --> AD[Admin - Dueño del espacio]
+    AD --> L1[Sede A]
+    AD --> L2[Sede B]
     L1 --> R[Responsable]
     L1 --> T1[Equipo X]
     L1 --> T2[Equipo Y]

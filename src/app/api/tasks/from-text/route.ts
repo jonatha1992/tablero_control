@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
-import { teamService } from '@/services/team.service';
 import { extractTasksFromTranscription } from '@/lib/groq/extract-tasks';
+import { loadExtractContext, type ExtractContext } from '@/lib/groq/extract-context';
 import { handle } from '@/lib/api/route-handler';
 
 export const maxDuration = 30;
@@ -25,11 +25,18 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'text_required' }, { status: 400 });
   }
 
-  const members: { id: string; name: string }[] = [];
+  let extractCtx: ExtractContext = {
+    members: [],
+    locations: [],
+    projects: [],
+    cycles: [],
+    objectives: [],
+    siteLabel: 'Sede',
+    today: new Date().toISOString().split('T')[0],
+  };
   if (user.businessId) {
     try {
-      const allMembers = await teamService.getMembersByBusiness(user.businessId);
-      members.push(...allMembers.map((m) => ({ id: m.id, name: m.name })));
+      extractCtx = await loadExtractContext(user.businessId);
     } catch {
       // non-fatal
     }
@@ -38,7 +45,7 @@ export const POST = handle(async (request: NextRequest) => {
   let tasks: Awaited<ReturnType<typeof extractTasksFromTranscription>>;
   let parseError = false;
   try {
-    tasks = await extractTasksFromTranscription(text, members);
+    tasks = await extractTasksFromTranscription(text, extractCtx);
   } catch (err) {
     console.error('[from-text] Task extraction failed', err);
     tasks = [];

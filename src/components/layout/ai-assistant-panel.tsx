@@ -4,12 +4,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Bot, Calendar, Check, ExternalLink, Loader2, MapPin, Mic,
-  Send, Sparkles, Target, Volume2, VolumeX, X,
+  Bot, Calendar, Check, ExternalLink, Loader2, Mic,
+  Send, Sparkles, Target, Volume2, VolumeX, Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAssistantChat } from '@/hooks/mutations/use-assistant-chat';
 import type { DisplayMessage } from '@/hooks/mutations/use-assistant-chat';
 import { assistantApi } from '@/lib/api/assistant';
@@ -17,10 +16,11 @@ import {
   useDictateTasksUpload,
   useConfirmDictatedTasks,
 } from '@/hooks/mutations/use-dictate-tasks';
-import { useMembersQuery } from '@/hooks/queries/use-members-query';
-import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useTaskPreviewContext } from '@/hooks/use-task-preview-context';
+import { TaskPreviewCard } from '@/components/tareas/task-preview-card';
+import { useKanbanUIStore } from '@/stores/kanban-ui.store';
+import { extractedTaskToDraft } from '@/lib/create-task-draft';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
-import type { TaskPriority, TaskStatus } from '@/types/domain/task';
 
 type AgentTab = 'assistant' | 'planner';
 
@@ -36,15 +36,6 @@ const OBJECTIVE_PATTERN =
 const TASK_PATTERN =
   /^(crear|nueva?s?|quiero\s+(crear|hacer|agregar|añadir)|agrega?r?|añadir)\s*(una?s?\s+)?(tarea|tareas)[:\-–]?\s*(.{3,})/i;
 
-const PRIORITY_BORDER: Record<TaskPriority, string> = {
-  low: 'border-l-slate-300', medium: 'border-l-blue-400',
-  high: 'border-l-orange-400', urgent: 'border-l-red-500',
-};
-const PRIORITY_LABELS: Record<TaskPriority, string> = {
-  low: 'Baja', medium: 'Media', high: 'Alta', urgent: 'Urgente',
-};
-const STATUS_LABELS: Record<string, string> = { todo: 'Por hacer', in_progress: 'En progreso' };
-
 const ASSISTANT_SUGGESTIONS = [
   '¿Qué tareas están vencidas?',
   '¿Qué tengo para esta semana?',
@@ -53,9 +44,9 @@ const ASSISTANT_SUGGESTIONS = [
 ];
 
 const PLANNER_SUGGESTIONS = [
-  'Crear tarea: revisar el informe mensual',
-  'Crear planificación: migrar servidor a la nube',
-  'Crear objetivo: mejorar retención de clientes',
+  'Revisar el informe mensual para el viernes',
+  'Planificar migración del servidor a la nube',
+  'Objetivo: mejorar retención de clientes',
   'Dictar tareas por voz 🎤',
 ];
 
@@ -72,49 +63,8 @@ const EMPTY_STATE: Record<AgentTab, { title: string; subtitle: string }> = {
 
 const PLACEHOLDER: Record<AgentTab, string> = {
   assistant: 'Preguntá sobre tareas, estado, o el sistema…',
-  planner: 'Crear tarea: … / Crear planificación: … / dictá por voz',
+  planner: 'Describí qué querés crear en lenguaje natural…',
 };
-
-function TaskPreviewCard({ task, members, locations, onChange, onRemove }: {
-  task: ExtractedTask;
-  members: { id: string; name: string }[];
-  locations: { id: string; name: string }[];
-  onChange: (t: ExtractedTask) => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className={cn('rounded-lg border border-border bg-card p-2.5 border-l-4 text-xs', PRIORITY_BORDER[task.priority])}>
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="shrink-0 flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">{task.order}</span>
-        <Input value={task.title} onChange={(e) => onChange({ ...task, title: e.target.value })} className="h-7 text-xs font-medium bg-background flex-1" maxLength={200} />
-        <button type="button" onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-destructive p-0.5"><X className="h-3.5 w-3.5" /></button>
-      </div>
-      <div className="flex flex-wrap gap-1.5 pl-7">
-        <select value={task.priority} onChange={(e) => onChange({ ...task, priority: e.target.value as TaskPriority })} className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]">
-          {(Object.keys(PRIORITY_LABELS) as TaskPriority[]).map((p) => <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>)}
-        </select>
-        <select value={task.status} onChange={(e) => onChange({ ...task, status: e.target.value as Extract<TaskStatus, 'todo' | 'in_progress'> })} className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]">
-          {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
-        {locations.length > 0 && (
-          <div className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-            <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-            <select value={task.locationId ?? ''} onChange={(e) => onChange({ ...task, locationId: e.target.value || undefined })} className="bg-background text-foreground outline-none max-w-[90px]">
-              <option value="">Sin sector</option>
-              {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </div>
-        )}
-        {task.dueDate && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">📅 {task.dueDate}</span>}
-        {task.estimatedHours && <span className="rounded border border-border bg-background px-1 py-0.5 text-[10px]">⏱ {task.estimatedHours}h</span>}
-        {members.slice(0, 3).map((m) => {
-          const on = task.assigneeIds.includes(m.id);
-          return <button key={m.id} type="button" onClick={() => onChange({ ...task, assigneeIds: on ? task.assigneeIds.filter((id) => id !== m.id) : [...task.assigneeIds, m.id] })} className={cn('rounded-full px-1.5 py-0.5 text-[10px] border transition-colors', on ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary')}>{m.name.split(' ')[0]}</button>;
-        })}
-      </div>
-    </div>
-  );
-}
 
 export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
   const [activeTab, setActiveTab] = useState<AgentTab>('assistant');
@@ -138,18 +88,23 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const chat = activeTab === 'assistant' ? assistantChat : plannerChat;
 
   const {
-    messages, send, addPreview, confirmPreview, cancelPreview,
+    messages, send, sendPlanner, answerClarify, addPreview, confirmPreview, cancelPreview,
     replacePreviewWithAction, addTaskPreview, confirmTaskMessage,
     updateTaskInMessage, removeTaskFromMessage, isPending,
   } = chat;
 
   const uploadMutation = useDictateTasksUpload();
   const confirmMutation = useConfirmDictatedTasks();
+  const openCreateModalWithDraft = useKanbanUIStore((s) => s.openCreateModalWithDraft);
 
-  const { data: membersData } = useMembersQuery();
-  const members = (membersData ?? []).map((m) => ({ id: m.id, name: m.name }));
-  const { data: locationsData = [] } = useLocationsQuery();
-  const locations = locationsData.map((l) => ({ id: l.id, name: l.name }));
+  const {
+    members,
+    locations,
+    projects,
+    cycles,
+    objectives,
+    confirmOptions,
+  } = useTaskPreviewContext();
 
   const isLoading = isPending || isGenerating || micState === 'processing';
 
@@ -212,7 +167,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           const result = await assistantApi.previewPlan(type, description);
           addPreview(result.type, result.description, result.plan);
         } catch {
-          await send(msg);
+          await sendPlanner(msg);
         } finally {
           setIsGenerating(false);
         }
@@ -226,12 +181,15 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           const result = await assistantApi.extractFromText(description);
           addTaskPreview(result.tasks, result.parseError);
         } catch {
-          await send(msg);
+          await sendPlanner(msg);
         } finally {
           setIsGenerating(false);
         }
         return;
       }
+
+      await sendPlanner(msg);
+      return;
     }
 
     await send(msg);
@@ -300,10 +258,18 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
 
   const handleConfirmTasks = (tasks: ExtractedTask[], msgIdx: number) => {
     setConfirmingIdx(msgIdx);
-    confirmMutation.mutate(tasks, {
-      onSuccess: () => { confirmTaskMessage(msgIdx); setConfirmingIdx(null); },
-      onError: () => setConfirmingIdx(null),
-    });
+    confirmMutation.mutate(
+      { tasks, options: confirmOptions },
+      {
+        onSuccess: () => { confirmTaskMessage(msgIdx); setConfirmingIdx(null); },
+        onError: () => setConfirmingIdx(null),
+      },
+    );
+  };
+
+  const handleOpenInForm = (task: ExtractedTask) => {
+    openCreateModalWithDraft(extractedTaskToDraft(task));
+    handleClose();
   };
 
   const fmtSec = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
@@ -317,7 +283,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
-        className="max-w-2xl flex flex-col p-0 gap-0 h-[580px]"
+        className="max-w-3xl flex flex-col p-0 gap-0 h-[min(720px,90vh)]"
         onInteractOutside={(e) => { if (isLoading) e.preventDefault(); }}
       >
         <DialogHeader className="px-4 pt-3 pb-2 shrink-0 border-b">
@@ -449,6 +415,31 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
               );
             }
 
+            /* ── Clarify (pregunta del agente) ── */
+            if (msg.role === 'clarify') {
+              return (
+                <div key={i} className="flex flex-col gap-2 self-start max-w-[90%]">
+                  <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm">
+                    {msg.question}
+                  </div>
+                  {msg.options && msg.options.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pl-1">
+                      {msg.options.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => answerClarify(msg.field, opt)}
+                          className="rounded-full border border-border bg-background px-3 py-1 text-xs hover:bg-muted transition-colors"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             /* ── Tasks preview (desde audio o texto) ── */
             if (msg.role === 'tasks') {
               const sorted = [...msg.tasks].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
@@ -461,7 +452,30 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                     <div className="flex flex-col gap-1.5">
                       {sorted.map((task) => {
                         const ti = msg.tasks.indexOf(task);
-                        return <TaskPreviewCard key={ti} task={task} members={members} locations={locations} onChange={(u) => updateTaskInMessage(i, ti, u)} onRemove={() => removeTaskFromMessage(i, ti)} />;
+                        return (
+                          <div key={ti} className="space-y-1">
+                            <TaskPreviewCard
+                              task={task}
+                              members={members}
+                              locations={locations}
+                              projects={projects}
+                              cycles={cycles}
+                              objectives={objectives}
+                              onChange={(u) => updateTaskInMessage(i, ti, u)}
+                              onRemove={() => removeTaskFromMessage(i, ti)}
+                            />
+                            {!msg.confirmed && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenInForm(task)}
+                                className="ml-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                              >
+                                <Pencil className="h-3 w-3" />
+                                Editar en formulario
+                              </button>
+                            )}
+                          </div>
+                        );
                       })}
                     </div>
                   )}

@@ -20,13 +20,17 @@ Un mismo usuario puede ser colaborador en el negocio A y dueño del negocio B (`
 
 ```mermaid
 flowchart LR
-  invite["/i/token"] --> auth[Firebase Auth]
-  auth --> accept["POST accept invite"]
+  invite["/i/token"] --> signup["Nombre + contraseña inline"]
+  signup --> accept["POST accept invite"]
+  invite --> authAlt[Google o login]
+  authAlt --> accept
   accept --> dash[Dashboard del invitador]
   dash --> config[Config / Mi perfil]
   config --> create["Armar tu negocio opcional"]
   create --> switch[Cambiar negocio en header]
 ```
+
+Invitados sin correo real: `prepare-account` genera `username` + email sintético `{username}@guest.local`. Login posterior con **nombre + contraseña** vía `GET /api/auth/resolve?login=…`.
 
 ## Archivos clave
 

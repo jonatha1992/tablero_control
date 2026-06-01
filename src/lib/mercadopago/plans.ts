@@ -24,7 +24,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceYearly: 0,
     currency: 'ARS',
     limits: { users: 3, locations: 1, projects: 2, attachmentsPerMonth: 10 },
-    features: ['Kanban básico', 'Calendario', '1 local', 'Hasta 3 usuarios'],
+    features: ['Kanban básico', 'Calendario', '1 sede', 'Hasta 3 usuarios'],
   },
   basic: {
     id: 'basic',
@@ -33,7 +33,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceYearly: 12,
     currency: 'ARS',
     limits: { users: 10, locations: 3, projects: 10, attachmentsPerMonth: -1 },
-    features: ['Todo en Free', '10 usuarios', '3 locales', 'Adjuntos ilimitados', 'Reportes básicos'],
+    features: ['Todo en Free', '10 usuarios', '3 sedes', 'Adjuntos ilimitados', 'Reportes básicos'],
   },
   pro: {
     id: 'pro',
@@ -45,8 +45,8 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     features: [
       'Todo en Basic',
       '50 usuarios',
-      '10 locales',
-      'Proyectos ilimitados',
+      '10 sedes',
+      'Tableros ilimitados',
       'Reportes avanzados + exportación',
       'Roles personalizados',
       'Soporte prioritario',

@@ -22,6 +22,13 @@ export interface AssistantContext {
   activeCycleName?: string;
   tasks: TaskSummary[];
   today: string;
+  /** Planner enrichment */
+  siteLabel?: string;
+  locations?: { id: string; name: string }[];
+  projects?: { id: string; name: string }[];
+  cycles?: { id: string; name: string }[];
+  objectives?: { id: string; name: string }[];
+  defaultProjectName?: string;
 }
 
 export interface AssistantResponse {
@@ -144,6 +151,11 @@ Reglas:
 
 export type AssistantMode = 'assistant' | 'planner';
 
+function formatNamedList(items?: { name: string }[], empty = 'ninguno'): string {
+  if (!items?.length) return empty;
+  return items.map((i) => i.name).join(', ');
+}
+
 function buildPlannerSystemPrompt(ctx: AssistantContext): string {
   const pending = ctx.tasks.filter((t) => t.status !== 'done');
   const overdue = pending.filter((t) => t.isOverdue);
@@ -151,51 +163,36 @@ function buildPlannerSystemPrompt(ctx: AssistantContext): string {
   const blocked = pending.filter((t) => t.status === 'blocked');
 
   const now = new Date();
-  const currentYear = now.getFullYear();
   const todayFormatted = now.toLocaleDateString('es-AR', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
+  const site = ctx.siteLabel ?? 'Sede';
 
-  return `Sos el Planificador de Tablero de Control, un asistente de IA especializado en crear y organizar trabajo.
+  return `Sos el Planificador de Tablero de Control — creás y organizás trabajo en lenguaje natural.
 
-USUARIO: ${ctx.userName} (${ctx.userRole})${ctx.businessName ? ` — negocio: "${ctx.businessName}"` : ''}
+USUARIO: ${ctx.userName} (${ctx.userRole})${ctx.businessName ? ` — espacio: "${ctx.businessName}"` : ''}
 HOY: ${todayFormatted}
-AÑO ACTUAL: ${currentYear}
 SPRINT ACTIVO: ${ctx.activeCycleName ?? 'ninguno'}
+TABLERO DEFAULT: ${ctx.defaultProjectName ?? 'Principal'}
 
-REGLAS PARA MOSTRAR FECHAS EN TUS RESPUESTAS (OBLIGATORIO):
-- Fecha de hoy (${ctx.today}) → "hoy"
-- Mañana → "mañana"
-- Esta semana (misma semana calendario) → solo el día ("el jueves", "el lunes")
-- La semana que viene → "el jueves que viene" / "el lunes de la semana que viene"
-- Este mes → "el jueves 22" (sin año)
-- El mes que viene → "el lunes 3 de junio" (sin año)
-- Solo incluir el año si es DIFERENTE a ${currentYear}
-- NUNCA mostrar fechas en formato ISO (YYYY-MM-DD ni DD/MM/YYYY)
+CONTEXTO DEL ESPACIO:
+- ${site}s: ${formatNamedList(ctx.locations)}
+- Tableros: ${formatNamedList(ctx.projects)}
+- Ciclos/sprints: ${formatNamedList(ctx.cycles)}
+- Objetivos: ${formatNamedList(ctx.objectives)}
 
-RESUMEN ACTUAL: ${pending.length} pendientes | ${overdue.length} vencidas | ${inProgress.length} en progreso | ${blocked.length} bloqueadas
+RESUMEN: ${pending.length} pendientes | ${overdue.length} vencidas | ${inProgress.length} en progreso | ${blocked.length} bloqueadas
 
-TAREAS PENDIENTES (para evitar duplicados y sugerir contexto):
+TAREAS PENDIENTES (evitar duplicados):
 ${formatTaskList(pending.slice(0, 50))}
 
----
-
-TU ROL: Ayudar al usuario a crear y organizar trabajo de forma eficiente.
-
-PODÉS AYUDAR CON:
-1. CREAR TAREAS: El usuario escribe "Crear tarea: [descripción]" o dicta por voz con el 🎤. Ayudalo a definir bien la tarea antes de crearla.
-2. CREAR PLANIFICACIONES (sprints/ciclos): El usuario escribe "Crear planificación: [descripción]". Ayudalo a describir el alcance y objetivo.
-3. CREAR OBJETIVOS (metas/OKRs): El usuario escribe "Crear objetivo: [descripción]". Ayudalo a definir la meta claramente.
-
 INSTRUCCIONES:
-- Si el usuario describe trabajo de forma vaga, PREGUNTÁ por detalles: prioridad, fecha límite, a quién asignar, si es parte de un sprint.
-- Si la tarea suena a rutina o actividad periódica (reunión, reporte, revisión, limpieza, control, backup, etc.), preguntá si debe ser repetitiva y con qué frecuencia (diaria, semanal, quincenal, mensual).
-- Si el usuario quiere crear algo pero no usa el formato correcto, guialo: "Escribí: Crear tarea: [su descripción]"
-- Sugerí descomponer requests grandes en tareas más pequeñas y manejables.
-- Antes de crear, revisá las tareas pendientes para evitar duplicados y sugerir relaciones.
-- Si ves tareas vencidas o bloqueadas relacionadas, mencionalo brevemente.
-- Respondé en español, de forma concisa y orientada a la acción.
-- No expliques cómo funciona el sistema (eso lo hace el Asistente). Enfocate en crear y organizar.
+- El usuario puede describir trabajo en lenguaje natural; no exijas el prefijo "Crear tarea:".
+- Si falta info (prioridad, fecha, assignee, sprint, tablero, recurrencia), PREGUNTÁ antes de asumir.
+- Rutinas (reuniones, reportes, limpieza): preguntá frecuencia (diaria, semanal, quincenal, mensual).
+- Podés sugerir descomponer pedidos grandes en subtareas o checklist.
+- Revisá duplicados con la lista de pendientes.
+- Respondé en español, conciso, orientado a la acción.
 - PRIORIDADES: urgent > high > medium > low
 - ESTADOS: backlog | todo | in_progress | in_review | done | blocked`;
 }

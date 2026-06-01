@@ -17,8 +17,14 @@ export function useCreateLocation() {
         description: `"${variables.name}" fue creado exitosamente.`,
       });
     },
-    onError: (err: Error) => {
+    onError: (err) => {
       if (err.message === 'locations_limit_exceeded') return;
+      if (err.message === 'forbidden') {
+        toast.error('Sin permiso para editar sedes', {
+          description: 'Solo un administrador del espacio puede crear o modificar sedes.',
+        });
+        return;
+      }
       toast.error('Error al crear sector', {
         description: 'Verificá los datos e intentá nuevamente.',
       });
@@ -38,7 +44,13 @@ export function useUpdateLocation() {
         description: `"${data.name}" fue actualizado correctamente.`,
       });
     },
-    onError: () => {
+    onError: (err) => {
+      if (err.message === 'forbidden') {
+        toast.error('Sin permiso para editar sedes', {
+          description: 'Solo un administrador del espacio puede modificar sedes.',
+        });
+        return;
+      }
       toast.error('Error al actualizar sector', {
         description: 'No se pudo guardar los cambios. Intentá nuevamente.',
       });
@@ -58,7 +70,13 @@ export function useDeleteLocation() {
         description: 'El sector fue eliminado del sistema.',
       });
     },
-    onError: () => {
+    onError: (err) => {
+      if (err.message === 'forbidden') {
+        toast.error('Sin permiso para eliminar sedes', {
+          description: 'Solo un administrador del espacio puede eliminar sedes.',
+        });
+        return;
+      }
       toast.error('Error al eliminar sector', {
         description: 'No se pudo eliminar el sector. Intentá nuevamente.',
       });

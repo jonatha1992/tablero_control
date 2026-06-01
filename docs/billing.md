@@ -152,7 +152,11 @@ Al crear usuario (`POST /api/users/create`):
 
 `create-user-modal.tsx` muestra bloque de upgrade con link a `/dashboard/billing` cuando recibe `members_limit_exceeded`.
 
-`limitProjects` y `limitAttachments` definidos en PlanConfig pero sin enforcement activo aún.
+`limitProjects` (UI: tableros por espacio) tiene enforcement en `project.service.ts`. `limitAttachments` definido en PlanConfig; enforcement según integración de adjuntos.
+
+Límites aplican **por espacio** (`Business`), no por usuario: usuarios, sedes (`limitLocations`), tableros (`limitProjects`), adjuntos/mes.
+
+Al crear un espacio (`POST /api/auth/register`, `POST /api/businesses`), se crea automáticamente un tablero **Principal** vía `ensureDefaultBoard()`. Espacios existentes sin tablero: `npx tsx scripts/ensure-default-boards.ts`.
 
 ## Cron de vencimientos (`/api/cron/subscription-expiry`)
 

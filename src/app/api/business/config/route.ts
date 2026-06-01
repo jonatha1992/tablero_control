@@ -34,10 +34,25 @@ export const PATCH = handle(async (req: NextRequest) => {
 
   try {
     const body = await req.json();
-    await businessRepository.update(authed.businessId, {
-      name: body.name,
-      settings: body.settings,
-    });
+    const existing = await businessRepository.findById(authed.businessId);
+    if (!existing) {
+      return NextResponse.json({ error: 'business_not_found' }, { status: 404 });
+    }
+
+    const updates: { name?: string; settings?: typeof existing.settings } = {};
+    if (body.name !== undefined) updates.name = body.name;
+
+    if (body.settings !== undefined) {
+      updates.settings = {
+        ...existing.settings,
+        ...body.settings,
+        terminology: body.settings.terminology !== undefined
+          ? { ...existing.settings?.terminology, ...body.settings.terminology }
+          : existing.settings?.terminology,
+      };
+    }
+
+    await businessRepository.update(authed.businessId, updates);
 
     await writeAuditLog({
       actorId: authed.uid,

@@ -6,13 +6,15 @@ Base: `src/app/api/`
 ```
 POST /api/auth/register         ← dueño SaaS: crea User + Business + membership (accountIntent: owner)
 POST /api/auth/forgot-password
+GET  /api/auth/resolve           ← público: username, email o nombre → email Firebase (login pre-auth)
 GET  /api/auth/profile          ← superadmin auto-provision si SUPERADMIN_EMAILS; colaboradores: reasigna businessId desde memberships; sin membresías → 404 not_invited. Respuesta: hasOwnedBusiness, canCreateOwnBusiness, isOwner
 ```
 
 ## Invites (público con token Firebase)
 ```
 GET    /api/invites/[token]           ← metadata del link (público)
-POST   /api/invites/[token]/accept    ← membresía al negocio invitador; NO crea Business; usuario nuevo → accountIntent: collaborator
+POST   /api/invites/[token]/prepare-account ← username + email @guest.local (público; valida invite)
+POST   /api/invites/[token]/accept    ← membresía al negocio invitador; body opcional `{ username }`; NO crea Business; usuario nuevo → accountIntent: collaborator
 GET    /api/invites                   ← listar links (admin)
 POST   /api/invites                   ← crear link
 DELETE /api/invites/[token]           ← revocar
@@ -30,8 +32,15 @@ GET    /api/tasks/[id]/subtasks
 POST   /api/tasks/[id]/subtasks
 GET    /api/tasks/[id]/time-entries
 POST   /api/tasks/[id]/time-entries
-POST   /api/tasks/from-audio    ← Groq Whisper → extracción con LLM
-POST   /api/tasks/from-text     ← extracción LLM desde texto
+POST   /api/tasks/from-audio    ← Groq Whisper → extracción con LLM + contexto tenant
+POST   /api/tasks/from-text     ← extracción LLM desde texto + contexto tenant
+```
+
+## Assistant (IA)
+```
+POST   /api/assistant/chat           ← chat informativo; body: { messages, mode?: 'assistant'|'planner' }
+POST   /api/assistant/planner        ← Planificador: intent → clarify | preview_tasks | preview_plan
+POST   /api/assistant/generate-plan  ← genera planificación sprint/objetivo
 ```
 
 ## Comments / Time Entries

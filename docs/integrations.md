@@ -111,16 +111,30 @@ Firebase Console → Configuración del proyecto → Cuentas de servicio → Gen
 transcribeAudio(buffer: Buffer, filename: string): Promise<string>
 // Usa Whisper Large V3 Turbo
 
+// extract-context.ts
+loadExtractContext(businessId): Promise<ExtractContext>
+// Miembros, sedes, tableros, ciclos, objetivos, defaults
+
 // extract-tasks.ts
-extractTasks(text: string, members: Member[], today: string): Promise<ExtractedTask[]>
-// Extrae: título, prioridad, status, assignees, tags, dueDate, dueTime, recurrencia, estimatedHours
+extractTasksFromTranscription(text, ctx: ExtractContext): Promise<ExtractedTask[]>
+// Extrae: título, descripción, prioridad, status, assignees, tags, dueDate, dueTime,
+// location, project, cycle, objective, checklist, subtareas, recurrencia, estimatedHours
+
+// planner-intent.ts + planner-tools.ts + planner-agent.ts
+runPlannerAgent(message, ctx, history): Promise<PlannerResponse>
+// clarify | preview_tasks | preview_plan | message
 ```
 
-API routes:
+API routes — tareas:
 - `POST /api/tasks/from-audio` — audio → Whisper → extractTasks
 - `POST /api/tasks/from-text` — texto → extractTasks
 
-Variable: `GROQ_API_KEY`
+API routes — asistente:
+- `POST /api/assistant/chat` — chat informativo (modo `assistant` | `planner` legacy texto)
+- `POST /api/assistant/planner` — agente Planificador (intent + preview + clarify)
+- `POST /api/assistant/generate-plan` — generación de planificación sprint/objetivo
+
+Variable: `GROQ_API_KEY` (rotación multi-provider vía `src/lib/ai/providers.ts` cuando aplica)
 
 ---
 

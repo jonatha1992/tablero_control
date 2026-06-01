@@ -3,6 +3,7 @@ import { locationService } from '@/services/location.service';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
+import { canMutateLocation } from '@/lib/permissions/location-access';
 import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 import { handle } from '@/lib/api/route-handler';
@@ -48,6 +49,10 @@ export const POST = handle(async (request: NextRequest) => {
     }
 
     assertSameTenant(user.data, { businessId: body.businessId });
+
+    if (!canMutateLocation(user.data, 'create', { id: '', businessId: body.businessId })) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
 
     if (user.role !== 'superadmin') {
       const business = await prisma.business.findUnique({

@@ -1,5 +1,6 @@
 ﻿import { getToken } from '@/lib/firebase/auth';
 import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
+import type { PlannerResponse } from '@/lib/groq/planner-types';
 import { ApiError } from './errors';
 
 interface AssistantResponse {
@@ -55,5 +56,10 @@ export const assistantApi = {
     fetchJsonAuth<{ type: 'cycle' | 'objective'; description: string; plan: import('@/lib/groq/generate-plan').GeneratedPlan }>('/api/assistant/preview-plan', {
       method: 'POST',
       body: JSON.stringify({ type, description }),
+    }),
+  planner: (message: string, messages: AssistantMessage[] = []) =>
+    fetchJsonAuth<PlannerResponse>('/api/assistant/planner', {
+      method: 'POST',
+      body: JSON.stringify({ message, messages }),
     }),
 };

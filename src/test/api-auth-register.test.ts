@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/register/route';
 import { verifyToken } from '@/lib/firebase/admin';
-import { userRepository, businessRepository } from '@/repositories';
+import { businessRepository, userRepository } from '@/repositories';
+import { ensureDefaultBoard } from '@/lib/default-board';
 
 vi.mock('@/lib/firebase/admin', () => ({
   verifyToken: vi.fn(),
@@ -35,12 +36,21 @@ vi.mock('@/services/mail.service', () => ({
   MailService: { sendWelcomeEmail: vi.fn().mockResolvedValue(undefined) },
 }));
 
+vi.mock('@/lib/default-board', () => ({
+  ensureDefaultBoard: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/lib/firebase/init-system-roles', () => ({
+  initSystemRoles: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockVerifyToken = vi.mocked(verifyToken);
 const mockFindById = vi.mocked(userRepository.findById);
 const mockFindByEmail = vi.mocked(userRepository.findByEmail);
 const mockUpdateId = vi.mocked(userRepository.updateId);
 const mockUserCreate = vi.mocked(userRepository.create);
 const mockBusinessCreate = vi.mocked(businessRepository.create);
+const mockEnsureDefaultBoard = vi.mocked(ensureDefaultBoard);
 
 const decoded = { uid: 'uid-new', email: 'new@test.com', name: 'Nuevo', picture: null };
 const mockBusiness = { id: 'biz-1', name: 'Negocio de Nuevo' };
@@ -121,6 +131,7 @@ describe('POST /api/auth/register — nuevo usuario', () => {
     expect(res.status).toBe(201);
     expect(mockBusinessCreate).toHaveBeenCalledOnce();
     expect(mockUserCreate).toHaveBeenCalledOnce();
+    expect(mockEnsureDefaultBoard).toHaveBeenCalledWith('biz-1');
   });
 
   it('asigna rol admin para usuarios comunes', async () => {

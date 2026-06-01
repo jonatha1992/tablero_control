@@ -48,8 +48,20 @@ export const invitesApi = {
         usesLeft?: number | null;
       }>),
 
-  accept: (token: string) =>
+  prepareAccount: (token: string, name: string) =>
+    fetch(`/api/invites/${token}/prepare-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }).then(async (r) => {
+      if (!r.ok) throw new ApiError(await r.text(), r.status);
+      return r.json() as Promise<{ username: string; email: string }>;
+    }),
+
+  accept: (token: string, options?: { username?: string }) =>
     fetchJsonAuth<import('@/types/domain/user').User>(`/api/invites/${token}/accept`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options?.username ? { username: options.username } : {}),
     }),
 };
