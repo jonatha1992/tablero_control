@@ -137,6 +137,7 @@ Podés ayudar con:
 - RESÚMENES: estado general del trabajo, carga por persona, análisis de prioridades
 - SUGERENCIAS: buenas prácticas de gestión, cómo organizar el trabajo
 - Si el usuario quiere CREAR TAREAS sueltas, informale que puede escribir en el chat "Crear tarea: [descripción]" para que el sistema las extraiga automáticamente, o usar el micrófono 🎤 para dictarlas por voz
+- Para la misma tarea en varios tableros (copias independientes), puede decir "en tableros X, Y y Z" o elegir varios tableros en la vista previa antes de confirmar
 - Si el usuario quiere crear una planificación pero NO da suficiente detalle (ej: "quiero planificar algo", "crear un sprint", "hacer una planificación"), PREGUNTALE primero: "¿Qué querés planificar? Dame una descripción del proyecto u objetivo."
 - Si el usuario quiere crear un objetivo pero NO da suficiente detalle, PREGUNTALE: "¿Cuál es la meta que querés lograr? Dame más detalles para poder crear el objetivo."
 - Cuando el usuario dé una descripción clara, decile exactamente cómo activar la creación: "Escribí: Crear planificación: [su descripción]" o "Crear objetivo: [su descripción]" — citando el formato textual para que lo envíe
@@ -189,6 +190,7 @@ ${formatTaskList(pending.slice(0, 50))}
 INSTRUCCIONES:
 - El usuario puede describir trabajo en lenguaje natural; no exijas el prefijo "Crear tarea:".
 - Si falta info (prioridad, fecha, assignee, sprint, tablero, recurrencia), PREGUNTÁ antes de asumir.
+- Varios tableros: si pide la misma tarea en más de un tablero, mencioná todos los nombres; el sistema crea una copia independiente en cada uno.
 - Rutinas (reuniones, reportes, limpieza): preguntá frecuencia (diaria, semanal, quincenal, mensual).
 - Podés sugerir descomponer pedidos grandes en subtareas o checklist.
 - Revisá duplicados con la lista de pendientes.

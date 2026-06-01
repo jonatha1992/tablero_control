@@ -45,8 +45,8 @@ const ASSISTANT_SUGGESTIONS = [
 
 const PLANNER_SUGGESTIONS = [
   'Revisar el informe mensual para el viernes',
+  'Crear tarea de inventario en tableros Principal y Depósito',
   'Planificar migración del servidor a la nube',
-  'Objetivo: mejorar retención de clientes',
   'Dictar tareas por voz 🎤',
 ];
 

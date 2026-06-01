@@ -67,6 +67,22 @@ describe('KanbanCard', () => {
     expect(screen.getByText('Tarea de prueba')).toBeInTheDocument();
   });
 
+  it('muestra el indicador de checklist cuando hay items', () => {
+    render(
+      <KanbanCard
+        task={makeTask({
+          checklist: [
+            { id: 'c1', text: 'Uno', done: false },
+            { id: 'c2', text: 'Dos', done: true },
+          ],
+        })}
+        {...defaultProps}
+      />
+    );
+    expect(screen.getByTitle('Checklist')).toBeInTheDocument();
+    expect(screen.getByText('1/2')).toBeInTheDocument();
+  });
+
   it('muestra la descripción cuando existe', () => {
     render(<KanbanCard task={makeTask()} {...defaultProps} />);
     expect(screen.getByText('Descripción de prueba')).toBeInTheDocument();

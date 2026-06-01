@@ -72,7 +72,7 @@ describe('GET /api/superadmin/metrics', () => {
   });
 
   it('retorna estructura correcta con MRR y planBreakdown', async () => {
-    // Mockear $transaction para retornar los 14 valores en orden
+    // Mockear $transaction para retornar los 13 valores en orden
     mockTransaction.mockResolvedValueOnce([
       5,   // totalBusinesses
       4,   // activeBusinesses
@@ -87,7 +87,6 @@ describe('GET /api/superadmin/metrics', () => {
       0,   // enterprisePlan
       [],  // recentUsers
       [],  // recentBusinesses
-      [],  // recentActivity
     ]);
 
     const req = makeRequest('http://localhost/api/superadmin/metrics');

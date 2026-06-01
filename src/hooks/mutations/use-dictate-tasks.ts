@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/auth-context';
 import { getToken } from '@/lib/firebase/auth';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { CreateTaskDTO } from '@/types/dto/task.dto';
+import type { Task } from '@/types/domain/task';
+import { resolveProjectTargets } from '@/lib/tasks/resolve-project-targets';
 
 export interface FromAudioResult {
   transcription: string;
@@ -28,7 +30,7 @@ export interface ConfirmTasksOptions {
   defaultCycleId?: string;
 }
 
-function toCreateDto(t: ExtractedTask, opts: ConfirmTasksOptions): CreateTaskDTO {
+function toCreateDto(t: ExtractedTask, projectId: string | undefined, opts: ConfirmTasksOptions): CreateTaskDTO {
   return {
     title: t.title,
     description: t.description,
@@ -39,7 +41,7 @@ function toCreateDto(t: ExtractedTask, opts: ConfirmTasksOptions): CreateTaskDTO
     tags: t.tags,
     estimatedHours: t.estimatedHours,
     locationId: t.locationId,
-    projectId: t.projectId ?? opts.defaultProjectId,
+    projectId,
     cycleId: t.cycleId ?? opts.defaultCycleId,
     objectiveId: t.objectiveId,
     checklist: t.checklist?.length ? t.checklist : undefined,
@@ -55,6 +57,20 @@ function toCreateDto(t: ExtractedTask, opts: ConfirmTasksOptions): CreateTaskDTO
         }
       : undefined,
   };
+}
+
+function countUniqueBoards(tasks: ExtractedTask[], options: ConfirmTasksOptions): number {
+  const ids = new Set<string>();
+  for (const t of tasks) {
+    for (const target of resolveProjectTargets({
+      projectIds: t.projectIds,
+      projectId: t.projectId,
+      defaultProjectId: options.defaultProjectId,
+    })) {
+      if (target) ids.add(target);
+    }
+  }
+  return ids.size;
 }
 
 export function useDictateTasksUpload() {
@@ -93,24 +109,33 @@ export function useConfirmDictatedTasks() {
       tasks: ExtractedTask[];
       options?: ConfirmTasksOptions;
     }) => {
-      const results = [];
+      const results: Task[] = [];
       for (const t of tasks) {
-        const dto = toCreateDto(t, options);
-        const created = await tasksApi.create(dto, user!.id, user?.businessId ?? '');
-        if (t.subtasks?.length) {
-          for (const subTitle of t.subtasks) {
-            await subtasksApi.create(created.id, subTitle);
+        const targets = resolveProjectTargets({
+          projectIds: t.projectIds,
+          projectId: t.projectId,
+          defaultProjectId: options.defaultProjectId,
+        });
+        for (const projectId of targets) {
+          const dto = toCreateDto(t, projectId, options);
+          const created = await tasksApi.create(dto, user!.id, user?.businessId ?? '');
+          if (t.subtasks?.length) {
+            for (const subTitle of t.subtasks) {
+              await subtasksApi.create(created.id, subTitle);
+            }
           }
+          results.push(created);
         }
-        results.push(created);
       }
-      return results;
+      return { created: results, options };
     },
-    onSuccess: (created) => {
+    onSuccess: ({ created, options }, { tasks }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
       const n = created.length;
-      toast.success(`${n} tarea${n !== 1 ? 's' : ''} creada${n !== 1 ? 's' : ''}`, {
-        description: created.map((t) => t.title).join(', '),
+      const boards = countUniqueBoards(tasks, options);
+      const boardPart = boards > 1 ? ` en ${boards} tableros` : '';
+      toast.success(`${n} tarea${n !== 1 ? 's' : ''} creada${n !== 1 ? 's' : ''}${boardPart}`, {
+        description: [...new Set(created.map((task) => task.title))].join(', '),
       });
     },
     onError: (err: Error) => {

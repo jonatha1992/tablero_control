@@ -20,6 +20,10 @@ import { useAuth } from '@/hooks/auth-context';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { hasMultipleBoards } from '@/lib/business-defaults';
+import {
+  ProjectMultiPicker,
+  shouldShowProjectMultiPicker,
+} from '@/components/tareas/project-multi-picker';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
@@ -113,7 +117,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [dueTime, setDueTime] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [locationId, setLocationId] = useState<string>('');
-  const [projectId, setProjectId] = useState<string>('');
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [cycleId, setCycleId] = useState<string>('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
@@ -135,8 +139,11 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const { user } = useAuth();
   const { data: business } = useBusinessQuery(user?.businessId);
   const labels = useSpaceLabels();
-  const showBoardPicker = hasMultipleBoards(business?.settings);
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const showBoardPicker = shouldShowProjectMultiPicker(
+    projects.length,
+    hasMultipleBoards(business?.settings),
+  );
   const { data: cycles = [] } = useCyclesQuery(user?.businessId ?? '');
   const { selectedSprintId, viewMode: sprintMode } = useScrumUIStore();
 
@@ -145,7 +152,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
   useEffect(() => {
     if (open && !showBoardPicker && defaultBoardId) {
-      setProjectId(defaultBoardId);
+      setSelectedProjectIds([defaultBoardId]);
     }
   }, [open, showBoardPicker, defaultBoardId]);
 
@@ -171,7 +178,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     if (d.dueTime) setDueTime(d.dueTime);
     if (d.assigneeIds?.length) setAssigneeIds(d.assigneeIds);
     if (d.locationId) setLocationId(d.locationId);
-    if (d.projectId) setProjectId(d.projectId);
+    if (d.projectIds?.length) setSelectedProjectIds(d.projectIds);
+    else if (d.projectId) setSelectedProjectIds([d.projectId]);
     if (d.cycleId) setCycleId(d.cycleId);
     if (d.estimatedHours != null) setEstimatedHours(d.estimatedHours);
     if (d.checklist?.length) setChecklist(d.checklist);
@@ -196,7 +204,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setTitle(''); setDescription(''); setTags('');
     setDueDate(defaultDueDate ?? today); setDueTime(''); setAssigneeIds([]);
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
-    setLocationId(''); setProjectId(''); setCycleId('');
+    setLocationId(''); setSelectedProjectIds([]); setCycleId('');
     setEstimatedHours(undefined);
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
@@ -247,6 +255,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           if (task.dueTime) setDueTime(task.dueTime);
           if (task.assigneeIds?.length) setAssigneeIds(task.assigneeIds);
           if (task.estimatedHours) setEstimatedHours(task.estimatedHours);
+          if (task.projectIds?.length) setSelectedProjectIds(task.projectIds);
+          else if (task.projectId) setSelectedProjectIds([task.projectId]);
           toast.success('Formulario completado por IA');
         } else {
           toast.warning('No se detectó ninguna tarea en el audio');
@@ -267,12 +277,19 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    const boardTargets = selectedProjectIds.length
+      ? selectedProjectIds
+      : defaultBoardId
+        ? [defaultBoardId]
+        : [];
+
     createTask.mutate(
       {
         title, description, status, priority, type,
         assigneeIds,
         locationId: locationId || undefined,
-        projectId: (showBoardPicker ? projectId : defaultBoardId || projectId) || undefined,
+        projectIds: boardTargets.length > 1 ? boardTargets : undefined,
+        projectId: boardTargets.length === 1 ? boardTargets[0] : undefined,
         cycleId: cycleId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         estimatedHours: estimatedHours || undefined,
@@ -286,10 +303,13 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         checklist: checklist.length > 0 ? checklist : undefined,
       },
       {
-        onSuccess: (task) => {
-          pendingSubtasks.forEach((subtaskTitle) =>
-            createSubtask.mutate({ taskId: task.id, title: subtaskTitle })
-          );
+        onSuccess: (result) => {
+          const created = Array.isArray(result) ? result : [result];
+          for (const t of created) {
+            pendingSubtasks.forEach((subtaskTitle) =>
+              createSubtask.mutate({ taskId: t.id, title: subtaskTitle })
+            );
+          }
           onOpenChange(false);
           reset();
         },
@@ -402,20 +422,15 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           {showBoardPicker && (
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-1">
-              <FolderKanban className="h-3.5 w-3.5" /> Tablero (Opcional)
+              <FolderKanban className="h-3.5 w-3.5" /> Tableros (podés elegir varios)
             </label>
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">Sin asignar</option>
-              {projects.map((proj) => (
-                <option key={proj.id} value={proj.id}>
-                  {proj.name}
-                </option>
-              ))}
-            </select>
+            <ProjectMultiPicker
+              projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+              value={selectedProjectIds}
+              onChange={setSelectedProjectIds}
+              size="md"
+              placeholder="Sin tablero"
+            />
           </div>
           )}
 
@@ -724,7 +739,11 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               Cancelar
             </Button>
             <Button type="submit" disabled={!title.trim() || createTask.isPending}>
-              {createTask.isPending ? 'Creando...' : 'Crear tarea'}
+              {createTask.isPending
+                ? 'Creando...'
+                : selectedProjectIds.length > 1
+                  ? `Crear en ${selectedProjectIds.length} tableros`
+                  : 'Crear tarea'}
             </Button>
           </DialogFooter>
         </form>

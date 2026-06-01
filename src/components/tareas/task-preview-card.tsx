@@ -1,11 +1,25 @@
 'use client';
 
-import { MapPin, X, Repeat, FolderKanban, Timer, Target } from 'lucide-react';
+import { MapPin, X, Repeat, Timer, Target, ChevronDown, Check } from 'lucide-react';
+import { ProjectMultiPicker } from '@/components/tareas/project-multi-picker';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  PRIORITY_OPTIONS,
+  STATUS_OPTIONS,
+  TYPE_OPTIONS,
+  type SelectOption,
+} from '@/lib/constants/task-colors';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { TaskPriority, TaskStatus, TaskType } from '@/types/domain/task';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
+import type { LucideIcon } from 'lucide-react';
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: 'Baja',
@@ -38,6 +52,99 @@ export const PRIORITY_BORDER: Record<TaskPriority, string> = {
   high: 'border-l-orange-400',
   urgent: 'border-l-red-500',
 };
+
+function PreviewColoredSelect<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: SelectOption<T>[];
+  onChange: (v: T) => void;
+}) {
+  const selected = options.find((o) => o.value === value) ?? options[0];
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 rounded border border-border bg-background px-1 py-0.5 text-[10px] text-foreground hover:bg-accent transition-colors"
+        >
+          <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', selected.dot)} />
+          <span className="max-w-[72px] truncate">{selected.label}</span>
+          <ChevronDown className="h-2.5 w-2.5 opacity-50 shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="z-[400] min-w-[8.5rem]">
+        {options.map((opt) => (
+          <DropdownMenuItem
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className="gap-2 text-xs"
+          >
+            <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
+            {opt.label}
+            {opt.value === value && <Check className="ml-auto h-3 w-3 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function PreviewIconSelect({
+  icon: Icon,
+  value,
+  placeholder,
+  options,
+  onChange,
+}: {
+  icon: LucideIcon;
+  value: string;
+  placeholder: string;
+  options: NamedItem[];
+  onChange: (id: string | undefined) => void;
+}) {
+  const selected = options.find((o) => o.id === value);
+  const label = selected?.name ?? placeholder;
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px] text-foreground hover:bg-accent transition-colors max-w-[130px]"
+        >
+          <Icon className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+          <span className="truncate">{label}</span>
+          <ChevronDown className="h-2.5 w-2.5 opacity-50 shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="z-[400] max-h-56 overflow-y-auto min-w-[8.5rem]">
+        <DropdownMenuItem
+          onClick={() => onChange(undefined)}
+          className="gap-2 text-xs text-muted-foreground"
+        >
+          <Icon className="h-3 w-3 shrink-0 opacity-60" />
+          {placeholder}
+          {!value && <Check className="ml-auto h-3 w-3 text-primary" />}
+        </DropdownMenuItem>
+        {options.map((opt) => (
+          <DropdownMenuItem
+            key={opt.id}
+            onClick={() => onChange(opt.id)}
+            className="gap-2 text-xs"
+          >
+            <Icon className="h-3 w-3 shrink-0 text-muted-foreground" />
+            <span className="truncate">{opt.name}</span>
+            {opt.id === value && <Check className="ml-auto h-3 w-3 text-primary shrink-0" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 interface NamedItem {
   id: string;
@@ -115,96 +222,71 @@ export function TaskPreviewCard({
         />
 
         <div className="flex flex-wrap gap-1.5">
-          <select
+          <PreviewColoredSelect
             value={task.priority}
-            onChange={(e) => onChange({ ...task, priority: e.target.value as TaskPriority })}
-            className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]"
-          >
-            {(Object.keys(PRIORITY_LABELS) as TaskPriority[]).map((p) => (
-              <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
-            ))}
-          </select>
-          <select
+            options={PRIORITY_OPTIONS}
+            onChange={(priority) => onChange({ ...task, priority })}
+          />
+          <PreviewColoredSelect
             value={task.status}
-            onChange={(e) => onChange({ ...task, status: e.target.value as TaskStatus })}
-            className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]"
-          >
-            {(Object.keys(STATUS_LABELS) as TaskStatus[]).map((s) => (
-              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-            ))}
-          </select>
-          <select
+            options={STATUS_OPTIONS.filter((o) => o.value !== 'archived')}
+            onChange={(status) => onChange({ ...task, status })}
+          />
+          <PreviewColoredSelect
             value={task.type}
-            onChange={(e) => onChange({ ...task, type: e.target.value as TaskType })}
-            className="rounded border border-border bg-background text-foreground px-1 py-0.5 text-[10px]"
-          >
-            {(Object.keys(TYPE_LABELS) as TaskType[]).map((t) => (
-              <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-            ))}
-          </select>
+            options={TYPE_OPTIONS}
+            onChange={(type) => onChange({ ...task, type })}
+          />
 
           {projects.length > 0 && (
-            <div className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-              <FolderKanban className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-              <select
-                value={task.projectId ?? ''}
-                onChange={(e) => onChange({ ...task, projectId: e.target.value || undefined })}
-                className="bg-background text-foreground outline-none max-w-[100px]"
-              >
-                <option value="">Tablero</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
+            <ProjectMultiPicker
+              projects={projects}
+              value={
+                task.projectIds?.length
+                  ? task.projectIds
+                  : task.projectId
+                    ? [task.projectId]
+                    : []
+              }
+              onChange={(ids) =>
+                onChange({
+                  ...task,
+                  projectIds: ids.length ? ids : undefined,
+                  projectId: ids.length === 1 ? ids[0] : undefined,
+                })
+              }
+              size="sm"
+            />
           )}
 
           {cycles.length > 0 && (
-            <div className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-              <Timer className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-              <select
-                value={task.cycleId ?? ''}
-                onChange={(e) => onChange({ ...task, cycleId: e.target.value || undefined })}
-                className="bg-background text-foreground outline-none max-w-[100px]"
-              >
-                <option value="">Sin sprint</option>
-                {cycles.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+            <PreviewIconSelect
+              icon={Timer}
+              value={task.cycleId ?? ''}
+              placeholder="Sin sprint"
+              options={cycles}
+              onChange={(cycleId) => onChange({ ...task, cycleId })}
+            />
           )}
 
           {objectives.length > 0 && (
-            <div className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-              <Target className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-              <select
-                value={task.objectiveId ?? ''}
-                onChange={(e) => onChange({ ...task, objectiveId: e.target.value || undefined })}
-                className="bg-background text-foreground outline-none max-w-[100px]"
-              >
-                <option value="">Sin objetivo</option>
-                {objectives.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-            </div>
+            <PreviewIconSelect
+              icon={Target}
+              value={task.objectiveId ?? ''}
+              placeholder="Sin objetivo"
+              options={objectives}
+              onChange={(objectiveId) => onChange({ ...task, objectiveId })}
+            />
           )}
 
           {locations.length > 0 && (
-            <div className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-              <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-              <select
-                value={task.locationId ?? ''}
-                onChange={(e) => onChange({ ...task, locationId: e.target.value || undefined })}
-                className="bg-background text-foreground outline-none max-w-[90px]"
-              >
-                <option value="">Sin {labels.site.toLowerCase()}</option>
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
-              </select>
-            </div>
+            <PreviewIconSelect
+              icon={MapPin}
+              value={task.locationId ?? ''}
+              placeholder={`Sin ${labels.site.toLowerCase()}`}
+              options={locations}
+              onChange={(locationId) => onChange({ ...task, locationId })}
+            />
           )}
 
           <input

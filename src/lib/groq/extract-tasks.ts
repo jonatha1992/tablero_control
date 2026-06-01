@@ -16,6 +16,8 @@ export interface ExtractedTask {
   order: number;
   locationId?: string;
   projectId?: string;
+  /** Copias independientes en varios tableros (prioridad sobre projectId al confirmar). */
+  projectIds?: string[];
   cycleId?: string;
   objectiveId?: string;
   checklist?: ChecklistItem[];
@@ -78,6 +80,7 @@ Devuelve ÚNICAMENTE JSON válido:
       "dueTime": "HH:MM o null",
       "locationId": "id exacto o null",
       "projectId": "id exacto o null",
+      "projectIds": ["id1", "id2"] o null si un solo tablero,
       "cycleId": "id exacto o null",
       "objectiveId": "id exacto o null",
       "checklist": [{ "id": "c1", "text": "paso", "done": false }],
@@ -94,8 +97,10 @@ Devuelve ÚNICAMENTE JSON válido:
 
 Reglas:
 - Cada acción/tarea mencionada = ítem separado. order desde 1.
-- assigneeIds, locationId, projectId, cycleId, objectiveId: solo ids de las listas. Sin match → null/[].
-- Si no menciona tablero → projectId null (el sistema usará default). Si menciona sprint → cycleId.
+- assigneeIds, locationId, projectId, projectIds, cycleId, objectiveId: solo ids de las listas. Sin match → null/[].
+- Si menciona varios tableros ("en Marketing y Ventas") → projectIds con todos los ids válidos; projectId null.
+- Si un solo tablero → projectId o projectIds de un elemento. Si no menciona tablero → projectId y projectIds null (default en UI).
+- Si menciona sprint → cycleId.
 - status backlog si es idea futura; todo por defecto; in_progress si ya en curso.
 - recurrence: rutinas ("todos los viernes", "quincenal", "cada mes"). Sin repetición → null.
 - checklist: pasos mencionados dentro de una tarea. subtasks: tareas hijas con título propio.
@@ -117,16 +122,34 @@ function sanitizeTask(raw: ExtractedTask, ctx: ExtractContext): ExtractedTask {
 
   const status = VALID_STATUSES.includes(raw.status) ? raw.status : 'todo';
 
+  const fromArray = (Array.isArray(raw.projectIds) ? raw.projectIds : []).filter(
+    (id): id is string => typeof id === 'string' && projectIds.has(id),
+  );
+
+  let projectId: string | undefined;
+  let resolvedProjectIds: string[] | undefined;
+
+  if (fromArray.length > 0) {
+    resolvedProjectIds = fromArray;
+    projectId = fromArray.length === 1 ? fromArray[0] : undefined;
+  } else if (raw.projectId && projectIds.has(raw.projectId)) {
+    projectId = raw.projectId;
+    resolvedProjectIds = [raw.projectId];
+  } else if (!Array.isArray(raw.projectIds) || raw.projectIds.length === 0) {
+    projectId = ctx.defaultProjectId;
+    if (ctx.defaultProjectId) {
+      resolvedProjectIds = [ctx.defaultProjectId];
+    }
+  }
+
   return {
     ...raw,
     title: String(raw.title ?? '').slice(0, 120),
     status,
     assigneeIds: (raw.assigneeIds ?? []).filter((id) => memberIds.has(id)),
     locationId: raw.locationId && locationIds.has(raw.locationId) ? raw.locationId : undefined,
-    projectId:
-      raw.projectId && projectIds.has(raw.projectId)
-        ? raw.projectId
-        : ctx.defaultProjectId,
+    projectId,
+    projectIds: resolvedProjectIds,
     cycleId: raw.cycleId && cycleIds.has(raw.cycleId) ? raw.cycleId : undefined,
     objectiveId:
       raw.objectiveId && objectiveIds.has(raw.objectiveId) ? raw.objectiveId : undefined,

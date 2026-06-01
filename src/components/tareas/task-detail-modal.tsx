@@ -20,7 +20,14 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive, Copy } from 'lucide-react';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
+import { hasMultipleBoards } from '@/lib/business-defaults';
+import {
+  ProjectMultiPicker,
+  shouldShowProjectMultiPicker,
+} from '@/components/tareas/project-multi-picker';
+import { useReplicateTaskToProjects } from '@/hooks/mutations/use-replicate-task';
 import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
 import { TaskComments } from './task-comments';
@@ -49,6 +56,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [description, setDescription] = useState('');
   const [editingAssignees, _setEditingAssignees] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showReplicate, setShowReplicate] = useState(false);
+  const [replicateProjectIds, setReplicateProjectIds] = useState<string[]>([]);
   const [editLocationId, setEditLocationId] = useState('');
   const [editProjectId, setEditProjectId] = useState('');
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
@@ -63,10 +72,16 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
   const deleteTask = useDeleteTask();
+  const replicateTask = useReplicateTaskToProjects();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
   const { user } = useAuth();
+  const { data: business } = useBusinessQuery(user?.businessId);
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const showMultiBoardPicker = shouldShowProjectMultiPicker(
+    projects.length,
+    hasMultipleBoards(business?.settings),
+  );
 
   if (!task) return null;
 
@@ -328,46 +343,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
             </div>
           ) : (
-            <div className="flex items-center gap-2 mt-4">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setTitle(task.title);
-                  setDescription(task.description);
-                  const d = task.dueDate ? new Date(task.dueDate) : null;
-                  setEditDueDate(d ? d.toISOString().split('T')[0] : '');
-                  const h = d ? d.getHours() : 0;
-                  const m = d ? d.getMinutes() : 0;
-                  setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
-                  setEditLocationId(task.locationId ?? '');
-                  setEditProjectId(task.projectId ?? '');
-                  setEditAssigneeIds(task.assigneeIds ?? []);
-                  setIsRecurring(!!task.recurrence);
-                  setFrequency(task.recurrence?.frequency ?? 'weekly');
-                  setIntervalValue(task.recurrence?.interval ?? 1);
-                  setDayOfWeek(task.recurrence?.dayOfWeek);
-                  setDayOfMonth(task.recurrence?.dayOfMonth);
-                  setEditing(true);
-                }}
-              >
-                Editar
-              </Button>
-              {task.status === 'done' && (
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="h-9 w-9"
-                  onClick={() => moveTask.mutate({ taskId: task.id, newStatus: 'archived' })}
-                  title="Archivar tarea"
-                >
-                  <Archive className="h-4 w-4" />
-                </Button>
-              )}
-              <Button size="icon" variant="destructive" className="h-9 w-9" onClick={handleDelete} disabled={deleteTask.isPending}>
-                <Trash className="h-4 w-4" />
-              </Button>
-            </div>
+            null
           )}
         </DialogHeader>
 
@@ -565,6 +541,70 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           {task.completedDate && <p>Completada: {new Date(task.completedDate).toLocaleString('es')}</p>}
         </div>
 
+        {/* Actions (bottom) — only when not editing */}
+        {!editing && (
+          <div className="mt-4 pt-4 border-t flex flex-wrap items-center justify-end gap-2">
+            {showMultiBoardPicker && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setReplicateProjectIds([]);
+                  setShowReplicate(true);
+                }}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Duplicar en tableros
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setTitle(task.title);
+                setDescription(task.description);
+                const d = task.dueDate ? new Date(task.dueDate) : null;
+                setEditDueDate(d ? d.toISOString().split('T')[0] : '');
+                const h = d ? d.getHours() : 0;
+                const m = d ? d.getMinutes() : 0;
+                setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
+                setEditLocationId(task.locationId ?? '');
+                setEditProjectId(task.projectId ?? '');
+                setEditAssigneeIds(task.assigneeIds ?? []);
+                setIsRecurring(!!task.recurrence);
+                setFrequency(task.recurrence?.frequency ?? 'weekly');
+                setIntervalValue(task.recurrence?.interval ?? 1);
+                setDayOfWeek(task.recurrence?.dayOfWeek);
+                setDayOfMonth(task.recurrence?.dayOfMonth);
+                setEditing(true);
+              }}
+            >
+              Editar
+            </Button>
+            {task.status === 'done' && (
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-9 w-9"
+                onClick={() => moveTask.mutate({ taskId: task.id, newStatus: 'archived' })}
+                title="Archivar tarea"
+              >
+                <Archive className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              size="icon"
+              variant="destructive"
+              className="h-9 w-9"
+              onClick={handleDelete}
+              disabled={deleteTask.isPending}
+              title="Eliminar tarea"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         </div>
 
         {/* Save/Cancel footer — outside scroll area, always visible */}
@@ -580,6 +620,46 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           </div>
         )}
       </DialogContent>
+
+      <Dialog open={showReplicate} onOpenChange={setShowReplicate}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Duplicar en tableros</DialogTitle>
+            <DialogDescription>
+              Se crearán copias independientes de &quot;{task.title}&quot; en cada tablero elegido (incluye subtareas).
+            </DialogDescription>
+          </DialogHeader>
+          <ProjectMultiPicker
+            projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+            value={replicateProjectIds}
+            onChange={setReplicateProjectIds}
+            size="md"
+            placeholder="Elegí tableros"
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setShowReplicate(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={replicateProjectIds.length === 0 || replicateTask.isPending}
+              onClick={() => {
+                replicateTask.mutate(
+                  { sourceTaskId: task.id, projectIds: replicateProjectIds },
+                  {
+                    onSuccess: () => {
+                      setShowReplicate(false);
+                      setReplicateProjectIds([]);
+                    },
+                  },
+                );
+              }}
+            >
+              {replicateTask.isPending ? 'Duplicando…' : `Duplicar (${replicateProjectIds.length})`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={showConfirmDelete}

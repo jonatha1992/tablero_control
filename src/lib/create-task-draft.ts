@@ -14,6 +14,7 @@ export function extractedTaskToDraft(task: ExtractedTask): CreateTaskDraft {
     assigneeIds: task.assigneeIds,
     locationId: task.locationId,
     projectId: task.projectId,
+    projectIds: task.projectIds,
     cycleId: task.cycleId,
     objectiveId: task.objectiveId,
     estimatedHours: task.estimatedHours,

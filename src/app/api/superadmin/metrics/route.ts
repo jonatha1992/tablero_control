@@ -20,7 +20,6 @@ export const GET = handle(async (req: NextRequest) => {
     freePlan, basicPlan, proPlan, enterprisePlan,
     recentUsers,
     recentBusinesses,
-    recentActivity,
   ] = await prisma.$transaction([
     prisma.business.count(),
     prisma.business.count({ where: { status: 'active' } }),
@@ -43,11 +42,6 @@ export const GET = handle(async (req: NextRequest) => {
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true, plan: true, status: true, createdAt: true }
     }),
-    prisma.auditLog.findMany({
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: { actor: { select: { name: true } }, business: { select: { name: true } } }
-    }),
   ]);
 
   const mrr = activeSubscriptions.reduce((acc: number, s: { amount: number }) => acc + s.amount, 0);
@@ -65,6 +59,5 @@ export const GET = handle(async (req: NextRequest) => {
     tasks: { total: totalTasks },
     subscriptions: { active: activeSubscriptions.length, mrr },
     planBreakdown: planCount,
-    activity: recentActivity,
   });
 });

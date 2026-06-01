@@ -27,4 +27,19 @@ describe('useConfirmDictatedTasks DTO mapping', () => {
     expect(draft.subtasks).toEqual(['Borrador']);
     expect(draft.recurrence?.frequency).toBe('weekly');
   });
+
+  it('extractedTaskToDraft incluye projectIds', () => {
+    const task: ExtractedTask = {
+      title: 'Multi',
+      priority: 'medium',
+      status: 'todo',
+      type: 'task',
+      assigneeIds: [],
+      tags: [],
+      order: 1,
+      projectIds: ['p1', 'p2'],
+    };
+    const draft = extractedTaskToDraft(task);
+    expect(draft.projectIds).toEqual(['p1', 'p2']);
+  });
 });

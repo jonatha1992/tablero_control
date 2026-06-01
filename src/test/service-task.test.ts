@@ -15,7 +15,16 @@ vi.mock('@/repositories', () => ({
   },
 }));
 
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    project: {
+      findMany: vi.fn(),
+    },
+  },
+}));
+
 import { taskRepository } from '@/repositories';
+import { prisma } from '@/lib/prisma';
 import type { Task } from '@/types/domain/task';
 
 const mockRepo = vi.mocked(taskRepository);
@@ -86,6 +95,36 @@ describe('TaskService.createTask', () => {
 
     expect(result.id).toBe('task-new');
     expect(result.title).toBe('Creada');
+  });
+});
+
+describe('TaskService.createTasksForProjects', () => {
+  it('crea una tarea por cada projectId', async () => {
+    vi.mocked(prisma.project.findMany).mockResolvedValueOnce([
+      { id: 'p1', businessId: 'biz-1' },
+      { id: 'p2', businessId: 'biz-1' },
+    ] as never);
+    mockRepo.create
+      .mockResolvedValueOnce({ ...baseTask, id: 't1', projectId: 'p1' } as never)
+      .mockResolvedValueOnce({ ...baseTask, id: 't2', projectId: 'p2' } as never);
+
+    const dto = {
+      title: 'Multi',
+      status: 'todo' as const,
+      priority: 'medium' as const,
+      type: 'task' as const,
+      assigneeIds: [] as string[],
+      tags: [] as string[],
+    };
+    const result = await taskService.createTasksForProjects(
+      dto,
+      { projectIds: ['p1', 'p2'] },
+      'user-1',
+      'biz-1',
+    );
+
+    expect(result).toHaveLength(2);
+    expect(mockRepo.create).toHaveBeenCalledTimes(2);
   });
 });
 
