@@ -6,6 +6,7 @@ import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UpdateMemberDTO } from '@/types/dto/team.dto';
 import type { User } from '@/types/domain/user';
 import { useAuth } from '@/hooks/auth-context';
+import { showRemoveMemberError } from '@/lib/team/member-removal-errors';
 import { toast } from 'sonner';
 
 export function useUpdateMember() {
@@ -39,11 +40,7 @@ export function useRemoveMember() {
     },
     onError: (err: Error, _id: string, context) => {
       if (context?.previous) queryClient.setQueryData(context.key, context.previous);
-      if (err.message?.includes('cannot_remove_owner')) {
-        toast.error('No se puede eliminar al propietario del negocio');
-      } else {
-        toast.error('Error al eliminar miembro');
-      }
+      showRemoveMemberError(err);
     },
     onSuccess: () => {
       toast.success('Miembro eliminado del equipo');

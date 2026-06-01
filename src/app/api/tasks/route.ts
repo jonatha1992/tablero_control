@@ -44,9 +44,9 @@ export const GET = handle(async (request: NextRequest) => {
   if (priority) { const ids = priority.split(',').filter(Boolean); if (ids.length) filters.priority = ids as TaskPriority[]; }
   if (projectId) { const ids = projectId.split(',').filter(Boolean); if (ids.length) filters.projectId = ids; }
   
-  // Enforce tenant-level location restriction if user is not admin/superadmin
+  // Sector-scoped users: su sector + tareas propias sin sector (p. ej. creadas por IA sin locationId)
   if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
-    filters.locationId = [userLocationId];
+    filters.locationOrCreator = { locationId: userLocationId, creatorId: user.uid };
   } else if (locationId) { 
     const ids = locationId.split(',').filter(Boolean); 
     if (ids.length) filters.locationId = ids; 

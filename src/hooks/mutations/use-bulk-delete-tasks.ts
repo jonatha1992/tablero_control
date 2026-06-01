@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { messageFromTaskDeleteError } from '@/lib/api/task-delete-error';
 import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import type { Task } from '@/types/domain/task';
@@ -29,7 +30,7 @@ export function useBulkDeleteTasks() {
       context?.previousQueries.forEach(([queryKey, data]) => {
         queryClient.setQueryData(queryKey, data);
       });
-      toast.error('Error al eliminar', { description: (err as Error).message });
+      toast.error('Error al eliminar', { description: messageFromTaskDeleteError(err) });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });

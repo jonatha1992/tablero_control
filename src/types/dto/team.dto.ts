@@ -5,6 +5,7 @@ export interface InviteMemberDTO {
   email: string;
   role: UserRole;
   locationId?: string;
+  locationAssignments?: LocationAssignmentInput[];
 }
 
 export interface LocationAssignmentInput {

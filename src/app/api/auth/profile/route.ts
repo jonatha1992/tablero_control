@@ -116,6 +116,29 @@ export const GET = handle(async (request: NextRequest) => {
     const hasOwnedBusiness = ownedCount > 0;
     const isOwner = Boolean(user.businessId && business?.ownerId === user.id);
 
+    const currentBusinessId = user.businessId;
+    const membershipInCurrentBusiness = (user.memberships ?? []).find(
+      (m) => m.businessId === currentBusinessId && m.isActive
+    );
+
+    // Space creator should always be admin in their owned business (heals legacy misconfigured memberships)
+    if (
+      isOwner &&
+      user.businessId &&
+      membershipInCurrentBusiness &&
+      membershipInCurrentBusiness.role !== 'admin' &&
+      membershipInCurrentBusiness.role !== 'superadmin'
+    ) {
+      await prisma.userBusiness.update({
+        where: {
+          userId_businessId: { userId: user.id, businessId: user.businessId },
+        },
+        data: { role: 'admin' },
+      });
+      user = await userRepository.update(user.id, { role: 'admin' });
+      user = (await userRepository.findById(user.id)) ?? user;
+    }
+
     if (process.env.NODE_ENV !== 'production') {
       const elapsedMs = Date.now() - startedAt;
       console.debug(`[perf] profile GET ${elapsedMs}ms`);

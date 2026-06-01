@@ -130,6 +130,25 @@ describe('DELETE /api/members/[id]', () => {
     expect(mockRemoveMember).not.toHaveBeenCalled();
   });
 
+  it('retorna 400 al intentar eliminarse a sí mismo', async () => {
+    mockRequireUser.mockResolvedValueOnce({
+      uid: 'admin-1',
+      role: 'admin',
+      businessId: 'biz-1',
+      email: 'admin@biz.com',
+      name: 'Admin Opel',
+      data: { id: 'admin-1', role: 'admin', businessId: 'biz-1', name: 'Admin Opel', email: 'admin@biz.com', teamIds: [], preferences: {}, isActive: true, createdAt: new Date(), updatedAt: new Date() },
+    } as never);
+
+    const req = new NextRequest('http://localhost/api/members/admin-1', { method: 'DELETE' });
+    const res = await DELETE(req, { params: Promise.resolve({ id: 'admin-1' }) });
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('cannot_remove_self');
+    expect(mockRemoveMember).not.toHaveBeenCalled();
+  });
+
   it('retorna 403 al intentar eliminar al propietario del negocio', async () => {
     const ownerMember = {
       ...regularMember,
@@ -157,6 +176,37 @@ describe('DELETE /api/members/[id]', () => {
 
     expect(res.status).toBe(404);
     expect(mockRemoveMember).not.toHaveBeenCalled();
+  });
+
+  it('permite eliminar miembro al propietario del negocio aunque su rol no sea admin', async () => {
+    mockRequireUser.mockResolvedValueOnce({
+      uid: 'owner-1',
+      role: 'miembro',
+      businessId: 'biz-1',
+      email: 'owner@biz.com',
+      name: 'Dueño',
+      data: {
+        id: 'owner-1',
+        role: 'miembro',
+        businessId: 'biz-1',
+        name: 'Dueño',
+        email: 'owner@biz.com',
+        teamIds: [],
+        preferences: {},
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    } as never);
+    mockFindBusiness.mockResolvedValue({ id: 'biz-1', ownerId: 'owner-1' } as never);
+    mockFindUser.mockResolvedValueOnce(regularMember as never);
+    mockRemoveMember.mockResolvedValueOnce(undefined);
+
+    const req = new NextRequest('http://localhost/api/members/mem-1', { method: 'DELETE' });
+    const res = await DELETE(req, { params: Promise.resolve({ id: 'mem-1' }) });
+
+    expect(res.status).toBe(200);
+    expect(mockRemoveMember).toHaveBeenCalledWith('mem-1', 'biz-1');
   });
 
   it('retorna 403 si el usuario no tiene permiso business.users.crud', async () => {

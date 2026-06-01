@@ -104,11 +104,38 @@ describe('DELETE /api/tasks/[id]', () => {
     expect(await res.json()).toEqual({ error: 'No encontrada' });
   });
 
-  it('returns 403 {error:Forbidden} when can(task.delete) is false', async () => {
+  it('returns 403 missing_permission when can(task.delete) is false', async () => {
     mockCan.mockReturnValueOnce(false);
     const res = await DELETE(makeReq('t-1'), { params: Promise.resolve({ id: 't-1' }) });
     expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: 'Forbidden' });
+    expect(await res.json()).toEqual({ error: 'forbidden', reason: 'missing_permission' });
+    expect(mockDeleteTask).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 wrong_location when task is in another sector', async () => {
+    mockRequireUser.mockResolvedValueOnce({
+      uid: 'u-1',
+      role: 'responsable',
+      businessId: 'biz-1',
+      email: 'r@biz.com',
+      name: 'Resp',
+      data: {
+        id: 'u-1',
+        role: 'responsable',
+        businessId: 'biz-1',
+        memberships: [{ businessId: 'biz-1', isActive: true, role: 'responsable', locationId: 'loc-a' }],
+      },
+    } as never);
+    mockGetTaskById.mockResolvedValueOnce({
+      id: 't-1',
+      title: 'T',
+      locationId: 'loc-b',
+      assigneeIds: [],
+    } as never);
+
+    const res = await DELETE(makeReq('t-1'), { params: Promise.resolve({ id: 't-1' }) });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'forbidden', reason: 'wrong_location' });
     expect(mockDeleteTask).not.toHaveBeenCalled();
   });
 

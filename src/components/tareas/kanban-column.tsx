@@ -16,8 +16,8 @@ interface KanbanColumnProps {
   selectedTaskIds: string[];
   isSelectMode: boolean;
   onSelectAll: (taskIds: string[]) => void;
-  onBulkDelete: (taskIds: string[]) => void;
-  onDelete: (taskId: string) => void;
+  onBulkDelete?: (taskIds: string[]) => void;
+  onDelete?: (taskId: string) => void;
   onToggleSelect: (taskId: string) => void;
   locations: { id: string; name: string }[];
 }

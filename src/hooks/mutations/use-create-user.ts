@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { getToken } from '@/lib/firebase/auth';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 import type { UserRole } from '@/types/domain/user';
+import type { LocationAssignmentInput } from '@/types/dto/team.dto';
 import type { CreateUserMode, CreateUserResult } from '@/app/api/users/create/route';
 
 export interface CreateUserInput {
@@ -14,7 +15,9 @@ export interface CreateUserInput {
   password?: string;
   role: UserRole;
   businessId?: string;
+  /** @deprecated Use locationAssignments */
   locationId?: string;
+  locationAssignments?: LocationAssignmentInput[];
   mode?: CreateUserMode;
 }
 

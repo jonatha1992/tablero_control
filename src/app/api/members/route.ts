@@ -3,7 +3,7 @@ import { teamService } from '@/services/team.service';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
-import { can } from '@/lib/permissions';
+import { canManageBusinessUsers } from '@/lib/permissions';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
@@ -34,15 +34,16 @@ export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  if (!can(user.data, 'business.users.crud')) {
+  const { dto, businessId } = await request.json();
+  assertSameTenant(user.data, { businessId });
+
+  const business = await businessRepository.findById(businessId);
+  if (!canManageBusinessUsers(user.data, business?.ownerId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const subDenied = requireActiveSubscription(user, request);
   if (subDenied) return subDenied;
-
-  const { dto, businessId } = await request.json();
-  assertSameTenant(user.data, { businessId });
 
   const normalizedEmail = dto.email?.toLowerCase().trim() ?? '';
   const adminAuth = getAdminAuth();

@@ -49,6 +49,7 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useAuth } from '@/hooks/auth-context';
+import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
 import { X } from 'lucide-react';
 
 const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'];
@@ -86,7 +87,15 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
 
-  const requestDelete = (taskIds: string[]) => setPendingDelete(taskIds);
+  const requestDelete = (taskIds: string[]) => {
+    const allowed = taskIds.filter((id) => {
+      const task = tasks.find((t) => t.id === id);
+      return task && canDeleteTask(task);
+    });
+    if (allowed.length > 0) setPendingDelete(allowed);
+  };
+
+  const handleDeleteOne = (taskId: string) => requestDelete([taskId]);
 
   const handleToggleSelect = (taskId: string) => {
     if (!isSelectMode) toggleSelectMode();
@@ -101,6 +110,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   };
 
   const { user } = useAuth();
+  const { canDeleteAny, canDeleteTask } = useCanDeleteTask();
   const moveTask = useMoveTask();
   const updateTask = useUpdateTask();
   const bulkMove = useBulkMoveTasks();
@@ -402,13 +412,15 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                       </DropdownMenu>
                     </>
                   )}
-                  <button
-                    onClick={() => requestDelete(selectedTaskIds)}
-                    className="h-7 px-2 flex items-center gap-1 rounded text-sm hover:bg-destructive/10 hover:text-destructive transition-colors"
-                    title="Eliminar seleccionadas"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {canDeleteAny && (
+                    <button
+                      onClick={() => requestDelete(selectedTaskIds)}
+                      className="h-7 px-2 flex items-center gap-1 rounded text-sm hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      title="Eliminar seleccionadas"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   <button
                     onClick={clearSelection}
                     className="p-0.5 hover:bg-muted rounded transition-colors"
@@ -488,8 +500,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 selectedTaskIds={selectedTaskIds}
                 isSelectMode={isSelectMode}
                 onSelectAll={selectAllInColumn}
-                onBulkDelete={requestDelete}
-                onDelete={(taskId) => requestDelete([taskId])}
+                onBulkDelete={canDeleteAny ? requestDelete : undefined}
+                onDelete={canDeleteAny ? handleDeleteOne : undefined}
                 onToggleSelect={handleToggleSelect}
                 locations={locations}
 

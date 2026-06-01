@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { tasksApi } from '@/lib/api/tasks';
+import { isAbortError } from '@/lib/is-abort-error';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskFilters } from '@/types/domain/task';
 
@@ -35,13 +36,14 @@ export function useTasksQuery(filters?: TaskFilters) {
       try {
         if (businessId) {
           return filters
-            ? await tasksApi.getByBusiness(businessId, apiSignal, filters)
-            : await tasksApi.getByBusiness(businessId, apiSignal);
+            ? await tasksApi.getByBusiness(businessId, signal, filters)
+            : await tasksApi.getByBusiness(businessId, signal);
         }
         return filters
-          ? await tasksApi.getByCreator(user.id, apiSignal, filters)
-          : await tasksApi.getByCreator(user.id, apiSignal);
+          ? await tasksApi.getByCreator(user.id, signal, filters)
+          : await tasksApi.getByCreator(user.id, signal);
       } catch (e) {
+        if (isAbortError(e)) throw e;
         console.error('[useTasksQuery] Error al obtener tareas:', e);
         return [];
       }

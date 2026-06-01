@@ -188,7 +188,7 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
 
         {onDelete && !isSelectMode && (
           <button
-            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive mt-0.5 text-muted-foreground"
+            className="opacity-70 hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive mt-0.5 text-muted-foreground"
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
             title="Eliminar tarea"
           >
@@ -198,8 +198,9 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
+              className="opacity-70 hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded hover:bg-muted mt-0.5 text-muted-foreground"
               onClick={(e) => e.stopPropagation()}
+              title="Opciones de tarea"
             >
               <MoreVertical className="h-3.5 w-3.5" />
             </button>

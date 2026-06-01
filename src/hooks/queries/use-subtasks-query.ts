@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { subtasksApi } from '@/lib/api/subtasks';
+import { isAbortError } from '@/lib/is-abort-error';
 import type { Task } from '@/types/domain/task';
 
 export const subtaskKeys = {
@@ -17,6 +18,7 @@ export function useSubtasksQuery(taskId: string) {
       try {
         return await subtasksApi.getByTask(taskId);
       } catch (e) {
+        if (isAbortError(e)) throw e;
         console.error('[useSubtasksQuery] Error:', e);
         return [];
       }

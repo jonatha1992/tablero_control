@@ -11,7 +11,12 @@ vi.mock('@/hooks/mutations/use-create-user', () => ({
 }));
 
 vi.mock('@/hooks/queries/use-locations-query', () => ({
-  useLocationsQuery: vi.fn(() => ({ data: [] })),
+  useLocationsQuery: vi.fn(() => ({
+    data: [
+      { id: 'loc-1', name: 'Expense Tracker' },
+      { id: 'loc-2', name: 'Match Analyzer' },
+    ],
+  })),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -35,8 +40,10 @@ beforeEach(() => {
 });
 
 describe('CreateUserModal — campos por modo', () => {
-  it('modo email: un solo bloque de contraseña', () => {
+  it('modo email: selector compacto en una fila y contraseña única', () => {
     render(<CreateUserModal {...defaultProps} />);
+    const modeGrid = screen.getByRole('button', { name: /Con correo/i }).parentElement;
+    expect(modeGrid?.className).toMatch(/grid-cols-4/);
     expect(screen.getByText('Correo electrónico')).toBeInTheDocument();
     expect(screen.queryByText('Nombre de usuario')).not.toBeInTheDocument();
     expect(screen.getAllByText('Contraseña inicial')).toHaveLength(1);
@@ -78,6 +85,44 @@ describe('CreateUserModal — campos por modo', () => {
         username: 'juan.test',
         name: 'Juan Test',
         email: undefined,
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('sin sectores no envía locationAssignments', async () => {
+    const user = userEvent.setup();
+    render(<CreateUserModal {...defaultProps} />);
+
+    await user.type(screen.getByPlaceholderText('Juan García'), 'Ana');
+    await user.type(screen.getByPlaceholderText('juan@empresa.com'), 'ana@test.com');
+    await user.click(screen.getByRole('button', { name: /Crear usuario/i }));
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ locationAssignments: undefined }),
+      expect.any(Object)
+    );
+  });
+
+  it('envía locationAssignments con rol por sector al confirmar', async () => {
+    const user = userEvent.setup();
+    render(<CreateUserModal {...defaultProps} />);
+
+    await user.type(screen.getByPlaceholderText('Juan García'), 'Ana Multi');
+    await user.type(screen.getByPlaceholderText('juan@empresa.com'), 'ana@test.com');
+
+    await user.click(screen.getByRole('button', { name: /Agregar sector/i }));
+    const [sectorSelect, roleSelect] = screen.getAllByRole('combobox');
+    await user.selectOptions(sectorSelect, 'loc-1');
+    await user.selectOptions(roleSelect, 'responsable');
+    await user.click(screen.getByRole('button', { name: /Confirmar sector/i }));
+
+    await user.click(screen.getByRole('button', { name: /Crear usuario/i }));
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Ana Multi',
+        locationAssignments: [{ locationId: 'loc-1', role: 'responsable' }],
       }),
       expect.any(Object)
     );

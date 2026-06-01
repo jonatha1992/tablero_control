@@ -10,6 +10,11 @@ class TeamService {
 
   async inviteMember(dto: InviteMemberDTO, businessId: string, id?: string): Promise<User> {
     const normalizedEmail = dto.email.toLowerCase().trim();
+    const assignments =
+      dto.locationAssignments ??
+      (dto.locationId ? [{ locationId: dto.locationId, role: dto.role as UserRole }] : []);
+    const primaryLocationId = assignments[0]?.locationId ?? dto.locationId ?? null;
+
     const existing = await userRepository.findByEmail(normalizedEmail);
     if (existing) {
       // User already exists → add or update membership
@@ -19,15 +24,22 @@ class TeamService {
       if (existingMembership) {
         await prisma.userBusiness.update({
           where: { userId_businessId: { userId: existing.id, businessId } },
-          data: { role: dto.role, locationId: dto.locationId, isActive: true },
+          data: { role: dto.role, locationId: primaryLocationId, isActive: true },
         });
       } else {
         await userRepository.addMembership({
           userId: existing.id,
           businessId,
           role: dto.role as UserRole,
-          locationId: dto.locationId,
+          locationId: primaryLocationId ?? undefined,
           isActive: true,
+        });
+      }
+      if (assignments.length > 0) {
+        await userRepository.setLocationAssignments(existing.id, assignments);
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: { locationId: primaryLocationId },
         });
       }
       // Update active business cache to the invited one
@@ -42,7 +54,7 @@ class TeamService {
       email: normalizedEmail,
       role: dto.role,
       businessId,
-      locationId: dto.locationId,
+      locationId: primaryLocationId ?? undefined,
       teamIds: [],
       customRoleIds: [],
       isActive: true,
@@ -59,14 +71,12 @@ class TeamService {
       userId: user.id,
       businessId,
       role: dto.role as UserRole,
-      locationId: dto.locationId,
+      locationId: primaryLocationId ?? undefined,
       isActive: true,
     });
 
-    if (dto.locationId) {
-      await userRepository.setLocationAssignments(user.id, [
-        { locationId: dto.locationId, role: dto.role as UserRole },
-      ]);
+    if (assignments.length > 0) {
+      await userRepository.setLocationAssignments(user.id, assignments);
     }
 
     const refreshed = await userRepository.findById(user.id);

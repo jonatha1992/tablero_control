@@ -143,5 +143,25 @@ describe('POST /api/members', () => {
     await POST(req);
     expect(mockInvite).toHaveBeenCalledWith(dto, 'biz-1', 'firebase-uid-123');
   });
+
+  it('reenvía locationAssignments en el dto de invitación', async () => {
+    mockInvite.mockResolvedValueOnce({ id: 'x' } as never);
+    const dto = {
+      email: 'x@y.com',
+      role: 'miembro',
+      name: 'X',
+      locationAssignments: [
+        { locationId: 'loc-1', role: 'responsable' },
+        { locationId: 'loc-2', role: 'viewer' },
+      ],
+    };
+
+    const req = new NextRequest('http://localhost/api/members', {
+      method: 'POST',
+      body: JSON.stringify({ dto, businessId: 'biz-1' }),
+    });
+    await POST(req);
+    expect(mockInvite).toHaveBeenCalledWith(dto, 'biz-1', 'firebase-uid-123');
+  });
 });
 

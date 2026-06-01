@@ -14,6 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
+import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
+import { useCanUpdateTask } from '@/hooks/use-can-update-task';
+import { taskUpdateErrorMessage } from '@/lib/task-update-access';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
@@ -74,6 +77,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
   const deleteTask = useDeleteTask();
+  const { canDeleteTask: canDelete } = useCanDeleteTask();
+  const { canUpdateTask: canUpdate } = useCanUpdateTask();
   const replicateTask = useReplicateTaskToProjects();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
@@ -89,6 +94,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   const handleSave = () => {
     if (!title.trim()) return;
+    if (!canUpdate(task)) return;
     updateTask.mutate(
       {
         id: task.id,
@@ -572,30 +578,36 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 Duplicar en sectores
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setTitle(task.title);
-                setDescription(task.description);
-                const d = task.dueDate ? new Date(task.dueDate) : null;
-                setEditDueDate(d ? d.toISOString().split('T')[0] : '');
-                const h = d ? d.getHours() : 0;
-                const m = d ? d.getMinutes() : 0;
-                setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
-                setEditLocationId(task.locationId ?? '');
-                setEditProjectId(task.projectId ?? '');
-                setEditAssigneeIds(task.assigneeIds ?? []);
-                setIsRecurring(!!task.recurrence);
-                setFrequency(task.recurrence?.frequency ?? 'weekly');
-                setIntervalValue(task.recurrence?.interval ?? 1);
-                setDayOfWeek(task.recurrence?.dayOfWeek);
-                setDayOfMonth(task.recurrence?.dayOfMonth);
-                setEditing(true);
-              }}
-            >
-              Editar
-            </Button>
+            {canUpdate(task) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setTitle(task.title);
+                  setDescription(task.description);
+                  const d = task.dueDate ? new Date(task.dueDate) : null;
+                  setEditDueDate(d ? d.toISOString().split('T')[0] : '');
+                  const h = d ? d.getHours() : 0;
+                  const m = d ? d.getMinutes() : 0;
+                  setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
+                  setEditLocationId(task.locationId ?? '');
+                  setEditProjectId(task.projectId ?? '');
+                  setEditAssigneeIds(task.assigneeIds ?? []);
+                  setIsRecurring(!!task.recurrence);
+                  setFrequency(task.recurrence?.frequency ?? 'weekly');
+                  setIntervalValue(task.recurrence?.interval ?? 1);
+                  setDayOfWeek(task.recurrence?.dayOfWeek);
+                  setDayOfMonth(task.recurrence?.dayOfMonth);
+                  setEditing(true);
+                }}
+              >
+                Editar
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground max-w-[220px] text-right">
+                {taskUpdateErrorMessage('missing_permission')}
+              </p>
+            )}
             {task.status === 'done' && (
               <Button
                 size="icon"
@@ -607,16 +619,18 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Archive className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              size="icon"
-              variant="destructive"
-              className="h-9 w-9"
-              onClick={handleDelete}
-              disabled={deleteTask.isPending}
-              title="Eliminar tarea"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
+            {canDelete(task) && (
+              <Button
+                size="icon"
+                variant="destructive"
+                className="h-9 w-9"
+                onClick={handleDelete}
+                disabled={deleteTask.isPending}
+                title="Eliminar tarea"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         )}
 

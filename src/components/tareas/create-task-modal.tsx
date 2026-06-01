@@ -26,6 +26,7 @@ import {
 } from '@/components/tareas/project-multi-picker';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
+import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer, CheckSquare, ListTree, Plus } from 'lucide-react';
 import { tasksApi } from '@/lib/api/tasks';
@@ -163,6 +164,12 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
       setCycleId('');
     }
   }, [open, sprintMode, selectedSprintId]);
+
+  useEffect(() => {
+    if (!open || createTaskDraft) return;
+    const defaultLocationId = getActiveMembershipLocationId(user ?? undefined);
+    if (defaultLocationId) setLocationId(defaultLocationId);
+  }, [open, createTaskDraft, user]);
 
   useEffect(() => {
     if (!open || !createTaskDraft) return;

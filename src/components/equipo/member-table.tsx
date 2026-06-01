@@ -9,7 +9,8 @@ import { cn } from '@/lib/utils';
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/constants/user';
 import { getInitials } from '@/lib/utils/string';
 import { EditMemberModal } from './edit-member-modal';
-import { Edit2, Mail, UserX, MapPin } from 'lucide-react';
+import { MemberRemoveButton } from './member-remove-button';
+import { Edit2, Mail, MapPin } from 'lucide-react';
 import type { User } from '@/types';
 
 interface Location {
@@ -20,6 +21,7 @@ interface Location {
 interface MemberTableProps {
   members: User[];
   locations: Location[];
+  actorId?: string;
   onRemove?: (id: string) => void;
   canManage?: boolean;
   isSelectMode?: boolean;
@@ -32,6 +34,7 @@ interface MemberTableProps {
 function MemberRow({
   member,
   locations,
+  actorId,
   onRemove,
   canManage,
   isSelectMode,
@@ -40,6 +43,7 @@ function MemberRow({
 }: {
   member: User;
   locations: Location[];
+  actorId?: string;
   onRemove?: (id: string) => void;
   canManage?: boolean;
   isSelectMode?: boolean;
@@ -104,14 +108,21 @@ function MemberRow({
         </td>
 
         <td className="px-4 py-3 whitespace-nowrap">
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium',
-              ROLE_COLORS[member.role]
+          <div className="flex flex-wrap items-center gap-1">
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                ROLE_COLORS[member.role]
+              )}
+            >
+              {ROLE_LABELS[member.role]}
+            </span>
+            {member.isOwner && (
+              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                Propietario
+              </span>
             )}
-          >
-            {ROLE_LABELS[member.role]}
-          </span>
+          </div>
         </td>
 
         <td className="px-4 py-3">
@@ -168,17 +179,13 @@ function MemberRow({
               >
                 <Mail className="h-3.5 w-3.5" />
               </Button>
-              {onRemove && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive"
-                  onClick={() => setConfirmOpen(true)}
-                  title="Eliminar miembro"
-                >
-                  <UserX className="h-3.5 w-3.5" />
-                </Button>
-              )}
+              <MemberRemoveButton
+                member={member}
+                actorId={actorId}
+                onRemove={onRemove}
+                variant="icon"
+                onRequestConfirm={() => setConfirmOpen(true)}
+              />
             </div>
           </td>
         )}
@@ -202,6 +209,7 @@ function MemberRow({
           member={member}
           open={editOpen}
           onClose={() => setEditOpen(false)}
+          actorId={actorId}
           onRemove={onRemove}
         />
       )}
@@ -212,6 +220,7 @@ function MemberRow({
 export function MemberTable({
   members,
   locations,
+  actorId,
   onRemove,
   canManage,
   isSelectMode,
@@ -260,6 +269,7 @@ export function MemberTable({
                 key={member.id}
                 member={member}
                 locations={locations}
+                actorId={actorId}
                 onRemove={onRemove}
                 canManage={canManage}
                 isSelectMode={isSelectMode}

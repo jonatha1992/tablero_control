@@ -23,6 +23,7 @@ import { getToken } from '@/lib/firebase/auth';
 import type { UserRole } from '@/types/domain/user';
 import type { CreateUserMode } from '@/app/api/users/create/route';
 import { createUserFormFields } from '@/components/equipo/create-user-form-fields';
+import { SectorAssignmentsField, type SectorAssignmentRow } from '@/components/equipo/sector-assignments-field';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -38,11 +39,13 @@ const SUPERADMIN_ROLES: { value: UserRole; label: string; description: string }[
   ...ROLES,
 ];
 
+const MODE_ICON_CLASS = 'h-3 w-3 shrink-0';
+
 const MODES: { value: CreateUserMode; label: string; icon: React.ReactNode; hint: string }[] = [
-  { value: 'email', label: 'Con correo', icon: <Mail className="h-4 w-4" />, hint: 'Email + contraseña. Se envía invitación.' },
-  { value: 'username', label: 'Con usuario', icon: <User className="h-4 w-4" />, hint: 'Sin email. Ingresa con nombre de usuario.' },
-  { value: 'google', label: 'Con Google', icon: <Globe className="h-4 w-4" />, hint: 'Ingresa su Gmail. El usuario usa Google para entrar.' },
-  { value: 'ghost', label: 'Sin acceso', icon: <UserRoundCog className="h-4 w-4" />, hint: 'Solo para control interno y asignación de tareas.' },
+  { value: 'email', label: 'Con correo', icon: <Mail className={MODE_ICON_CLASS} />, hint: 'Email + contraseña. Se envía invitación.' },
+  { value: 'username', label: 'Con usuario', icon: <User className={MODE_ICON_CLASS} />, hint: 'Sin email. Ingresa con nombre de usuario.' },
+  { value: 'google', label: 'Con Google', icon: <Globe className={MODE_ICON_CLASS} />, hint: 'Ingresa su Gmail. El usuario usa Google para entrar.' },
+  { value: 'ghost', label: 'Sin acceso', icon: <UserRoundCog className={MODE_ICON_CLASS} />, hint: 'Solo para control interno y asignación de tareas.' },
 ];
 
 function generatePassword(): string {
@@ -69,7 +72,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const [createAccess, setCreateAccess] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>('miembro');
-  const [locationId, setLocationId] = useState<string>('');
+  const [locationAssignments, setLocationAssignments] = useState<SectorAssignmentRow[]>([]);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
@@ -82,7 +85,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   const queryClient = useQueryClient();
 
   const roles = isSuperAdmin ? SUPERADMIN_ROLES : ROLES;
-  const fields = createUserFormFields(mode);
+  const fields = createUserFormFields(mode, { createAccess });
   const showPasswordField = mode === 'username' || (mode === 'email' && createAccess);
 
   function handleGenerate() {
@@ -143,7 +146,13 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
         mode,
         role,
         businessId,
-        locationId: locationId || undefined,
+        locationAssignments:
+          locationAssignments.length > 0
+            ? locationAssignments.map(({ locationId: locId, role: r }) => ({
+                locationId: locId,
+                role: r,
+              }))
+            : undefined,
       },
       {
         onSuccess: () => setStep('success'),
@@ -193,7 +202,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     setPassword(generatePassword());
     setCreateAccess(true);
     setRole('miembro');
-    setLocationId('');
+    setLocationAssignments([]);
     setError('');
     setLimitInfo(null);
     setCopied(false);
@@ -218,7 +227,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Mode selector */}
-              <div className="grid grid-cols-2 gap-1.5 rounded-lg border p-1 sm:grid-cols-4">
+              <div className="grid grid-cols-4 gap-0.5 rounded-md border p-0.5">
                 {MODES.map((m) => (
                   <button
                     key={m.value}
@@ -233,14 +242,14 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                       }
                     }}
                     className={cn(
-                      'flex flex-col items-center gap-1 rounded-md px-2 py-2 text-xs font-medium transition-colors',
+                      'flex min-w-0 flex-col items-center justify-center gap-0.5 rounded px-0.5 py-1 text-[10px] font-medium leading-tight transition-colors sm:px-1 sm:py-1.5 sm:text-xs',
                       mode === m.value
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted'
                     )}
                   >
                     {m.icon}
-                    {m.label}
+                    <span className="text-center">{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -250,12 +259,13 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
               {/* Name */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Nombre completo</label>
+                <label className="text-sm font-medium">{fields.nameLabel}</label>
                 <Input
                   placeholder="Juan García"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={100}
+                  required
                 />
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
@@ -269,6 +279,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     maxLength={150}
+                    required={fields.emailRequired}
                   />
                   {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
@@ -276,12 +287,13 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
               {fields.showUsername && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Nombre de usuario</label>
+                  <label className="text-sm font-medium">{fields.usernameLabel}</label>
                   <Input
                     placeholder="juan.garcia"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}
                     maxLength={30}
+                    required={fields.usernameRequired}
                   />
                   {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
                   <p className="text-xs text-muted-foreground">Solo letras, números, puntos, guiones.</p>
@@ -303,7 +315,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
 
               {showPasswordField && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Contraseña inicial</label>
+                  <label className="text-sm font-medium">{fields.passwordLabel}</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Input
@@ -311,7 +323,8 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="pr-10 font-mono text-sm"
-                        minLength={6}
+                        minLength={fields.passwordRequired ? 6 : undefined}
+                        required={fields.passwordRequired}
                       />
                       <button
                         type="button"
@@ -348,24 +361,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 </div>
               )}
 
-              {/* Location */}
+              {/* Role */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Asignar Local/Sector (Opcional)</label>
-                  <select
-                    value={locationId}
-                    onChange={(e) => setLocationId(e.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="">Sin asignar (Global)</option>
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>{loc.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Role */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Rol</label>
+                  <label className="text-sm font-medium">Rol base</label>
                   <div className="grid grid-cols-2 gap-2">
                     {roles.map((r) => (
                       <button
@@ -385,6 +383,13 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                     ))}
                   </div>
                 </div>
+
+                <SectorAssignmentsField
+                  assignments={locationAssignments}
+                  onChange={setLocationAssignments}
+                  locations={locations}
+                  baseRole={role}
+                />
 
                 {limitInfo && (
                   <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">

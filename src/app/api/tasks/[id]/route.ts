@@ -83,10 +83,16 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
 
   if (!attachmentOnlyAllowed) {
     if (!can(user.data, 'task.update.any')) {
-      const taskCheck = await prisma.task.findUnique({ where: { id }, select: { assignees: { select: { id: true } } } });
-      const assigneeIds = taskCheck?.assignees.map(a => a.id) ?? [];
-      if (!can(user.data, 'task.update.assigned', { assigneeIds })) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      const taskCheck = await prisma.task.findUnique({
+        where: { id },
+        select: { assignees: { select: { id: true } }, creatorId: true },
+      });
+      const assigneeIds = taskCheck?.assignees.map((a) => a.id) ?? [];
+      if (!can(user.data, 'task.update.assigned', {
+        assigneeIds,
+        creatorId: taskCheck?.creatorId,
+      })) {
+        return NextResponse.json({ error: 'missing_permission' }, { status: 403 });
       }
     }
   }
@@ -242,12 +248,12 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
     if (deletedTask?.locationId && deletedTask.locationId !== userLocationId) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden', reason: 'wrong_location' }, { status: 403 });
     }
   }
 
   if (!can(user.data, 'task.delete')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ error: 'forbidden', reason: 'missing_permission' }, { status: 403 });
   }
 
   await taskService.deleteTask(id);

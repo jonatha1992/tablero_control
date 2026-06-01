@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
-  UserCog, Trash2, X, Save, Loader2,
-  Mail, Lock, MapPin, Shield, Crown, Users, Eye, Star, Check, Plus,
+  UserCog, X, Save, Loader2,
+  Mail, Lock, Shield, Crown, Users, Eye, Star, Check,
 } from 'lucide-react';
 import {
   Dialog,
@@ -21,9 +21,10 @@ import { useUpdateMember } from '@/hooks/mutations/use-update-member';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useRolesQuery } from '@/hooks/queries/use-roles-query';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { MemberRemoveButton } from './member-remove-button';
 import { useAuth } from '@/hooks/auth-context';
 import type { User, UserRole, UserLocationAssignment } from '@/types/domain/user';
-import type { LocationAssignmentInput } from '@/types/dto/team.dto';
+import { SectorAssignmentsField, type SectorAssignmentRow } from './sector-assignments-field';
 
 const ROLES: {
   value: UserRole;
@@ -64,56 +65,21 @@ function MemberAvatar({ name, avatar }: { name: string; avatar?: string | null }
   );
 }
 
-interface LocationRowProps {
-  assignment: LocationAssignmentInput & { locationName: string };
-  onRemove: () => void;
-  onRoleChange: (role: UserRole) => void;
-}
-
-function LocationRow({ assignment, onRemove, onRoleChange }: LocationRowProps) {
-  return (
-    <div className="flex items-center gap-2 rounded-md border border-input bg-muted/20 px-3 py-2">
-      <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span className="flex-1 truncate text-sm font-medium">{assignment.locationName}</span>
-      <select
-        value={assignment.role}
-        onChange={(e) => onRoleChange(e.target.value as UserRole)}
-        className="h-7 appearance-none rounded border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        {ROLES.map((r) => (
-          <option key={r.value} value={r.value}>
-            {r.label}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={onRemove}
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-      >
-        <X className="h-3 w-3" />
-      </button>
-    </div>
-  );
-}
-
 interface Props {
   member: User | null;
   open: boolean;
   onClose: () => void;
+  actorId?: string;
   onRemove?: (id: string) => void;
 }
 
-export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
+export function EditMemberModal({ member, open, onClose, actorId, onRemove }: Props) {
   const [name, setName] = useState('');
   const [role, setRole] = useState<UserRole>('miembro');
   const [error, setError] = useState('');
   const [customRoleIds, setCustomRoleIds] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [locationAssignments, setLocationAssignments] = useState<(LocationAssignmentInput & { locationName: string })[]>([]);
-  const [addingLocation, setAddingLocation] = useState(false);
-  const [newLocationId, setNewLocationId] = useState('');
-  const [newLocationRole, setNewLocationRole] = useState<UserRole>('miembro');
+  const [locationAssignments, setLocationAssignments] = useState<SectorAssignmentRow[]>([]);
 
   const { user: authUser } = useAuth();
   const { mutate, isPending } = useUpdateMember();
@@ -122,19 +88,12 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
 
   const availableCustomRoles = allRoles.filter((r) => r.isActive && !r.isSystem);
 
-  const assignedLocationIds = new Set(locationAssignments.map((a) => a.locationId));
-  const unassignedLocations = locations.filter((l) => !assignedLocationIds.has(l.id));
-
   const memberId = member?.id;
   useEffect(() => {
     if (!member || !open) return;
     setName(member.name);
     setRole(member.role);
     setCustomRoleIds(member.customRoleIds ?? []);
-    setAddingLocation(false);
-    setNewLocationId('');
-    setNewLocationRole(member.role);
-
     if (member.locationAssignments?.length) {
       const businessLocationIds = new Set(locations.map((l) => l.id));
       setLocationAssignments(
@@ -159,34 +118,6 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId, open]);
-
-  function applyBaseRoleToAllSectors() {
-    setLocationAssignments((prev) => prev.map((a) => ({ ...a, role })));
-    setNewLocationRole(role);
-  }
-
-  function addLocation() {
-    if (!newLocationId) return;
-    const loc = locations.find((l) => l.id === newLocationId);
-    if (!loc) return;
-    setLocationAssignments((prev) => [
-      ...prev,
-      { locationId: loc.id, locationName: loc.name, role: newLocationRole },
-    ]);
-    setNewLocationId('');
-    setNewLocationRole(role);
-    setAddingLocation(false);
-  }
-
-  function removeLocation(locationId: string) {
-    setLocationAssignments((prev) => prev.filter((a) => a.locationId !== locationId));
-  }
-
-  function updateLocationRole(locationId: string, newRole: UserRole) {
-    setLocationAssignments((prev) =>
-      prev.map((a) => (a.locationId === locationId ? { ...a, role: newRole } : a))
-    );
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -304,106 +235,12 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               </div>
             </div>
 
-            {/* Sector assignments */}
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-sm font-medium">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                Sectores asignados
-                <span className="ml-1 text-xs font-normal text-muted-foreground">(rol por sector)</span>
-              </label>
-
-              <div className="space-y-1.5">
-                {locationAssignments.length > 1 && (
-                  <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-3 py-2">
-                    <p className="text-xs text-muted-foreground">
-                      Tip: podés aplicar el rol base a todos los sectores y luego ajustar solo excepciones.
-                    </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      onClick={applyBaseRoleToAllSectors}
-                    >
-                      Aplicar rol base
-                    </Button>
-                  </div>
-                )}
-
-                {locationAssignments.length === 0 && !addingLocation && (
-                  <p className="rounded-md border border-dashed border-input px-3 py-2.5 text-xs text-muted-foreground">
-                    Sin sectores asignados — accede a todos según rol base.
-                  </p>
-                )}
-
-                {locationAssignments.map((a) => (
-                  <LocationRow
-                    key={a.locationId}
-                    assignment={a}
-                    onRemove={() => removeLocation(a.locationId)}
-                    onRoleChange={(r) => updateLocationRole(a.locationId, r)}
-                  />
-                ))}
-
-                {addingLocation ? (
-                  <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <select
-                      autoFocus
-                      value={newLocationId}
-                      onChange={(e) => setNewLocationId(e.target.value)}
-                      className="flex-1 h-7 appearance-none rounded border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="">Elegir sector…</option>
-                      {unassignedLocations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={newLocationRole}
-                      onChange={(e) => setNewLocationRole(e.target.value as UserRole)}
-                      className="h-7 appearance-none rounded border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      {ROLES.map((r) => (
-                        <option key={r.value} value={r.value}>
-                          {r.label}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs"
-                      onClick={addLocation}
-                      disabled={!newLocationId}
-                    >
-                      <Check className="h-3 w-3" />
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => { setAddingLocation(false); setNewLocationId(''); }}
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ) : (
-                  unassignedLocations.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setAddingLocation(true)}
-                      className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Agregar sector
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
+            <SectorAssignmentsField
+              assignments={locationAssignments}
+              onChange={setLocationAssignments}
+              locations={locations}
+              baseRole={role}
+            />
 
             {/* Custom roles */}
             {role !== 'superadmin' && availableCustomRoles.length > 0 && (
@@ -457,17 +294,15 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
             )}
 
             <DialogFooter className="gap-2 sm:justify-between pt-1">
-              {onRemove && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setConfirmDelete(true)}
+              {member && (
+                <MemberRemoveButton
+                  member={member}
+                  actorId={actorId ?? authUser?.id}
+                  onRemove={onRemove}
+                  variant="modal"
                   disabled={isPending}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Eliminar
-                </Button>
+                  onRequestConfirm={() => setConfirmDelete(true)}
+                />
               )}
               <div className="flex gap-2 sm:ml-auto">
                 <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isPending}>
