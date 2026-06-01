@@ -15,6 +15,8 @@ import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { exportReportExcel } from '@/lib/reports-export';
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -160,6 +162,33 @@ export default function ReportesPage() {
   const urgentTasks = tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+  const handleExport = async () => {
+    try {
+      await exportReportExcel({
+        period,
+        tasks,
+        members,
+        completionRate,
+        completedTasks,
+        totalTasks,
+        blockedTasks,
+        urgentTasks,
+        statusDist: statusDist.map(({ name, value }) => ({ name, value })),
+        priorityDist: priorityDist.map(({ name, value }) => ({ name, value })),
+        teamWorkload: teamWorkload.map(({ fullName, asignadas, completadas, rate }) => ({
+          fullName,
+          asignadas,
+          completadas,
+          rate,
+        })),
+        weeklyActivity,
+      });
+      toast.success('Archivo Excel descargado');
+    } catch {
+      toast.error('No se pudo exportar el reporte');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center gap-2 text-muted-foreground">
@@ -189,9 +218,9 @@ export default function ReportesPage() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => void handleExport()} disabled={totalTasks === 0}>
             <Download className="h-4 w-4 mr-2" />
-            Exportar
+            Exportar Excel
           </Button>
       </div>
 

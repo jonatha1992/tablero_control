@@ -6,10 +6,7 @@ import { invitesApi, type CreateInviteInput } from '@/lib/api/invites';
 import { inviteKeys } from '@/hooks/queries/use-invites-query';
 import { memberKeys } from '@/hooks/queries/use-members-query';
 
-export type InviteUserInput = CreateInviteInput & {
-  email: string;
-  inviteeName?: string;
-};
+export type InviteUserInput = CreateInviteInput;
 
 export type InviteUserResult = Awaited<ReturnType<typeof invitesApi.create>> & {
   emailSent?: boolean;

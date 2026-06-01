@@ -154,6 +154,11 @@ const SECTIONS: Section[] = [
         title: 'Rendimiento del equipo',
         description: 'Gráficos de tareas por estado, prioridad y miembro. Identificá cuellos de botella y miembros sobrecargados.',
       },
+      {
+        title: 'Exportar a Excel',
+        description:
+          'Usá Exportar Excel (arriba a la derecha) para descargar un archivo .xlsx con varias hojas: resumen, actividad, distribuciones, equipo y tareas. Elegí Semana, Mes o Trimestre para filtrar la hoja Tareas. Abrilo directamente en Microsoft Excel o Google Sheets.',
+      },
     ],
   },
   {

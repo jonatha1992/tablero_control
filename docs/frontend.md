@@ -57,7 +57,7 @@ Para usuarios que **no son dueños** del negocio activo (`isOwner === false`), s
 
 Cada paso usa `element: '#tour-nav-xxx'`. Si el elemento no existe en el DOM, el paso se omite automáticamente.
 
-**Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Planificación, Equipo (flujo de invitación, espacio propio opt-in, troubleshooting), Reportes, Facturación, Configuración (incl. **Armar tu espacio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
+**Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Planificación, Equipo (flujo de invitación, espacio propio opt-in, troubleshooting), Reportes (incl. exportación Excel), Facturación, Configuración (incl. **Armar tu espacio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
 
 **Invitar usuario** (`src/components/equipo/create-user-modal.tsx`): formulario único (nombre, correo, rol base, sectores opcionales). En equipo crea un `BusinessInvite` de un solo uso (`POST /api/invites` con `email`) y envía el link `/i/{id}`. Superadmin sigue usando `POST /api/users/create` en modo correo (sin contraseña en el modal).
 
@@ -83,7 +83,7 @@ src/app/
 │   ├── equipo/
 │   │   └── roles/
 │   ├── sectores/          ← UI de Location (label configurable: Sedes, Sectores, etc.); ruta /equipo/sectores
-│   ├── reportes/
+│   ├── reportes/          # métricas + export Excel .xlsx (ver sección Reportes)
 │   ├── billing/
 │   ├── config/
 │   └── ayuda/
@@ -171,3 +171,22 @@ El nivel superior siempre es **Espacio** (`Business`). Las unidades internas (`L
 Al crear o editar una unidad interna (`SectorModal`), el campo **Tipo** es un selector con los slugs de `business.settings.localeTypes` (o presets por defecto: local, sucursal, departamento, sector, área, negocio, sede) más tipos ya usados en locations existentes. Opción **Agregar otro tipo…** persiste el slug nuevo en `localeTypes` al guardar.
 
 **Código:** `src/lib/terminology.ts` (`resolveSpaceLabels`, presets), hook `useSpaceLabels()` (`src/hooks/use-space-labels.ts`), card `src/components/config/space-terminology-card.tsx`. Consumidores: sidebar Equipo, pantalla `/dashboard/equipo/sectores`, modales de location, campo location en create-task.
+
+## Reportes (`/dashboard/reportes`)
+
+Página client (`src/app/dashboard/reportes/page.tsx`). Datos en vivo con `useTasksQuery` y `useMembersQuery`. Gráficos con Recharts.
+
+**Vistas (tabs):**
+- **Actividad** — barras de tareas creadas, completadas y bloqueadas (últimas 6 semanas).
+- **Distribución** — tortas por estado y por prioridad.
+- **Equipo** — carga por miembro (asignadas vs completadas) y tarjetas de rendimiento.
+
+**KPIs** en la parte superior: tasa de completado, total de tareas, bloqueadas, urgentes activas.
+
+**Período** (Semana / Mes / Trimestre): control en el header. Los gráficos usan el universo completo de tareas del negocio; el período **sí filtra** la hoja *Tareas* del Excel exportado.
+
+**Exportar Excel** (botón con icono de descarga):
+- Handler: `handleExport` → `exportReportExcel()` en `src/lib/reports-export.ts` (import dinámico de `xlsx`).
+- Archivo: `reporte-tareas-{week|month|quarter}-YYYY-MM-DD.xlsx` — libro nativo de Excel, no CSV.
+- Hojas: **Resumen**, **Actividad**, **Por estado**, **Por prioridad**, **Equipo**, **Tareas** (detalle filtrado por período).
+- Deshabilitado si no hay tareas (`totalTasks === 0`). Toast de éxito/error vía `sonner`.

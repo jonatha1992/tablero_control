@@ -41,9 +41,11 @@ interface Props {
 }
 
 type Step = 'form' | 'success';
+type DeliveryMethod = 'email' | 'link';
 
 export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessId }: Props) {
   const [step, setStep] = useState<Step>('form');
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('email');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('miembro');
@@ -71,9 +73,13 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
-    if (!trimmedName) nextErrors.name = 'El nombre es obligatorio';
-    if (!trimmedEmail) nextErrors.email = 'El correo electrónico es obligatorio';
-    else if (!EMAIL_REGEX.test(trimmedEmail)) nextErrors.email = 'El correo no es válido';
+    const nameRequired = !useInviteFlow || deliveryMethod === 'email';
+    if (nameRequired && !trimmedName) nextErrors.name = 'El nombre es obligatorio';
+    const requireEmail = !useInviteFlow || deliveryMethod === 'email';
+    if (requireEmail) {
+      if (!trimmedEmail) nextErrors.email = 'El correo electrónico es obligatorio';
+      else if (!EMAIL_REGEX.test(trimmedEmail)) nextErrors.email = 'El correo no es válido';
+    }
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -94,8 +100,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
           locationIds,
           maxUses: 1,
           expiresInDays: 7,
-          email: trimmedEmail,
-          inviteeName: trimmedName,
+          ...(deliveryMethod === 'email' && trimmedEmail
+            ? { email: trimmedEmail, inviteeName: trimmedName || undefined }
+            : {}),
         },
         {
           onSuccess: (data) => {
@@ -159,6 +166,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
   function handleClose() {
     if (isPending) return;
     setStep('form');
+    setDeliveryMethod('email');
     setName('');
     setEmail('');
     setRole('miembro');
@@ -186,35 +194,78 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
               </DialogTitle>
               <DialogDescription>
                 {useInviteFlow
-                  ? 'Completá los datos y enviaremos un link personalizado para que se una al equipo.'
+                  ? deliveryMethod === 'email'
+                    ? 'Enviaremos un correo personal con el link de invitación (un solo uso).'
+                    : 'Generá un link de un solo uso para compartirlo vos por el canal que prefieras.'
                   : 'Se enviará un correo para que el usuario active su acceso.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {useInviteFlow && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Cómo invitar</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryMethod('email')}
+                      className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                        deliveryMethod === 'email'
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                          : 'border-input hover:bg-muted/50'
+                      }`}
+                    >
+                      <span className="font-medium block">Por correo</span>
+                      <span className="text-xs text-muted-foreground">Más privado · un solo uso</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryMethod('link')}
+                      className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                        deliveryMethod === 'link'
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                          : 'border-input hover:bg-muted/50'
+                      }`}
+                    >
+                      <span className="font-medium block">Solo link</span>
+                      <span className="text-xs text-muted-foreground">Copiás o compartís vos</span>
+                    </button>
+                  </div>
+                  {role === 'admin' && deliveryMethod === 'link' && (
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      Para administradores recomendamos invitar por correo personal, así el link no queda expuesto.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Nombre completo</label>
+                <label className="text-sm font-medium">
+                  Nombre completo{useInviteFlow && deliveryMethod === 'link' ? ' (opcional)' : ''}
+                </label>
                 <Input
                   placeholder="Juan García"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={100}
-                  required
+                  required={!useInviteFlow || deliveryMethod === 'email'}
                 />
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Correo electrónico</label>
-                <Input
-                  type="email"
-                  placeholder="juan@empresa.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  maxLength={150}
-                  required
-                />
-                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-              </div>
+              {(!useInviteFlow || deliveryMethod === 'email') && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Correo electrónico</label>
+                  <Input
+                    type="email"
+                    placeholder="juan@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    maxLength={150}
+                    required
+                  />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Rol en el espacio</label>
@@ -277,7 +328,11 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                   ) : (
                     <Mail className="mr-1.5 h-4 w-4" />
                   )}
-                  {isPending ? 'Enviando...' : 'Enviar invitación'}
+                  {isPending
+                    ? 'Enviando...'
+                    : useInviteFlow && deliveryMethod === 'link'
+                      ? 'Generar link'
+                      : 'Enviar invitación'}
                 </Button>
               </DialogFooter>
             </form>
@@ -287,10 +342,12 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-green-600">
                 <Check className="h-5 w-5" />
-                Invitación enviada
+                {emailSent ? 'Invitación enviada' : 'Link generado'}
               </DialogTitle>
               <DialogDescription>
-                {name.trim()} puede unirse al equipo con el link de invitación.
+                {name.trim()
+                  ? `${name.trim()} puede unirse al equipo con el link de invitación.`
+                  : 'Compartí el link para que la persona se una al equipo.'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
