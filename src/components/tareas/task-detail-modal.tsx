@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -90,6 +90,15 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
     hasMultipleBoards(business?.settings),
   );
 
+  useEffect(() => {
+    if (!open) {
+      setEditing(false);
+      setShowConfirmDelete(false);
+      setShowReplicate(false);
+      setShowReplicateLocations(false);
+    }
+  }, [open]);
+
   if (!task) return null;
 
   const handleSave = () => {
@@ -113,7 +122,12 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           } : undefined
         }
       },
-      { onSuccess: () => setEditing(false) }
+      {
+        onSuccess: () => {
+          setEditing(false);
+          onOpenChange(false);
+        },
+      }
     );
   };
 
