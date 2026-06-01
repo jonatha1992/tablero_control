@@ -1,11 +1,29 @@
 import { describe, it, expect } from 'vitest';
 import { canMutateLocation } from '@/lib/permissions/location-access';
+import type { UserBusiness } from '@/types/domain/user';
+
+function m(
+  partial: Pick<UserBusiness, 'businessId' | 'isActive'> & Partial<UserBusiness>,
+): UserBusiness {
+  const now = new Date();
+  return {
+    id: partial.id ?? `m-${Math.random().toString(36).slice(2)}`,
+    userId: partial.userId ?? 'u-1',
+    businessId: partial.businessId,
+    role: partial.role ?? 'admin',
+    locationId: partial.locationId,
+    businessName: partial.businessName,
+    isActive: partial.isActive,
+    createdAt: partial.createdAt ?? now,
+    updatedAt: partial.updatedAt ?? now,
+  };
+}
 
 const admin = {
   id: 'adm-1',
   role: 'admin' as const,
   businessId: 'biz-1',
-  memberships: [{ businessId: 'biz-1', locationId: undefined, isActive: true }],
+  memberships: [m({ businessId: 'biz-1', locationId: undefined, isActive: true, userId: 'adm-1', role: 'admin' })],
 };
 
 const superadminInTenant = {
@@ -26,21 +44,21 @@ const responsableOwn = {
   id: 'res-1',
   role: 'responsable' as const,
   businessId: 'biz-1',
-  memberships: [{ businessId: 'biz-1', locationId: 'loc-1', isActive: true }],
+  memberships: [m({ businessId: 'biz-1', locationId: 'loc-1', isActive: true, userId: 'res-1', role: 'responsable' })],
 };
 
 const responsableOther = {
   id: 'res-2',
   role: 'responsable' as const,
   businessId: 'biz-1',
-  memberships: [{ businessId: 'biz-1', locationId: 'loc-2', isActive: true }],
+  memberships: [m({ businessId: 'biz-1', locationId: 'loc-2', isActive: true, userId: 'res-2', role: 'responsable' })],
 };
 
 const miembro = {
   id: 'mem-1',
   role: 'miembro' as const,
   businessId: 'biz-1',
-  memberships: [{ businessId: 'biz-1', locationId: 'loc-1', isActive: true }],
+  memberships: [m({ businessId: 'biz-1', locationId: 'loc-1', isActive: true, userId: 'mem-1', role: 'miembro' })],
 };
 
 const location = { id: 'loc-1', businessId: 'biz-1', managerId: 'res-1' };

@@ -35,6 +35,23 @@ class TaskService {
     }
   }
 
+  async validateLocationIdsForBusiness(locationIds: string[], businessId: string): Promise<void> {
+    const ids = [...new Set(locationIds.filter(Boolean))];
+    if (ids.length === 0) return;
+    const locations = await prisma.location.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, businessId: true },
+    });
+    if (locations.length !== ids.length) {
+      throw new Error('location_not_found');
+    }
+    for (const l of locations) {
+      if (l.businessId !== businessId) {
+        throw new Error('forbidden');
+      }
+    }
+  }
+
   async createTasksForProjects(
     dto: CreateTaskDTO,
     targets: ResolveProjectTargetsInput,

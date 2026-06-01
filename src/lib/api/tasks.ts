@@ -51,7 +51,8 @@ export const tasksApi = {
     }),
 
   replicate: (body: {
-    projectIds: string[];
+    projectIds?: string[];
+    locationIds?: string[];
     template?: CreateTaskDTO;
     sourceTaskId?: string;
   }) =>

@@ -87,6 +87,33 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'businessId requerido' }, { status: 400 });
   }
   assertSameTenant(user.data, { businessId: effectiveBusinessId });
+
+  // Ensure referenced resources belong to the same tenant (avoid cross-tenant tasks).
+  if (dto.locationId) {
+    const loc = await prisma.location.findUnique({ where: { id: dto.locationId }, select: { businessId: true } });
+    if (!loc || loc.businessId !== effectiveBusinessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+  if (dto.projectId) {
+    const proj = await prisma.project.findUnique({ where: { id: dto.projectId }, select: { businessId: true } });
+    if (!proj || proj.businessId !== effectiveBusinessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+  if (dto.cycleId) {
+    const cycle = await prisma.cycle.findUnique({ where: { id: dto.cycleId }, select: { businessId: true } });
+    if (!cycle || cycle.businessId !== effectiveBusinessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+  if (dto.objectiveId) {
+    const obj = await prisma.objective.findUnique({ where: { id: dto.objectiveId }, select: { businessId: true } });
+    if (!obj || obj.businessId !== effectiveBusinessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
   const effectiveCreatorId =
     creatorId && (user.role === 'superadmin' || user.role === 'admin')
       ? creatorId
