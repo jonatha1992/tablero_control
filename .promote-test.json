@@ -1,0 +1,9 @@
+{
+  "source_branch": "dev",
+  "target_branch": "test",
+  "test_commands": [
+    "npm run test:run",
+    "npm run lint",
+    "$env:SKIP_VERSION_BUMP='1'; npm run build"
+  ]
+}
