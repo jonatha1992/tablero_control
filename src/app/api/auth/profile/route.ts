@@ -6,6 +6,11 @@ import { handle } from '@/lib/api/route-handler';
 import { DEFAULT_BUSINESS_SETTINGS } from '@/lib/business-defaults';
 import { ensureDefaultBoard } from '@/lib/default-board';
 import type { UserRole } from '@/types/domain/user';
+import {
+  healPlatformSuperAdmin,
+  isPlatformSuperAdmin,
+  isPlatformSuperAdminEmail,
+} from '@/lib/platform-superadmin';
 
 const DEFAULT_PREFERENCES = {
   theme: 'system' as const,
@@ -77,7 +82,7 @@ export const GET = handle(async (request: NextRequest) => {
         await userRepository.addMembership({
           userId: user.id,
           businessId: business.id,
-          role: 'superadmin' as UserRole,
+          role: 'admin',
           isActive: true,
         });
         user = await userRepository.findById(user.id) ?? user;
@@ -86,6 +91,11 @@ export const GET = handle(async (request: NextRequest) => {
 
     if (!user) {
       return NextResponse.json({ error: 'not_invited' }, { status: 404 });
+    }
+
+    if (decodedEmail && isPlatformSuperAdminEmail(decodedEmail)) {
+      await healPlatformSuperAdmin(user.id, decodedEmail);
+      user = (await userRepository.findById(user.id)) ?? user;
     }
 
     const memberships = user.memberships ?? [];
@@ -99,14 +109,23 @@ export const GET = handle(async (request: NextRequest) => {
 
     if (!activeMembership) {
       const fallback = activeMemberships[0];
-      user = await userRepository.update(user.id, {
+      const fallbackRole =
+        fallback.role === 'superadmin' ? 'admin' : (fallback.role as UserRole);
+      const cachedRole = isPlatformSuperAdmin(user)
+        ? 'superadmin'
+        : fallbackRole;
+      const shouldUpdateAvatar = !user.avatar && decoded.picture;
+      const updatedUser = await userRepository.update(user.id, {
         businessId: fallback.businessId,
-        role: fallback.role,
-        ...(!user.avatar && decoded.picture ? { avatar: decoded.picture } : {}),
+        role: cachedRole,
+        ...(shouldUpdateAvatar ? { avatar: decoded.picture } : {}),
       });
-      user = await userRepository.findById(user.id) ?? user;
+      if (!updatedUser) {
+        return NextResponse.json({ error: 'not_invited' }, { status: 404 });
+      }
+      user = await userRepository.findById(updatedUser.id) ?? updatedUser;
     } else if (!user.avatar && decoded.picture) {
-      user = await userRepository.update(user.id, { avatar: decoded.picture });
+      user = (await userRepository.update(user.id, { avatar: decoded.picture })) ?? user;
     }
 
     const [ownedCount, business] = await Promise.all([
@@ -121,13 +140,20 @@ export const GET = handle(async (request: NextRequest) => {
       (m) => m.businessId === currentBusinessId && m.isActive
     );
 
+    const platformSuperAdmin = isPlatformSuperAdmin(user);
+    const businessRole =
+      membershipInCurrentBusiness?.role === 'superadmin'
+        ? 'admin'
+        : (membershipInCurrentBusiness?.role as UserRole | undefined);
+
     // Space creator should always be admin in their owned business (heals legacy misconfigured memberships)
     if (
       isOwner &&
       user.businessId &&
       membershipInCurrentBusiness &&
       membershipInCurrentBusiness.role !== 'admin' &&
-      membershipInCurrentBusiness.role !== 'superadmin'
+      membershipInCurrentBusiness.role !== 'superadmin' &&
+      !platformSuperAdmin
     ) {
       await prisma.userBusiness.update({
         where: {
@@ -137,6 +163,20 @@ export const GET = handle(async (request: NextRequest) => {
       });
       user = await userRepository.update(user.id, { role: 'admin' });
       user = (await userRepository.findById(user.id)) ?? user;
+    } else if (
+      isOwner &&
+      platformSuperAdmin &&
+      user.businessId &&
+      membershipInCurrentBusiness &&
+      membershipInCurrentBusiness.role !== 'admin'
+    ) {
+      await prisma.userBusiness.update({
+        where: {
+          userId_businessId: { userId: user.id, businessId: user.businessId },
+        },
+        data: { role: 'admin' },
+      });
+      user = (await userRepository.findById(user.id)) ?? user;
     }
 
     if (process.env.NODE_ENV !== 'production') {
@@ -144,8 +184,13 @@ export const GET = handle(async (request: NextRequest) => {
       console.debug(`[perf] profile GET ${elapsedMs}ms`);
     }
 
+    const responseRole = platformSuperAdmin ? 'superadmin' : user.role;
+
     return NextResponse.json({
       ...user,
+      role: responseRole,
+      businessRole: platformSuperAdmin ? businessRole ?? 'admin' : undefined,
+      isPlatformSuperAdmin: platformSuperAdmin,
       isOwner,
       hasOwnedBusiness,
       canCreateOwnBusiness: true,

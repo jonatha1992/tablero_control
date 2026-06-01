@@ -10,16 +10,16 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 
 export default function SuperadminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isSuperAdmin } = useAuth();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'superadmin')) {
+    if (!loading && (!user || !isSuperAdmin)) {
       router.replace('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [user, loading, isSuperAdmin, router]);
 
   if (loading) {
     return (
@@ -29,7 +29,7 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
     );
   }
 
-  if (!user || user.role !== 'superadmin') return null;
+  if (!user || !isSuperAdmin) return null;
 
   return (
     <div className="flex flex-1 h-full min-h-0 w-full flex-col">

@@ -10,9 +10,22 @@
 3. `GET /api/auth/profile` auto-provisiona el User en PostgreSQL con `role: 'superadmin'`.
 4. Login redirige automáticamente a `/superadmin`.
 
+### Superadmin del sistema vs rol en la empresa
+
+- **Superadmin (sistema):** operador de TecnoFusión. Se define por `SUPERADMIN_EMAILS` y `User.role = superadmin`. Acceso a `/superadmin` y APIs `platform.*`.
+- **Administrador (empresa):** rol en `UserBusiness` / equipo (`admin`, `responsable`, `miembro`, `viewer`). Solo permisos dentro de un negocio.
+
+Editar el rol en **Equipo → Editar miembro** no quita el superadmin del sistema; solo cambia la membresía del negocio.
+
+### Recuperar superadmin si se perdió
+
+1. Confirmar `SUPERADMIN_EMAILS=tecnofusion.it@gmail.com` (o tu email) en `.env.local` / Vercel.
+2. Cerrar sesión y volver a entrar (`GET /api/auth/profile` restaura `User.role`).
+3. Opcional en DB: `UPDATE "User" SET role = 'superadmin' WHERE email = 'tu@email.com';` y `UserBusiness.role = 'admin'` donde figure `superadmin`.
+
 ## Panel superadmin
 
-URL: `/superadmin` — solo accesible con `role = 'superadmin'`.
+URL: `/superadmin` — accesible con `isPlatformSuperAdmin` (email en allowlist o `User.role = superadmin`).
 
 ### Secciones
 

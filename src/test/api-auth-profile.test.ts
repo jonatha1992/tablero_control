@@ -21,6 +21,11 @@ vi.mock('@/lib/firebase/admin', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     business: { count: vi.fn() },
+    user: { update: vi.fn().mockResolvedValue({}) },
+    userBusiness: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      update: vi.fn().mockResolvedValue({}),
+    },
   },
 }));
 
@@ -170,6 +175,9 @@ describe('GET /api/auth/profile — auto-provisioning superadmin', () => {
       email: 'superadmin@test.com',
       role: 'superadmin',
     }));
+    expect(vi.mocked(userRepository.addMembership)).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' })
+    );
     const body = await res.json();
     expect(body.role).toBe('superadmin');
   });

@@ -2,6 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { canDeleteTask } from '@/lib/task-delete-access';
 import type { User } from '@/types/domain/user';
 
+const preferences: User['preferences'] = {
+  theme: 'system',
+  locale: 'es',
+  timezone: 'America/Argentina/Buenos_Aires',
+  notifications: {
+    email: true,
+    push: true,
+    agentReports: true,
+    agentAlerts: true,
+  },
+  dashboardLayout: [],
+};
+
 const baseUser = (role: User['role'], overrides?: Partial<User>): User => ({
   id: 'u-1',
   email: 'a@b.com',
@@ -11,6 +24,7 @@ const baseUser = (role: User['role'], overrides?: Partial<User>): User => ({
   teamIds: [],
   memberships: [{ id: 'm-1', userId: 'u-1', businessId: 'biz-1', role, isActive: true, createdAt: new Date(), updatedAt: new Date() }],
   customRoleIds: [],
+  preferences,
   isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),

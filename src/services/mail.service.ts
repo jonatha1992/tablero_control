@@ -59,14 +59,15 @@ export class MailService {
     invitedBy: string,
     teamName: string,
     inviterEmail?: string,
-    resetLink?: string
+    resetLink?: string,
+    inviteLinkOverride?: string
   ) {
     try {
       const html = await render(React.createElement(TeamInviteEmail, {
         invitedByUsername: invitedBy,
         invitedByEmail: inviterEmail,
         teamName,
-        inviteLink: `${APP_URL}/login`,
+        inviteLink: inviteLinkOverride ?? `${APP_URL}/login`,
         resetLink,
       }));
       await sendMail(to, `Te han invitado a unirte a ${teamName}`, html);

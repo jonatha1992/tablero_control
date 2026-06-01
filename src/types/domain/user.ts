@@ -42,7 +42,12 @@ export interface User {
   name: string;
   email: string;
   username?: string;
+  /** Effective role for auth/UI: superadmin when platform operator, else business membership role. */
   role: UserRole;
+  /** Role in the active business (never superadmin for team membership). */
+  businessRole?: UserRole;
+  /** TecnoFusión platform operator (SUPERADMIN_EMAILS / User.role superadmin). */
+  isPlatformSuperAdmin?: boolean;
   businessId?: string;
   locationId?: string;
   customRoleIds: string[];

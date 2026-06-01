@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 vi.mock('@/lib/api/auth-helpers', () => ({
   requireUser: vi.fn(),
   requireRole: vi.fn(() => null),
+  requireActiveSubscription: vi.fn(() => null),
 }));
 
 vi.mock('@/lib/api/audit', () => ({
@@ -71,7 +72,7 @@ import { GET as listGET, POST as createPOST } from '@/app/api/invites/route';
 import { GET as detailGET, DELETE as revokeDelete } from '@/app/api/invites/[token]/route';
 import { POST as acceptPOST } from '@/app/api/invites/[token]/accept/route';
 import { POST as prepareAccountPOST } from '@/app/api/invites/[token]/prepare-account/route';
-import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { requireUser, requireRole, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { verifyToken } from '@/lib/firebase/admin';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
@@ -81,6 +82,7 @@ import { prisma } from '@/lib/prisma';
 
 const mockRequireUser = vi.mocked(requireUser);
 const mockRequireRole = vi.mocked(requireRole);
+const mockRequireActiveSubscription = vi.mocked(requireActiveSubscription);
 const mockWriteAuditLog = vi.mocked(writeAuditLog);
 const mockVerifyToken = vi.mocked(verifyToken);
 const mockGetEffectivePlanConfig = vi.mocked(getEffectivePlanConfig);
@@ -126,6 +128,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockRequireUser.mockResolvedValue(authedUser as never);
   mockRequireRole.mockReturnValue(null);
+  mockRequireActiveSubscription.mockReturnValue(null);
   mockWriteAuditLog.mockResolvedValue(undefined as never);
 });
 
