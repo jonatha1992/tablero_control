@@ -116,8 +116,9 @@ export const GET = handle(async (request: NextRequest) => {
     const hasOwnedBusiness = ownedCount > 0;
     const isOwner = Boolean(user.businessId && business?.ownerId === user.id);
 
+    const currentBusinessId = user.businessId;
     const membershipInCurrentBusiness = (user.memberships ?? []).find(
-      (m) => m.businessId === user.businessId && m.isActive
+      (m) => m.businessId === currentBusinessId && m.isActive
     );
 
     // Space creator should always be admin in their owned business (heals legacy misconfigured memberships)
