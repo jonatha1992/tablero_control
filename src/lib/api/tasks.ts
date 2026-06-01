@@ -50,6 +50,16 @@ export const tasksApi = {
       body: JSON.stringify({ dto, creatorId, businessId }),
     }),
 
+  replicate: (body: {
+    projectIds: string[];
+    template?: CreateTaskDTO;
+    sourceTaskId?: string;
+  }) =>
+    fetchJsonAuth<{ tasks: Task[]; count: number }>('/api/tasks/replicate', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   update: (id: string, data: UpdateTaskDTO) =>
     fetchJsonAuth<Task>(`/api/tasks/${id}`, {
       method: 'PATCH',

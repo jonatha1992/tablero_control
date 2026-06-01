@@ -130,9 +130,26 @@ Contexto inyectado server-side (`loadExtractContext`): miembros, sedes, tableros
 
 ### Campos soportados en extracción / confirmación
 
-Título, descripción, status, prioridad, tipo, tags, fecha+hora, assignees, location, project, cycle, objective, checklist, subtareas, recurrencia (`weekly`, `biweekly`, `monthly`, etc.).
+Título, descripción, status, prioridad, tipo, tags, fecha+hora, assignees, location, project / **projectIds** (varios tableros), cycle, objective, checklist, subtareas, recurrencia (`weekly`, `biweekly`, `monthly`, etc.).
 
-Defaults al confirmar: si falta `projectId` → tablero Principal; si falta `cycleId` → sprint seleccionado en UI (`useTaskPreviewContext.confirmOptions`).
+Defaults al confirmar: si falta tablero → tablero Principal; si falta `cycleId` → sprint seleccionado en UI (`useTaskPreviewContext.confirmOptions`).
+
+### Copia en varios tableros (tareas independientes)
+
+No hay tarea compartida entre tableros: cada tablero recibe su **propia fila** `Task` (mismo contenido, distinto `projectId`). Al completar o editar una copia, las demás no cambian.
+
+| Entrada | Comportamiento |
+|---------|----------------|
+| Planificador / voz / texto | El LLM puede devolver `projectIds: ["id1","id2"]` si el usuario nombra varios tableros; en preview, `ProjectMultiPicker` permite ajustar la selección antes de confirmar. |
+| Confirmar preview | `useConfirmDictatedTasks` expande cada ítem a N `POST /api/tasks` (uno por tablero). |
+| Modal «Nueva tarea» | Multi-select de tableros; si hay más de uno → `POST /api/tasks/replicate` con plantilla. |
+| Detalle de tarea | «Duplicar en tableros» → `POST /api/tasks/replicate` con `sourceTaskId` (copia checklist reseteado, subtareas por título, estado `todo`). |
+
+API: `POST /api/tasks/replicate` — body `{ projectIds: string[], template?: CreateTaskDTO, sourceTaskId?: string }`. Valida que todos los `projectIds` pertenezcan al `businessId` del usuario.
+
+Helpers: `src/lib/tasks/resolve-project-targets.ts`, `src/lib/tasks/task-to-create-dto.ts`.
+
+**No incluye:** sincronizar copias entre tableros, copiar adjuntos/comentarios, ni un solo Kanban card visible en múltiples tableros sin duplicar.
 
 ### Componentes clave
 
@@ -142,4 +159,7 @@ Defaults al confirmar: si falta `projectId` → tablero Principal; si falta `cyc
 | `src/lib/groq/planner-intent.ts` | Clasificación de intención |
 | `src/lib/groq/planner-tools.ts` | Pipeline intent → clarify / preview |
 | `src/components/tareas/task-preview-card.tsx` | Preview editable unificada |
-| `src/hooks/mutations/use-dictate-tasks.ts` | Confirmación → DTO completo |
+| `src/hooks/mutations/use-dictate-tasks.ts` | Confirmación → DTO completo (fan-out multi-tablero) |
+| `src/components/tareas/project-multi-picker.tsx` | Selector multi-tablero |
+| `src/app/api/tasks/replicate/route.ts` | Duplicar plantilla o tarea existente en N tableros |
+| `src/hooks/mutations/use-replicate-task.ts` | Mutación cliente para replicate |

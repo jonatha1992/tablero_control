@@ -17,6 +17,7 @@ import {
   ListTree,
   ChevronDown,
   Archive,
+  ListChecks,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
@@ -96,6 +97,8 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
   const shortId = task.id.slice(0, 6).toUpperCase();
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const hasSubtasks = (task.subtaskIds?.length ?? 0) > 0;
+  const checklistTotal = task.checklist?.length ?? 0;
+  const checklistDone = task.checklist?.filter((i) => i.done).length ?? 0;
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
@@ -352,7 +355,7 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
         </DropdownMenu>
 
         {/* Meta: id, comentarios, adjuntos, checklist, subtareas, fecha */}
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-muted-foreground flex-wrap justify-end">
           <span className="font-mono text-[10px] text-muted-foreground/40">#{shortId}</span>
           {task.commentCount > 0 && (
             <div className="flex items-center gap-1 text-xs">
@@ -366,10 +369,13 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
               <span>{task.attachmentUrls.length}</span>
             </div>
           )}
-          {task.checklist && task.checklist.length > 0 && (
-            <div className="flex items-center gap-1 text-xs">
-              <CheckSquare className="h-3.5 w-3.5" />
-              <span>{task.checklist.filter((i) => i.done).length}/{task.checklist.length}</span>
+          {checklistTotal > 0 && (
+            <div
+              className="inline-flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-foreground/80"
+              title="Checklist"
+            >
+              <ListChecks className="h-3.5 w-3.5" />
+              <span className="tabular-nums">{checklistDone}/{checklistTotal}</span>
             </div>
           )}
           {hasSubtasks && (

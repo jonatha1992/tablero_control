@@ -1,4 +1,9 @@
 import { taskRepository } from '@/repositories';
+import { prisma } from '@/lib/prisma';
+import {
+  resolveProjectTargets,
+  type ResolveProjectTargetsInput,
+} from '@/lib/tasks/resolve-project-targets';
 import type { Task, TaskFilters, TaskStatus, RecurrenceConfig } from '@/types/domain/task';
 import type { CreateTaskDTO, UpdateTaskDTO, ReorderKanbanDTO } from '@/types/dto/task.dto';
 import type { PaginatedResponse } from '@/types/api/responses';
@@ -11,6 +16,45 @@ class TaskService {
   ): Promise<Task> {
     if (!dto.title.trim()) throw new Error('El título es requerido');
     return taskRepository.create({ ...dto, creatorId, businessId });
+  }
+
+  async validateProjectIdsForBusiness(projectIds: string[], businessId: string): Promise<void> {
+    const ids = [...new Set(projectIds.filter(Boolean))];
+    if (ids.length === 0) return;
+    const projects = await prisma.project.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, businessId: true },
+    });
+    if (projects.length !== ids.length) {
+      throw new Error('project_not_found');
+    }
+    for (const p of projects) {
+      if (p.businessId !== businessId) {
+        throw new Error('forbidden');
+      }
+    }
+  }
+
+  async createTasksForProjects(
+    dto: CreateTaskDTO,
+    targets: ResolveProjectTargetsInput,
+    creatorId: string,
+    businessId: string,
+  ): Promise<Task[]> {
+    const projectTargets = resolveProjectTargets(targets);
+    const concreteIds = projectTargets.filter((id): id is string => id != null);
+    await this.validateProjectIdsForBusiness(concreteIds, businessId);
+
+    const created: Task[] = [];
+    for (const projectId of projectTargets) {
+      const task = await this.createTask(
+        { ...dto, projectId: projectId ?? undefined },
+        creatorId,
+        businessId,
+      );
+      created.push(task);
+    }
+    return created;
   }
 
   async getTasksByBusiness(businessId: string, filters?: TaskFilters): Promise<Task[]> {

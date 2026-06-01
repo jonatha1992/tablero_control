@@ -61,6 +61,49 @@ describe('sanitizeTask (via extractTasksFromTranscription)', () => {
     expect(tasks[0].assigneeIds).toEqual(['u1']);
   });
 
+  it('conserva projectIds válidos múltiples', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea multi',
+        priority: 'medium',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+        projectIds: ['p1', 'p2'],
+      },
+    ]);
+    const ctx = {
+      ...baseCtx,
+      projects: [
+        { id: 'p1', name: 'A' },
+        { id: 'p2', name: 'B' },
+      ],
+    };
+    const tasks = await extractTasksFromTranscription('texto', ctx);
+    expect(tasks[0].projectIds).toEqual(['p1', 'p2']);
+    expect(tasks[0].projectId).toBeUndefined();
+  });
+
+  it('filtra projectIds inválidos y mantiene los válidos', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea',
+        priority: 'low',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+        projectIds: ['p1', 'p-bad'],
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].projectIds).toEqual(['p1']);
+    expect(tasks[0].projectId).toBe('p1');
+  });
+
   it('reemplaza projectId inválido con defaultProjectId', async () => {
     mockGroqResponse([
       {

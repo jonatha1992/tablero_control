@@ -19,6 +19,7 @@ export interface CreateTaskDraft {
   assigneeIds?: string[];
   locationId?: string;
   projectId?: string;
+  projectIds?: string[];
   cycleId?: string;
   objectiveId?: string;
   estimatedHours?: number;

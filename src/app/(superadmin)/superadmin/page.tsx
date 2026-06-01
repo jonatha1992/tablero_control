@@ -19,13 +19,6 @@ interface Metrics {
   tasks: { total: number };
   subscriptions: { active: number; mrr: number };
   planBreakdown: Record<string, number>;
-  activity: Array<{
-    id: string;
-    action: string;
-    createdAt: string;
-    actor: { name: string };
-    business?: { name: string };
-  }>;
 }
 
 async function fetchMetrics(): Promise<Metrics> {
@@ -118,48 +111,6 @@ export default function SuperadminPage() {
                       </span>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              <div className="border rounded-xl overflow-hidden bg-card">
-                <div className="px-5 py-4 border-b">
-                  <p className="font-semibold">Últimos Usuarios</p>
-                </div>
-                <div className="divide-y text-sm">
-                  {data.users.recent.map((u) => (
-                    <div key={u.id} className="px-5 py-3 flex justify-between items-center hover:bg-muted/30">
-                      <div>
-                        <p className="font-medium">{u.name}</p>
-                        <p className="text-xs text-muted-foreground">{u.email} {u.business ? `• ${u.business.name}` : ''}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(u.createdAt).toLocaleDateString('es-AR')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border rounded-xl overflow-hidden bg-card">
-                <div className="px-5 py-4 border-b bg-muted/20">
-                  <p className="font-semibold text-primary">Auditoría del Sistema (Todo)</p>
-                </div>
-                <div className="divide-y text-xs">
-                  {data.activity.length > 0 ? (
-                    data.activity.map((log) => (
-                      <div key={log.id} className="px-5 py-3 flex gap-4 items-start hover:bg-muted/30">
-                        <div className="w-24 shrink-0 text-muted-foreground">
-                          {new Date(log.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div className="flex-1">
-                          <p><span className="font-medium">{log.actor.name}</span> <span className="text-muted-foreground">{log.action}</span></p>
-                          {log.business && <p className="text-[10px] text-muted-foreground">Negocio: {log.business.name}</p>}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-5 py-8 text-center text-muted-foreground italic">No hay actividad reciente registrada</div>
-                  )}
                 </div>
               </div>
             </div>
