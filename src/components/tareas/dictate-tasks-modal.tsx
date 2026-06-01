@@ -33,7 +33,12 @@ type AssistantMessage = {
 };
 type ChatMessage = UserMessage | AssistantMessage;
 
-function DictateTasksInner() {
+type DictateTasksInnerProps = {
+  /** Cierra el modal tras confirmar y crear las tareas en el tablero. */
+  onTasksConfirmed?: () => void;
+};
+
+function DictateTasksInner({ onTasksConfirmed }: DictateTasksInnerProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -129,6 +134,7 @@ function DictateTasksInner() {
             ),
           );
           setCreatingIdx(null);
+          onTasksConfirmed?.();
         },
         onError: () => setCreatingIdx(null),
       },
@@ -301,7 +307,7 @@ export function DictateTasksModal({ open, onOpenChange }: DictateTasksModalProps
           <MessageSquare className="h-4 w-4 text-primary shrink-0" />
           <DialogTitle className="text-base">Crear con IA</DialogTitle>
         </DialogHeader>
-        <DictateTasksInner />
+        <DictateTasksInner onTasksConfirmed={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
