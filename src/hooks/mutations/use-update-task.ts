@@ -15,10 +15,10 @@ export function useUpdateTask() {
       tasksApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.all });
-      await queryClient.cancelQueries({ queryKey: taskKeys.detail(id) });
+      await queryClient.cancelQueries({ queryKey: [...taskKeys.all, 'detail'] });
 
       const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all });
-      const previousDetail = queryClient.getQueryData<Task>(taskKeys.detail(id));
+      const previousDetails = queryClient.getQueriesData<Task>({ queryKey: [...taskKeys.all, 'detail'] });
 
       // Actualizar todas las listas (Kanban, etc)
       queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
@@ -34,30 +34,34 @@ export function useUpdateTask() {
         });
       });
 
-      // Actualizar el detalle específico
-      if (previousDetail) {
-        const updatedDetail = { ...previousDetail, ...data } as Task;
+      // Actualizar cualquier cache de "detalle" (incluye businessId en la key)
+      queryClient.setQueriesData<Task>({ queryKey: [...taskKeys.all, 'detail'] }, (old) => {
+        if (!old || old.id !== id) return old;
+        const updatedDetail = { ...old, ...data } as Task;
         if (updatedDetail.locationId === null) updatedDetail.locationId = undefined;
         if (updatedDetail.projectId === null) updatedDetail.projectId = undefined;
-        queryClient.setQueryData<Task>(taskKeys.detail(id), updatedDetail);
-      }
+        return updatedDetail;
+      });
 
-      return { previousQueries, previousDetail };
+      return { previousQueries, previousDetails };
     },
-    onError: (err, { id }, context) => {
+    onError: (err, { id: _id }, context) => {
       if (context?.previousQueries) {
         context.previousQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      if (context?.previousDetail) {
-        queryClient.setQueryData(taskKeys.detail(id), context.previousDetail);
+      if (context?.previousDetails) {
+        context.previousDetails.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       toast.error('Error al actualizar tarea', { description: (err as Error).message });
     },
-    onSettled: (_data, _error, { id }) => {
+    onSettled: (_data, _error, { id: _id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) });
+      // Detail keys are tenant-scoped; invalidate them all to avoid missing the active one.
+      queryClient.invalidateQueries({ queryKey: [...taskKeys.all, 'detail'] });
     },
   });
 }

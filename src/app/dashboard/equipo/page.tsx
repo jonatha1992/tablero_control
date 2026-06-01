@@ -49,7 +49,9 @@ export default function EquipoPage() {
       m.locationId === locationFilter ||
       m.locationAssignments?.some((assignment) => assignment.locationId === locationFilter);
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
+    const name = (m.name ?? '').toLowerCase();
+    const email = (m.email ?? '').toLowerCase();
+    const matchesSearch = !q || name.includes(q) || email.includes(q);
     return matchesRole && matchesLocation && matchesSearch;
   });
 

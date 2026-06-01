@@ -13,8 +13,8 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const membersApi = {
-  getByBusiness: (businessId: string) =>
-    fetchJsonAuth<User[]>(`/api/members?businessId=${businessId}`),
+  getByBusiness: (businessId: string, signal?: AbortSignal) =>
+    fetchJsonAuth<User[]>(`/api/members?businessId=${businessId}`, { signal }),
 
   invite: (dto: InviteMemberDTO, businessId: string) =>
     fetchJsonAuth<User>('/api/members', {

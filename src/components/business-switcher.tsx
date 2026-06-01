@@ -33,7 +33,10 @@ export function BusinessSwitcher() {
 
   const handleSwitch = (businessId: string) => {
     if (businessId === user.businessId) return;
-    switchBusiness(businessId);
+    // Navigate away from detail views (task/member) before switching tenant,
+    // so old route params don't immediately refetch cross-tenant resources.
+    router.push('/dashboard');
+    void switchBusiness(businessId);
   };
 
   return (

@@ -13,7 +13,7 @@ export function useMembersQuery() {
   const { user } = useAuth();
   return useQuery({
     queryKey: memberKeys.byBusiness(user?.businessId ?? ''),
-    queryFn: () => membersApi.getByBusiness(user!.businessId!),
+    queryFn: ({ signal }) => membersApi.getByBusiness(user!.businessId!, signal),
     enabled: !!user?.businessId,
     staleTime: 1000 * 60 * 10,
   });

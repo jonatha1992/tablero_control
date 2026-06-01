@@ -1,7 +1,7 @@
 'use client';
 
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { AuthProvider } from '@/hooks/auth-context';
 import { ThemeProvider } from 'next-themes';
@@ -28,6 +28,17 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       })
   );
+
+  useEffect(() => {
+    const onBusinessSwitched = () => {
+      // Drop cached data that may belong to the previous business/tenant.
+      // Cancel first so in-flight queries don't resolve into noisy 403s after the switch.
+      void queryClient.cancelQueries();
+      queryClient.clear();
+    };
+    window.addEventListener('business:switched', onBusinessSwitched as EventListener);
+    return () => window.removeEventListener('business:switched', onBusinessSwitched as EventListener);
+  }, [queryClient]);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

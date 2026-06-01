@@ -5,6 +5,7 @@ import { tasksApi } from '@/lib/api/tasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import { toast } from 'sonner';
 import type { Task } from '@/types/domain/task';
+import { ApiError } from '@/lib/api/errors';
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
@@ -31,7 +32,11 @@ export function useDeleteTask() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.error('Error al eliminar la tarea', { description: err.message });
+      const description =
+        err instanceof ApiError && err.status === 403
+          ? 'No tenés permisos para eliminar esta tarea.'
+          : err.message;
+      toast.error('Error al eliminar la tarea', { description });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
