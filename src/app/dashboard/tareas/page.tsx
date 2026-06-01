@@ -10,7 +10,7 @@ import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { hasMultipleBoards } from '@/lib/business-defaults';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import type { TaskFilters } from '@/types';
-import { ChevronDown, FolderKanban, Timer } from 'lucide-react';
+import { ChevronDown, Timer, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +18,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { ProjectMultiPicker } from '@/components/tareas/project-multi-picker';
 
 export default function TareasPage() {
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
   const { user } = useAuth();
   const businessId = user?.businessId ?? '';
@@ -35,11 +36,11 @@ export default function TareasPage() {
 
   const taskFilters = useMemo((): TaskFilters | undefined => {
     const f: TaskFilters = {};
-    if (selectedProjectId) f.projectId = [selectedProjectId];
+    if (selectedProjectIds.length) f.projectId = selectedProjectIds;
     if (sprintMode === 'backlog') f.noCycle = true;
     else if (sprintMode === 'board' && selectedSprintId) f.cycleId = [selectedSprintId];
     return Object.keys(f).length > 0 ? f : undefined;
-  }, [selectedProjectId, sprintMode, selectedSprintId]);
+  }, [selectedProjectIds, sprintMode, selectedSprintId]);
 
   const { data: tasks = [], isLoading, isError, error } = useTasksQuery(taskFilters);
 
@@ -68,32 +69,25 @@ export default function TareasPage() {
       {/* Selector de tablero — solo con múltiples tableros habilitados */}
       {showBoardPicker && projects.length > 0 && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[220px]">
-                <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="truncate">
-                  {selectedProjectId
-                    ? projects.find((p) => p.id === selectedProjectId)?.name ?? 'Tablero'
-                    : 'Todas las tareas'}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-w-[260px]">
-              <DropdownMenuItem onClick={() => setSelectedProjectId('')}>
-                <span className={cn('flex-1', !selectedProjectId && 'font-medium')}>Todas las tareas</span>
-              </DropdownMenuItem>
-              {projects.map((project) => (
-                <DropdownMenuItem key={project.id} onClick={() => setSelectedProjectId(project.id)}>
-                  <span className={cn('flex-1 truncate', selectedProjectId === project.id && 'font-medium')}>
-                    {project.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-2 shrink-0">{project._count?.tasks ?? 0}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ProjectMultiPicker
+            projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+            value={selectedProjectIds}
+            onChange={setSelectedProjectIds}
+            size="md"
+            placeholder="Todos los tableros"
+          />
+
+          {selectedProjectIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedProjectIds([])}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              title="Limpiar filtro de tableros"
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpiar
+            </button>
+          )}
         </div>
       )}
 

@@ -57,7 +57,7 @@ beforeEach(() => {
 });
 
 describe('POST /api/tasks/replicate', () => {
-  it('retorna 400 sin projectIds', async () => {
+  it('retorna 400 sin targets', async () => {
     const res = await POST(makeRequest({ template: { title: 'X', status: 'todo', priority: 'medium', type: 'task', assigneeIds: [], tags: [] } }));
     expect(res.status).toBe(400);
   });

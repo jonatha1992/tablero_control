@@ -58,6 +58,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showReplicate, setShowReplicate] = useState(false);
   const [replicateProjectIds, setReplicateProjectIds] = useState<string[]>([]);
+  const [showReplicateLocations, setShowReplicateLocations] = useState(false);
+  const [replicateLocationIds, setReplicateLocationIds] = useState<string[]>([]);
   const [editLocationId, setEditLocationId] = useState('');
   const [editProjectId, setEditProjectId] = useState('');
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
@@ -557,6 +559,19 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 Duplicar en tableros
               </Button>
             )}
+            {locations.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setReplicateLocationIds([]);
+                  setShowReplicateLocations(true);
+                }}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Duplicar en sectores
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -656,6 +671,59 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               }}
             >
               {replicateTask.isPending ? 'Duplicando…' : `Duplicar (${replicateProjectIds.length})`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReplicateLocations} onOpenChange={setShowReplicateLocations}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Duplicar en sectores</DialogTitle>
+            <DialogDescription>
+              Se crearán copias independientes de &quot;{task.title}&quot; en cada sector/local elegido (incluye subtareas).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-72 overflow-y-auto border rounded-md p-1">
+            {locations.map((loc) => {
+              const checked = replicateLocationIds.includes(loc.id);
+              return (
+                <label key={loc.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setReplicateLocationIds((prev) =>
+                        prev.includes(loc.id) ? prev.filter((x) => x !== loc.id) : [...prev, loc.id]
+                      );
+                    }}
+                    className="rounded border-input h-4 w-4"
+                  />
+                  <span className="flex-1 truncate">{loc.name}</span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setShowReplicateLocations(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={replicateLocationIds.length === 0 || replicateTask.isPending}
+              onClick={() => {
+                replicateTask.mutate(
+                  { sourceTaskId: task.id, locationIds: replicateLocationIds },
+                  {
+                    onSuccess: () => {
+                      setShowReplicateLocations(false);
+                      setReplicateLocationIds([]);
+                    },
+                  },
+                );
+              }}
+            >
+              {replicateTask.isPending ? 'Duplicando…' : `Duplicar (${replicateLocationIds.length})`}
             </Button>
           </div>
         </DialogContent>

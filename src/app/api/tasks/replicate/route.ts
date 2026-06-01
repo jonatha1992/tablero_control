@@ -10,6 +10,7 @@ import type { CreateTaskDTO } from '@/types/dto/task.dto';
 
 interface ReplicateBody {
   projectIds?: string[];
+  locationIds?: string[];
   template?: CreateTaskDTO;
   sourceTaskId?: string;
 }
@@ -29,8 +30,9 @@ export const POST = handle(async (request: NextRequest) => {
   }
 
   const projectIds = body.projectIds?.filter(Boolean) ?? [];
-  if (projectIds.length === 0) {
-    return NextResponse.json({ error: 'projectIds_required' }, { status: 400 });
+  const locationIds = body.locationIds?.filter(Boolean) ?? [];
+  if (projectIds.length === 0 && locationIds.length === 0) {
+    return NextResponse.json({ error: 'targets_required' }, { status: 400 });
   }
 
   const effectiveBusinessId = user.businessId;
@@ -58,22 +60,41 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'template_or_source_required' }, { status: 400 });
   }
 
-  try {
-    await taskService.validateProjectIdsForBusiness(projectIds, effectiveBusinessId);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : '';
-    if (msg === 'forbidden') {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (projectIds.length > 0) {
+    try {
+      await taskService.validateProjectIdsForBusiness(projectIds, effectiveBusinessId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'forbidden') {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+      }
+      return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
     }
-    return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
+  }
+
+  if (locationIds.length > 0) {
+    try {
+      await taskService.validateLocationIdsForBusiness(locationIds, effectiveBusinessId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'forbidden') {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+      }
+      return NextResponse.json({ error: 'location_not_found' }, { status: 404 });
+    }
   }
 
   const effectiveCreatorId = user.uid;
   const created: Awaited<ReturnType<typeof taskService.createTask>>[] = [];
 
-  for (const projectId of projectIds) {
+  const targets =
+    projectIds.length > 0
+      ? projectIds.map((projectId) => ({ projectId, locationId: template.locationId }))
+      : locationIds.map((locationId) => ({ projectId: template.projectId, locationId }));
+
+  for (const target of targets) {
     const task = await taskService.createTask(
-      { ...template, projectId },
+      { ...template, projectId: target.projectId, locationId: target.locationId },
       effectiveCreatorId,
       effectiveBusinessId,
     );
@@ -89,7 +110,8 @@ export const POST = handle(async (request: NextRequest) => {
       metadata: {
         title: task.title,
         replicatedFrom: body.sourceTaskId,
-        projectId,
+        projectId: target.projectId,
+        locationId: target.locationId,
       },
     });
 
@@ -106,7 +128,11 @@ export const POST = handle(async (request: NextRequest) => {
         effectiveCreatorId,
         effectiveBusinessId,
       );
-      await taskService.updateTask(subtask.id, { parentId: task.id, projectId: task.projectId });
+      await taskService.updateTask(subtask.id, {
+        parentId: task.id,
+        projectId: task.projectId,
+        locationId: task.locationId,
+      });
     }
   }
 

@@ -4,7 +4,7 @@ import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { can, assertResourceBelongsToBusiness } from '@/lib/permissions';
 import { handle } from '@/lib/api/route-handler';
-import { getTaskBusinessId } from '@/lib/api/task-business';
+import { getTaskBusinessId, taskBelongsToBusiness } from '@/lib/api/task-business';
 import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications';
 
@@ -58,11 +58,36 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     }
   }
 
-  if (!can(user.data, 'task.update.any')) {
-    const taskCheck = await prisma.task.findUnique({ where: { id }, select: { assignees: { select: { id: true } } } });
-    const assigneeIds = taskCheck?.assignees.map(a => a.id) ?? [];
-    if (!can(user.data, 'task.update.assigned', { assigneeIds })) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // Permitir updates SOLO de adjuntos con permisos de attachments,
+  // sin requerir task.update.* (ej: miembro puede subir adjuntos aunque no esté asignado).
+  const updateKeys = Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined);
+  const isAttachmentOnlyUpdate = updateKeys.length > 0 && updateKeys.every((k) => k === 'attachmentUrls');
+  let attachmentOnlyAllowed = false;
+  if (isAttachmentOnlyUpdate) {
+    const prevUrls = existingTask?.attachmentUrls ?? [];
+    const nextUrls = Array.isArray((data as { attachmentUrls?: unknown }).attachmentUrls)
+      ? ((data as { attachmentUrls: string[] }).attachmentUrls ?? [])
+      : [];
+    const removed = prevUrls.filter((u) => !nextUrls.includes(u));
+    const added = nextUrls.filter((u) => !prevUrls.includes(u));
+
+    if (removed.length > 0) {
+      attachmentOnlyAllowed = can(user.data, 'attachment.delete');
+    } else if (added.length > 0) {
+      attachmentOnlyAllowed = can(user.data, 'attachment.upload');
+    } else {
+      // no-op (same list), allow to avoid false negatives
+      attachmentOnlyAllowed = true;
+    }
+  }
+
+  if (!attachmentOnlyAllowed) {
+    if (!can(user.data, 'task.update.any')) {
+      const taskCheck = await prisma.task.findUnique({ where: { id }, select: { assignees: { select: { id: true } } } });
+      const assigneeIds = taskCheck?.assignees.map(a => a.id) ?? [];
+      if (!can(user.data, 'task.update.assigned', { assigneeIds })) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
   }
 
@@ -192,11 +217,20 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   const { id } = await params;
 
-  const businessId = await getTaskBusinessId(id);
-  assertResourceBelongsToBusiness(user.data, businessId);
+  // Tenant guard: tasks don't store businessId directly; infer from relations.
+  // Use the current user's business context so DELETE doesn't fail on tasks with mixed relations.
+  if (!user.businessId) {
+    return NextResponse.json({ error: 'forbidden', reason: 'no_business_context' }, { status: 403 });
+  }
+  const belongs = await taskBelongsToBusiness(id, user.businessId);
+  if (!belongs) {
+    // Keep consistent with other tenant-guard failures.
+    // This will be surfaced as { reason: 'tenant_mismatch' } by the handle() wrapper.
+    assertResourceBelongsToBusiness(user.data, await getTaskBusinessId(id));
+  }
 
   const activeMembership = user.data.memberships?.find(
-    (m) => m.businessId === businessId && m.isActive
+    (m) => m.businessId === user.businessId && m.isActive
   );
   const userLocationId = activeMembership?.locationId;
   const deletedTask = await taskService.getTaskById(id);

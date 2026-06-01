@@ -11,7 +11,8 @@ export function useReplicateTaskToProjects() {
 
   return useMutation({
     mutationFn: (body: {
-      projectIds: string[];
+      projectIds?: string[];
+      locationIds?: string[];
       template?: CreateTaskDTO;
       sourceTaskId?: string;
     }) => tasksApi.replicate(body),
@@ -19,8 +20,11 @@ export function useReplicateTaskToProjects() {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
       const n = data.count;
       const boards = new Set(data.tasks.map((t) => t.projectId).filter(Boolean)).size;
+      const locations = new Set(data.tasks.map((t) => t.locationId).filter(Boolean)).size;
       toast.success(
-        `${n} copia${n !== 1 ? 's' : ''} creada${n !== 1 ? 's' : ''}${boards > 1 ? ` en ${boards} tableros` : ''}`,
+        `${n} copia${n !== 1 ? 's' : ''} creada${n !== 1 ? 's' : ''}${
+          boards > 1 ? ` en ${boards} tableros` : locations > 1 ? ` en ${locations} sectores` : ''
+        }`,
         { description: data.tasks[0]?.title },
       );
     },
