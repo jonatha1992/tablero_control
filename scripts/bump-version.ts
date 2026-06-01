@@ -11,6 +11,11 @@ const versionJsonPath = path.join(root, 'public/version.json');
 const packageJsonPath = path.join(root, 'package.json');
 
 function bumpVersion(): void {
+  if (process.env.SKIP_VERSION_BUMP === '1') {
+    console.log('Skipping version bump (SKIP_VERSION_BUMP=1)');
+    return;
+  }
+
   const content = fs.readFileSync(versionFilePath, 'utf8');
 
   const versionMatch = content.match(/APP_VERSION = ['"](\d+)\.(\d+)\.(\d+)['"]/);

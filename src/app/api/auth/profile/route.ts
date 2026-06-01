@@ -3,6 +3,8 @@ import { verifyToken } from '@/lib/firebase/admin';
 import { userRepository, businessRepository } from '@/repositories';
 import { prisma } from '@/lib/prisma';
 import { handle } from '@/lib/api/route-handler';
+import { DEFAULT_BUSINESS_SETTINGS } from '@/lib/business-defaults';
+import { ensureDefaultBoard } from '@/lib/default-board';
 import type { UserRole } from '@/types/domain/user';
 
 const DEFAULT_PREFERENCES = {
@@ -51,20 +53,12 @@ export const GET = handle(async (request: NextRequest) => {
           ownerId: decoded.uid,
           plan: 'free',
           status: 'active',
-          settings: {
-            maxLocations: 1,
-            maxUsers: 5,
-            theme: 'system',
-            language: 'es',
-            timezone: 'America/Argentina/Buenos_Aires',
-            notifications: { email: true },
-            features: { customBranding: false, advancedReports: false, apiAccess: false },
-            localeTypes: [],
-          },
+          settings: { ...DEFAULT_BUSINESS_SETTINGS },
           featureFlags: {},
           locationIds: [],
           teamIds: [],
         });
+        await ensureDefaultBoard(business.id);
         user = await userRepository.create({
           id: decoded.uid,
           email: decodedEmail || decoded.email || '',

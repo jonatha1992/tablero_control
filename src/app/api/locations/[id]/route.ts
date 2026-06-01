@@ -3,7 +3,7 @@ import { locationService } from '@/services/location.service';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertSameTenant } from '@/lib/permissions/tenant-guard';
-import { can } from '@/lib/permissions/matrix';
+import { canMutateLocation } from '@/lib/permissions/location-access';
 import { handle } from '@/lib/api/route-handler';
 
 interface Props {
@@ -27,10 +27,6 @@ export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  if (!can(user.data, 'business.locations.crud')) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
-
   const subDenied = requireActiveSubscription(user, request);
   if (subDenied) return subDenied;
 
@@ -41,6 +37,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
       return NextResponse.json({ error: 'Sector no encontrado' }, { status: 404 });
     }
     assertSameTenant(user.data, { businessId: location.businessId });
+
+    if (!canMutateLocation(user.data, 'update', location)) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
     const updated = await locationService.update(id, body);
@@ -66,10 +66,6 @@ export const DELETE = handle(async (request: NextRequest, { params }: Props) => 
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  if (!can(user.data, 'business.locations.crud')) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  }
-
   const subDenied = requireActiveSubscription(user, request);
   if (subDenied) return subDenied;
 
@@ -80,6 +76,10 @@ export const DELETE = handle(async (request: NextRequest, { params }: Props) => 
       return NextResponse.json({ error: 'Sector no encontrado' }, { status: 404 });
     }
     assertSameTenant(user.data, { businessId: location.businessId });
+
+    if (!canMutateLocation(user.data, 'delete', location)) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
 
     await locationService.delete(id);
 

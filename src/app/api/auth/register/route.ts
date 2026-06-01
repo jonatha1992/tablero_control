@@ -4,6 +4,9 @@ import { initSystemRoles } from '@/lib/firebase/init-system-roles';
 import { userRepository, businessRepository } from '@/repositories';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
+import { DEFAULT_BUSINESS_SETTINGS } from '@/lib/business-defaults';
+import { ensureDefaultBoard } from '@/lib/default-board';
+import { defaultSpaceName } from '@/lib/terminology';
 import type { UserRole } from '@/types/domain/user';
 
 const DEFAULT_PREFERENCES = {
@@ -72,27 +75,19 @@ export const POST = handle(async (request: NextRequest) => {
   } as Parameters<typeof userRepository.create>[0]);
 
   const business = await businessRepository.create({
-    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : `Empresa de ${name}`),
+    name: body.businessName?.trim() || (isSuperadmin ? 'TecnoFusión (Master)' : defaultSpaceName(name)),
     adminId: decoded.uid,
     ownerId: decoded.uid,
     plan: 'free',
     status: 'active',
-    settings: {
-      maxLocations: 1,
-      maxUsers: 5,
-      theme: 'system',
-      language: 'es',
-      timezone: 'America/Argentina/Buenos_Aires',
-      notifications: { email: true },
-      features: { customBranding: false, advancedReports: false, apiAccess: false },
-      localeTypes: [],
-    },
+    settings: { ...DEFAULT_BUSINESS_SETTINGS },
     featureFlags: {},
     locationIds: [],
     teamIds: [],
   });
 
   await userRepository.update(decoded.uid, { businessId: business.id });
+  await ensureDefaultBoard(business.id);
   await initSystemRoles(business.id);
 
   await userRepository.addMembership({

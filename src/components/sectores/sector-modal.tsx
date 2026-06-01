@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,18 @@ import { cn } from '@/lib/utils';
 import * as LucideIcons from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/auth-context';
+import {
+  defaultLocationType,
+  normalizeLocationTypeSlug,
+  resolveLocationTypeOptions,
+} from '@/lib/location-types';
+import { persistLocaleType } from '@/lib/persist-locale-type';
+import { LocationTypeSelect } from '@/components/sectores/location-type-select';
 
 export const SECTOR_ICONS: { name: string; icon: LucideIcon }[] = [
   { name: 'MapPin',        icon: LucideIcons.MapPin },
@@ -62,52 +74,108 @@ interface Props {
 }
 
 export function SectorModal({ open, onClose, businessId, location }: Props) {
+  const labels = useSpaceLabels();
+  const site = labels.site.toLowerCase();
+  const sites = labels.sites.toLowerCase();
+  const queryClient = useQueryClient();
+  const { isAdmin } = useAuth();
+  const { data: business } = useBusinessQuery(businessId);
+  const { data: locations = [] } = useLocationsQuery();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('department');
+  const [type, setType] = useState('local');
   const [icon, setIcon] = useState('MapPin');
   const [limitInfo, setLimitInfo] = useState<{ limit: number; current: number } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const typeOptions = useMemo(
+    () =>
+      resolveLocationTypeOptions(
+        business?.settings?.localeTypes,
+        [
+          ...locations.map((loc) => loc.type),
+          ...(location?.type ? [location.type] : []),
+        ],
+      ),
+    [business?.settings?.localeTypes, locations, location],
+  );
+
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
+  const wasOpenRef = useRef(false);
+  const lastLocationIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+
+    const locationId = location?.id;
+    const shouldInitialize = !wasOpenRef.current || locationId !== lastLocationIdRef.current;
+    if (!shouldInitialize) return;
+
+    wasOpenRef.current = true;
+    lastLocationIdRef.current = locationId;
+
+    const fallbackType = defaultLocationType(typeOptions, business?.settings?.localeTypes);
     if (location) {
       setName(location.name);
       setDescription(location.description || '');
-      setType(location.type);
+      setType(normalizeLocationTypeSlug(location.type) || fallbackType);
       setIcon((location.metadata?.icon as string) || 'MapPin');
     } else {
       setName('');
       setDescription('');
-      setType('department');
+      setType(fallbackType);
       setIcon('MapPin');
     }
     setLimitInfo(null);
-  }, [location, open]);
+    setErrors({});
+  }, [open, location, typeOptions, business?.settings?.localeTypes]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  async function ensureLocaleTypePersisted(nextType: string) {
+    if (!isAdmin) return;
+    const slug = normalizeLocationTypeSlug(nextType);
+    if (!slug || !businessId) return;
+    const configured = (business?.settings?.localeTypes ?? []).map(normalizeLocationTypeSlug);
+    if (configured.includes(slug)) return;
+    await persistLocaleType(business?.settings, slug);
+    await queryClient.invalidateQueries({ queryKey: ['business', businessId] });
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const nextErrors: Record<string, string> = {};
     const trimmedName = name.trim();
+    const normalizedType = normalizeLocationTypeSlug(type);
 
     if (!trimmedName) nextErrors.name = 'El nombre es obligatorio';
+    if (!normalizedType) nextErrors.type = 'Elegí o ingresá un tipo';
     setErrors(nextErrors);
 
-    if (!trimmedName || !businessId) {
+    if (!trimmedName || !normalizedType || !businessId) {
       if (!businessId) {
         toast.error('Error de sesión', {
-          description: 'No se pudo identificar tu negocio. Por favor, recargá la página.',
+          description: 'No se pudo identificar tu espacio. Por favor, recargá la página.',
         });
       }
+      return;
+    }
+
+    try {
+      await ensureLocaleTypePersisted(normalizedType);
+    } catch {
+      toast.error('No se pudo guardar el tipo nuevo', {
+        description: 'Podés reintentar o elegir un tipo de la lista.',
+      });
       return;
     }
 
     const data = {
       name: trimmedName,
       description: description.trim() || undefined,
-      type,
+      type: normalizedType,
       businessId,
       metadata: { icon },
     };
@@ -139,12 +207,12 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <SelectedIcon className="h-5 w-5 text-primary" />
-            {location ? 'Editar Sector/Departamento' : 'Nuevo Sector/Departamento'}
+            {location ? `Editar ${site}` : `Nueva ${site}`}
           </DialogTitle>
           <DialogDescription>
             {location
-              ? 'Modificá la información del sector seleccionado.'
-              : 'Completá los datos para crear un nuevo sector de tu empresa.'}
+              ? `Modificá la información de la ${site} seleccionada.`
+              : `Completá los datos para crear una nueva ${site} en tu espacio.`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -184,17 +252,21 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Tipo</label>
-            <Input
-              placeholder="Ej: Oficina, Sector, Departamento"
+            <LocationTypeSelect
               value={type}
-              onChange={(e) => setType(e.target.value)}
+              options={typeOptions}
+              onChange={setType}
               disabled={isLoading}
             />
+            <p className="text-xs text-muted-foreground">
+              Elegí un tipo del espacio o agregá uno nuevo si no está en la lista.
+            </p>
+            {errors.type && <p className="text-xs text-destructive">{errors.type}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Descripción (opcional)</label>
             <Textarea
-              placeholder="Breve descripción del sector..."
+              placeholder={`Breve descripción de la ${site}...`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="resize-none"
@@ -207,10 +279,10 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
             <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 space-y-2">
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
-                <p className="text-sm font-medium">Límite de sectores alcanzado</p>
+                <p className="text-sm font-medium">Límite de {sites} alcanzado</p>
               </div>
               <p className="text-sm text-amber-700 dark:text-amber-400">
-                Tu plan permite hasta <strong>{limitInfo.limit}</strong> sectores y ya tenés <strong>{limitInfo.current}</strong> activos.
+                Tu plan permite hasta <strong>{limitInfo.limit}</strong> {sites} y ya tenés <strong>{limitInfo.current}</strong> activas.
                 Actualizá tu plan para agregar más.
               </p>
               <Link
@@ -228,7 +300,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {location ? 'Guardar cambios' : 'Crear sector'}
+              {location ? 'Guardar cambios' : `Crear ${site}`}
             </Button>
           </DialogFooter>
         </form>

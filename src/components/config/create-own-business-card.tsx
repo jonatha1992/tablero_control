@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
+import { LABELS } from '@/lib/terminology';
 
 interface Props {
   activeTeamName?: string;
@@ -27,7 +28,7 @@ export function CreateOwnBusinessCard({ activeTeamName }: Props) {
     setError('');
     const trimmed = businessName.trim();
     if (!trimmed) {
-      setError('Ingresá un nombre para tu negocio');
+      setError(`Ingresá un nombre para tu ${LABELS.space.toLowerCase()}`);
       return;
     }
 
@@ -44,14 +45,14 @@ export function CreateOwnBusinessCard({ activeTeamName }: Props) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(data.error || 'No se pudo crear el negocio');
+        throw new Error(data.error || `No se pudo crear el ${LABELS.space.toLowerCase()}`);
       }
 
       const created = await res.json() as { id: string };
       await refreshProfile();
       await switchBusiness(created.id);
     } catch (err: unknown) {
-      setError((err as Error).message || 'Error al crear el negocio');
+      setError((err as Error).message || `Error al crear el ${LABELS.space.toLowerCase()}`);
     } finally {
       setLoading(false);
     }
@@ -64,10 +65,10 @@ export function CreateOwnBusinessCard({ activeTeamName }: Props) {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
-          <CardTitle className="text-base font-semibold">Armar tu negocio</CardTitle>
+          <CardTitle className="text-base font-semibold">Armar tu {LABELS.space.toLowerCase()}</CardTitle>
         </div>
         <CardDescription className="text-xs">
-          Estás trabajando en {teamLabel}. Si querés gestionar tu propio equipo y facturación, creá un negocio acá.
+          Estás trabajando en {teamLabel}. Si querés gestionar tu propio equipo y facturación, creá un {LABELS.space.toLowerCase()} acá.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -77,14 +78,14 @@ export function CreateOwnBusinessCard({ activeTeamName }: Props) {
           )}
           <div className="space-y-2">
             <label htmlFor="own-business-name" className="text-sm font-medium">
-              Nombre del negocio
+              Nombre del {LABELS.space.toLowerCase()}
             </label>
             <input
               id="own-business-name"
               type="text"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="Mi negocio"
+              placeholder="Mi espacio"
               maxLength={100}
               required
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -99,13 +100,13 @@ export function CreateOwnBusinessCard({ activeTeamName }: Props) {
                 Creando...
               </>
             ) : (
-              'Crear mi negocio'
+              'Crear mi espacio'
             )}
           </Button>
           <p className="text-xs text-muted-foreground">
-            También podés usar el selector de empresa en el header para{' '}
+            También podés usar el selector en el header para{' '}
             <Link href="/register?newBusiness=true" className="text-primary underline">
-              armar otro negocio
+              crear otro espacio
             </Link>
             .
           </p>

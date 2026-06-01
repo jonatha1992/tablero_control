@@ -57,7 +57,7 @@ Para usuarios que **no son dueños** del negocio activo (`isOwner === false`), s
 
 Cada paso usa `element: '#tour-nav-xxx'`. Si el elemento no existe en el DOM, el paso se omite automáticamente.
 
-**Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Planificación, Equipo (flujo de invitación, negocio propio opt-in, troubleshooting), Reportes, Facturación, Configuración (incl. **Armar tu negocio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
+**Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Planificación, Equipo (flujo de invitación, espacio propio opt-in, troubleshooting), Reportes, Facturación, Configuración (incl. **Armar tu espacio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
 
 **Crear usuario** (`src/components/equipo/create-user-modal.tsx`): modal con 4 modos de alta — `email` (correo + contraseña opcional), `username` (usuario + contraseña, sin email), `google` (Gmail), `ghost` (sin credenciales). Visibilidad de campos centralizada en `create-user-form-fields.ts`. El POST incluye `mode` y `username` cuando corresponde.
 
@@ -82,7 +82,7 @@ src/app/
 │   │   └── objetivos/
 │   ├── equipo/
 │   │   └── roles/
-│   ├── sectores/
+│   ├── sectores/          ← UI de Location (label configurable: Sedes, Sectores, etc.); ruta /equipo/sectores
 │   ├── reportes/
 │   ├── billing/
 │   ├── config/
@@ -94,14 +94,14 @@ src/app/
 
 Ruta pública: `/i/[token]` (`invite-client.tsx`).
 
-1. Usuario no autenticado: puede usar **Google**, **login** o **registro** con `?redirect=/i/{token}`.
+1. Usuario no autenticado: formulario inline **nombre + contraseña** (sin correo) → `POST /api/invites/{token}/prepare-account` genera username/email `@guest.local` → Firebase `register` → `POST /accept` con `{ username }` en un solo paso. Alternativas: **Google** (prod) o **login** con `?redirect=/i/{token}`.
 2. **No** llamar `POST /api/auth/register` en flujos con redirect a `/i/…` — ese endpoint crea un negocio propio. El alta en PostgreSQL ocurre en `POST /api/invites/{token}/accept`.
-3. Tras Firebase Auth sin perfil PG, login/registro redirigen de vuelta al link de invitación; el usuario pulsa **Unirme al equipo**.
+3. Tras Firebase Auth sin perfil PG (Google/login), el usuario vuelve al link y pulsa **Unirme al equipo** si aún no aceptó.
 4. `auth-context` no debe cerrar sesión en `/register` ni en `/i/…` durante el alta (rompe `getIdToken`). Ante `profile` 404 fuera de esas rutas, marca `notInvited` (no llama `POST /api/auth/register`).
 
 Después de `accept.mutateAsync()` + `refreshProfile()`, **NO redirigir automáticamente**. Dejar que `accept.isSuccess` muestre CheckCircle + botón "Ir al dashboard". El usuario navega manualmente.
 
-Copy en invite: "No vas a crear un negocio nuevo; te sumás al equipo de …".
+Copy en invite: "No vas a crear un negocio nuevo; te sumás al equipo de …". Post-alta: login futuro con **nombre + contraseña** (`GET /api/auth/resolve` resuelve nombre → email Firebase).
 
 Ver también [`docs/invites-and-accounts.md`](invites-and-accounts.md) (resumen de una página).
 
@@ -111,10 +111,10 @@ Ver también [`docs/invites-and-accounts.md`](invites-and-accounts.md) (resumen 
 
 | Momento | Qué ve el usuario | Dónde |
 |---------|-------------------|--------|
-| Entra por `/i/{token}` | Autenticarse + **Unirme al equipo** | `src/app/i/[token]/invite-client.tsx` — sin alta de negocio |
+| Entra por `/i/{token}` | Nombre + contraseña inline, o Google/login + **Unirme al equipo** | `src/app/i/[token]/invite-client.tsx` — sin alta de negocio |
 | Trabaja en el equipo invitador | Nombre del equipo en el header | `BusinessSwitcher` — solo contexto |
-| Quiere su negocio (opt-in) | Formulario **Armar tu negocio** | **Configuración → Mi perfil** — lugar principal |
-| Ya tiene negocio propio y quiere otro | **Armar otro negocio** | Menú del selector → `/register?newBusiness=true` |
+| Quiere su espacio (opt-in) | Formulario **Armar tu espacio** | **Configuración → Mi perfil** — lugar principal |
+| Ya tiene espacio propio y quiere otro | **Crear otro espacio** | Menú del selector → `/register?newBusiness=true` |
 
 ### Tabla técnica (API / rutas)
 
@@ -149,9 +149,25 @@ flowchart LR
 | `src/app/(auth)/login/page.tsx` | Sin registro silencioso en Google; mensaje + link a `/register` |
 | `src/app/i/[token]/invite-client.tsx` | Copy: no se crea negocio nuevo |
 | `src/components/config/create-own-business-card.tsx` | Card opt-in en Config |
-| `src/components/business-switcher.tsx` | Sin negocio propio → Config; con propio → register |
+| `src/components/business-switcher.tsx` | Sin espacio propio → Config; con propio → register |
 | `src/components/layout/onboarding-tour.tsx` | Omite Equipo/Facturación si `!isOwner` |
 
 `GET /api/auth/profile` expone `hasOwnedBusiness` y `canCreateOwnBusiness` para la UI.
 
 Ver [`docs/decisions/006-collaborator-vs-owner-account.md`](decisions/006-collaborator-vs-owner-account.md), [`docs/permissions.md`](permissions.md), [`docs/invites-and-accounts.md`](invites-and-accounts.md).
+
+## Nomenclatura del espacio (terminología UI)
+
+El nivel superior siempre es **Espacio** (`Business`). Las unidades internas (`Location` en Prisma) tienen label configurable por espacio.
+
+| Capa | Prisma | Label UI default |
+|------|--------|------------------|
+| Espacio | `Business` | Espacio / Espacios |
+| Tablero | `Project` | Tablero / Tableros |
+| Unidad interna | `Location` | Sede / Sedes (configurable) |
+
+**Configuración → pestaña Espacio** (solo admin/superadmin): preset (Sede, Sucursal, Departamento, Sector, Área, Negocio, Local) o personalizado. Se guarda en `business.settings.terminology` vía `PATCH /api/business/config` (merge profundo de `settings`).
+
+Al crear o editar una unidad interna (`SectorModal`), el campo **Tipo** es un selector con los slugs de `business.settings.localeTypes` (o presets por defecto: local, sucursal, departamento, sector, área, negocio, sede) más tipos ya usados en locations existentes. Opción **Agregar otro tipo…** persiste el slug nuevo en `localeTypes` al guardar.
+
+**Código:** `src/lib/terminology.ts` (`resolveSpaceLabels`, presets), hook `useSpaceLabels()` (`src/hooks/use-space-labels.ts`), card `src/components/config/space-terminology-card.tsx`. Consumidores: sidebar Equipo, pantalla `/dashboard/equipo/sectores`, modales de location, campo location en create-task.

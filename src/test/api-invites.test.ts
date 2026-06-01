@@ -70,6 +70,7 @@ vi.mock('@/lib/prisma', () => ({
 import { GET as listGET, POST as createPOST } from '@/app/api/invites/route';
 import { GET as detailGET, DELETE as revokeDelete } from '@/app/api/invites/[token]/route';
 import { POST as acceptPOST } from '@/app/api/invites/[token]/accept/route';
+import { POST as prepareAccountPOST } from '@/app/api/invites/[token]/prepare-account/route';
 import { requireUser, requireRole } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { verifyToken } from '@/lib/firebase/admin';
@@ -785,5 +786,137 @@ describe('POST /api/invites/[token]/accept', () => {
     expect(body.error).toBe('members_limit_exceeded');
     expect(mockGetEffectivePlanConfig).toHaveBeenCalledWith('free');
     expect(prisma.userBusiness.count).toHaveBeenCalled();
+  });
+
+  it('persiste username al auto-provisionar usuario nuevo', async () => {
+    mockVerifyToken.mockResolvedValueOnce({
+      uid: 'firebase-uid',
+      email: 'juan.garcia@guest.local',
+      name: 'Juan García',
+    } as never);
+
+    vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce({
+      ...mockInviteWithBusiness,
+      business: { plan: 'free', name: 'Acme Corp' },
+    } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null as never);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null as never);
+    vi.mocked(prisma.user.create).mockResolvedValueOnce({
+      ...existingUser,
+      email: 'juan.garcia@guest.local',
+      username: 'juan.garcia',
+    } as never);
+    vi.mocked(prisma.userBusiness.findUnique).mockResolvedValueOnce(null as never);
+    vi.mocked(prisma.userBusiness.count).mockResolvedValueOnce(0 as never);
+    vi.mocked(prisma.userBusiness.create).mockResolvedValueOnce({} as never);
+    vi.mocked(prisma.user.update).mockResolvedValueOnce({
+      ...updatedUser,
+      username: 'juan.garcia',
+    } as never);
+    vi.mocked(prisma.businessInvite.update).mockResolvedValueOnce({
+      ...mockInvite,
+      usedCount: 1,
+    } as never);
+    vi.mocked(prisma.userBusiness.findMany).mockResolvedValueOnce([] as never);
+
+    const req = new NextRequest('http://localhost/api/invites/inv-1/accept', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer firebase-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'juan.garcia' }),
+    });
+
+    const res = await acceptPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(200);
+    expect(prisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ username: 'juan.garcia' }),
+      }),
+    );
+  });
+
+  it('retorna 409 si el username ya existe al auto-provisionar', async () => {
+    mockVerifyToken.mockResolvedValueOnce({
+      uid: 'firebase-uid',
+      email: 'juan.garcia@guest.local',
+      name: 'Juan García',
+    } as never);
+
+    vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce({
+      ...mockInviteWithBusiness,
+      business: { plan: 'free', name: 'Acme Corp' },
+    } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null as never);
+    vi.mocked(prisma.user.findFirst)
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce({ id: 'other-user' } as never);
+
+    const req = new NextRequest('http://localhost/api/invites/inv-1/accept', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer firebase-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'juan.garcia' }),
+    });
+
+    const res = await acceptPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe('username_already_exists');
+  });
+});
+
+// ─── POST /api/invites/[token]/prepare-account ────────────────────────────────
+
+describe('POST /api/invites/[token]/prepare-account', () => {
+  const makeParams = (token: string) =>
+    ({ params: Promise.resolve({ token }) }) as { params: Promise<{ token: string }> };
+
+  it('retorna 400 si el nombre es inválido', async () => {
+    const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'J' }),
+    });
+    const res = await prepareAccountPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('invalid_name');
+  });
+
+  it('retorna 410 si la invitación expiró', async () => {
+    vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce({
+      ...mockInvite,
+      expiresAt: new Date('2000-01-01'),
+    } as never);
+
+    const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Juan García' }),
+    });
+    const res = await prepareAccountPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(410);
+    const body = await res.json();
+    expect(body.error).toBe('invite_expired');
+  });
+
+  it('devuelve username y email sintético para invite válido', async () => {
+    vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce(mockInvite as never);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null as never);
+
+    const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Juan García' }),
+    });
+    const res = await prepareAccountPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.username).toBe('juan.garcia');
+    expect(body.email).toBe('juan.garcia@guest.local');
   });
 });

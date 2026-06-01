@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/auth-context';
+import { LABELS, displaySpaceName } from '@/lib/terminology';
 
 export function BusinessSwitcher() {
   const { user, switchBusiness } = useAuth();
@@ -19,7 +20,7 @@ export function BusinessSwitcher() {
   if (!user) return null;
 
   const activeMembership = user.memberships?.find((m) => m.businessId === user.businessId && m.isActive);
-  const activeBusinessName = activeMembership?.businessName || 'Mi Empresa';
+  const activeBusinessName = displaySpaceName(activeMembership?.businessName);
   const hasOwnedBusiness = user.hasOwnedBusiness ?? false;
 
   const handleCreateBusiness = () => {
@@ -53,7 +54,7 @@ export function BusinessSwitcher() {
               className="flex cursor-pointer items-center justify-between gap-2"
               onClick={() => handleSwitch(m.businessId)}
             >
-              <span className="truncate">{m.businessName || m.businessId}</span>
+              <span className="truncate">{displaySpaceName(m.businessName) || m.businessId}</span>
               {m.businessId === user.businessId && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
             </DropdownMenuItem>
           ))}
@@ -63,7 +64,7 @@ export function BusinessSwitcher() {
           onClick={handleCreateBusiness}
         >
           <Plus className="h-3.5 w-3.5" />
-          {hasOwnedBusiness ? 'Armar otro negocio' : 'Armar tu negocio'}
+          {hasOwnedBusiness ? LABELS.anotherSpace : `Armar tu ${LABELS.space.toLowerCase()}`}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

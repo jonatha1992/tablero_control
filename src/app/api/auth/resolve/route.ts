@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/lib/api/auth-helpers';
 import { handle } from '@/lib/api/route-handler';
 
 export const GET = handle(async (request: NextRequest) => {
-  const authed = await requireUser(request);
-  if (authed instanceof NextResponse) return authed;
-
   const login = request.nextUrl.searchParams.get('login')?.trim();
   if (!login) {
     return NextResponse.json({ error: 'missing_login' }, { status: 400 });
   }
 
-  const user = await prisma.user.findFirst({
+  const byUsernameOrEmail = await prisma.user.findFirst({
     where: {
       OR: [
         { username: { equals: login, mode: 'insensitive' } },
@@ -22,9 +18,23 @@ export const GET = handle(async (request: NextRequest) => {
     select: { email: true },
   });
 
-  if (!user) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  if (byUsernameOrEmail) {
+    return NextResponse.json({ email: byUsernameOrEmail.email });
   }
 
-  return NextResponse.json({ email: user.email });
+  const byName = await prisma.user.findMany({
+    where: { name: { equals: login, mode: 'insensitive' } },
+    select: { email: true },
+    take: 2,
+  });
+
+  if (byName.length === 1) {
+    return NextResponse.json({ email: byName[0].email });
+  }
+
+  if (byName.length > 1) {
+    return NextResponse.json({ error: 'ambiguous_login' }, { status: 409 });
+  }
+
+  return NextResponse.json({ error: 'not_found' }, { status: 404 });
 });

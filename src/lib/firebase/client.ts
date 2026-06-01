@@ -44,6 +44,10 @@ export async function getMessagingInstance() {
 const useEmulators = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
 
 if (typeof window !== 'undefined' && useEmulators) {
+  // Warn clearly in browser console so the developer knows emulators must be running
+  console.warn(
+    '[Firebase] Modo emulador activo — asegurate de correr "npm run dev:all" para iniciar los emuladores en localhost:9099. Si ves ERR_CONNECTION_REFUSED, el emulador no está corriendo.',
+  );
   connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectFunctionsEmulator(functions, 'localhost', 5001);

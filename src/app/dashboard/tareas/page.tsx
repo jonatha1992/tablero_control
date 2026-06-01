@@ -6,6 +6,8 @@ import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useAuth } from '@/hooks/auth-context';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
+import { hasMultipleBoards } from '@/lib/business-defaults';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import type { TaskFilters } from '@/types';
 import { ChevronDown, FolderKanban, Timer } from 'lucide-react';
@@ -22,6 +24,8 @@ export default function TareasPage() {
 
   const { user } = useAuth();
   const businessId = user?.businessId ?? '';
+  const { data: business } = useBusinessQuery(businessId);
+  const showBoardPicker = hasMultipleBoards(business?.settings);
   const { data: projects = [] } = useProjectsQuery(businessId);
   const { data: cycles = [] } = useCyclesQuery(businessId);
   const { selectedSprintId, viewMode: sprintMode, setSelectedSprint, setViewMode: setSprintMode } = useScrumUIStore();
@@ -61,8 +65,8 @@ export default function TareasPage() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
 
-      {/* Selector de proyecto — solo si hay proyectos */}
-      {projects.length > 0 && (
+      {/* Selector de tablero — solo con múltiples tableros habilitados */}
+      {showBoardPicker && projects.length > 0 && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

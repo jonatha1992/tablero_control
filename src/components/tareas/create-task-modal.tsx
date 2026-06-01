@@ -17,6 +17,10 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useAuth } from '@/hooks/auth-context';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
+import { hasMultipleBoards } from '@/lib/business-defaults';
+import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer, CheckSquare, ListTree, Plus } from 'lucide-react';
@@ -92,7 +96,7 @@ interface CreateTaskModalProps {
 
 export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueDate, initialDate }: CreateTaskModalProps) {
   const today = initialDate?.toISOString().split('T')[0] ?? new Date().toISOString().split('T')[0];
-  const { activeColumns } = useKanbanUIStore();
+  const { activeColumns, createTaskDraft, clearCreateTaskDraft } = useKanbanUIStore();
   const visibleStatusOptions = STATUS_OPTIONS.filter((o) => activeColumns.includes(o.value));
   const resolvedDefault: TaskStatus =
     defaultStatus && activeColumns.includes(defaultStatus)
@@ -129,9 +133,21 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
   const { user } = useAuth();
+  const { data: business } = useBusinessQuery(user?.businessId);
+  const labels = useSpaceLabels();
+  const showBoardPicker = hasMultipleBoards(business?.settings);
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
   const { data: cycles = [] } = useCyclesQuery(user?.businessId ?? '');
   const { selectedSprintId, viewMode: sprintMode } = useScrumUIStore();
+
+  const defaultBoardId =
+    projects.find((p) => p.name === DEFAULT_BOARD_NAME)?.id ?? projects[0]?.id ?? '';
+
+  useEffect(() => {
+    if (open && !showBoardPicker && defaultBoardId) {
+      setProjectId(defaultBoardId);
+    }
+  }, [open, showBoardPicker, defaultBoardId]);
 
   useEffect(() => {
     if (open && sprintMode === 'board' && selectedSprintId) {
@@ -140,6 +156,35 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
       setCycleId('');
     }
   }, [open, sprintMode, selectedSprintId]);
+
+  useEffect(() => {
+    if (!open || !createTaskDraft) return;
+
+    const d = createTaskDraft;
+    if (d.title) setTitle(d.title);
+    if (d.description) setDescription(d.description);
+    if (d.status && activeColumns.includes(d.status)) setStatus(d.status);
+    if (d.priority) setPriority(d.priority);
+    if (d.type) setType(d.type);
+    if (d.tags?.length) setTags(d.tags.join(', '));
+    if (d.dueDate) setDueDate(d.dueDate);
+    if (d.dueTime) setDueTime(d.dueTime);
+    if (d.assigneeIds?.length) setAssigneeIds(d.assigneeIds);
+    if (d.locationId) setLocationId(d.locationId);
+    if (d.projectId) setProjectId(d.projectId);
+    if (d.cycleId) setCycleId(d.cycleId);
+    if (d.estimatedHours != null) setEstimatedHours(d.estimatedHours);
+    if (d.checklist?.length) setChecklist(d.checklist);
+    if (d.subtasks?.length) setPendingSubtasks(d.subtasks);
+    if (d.recurrence) {
+      setIsRecurring(true);
+      setFrequency(d.recurrence.frequency);
+      setIntervalValue(d.recurrence.interval ?? 1);
+      setDayOfWeek(d.recurrence.dayOfWeek);
+      setDayOfMonth(d.recurrence.dayOfMonth);
+    }
+    clearCreateTaskDraft();
+  }, [open, createTaskDraft, clearCreateTaskDraft, activeColumns]);
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
@@ -227,7 +272,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         title, description, status, priority, type,
         assigneeIds,
         locationId: locationId || undefined,
-        projectId: projectId || undefined,
+        projectId: (showBoardPicker ? projectId : defaultBoardId || projectId) || undefined,
         cycleId: cycleId || undefined,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         estimatedHours: estimatedHours || undefined,
@@ -338,7 +383,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
 
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" /> Local/Sector (Opcional)
+              <MapPin className="h-3.5 w-3.5" /> {labels.site} (Opcional)
             </label>
             <select
               value={locationId}
@@ -354,6 +399,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             </select>
           </div>
 
+          {showBoardPicker && (
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-1">
               <FolderKanban className="h-3.5 w-3.5" /> Tablero (Opcional)
@@ -371,6 +417,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               ))}
             </select>
           </div>
+          )}
 
           {cycles.length > 0 && (
             <div>

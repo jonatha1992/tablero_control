@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import type { Location } from '@/types/domain/location';
 import { SECTOR_ICONS } from './sector-modal';
 import { MapPin } from 'lucide-react';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
 
 interface Props {
   sector: Location | null;
@@ -30,6 +31,8 @@ interface Props {
 export function SectorDetailModal({ sector, open, onClose, onEdit }: Props) {
   const { data: allMembers = [] } = useMembersQuery();
   const removeMember = useRemoveMember();
+  const labels = useSpaceLabels();
+  const site = labels.site.toLowerCase();
   const members = allMembers.filter((m) => m.locationId === sector?.id);
 
   if (!sector) return null;
@@ -78,7 +81,7 @@ export function SectorDetailModal({ sector, open, onClose, onEdit }: Props) {
 
           {members.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center rounded-lg border-2 border-dashed">
-              Ningún miembro asignado a este local
+              Ningún miembro asignado a esta {site}
             </p>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -104,7 +107,7 @@ export function SectorDetailModal({ sector, open, onClose, onEdit }: Props) {
                     onClick={() => removeMember.mutate(member.id)}
                     disabled={removeMember.isPending}
                     className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                    title="Quitar miembro del sector"
+                    title={`Quitar miembro de la ${site}`}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -117,7 +120,7 @@ export function SectorDetailModal({ sector, open, onClose, onEdit }: Props) {
         <div className="flex justify-end pt-2">
           <Button variant="outline" size="sm" onClick={() => { onClose(); onEdit(sector); }}>
             <Edit2 className="mr-1.5 h-3.5 w-3.5" />
-            Editar local
+            Editar {site}
           </Button>
         </div>
       </DialogContent>

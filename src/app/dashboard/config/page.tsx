@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/auth-context';
 import { can } from '@/lib/permissions';
 import { useTheme } from 'next-themes';
-import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard } from 'lucide-react';
+import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard, Building2 } from 'lucide-react';
 import Image from 'next/image';
 import { auth } from '@/lib/firebase/client';
 import { resetPassword } from '@/lib/firebase/auth';
@@ -20,10 +20,12 @@ import { BillingCurrentPlan } from '@/components/billing/billing-current-plan';
 import { BillingInvoices } from '@/components/billing/billing-invoices';
 import { useSubscriptionQuery } from '@/hooks/queries/use-subscription-query';
 import { CreateOwnBusinessCard } from '@/components/config/create-own-business-card';
+import { SpaceTerminologyCard } from '@/components/config/space-terminology-card';
 
 export default function ConfigPage() {
   const { user } = useAuth();
   const canManageBilling = user ? (user.isOwner || can(user, 'business.subscription.manage')) : false;
+  const canManageSpace = user?.role === 'admin' || user?.role === 'superadmin';
   const { theme, setTheme } = useTheme();
   const searchParams = useSearchParams();
   const { data: subscription, isLoading } = useSubscriptionQuery(user?.businessId);
@@ -139,6 +141,11 @@ export default function ConfigPage() {
           {canManageBilling && (
             <TabsTrigger value="facturacion" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
               <CreditCard className="h-4 w-4 mr-2" /> Facturación
+            </TabsTrigger>
+          )}
+          {canManageSpace && (
+            <TabsTrigger value="espacio" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
+              <Building2 className="h-4 w-4 mr-2" /> Espacio
             </TabsTrigger>
           )}
         </TabsList>
@@ -348,6 +355,13 @@ export default function ConfigPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ESPACIO (admin) */}
+          {canManageSpace && (
+            <TabsContent value="espacio" className="mt-0 space-y-4 outline-none">
+              <SpaceTerminologyCard />
+            </TabsContent>
+          )}
 
           {/* FACTURACIÓN */}
           {canManageBilling && (

@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Location } from '@/types/domain/location';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
+import { formatLocationTypeLabel } from '@/lib/location-types';
 import { SECTOR_ICONS } from './sector-modal';
 import {
   DropdownMenu,
@@ -25,6 +27,7 @@ interface Props {
 
 export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLoading }: Props) {
   const { data: allMembers = [] } = useMembersQuery();
+  const labels = useSpaceLabels();
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -39,14 +42,14 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center">
         <MapPin className="mb-4 h-12 w-12 text-muted-foreground/30" />
-        <h3 className="text-lg font-medium">No hay sectores configurados</h3>
+        <h3 className="text-lg font-medium">Aún no hay {labels.sites.toLowerCase()}</h3>
         <p className="max-w-xs text-sm text-muted-foreground mb-4">
-          Agregá departamentos o sectores para organizar mejor el trabajo de tu equipo.
+          Agregá {labels.sites.toLowerCase()} para organizar mejor el trabajo de tu equipo.
         </p>
         {onCreate && (
           <Button onClick={onCreate}>
             <MapPin className="mr-2 h-4 w-4" />
-            Agregar Departamento
+            Agregar {labels.site.toLowerCase()}
           </Button>
         )}
       </div>
@@ -77,7 +80,7 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                   <div className="space-y-1">
                     <h3 className="font-semibold leading-none">{sector.name}</h3>
                     <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
-                      {sector.type}
+                      {formatLocationTypeLabel(sector.type)}
                     </Badge>
                   </div>
                 </div>

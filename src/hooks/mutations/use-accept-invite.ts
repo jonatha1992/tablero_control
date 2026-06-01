@@ -7,7 +7,10 @@ import { invitesApi } from '@/lib/api/invites';
 export function useAcceptInvite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (token: string) => invitesApi.accept(token),
+    mutationFn: (input: string | { token: string; username?: string }) => {
+      if (typeof input === 'string') return invitesApi.accept(input);
+      return invitesApi.accept(input.token, { username: input.username });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries();
       toast.success('Invitación aceptada');

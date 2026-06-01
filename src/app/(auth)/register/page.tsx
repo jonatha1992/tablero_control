@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { LABELS } from '@/lib/terminology';
 
 function RegisterForm() {
   const [name, setName] = useState('');
@@ -48,7 +49,7 @@ function RegisterForm() {
     setError('');
     const trimmedName = businessName.trim();
     if (!trimmedName) {
-      setFieldErrors({ businessName: 'El nombre del negocio es obligatorio' });
+      setFieldErrors({ businessName: `El nombre del ${LABELS.space.toLowerCase()} es obligatorio` });
       return;
     }
     setLoading(true);
@@ -60,11 +61,11 @@ function RegisterForm() {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: trimmedName }),
       });
-      if (!res.ok) throw new Error('Error al crear el negocio');
+      if (!res.ok) throw new Error(`Error al crear el ${LABELS.space.toLowerCase()}`);
       await refreshProfile();
       router.push('/dashboard');
     } catch (err: unknown) {
-      setError((err as Error).message || 'Error al crear el negocio');
+      setError((err as Error).message || `Error al crear el ${LABELS.space.toLowerCase()}`);
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ function RegisterForm() {
     if (!trimmedName) errors.name = 'El nombre es obligatorio';
     if (!trimmedEmail) errors.email = 'El correo es obligatorio';
     else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'Ingresá un correo válido';
-    if (!isInviteRedirect && !trimmedBusinessName) errors.businessName = 'El nombre del negocio es obligatorio';
+    if (!isInviteRedirect && !trimmedBusinessName) errors.businessName = `El nombre del ${LABELS.space.toLowerCase()} es obligatorio`;
     if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
     if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
 
@@ -126,7 +127,7 @@ function RegisterForm() {
       });
 
       if (!res.ok) {
-        throw new Error('Error al crear el negocio. Inténtalo de nuevo.');
+        throw new Error(`Error al crear el ${LABELS.space.toLowerCase()}. Inténtalo de nuevo.`);
       }
 
       // 3. Load profile + redirect
@@ -166,8 +167,8 @@ function RegisterForm() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center">
             <Image src="/icon-192.png" alt="Tablero de Control" width={48} height={48} className="rounded-xl object-contain" priority />
           </div>
-          <CardTitle className="text-2xl">Nuevo Negocio</CardTitle>
-          <CardDescription>Creá un nuevo negocio para gestionar</CardDescription>
+          <CardTitle className="text-2xl">Nuevo {LABELS.space}</CardTitle>
+          <CardDescription>Creá un nuevo {LABELS.space.toLowerCase()} para gestionar</CardDescription>
         </CardHeader>
         <form onSubmit={handleCreateBusiness}>
           <CardContent className="space-y-4">
@@ -177,13 +178,13 @@ function RegisterForm() {
               </div>
             )}
             <div className="space-y-2">
-              <label htmlFor="businessName" className="text-sm font-medium">Nombre del negocio</label>
+              <label htmlFor="businessName" className="text-sm font-medium">Nombre del {LABELS.space.toLowerCase()}</label>
               <input
                 id="businessName"
                 type="text"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Mi nuevo negocio"
+                placeholder={`Mi nuevo ${LABELS.space.toLowerCase()}`}
                 required
                 maxLength={100}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -193,7 +194,7 @@ function RegisterForm() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creando negocio...' : 'Crear negocio'}
+              {loading ? `Creando ${LABELS.space.toLowerCase()}...` : `Crear ${LABELS.space.toLowerCase()}`}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               <Link href="/dashboard" className="text-primary underline hover:text-primary/80">
@@ -218,7 +219,7 @@ function RegisterForm() {
         <CardDescription>
           {isInviteRedirect
             ? 'Creá tu cuenta para unirte al equipo'
-            : 'Registrá tu negocio para acceder al tablero'}
+            : `Registrá tu ${LABELS.space.toLowerCase()} para acceder al tablero`}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -245,7 +246,7 @@ function RegisterForm() {
           {!isInviteRedirect && (
             <div className="space-y-2">
               <label htmlFor="businessName" className="text-sm font-medium">
-                Nombre del negocio <span className="text-muted-foreground font-normal">(opcional)</span>
+                Nombre del {LABELS.space.toLowerCase()} <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <input
                 id="businessName"

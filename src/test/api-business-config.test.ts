@@ -135,6 +135,7 @@ describe('PATCH /api/business/config', () => {
   });
 
   it('actualiza el negocio y escribe audit log en caso de éxito', async () => {
+    mockFindById.mockResolvedValueOnce(mockBusiness as never);
     mockUpdate.mockResolvedValueOnce(undefined as never);
     mockWriteAuditLog.mockResolvedValueOnce(undefined as never);
     const req = new NextRequest('http://localhost/api/business/config', {
@@ -147,7 +148,10 @@ describe('PATCH /api/business/config', () => {
     expect(body.success).toBe(true);
     expect(mockUpdate).toHaveBeenCalledWith(
       'biz-1',
-      expect.objectContaining({ name: 'Nuevo Nombre', settings: { maxUsers: 10 } }),
+      expect.objectContaining({
+        name: 'Nuevo Nombre',
+        settings: expect.objectContaining({ maxUsers: 10 }),
+      }),
     );
     expect(mockWriteAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -162,6 +166,7 @@ describe('PATCH /api/business/config', () => {
   });
 
   it('retorna 500 cuando ocurre un error en la actualización', async () => {
+    mockFindById.mockResolvedValueOnce(mockBusiness as never);
     mockUpdate.mockRejectedValueOnce(new Error('DB connection lost'));
     const req = new NextRequest('http://localhost/api/business/config', {
       method: 'PATCH',

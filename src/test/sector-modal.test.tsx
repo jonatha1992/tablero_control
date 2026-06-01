@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SectorModal } from '@/components/sectores/sector-modal';
 import type { Location } from '@/types/domain/location';
@@ -22,6 +22,45 @@ vi.mock('@/hooks/mutations/use-locations', () => ({
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock('@/hooks/use-space-labels', () => ({
+  useSpaceLabels: () => ({
+    site: 'Sede',
+    sites: 'Sedes',
+    space: 'Espacio',
+    spaces: 'Espacios',
+    board: 'Tablero',
+    boards: 'Tableros',
+    createSpace: 'Crear espacio',
+    anotherSpace: 'Crear otro espacio',
+    mySpace: 'Mi espacio',
+    defaultBoardName: 'Principal',
+  }),
+}));
+
+vi.mock('@/hooks/queries/use-business-query', () => ({
+  useBusinessQuery: vi.fn(() => ({
+    data: { settings: { localeTypes: ['local', 'sector'] } },
+  })),
+}));
+
+vi.mock('@/hooks/auth-context', () => ({
+  useAuth: () => ({ isAdmin: true }),
+}));
+
+vi.mock('@/lib/persist-locale-type', () => ({
+  persistLocaleType: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/hooks/queries/use-locations-query', () => ({
+  useLocationsQuery: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
 }));
 
 // ─── Fixtures ───────────────────────────────────────────────────────────────
@@ -53,9 +92,9 @@ beforeEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('SectorModal — modo creación', () => {
-  it('muestra título "Nuevo Sector/Departamento"', () => {
+  it('muestra título "Nueva sede"', () => {
     render(<SectorModal {...defaultProps} />);
-    expect(screen.getByText(/Nuevo Sector\/Departamento/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Nueva sede/i })).toBeInTheDocument();
   });
 
   it('campos vacíos al abrir en modo creación', () => {
@@ -64,15 +103,15 @@ describe('SectorModal — modo creación', () => {
     expect(nameInput).toHaveValue('');
   });
 
-  it('tipo por defecto es "department"', () => {
+  it('tipo por defecto es "local"', () => {
     render(<SectorModal {...defaultProps} />);
-    const typeInput = screen.getByPlaceholderText(/Ej: Oficina, Sector, Departamento/i);
-    expect(typeInput).toHaveValue('department');
+    const typeSelect = screen.getByRole('combobox');
+    expect(typeSelect).toHaveValue('local');
   });
 
   it('submit sin nombre: no llama a createMutation.mutate', async () => {
     render(<SectorModal {...defaultProps} />);
-    const submitBtn = screen.getByRole('button', { name: /Crear sector/i });
+    const submitBtn = screen.getByRole('button', { name: /Crear sede/i });
     fireEvent.click(submitBtn);
     expect(mockCreateMutate).not.toHaveBeenCalled();
   });
@@ -81,19 +120,21 @@ describe('SectorModal — modo creación', () => {
     render(<SectorModal {...defaultProps} />);
     const nameInput = screen.getByPlaceholderText(/Ej: Departamento de IT/i);
     await userEvent.type(nameInput, 'Nuevo Sector');
-    const submitBtn = screen.getByRole('button', { name: /Crear sector/i });
+    const submitBtn = screen.getByRole('button', { name: /Crear sede/i });
     fireEvent.click(submitBtn);
-    expect(mockCreateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Nuevo Sector', businessId: 'biz-1', type: 'department' }),
-      expect.any(Object)
-    );
+    await waitFor(() => {
+      expect(mockCreateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Nuevo Sector', businessId: 'biz-1', type: 'local' }),
+        expect.any(Object)
+      );
+    });
   });
 });
 
 describe('SectorModal — modo edición', () => {
-  it('muestra título "Editar Sector/Departamento"', () => {
+  it('muestra título "Editar sede"', () => {
     render(<SectorModal {...defaultProps} location={existingLocation} />);
-    expect(screen.getByText(/Editar Sector\/Departamento/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Editar sede/i })).toBeInTheDocument();
   });
 
   it('pre-rellena el campo nombre con el valor existente', () => {
@@ -104,8 +145,8 @@ describe('SectorModal — modo edición', () => {
 
   it('pre-rellena el campo tipo con el valor existente', () => {
     render(<SectorModal {...defaultProps} location={existingLocation} />);
-    const typeInput = screen.getByPlaceholderText(/Ej: Oficina, Sector, Departamento/i);
-    expect(typeInput).toHaveValue('warehouse');
+    const typeSelect = screen.getByRole('combobox');
+    expect(typeSelect).toHaveValue('warehouse');
   });
 
   it('pre-rellena descripción con el valor existente', () => {
@@ -118,10 +159,12 @@ describe('SectorModal — modo edición', () => {
     render(<SectorModal {...defaultProps} location={existingLocation} />);
     const submitBtn = screen.getByRole('button', { name: /Guardar cambios/i });
     fireEvent.click(submitBtn);
-    expect(mockUpdateMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'loc-1' }),
-      expect.any(Object)
-    );
+    await waitFor(() => {
+      expect(mockUpdateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'loc-1' }),
+        expect.any(Object)
+      );
+    });
     expect(mockCreateMutate).not.toHaveBeenCalled();
   });
 });

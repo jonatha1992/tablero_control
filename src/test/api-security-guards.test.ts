@@ -142,6 +142,7 @@ describe('Locations [id] role guards', () => {
 
   it('PATCH returns 403 for miembro', async () => {
     mockRequireUser.mockResolvedValueOnce(makeUser('miembro') as never);
+    mockGetLocation.mockResolvedValueOnce({ id: 'loc-1', businessId: 'biz-1' } as never);
     const req = new NextRequest('http://localhost/api/locations/loc-1', {
       method: 'PATCH',
       body: JSON.stringify({ name: 'Updated' }),
@@ -152,6 +153,7 @@ describe('Locations [id] role guards', () => {
 
   it('PATCH returns 403 for viewer', async () => {
     mockRequireUser.mockResolvedValueOnce(makeUser('viewer') as never);
+    mockGetLocation.mockResolvedValueOnce({ id: 'loc-1', businessId: 'biz-1' } as never);
     const req = new NextRequest('http://localhost/api/locations/loc-1', {
       method: 'PATCH',
       body: JSON.stringify({ name: 'Updated' }),
@@ -162,6 +164,7 @@ describe('Locations [id] role guards', () => {
 
   it('DELETE returns 403 for miembro', async () => {
     mockRequireUser.mockResolvedValueOnce(makeUser('miembro') as never);
+    mockGetLocation.mockResolvedValueOnce({ id: 'loc-1', businessId: 'biz-1' } as never);
     const req = new NextRequest('http://localhost/api/locations/loc-1', { method: 'DELETE' });
     const res = await DELETE(req, { params: Promise.resolve({ id: 'loc-1' }) });
     expect(res.status).toBe(403);

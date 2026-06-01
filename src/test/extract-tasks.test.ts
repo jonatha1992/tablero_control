@@ -1,0 +1,210 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  defaultSpaceName,
+  displaySpaceName,
+  LABELS,
+  resolveSpaceLabels,
+} from '@/lib/terminology';
+import type { BusinessSettings } from '@/types/domain/business';
+import type { ExtractContext } from '@/lib/groq/extract-context';
+
+vi.mock('@/lib/groq/client', () => ({
+  groq: {
+    chat: {
+      completions: {
+        create: vi.fn(),
+      },
+    },
+  },
+}));
+
+import { groq } from '@/lib/groq/client';
+import { extractTasksFromTranscription } from '@/lib/groq/extract-tasks';
+
+const mockCreate = groq.chat.completions.create as ReturnType<typeof vi.fn>;
+
+const baseCtx: ExtractContext = {
+  members: [{ id: 'u1', name: 'Ana' }],
+  locations: [{ id: 'loc1', name: 'Oficina' }],
+  projects: [{ id: 'p1', name: 'Principal' }],
+  cycles: [{ id: 'cyc1', name: 'Sprint 1' }],
+  objectives: [{ id: 'obj1', name: 'Meta Q2' }],
+  defaultProjectId: 'p1',
+  siteLabel: 'Sede',
+  today: '2026-05-30',
+};
+
+function mockGroqResponse(tasks: unknown[]) {
+  mockCreate.mockResolvedValueOnce({
+    choices: [{ message: { content: JSON.stringify({ tasks }) } }],
+  });
+}
+
+describe('sanitizeTask (via extractTasksFromTranscription)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('filtra assigneeIds que no existen en el contexto', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea test',
+        priority: 'medium',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: ['u1', 'u-invalid'],
+        tags: [],
+        order: 1,
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].assigneeIds).toEqual(['u1']);
+  });
+
+  it('reemplaza projectId inválido con defaultProjectId', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea',
+        priority: 'low',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+        projectId: 'p-no-existe',
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].projectId).toBe('p1');
+  });
+
+  it('elimina locationId inválido', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea',
+        priority: 'low',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+        locationId: 'loc-fake',
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].locationId).toBeUndefined();
+  });
+
+  it('mantiene locationId válido', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea',
+        priority: 'low',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+        locationId: 'loc1',
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].locationId).toBe('loc1');
+  });
+
+  it('corrige status inválido a todo', async () => {
+    mockGroqResponse([
+      {
+        title: 'Tarea',
+        priority: 'high',
+        status: 'invalid_status',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].status).toBe('todo');
+  });
+
+  it('recorta título a 120 caracteres', async () => {
+    const longTitle = 'A'.repeat(200);
+    mockGroqResponse([
+      {
+        title: longTitle,
+        priority: 'medium',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].title.length).toBe(120);
+  });
+
+  it('normaliza checklist con ids faltantes', async () => {
+    mockGroqResponse([
+      {
+        title: 'Con checklist',
+        priority: 'medium',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+        checklist: [{ text: 'Paso 1' }, { id: 'c2', text: 'Paso 2', done: true }],
+      },
+    ]);
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks[0].checklist?.[0].id).toBe('c1');
+    expect(tasks[0].checklist?.[1].id).toBe('c2');
+    expect(tasks[0].checklist?.[1].done).toBe(true);
+  });
+
+  it('devuelve array vacío cuando tasks no es array', async () => {
+    mockCreate.mockResolvedValueOnce({
+      choices: [{ message: { content: '{"tasks": null}' } }],
+    });
+    const tasks = await extractTasksFromTranscription('texto', baseCtx);
+    expect(tasks).toEqual([]);
+  });
+});
+
+describe('extract-tasks sanitize via resolveSpaceLabels', () => {
+  it('resolveSpaceLabels respeta preset departamento', () => {
+    const settings: BusinessSettings = {
+      terminology: { locationPreset: 'departamento' },
+    };
+    expect(resolveSpaceLabels(settings).sites).toBe('Departamentos');
+  });
+});
+
+describe('ExtractContext shape', () => {
+  it('acepta contexto mínimo para extracción', () => {
+    const ctx: ExtractContext = {
+      members: [{ id: 'u1', name: 'Ana' }],
+      locations: [],
+      projects: [{ id: 'p1', name: 'Principal' }],
+      cycles: [],
+      objectives: [],
+      defaultProjectId: 'p1',
+      siteLabel: 'Sede',
+      today: '2026-05-30',
+    };
+    expect(ctx.defaultProjectId).toBe('p1');
+  });
+});
+
+describe('terminology', () => {
+  it('defaultSpaceName usa Espacio de', () => {
+    expect(defaultSpaceName('Ana')).toBe('Espacio de Ana');
+  });
+
+  it('displaySpaceName normaliza nombres legacy', () => {
+    expect(displaySpaceName('Negocio de David')).toBe('Espacio de David');
+    expect(displaySpaceName('')).toBe(LABELS.mySpace);
+  });
+});

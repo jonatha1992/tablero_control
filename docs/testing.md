@@ -98,7 +98,7 @@ const dbUser = {
 };
 ```
 
-Tests relacionados: `src/test/api-auth-profile.test.ts` (reasignación sin `businessCreate`), `src/test/api-invites.test.ts` (`accountIntent: collaborator`, sin `business.create` en accept).
+Tests relacionados: `src/test/api-auth-profile.test.ts` (reasignación sin `businessCreate`), `src/test/api-invites.test.ts` (`accountIntent: collaborator`, `prepare-account`, username en accept), `src/test/api-auth-resolve.test.ts` (login por nombre, público), `src/test/invite-username.test.ts`.
 
 ### Componentes
 

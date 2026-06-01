@@ -39,6 +39,10 @@ vi.mock('@/repositories', () => ({
   },
 }));
 
+vi.mock('@/lib/default-board', () => ({
+  ensureDefaultBoard: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockVerifyToken = vi.mocked(verifyToken);
 const mockFindById = vi.mocked(userRepository.findById);
 const mockFindByEmail = vi.mocked(userRepository.findByEmail);

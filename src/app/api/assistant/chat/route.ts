@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { handle } from '@/lib/api/route-handler';
 import { chatWithAssistant } from '@/lib/groq/assistant';
-import type { AssistantMessage, AssistantContext, AssistantMode, TaskSummary } from '@/lib/groq/assistant';
-import { taskRepository, cycleRepository } from '@/repositories/index';
+import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
+import { buildAssistantContext } from '@/lib/assistant-context';
 
 export const maxDuration = 30;
 
@@ -23,68 +23,24 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'messages_required' }, { status: 400 });
   }
 
-  const businessId = user.businessId;
-  const today = new Date().toISOString().split('T')[0];
-  const now = new Date();
-  let taskSummaries: TaskSummary[] = [];
-  let activeCycleName: string | undefined;
-
-  if (businessId) {
-    try {
-      const [tasks, cycles] = await Promise.all([
-        taskRepository.findAll(businessId),
-        cycleRepository.findByBusiness(businessId),
-      ]);
-
-      const cycleMap = new Map(cycles.map((c) => [c.id, c.name]));
-      activeCycleName = cycles.find((c) => c.status === 'active')?.name;
-
-      // Limitar a 100 tareas más relevantes (no-done primero, luego done recientes)
-      const sorted = [
-        ...tasks.filter((t) => t.status !== 'done'),
-        ...tasks.filter((t) => t.status === 'done').slice(0, 20),
-      ].slice(0, 100);
-
-      taskSummaries = sorted.map((t): TaskSummary => {
-        const dueDateStr = t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : undefined;
-        return {
-          title: t.title,
-          status: t.status,
-          priority: t.priority,
-          dueDate: dueDateStr,
-          assignees: (t.assignees ?? []).map((a) => a.name),
-          cycleName: t.cycleId ? cycleMap.get(t.cycleId) : undefined,
-          isOverdue: !!dueDateStr && dueDateStr < today && t.status !== 'done',
-        };
-      });
-    } catch {
-      // non-fatal
-    }
-  }
-
   const businessName = user.data.memberships?.find(
-    (m) => m.businessId === businessId,
+    (m) => m.businessId === user.businessId,
   )?.businessName;
 
-  const ctx: AssistantContext = {
+  const ctx = await buildAssistantContext({
+    businessId: user.businessId,
     userName: user.data.name,
     userRole: user.role,
     businessName,
-    activeCycleName,
-    tasks: taskSummaries,
-    today,
-  };
+  });
 
-  void now;
+  const mode = body.mode ?? 'assistant';
 
-  let result: Awaited<ReturnType<typeof chatWithAssistant>>;
   try {
-    const mode: AssistantMode = body.mode === 'planner' ? 'planner' : 'assistant';
-    result = await chatWithAssistant(messages, ctx, mode);
+    const result = await chatWithAssistant(messages, ctx, mode);
+    return NextResponse.json(result);
   } catch (err) {
-    console.error('[assistant/chat] Error:', err);
-    return NextResponse.json({ error: 'ai_error' }, { status: 500 });
+    console.error('[assistant/chat]', err);
+    return NextResponse.json({ error: 'chat_failed' }, { status: 500 });
   }
-
-  return NextResponse.json(result);
 });
