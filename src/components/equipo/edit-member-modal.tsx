@@ -133,7 +133,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
     setCustomRoleIds(member.customRoleIds ?? []);
     setAddingLocation(false);
     setNewLocationId('');
-    setNewLocationRole('miembro');
+    setNewLocationRole(member.role);
 
     if (member.locationAssignments?.length) {
       const businessLocationIds = new Set(locations.map((l) => l.id));
@@ -160,6 +160,11 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId, open]);
 
+  function applyBaseRoleToAllSectors() {
+    setLocationAssignments((prev) => prev.map((a) => ({ ...a, role })));
+    setNewLocationRole(role);
+  }
+
   function addLocation() {
     if (!newLocationId) return;
     const loc = locations.find((l) => l.id === newLocationId);
@@ -169,7 +174,7 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
       { locationId: loc.id, locationName: loc.name, role: newLocationRole },
     ]);
     setNewLocationId('');
-    setNewLocationRole('miembro');
+    setNewLocationRole(role);
     setAddingLocation(false);
   }
 
@@ -308,6 +313,23 @@ export function EditMemberModal({ member, open, onClose, onRemove }: Props) {
               </label>
 
               <div className="space-y-1.5">
+                {locationAssignments.length > 1 && (
+                  <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-3 py-2">
+                    <p className="text-xs text-muted-foreground">
+                      Tip: podés aplicar el rol base a todos los sectores y luego ajustar solo excepciones.
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      onClick={applyBaseRoleToAllSectors}
+                    >
+                      Aplicar rol base
+                    </Button>
+                  </div>
+                )}
+
                 {locationAssignments.length === 0 && !addingLocation && (
                   <p className="rounded-md border border-dashed border-input px-3 py-2.5 text-xs text-muted-foreground">
                     Sin sectores asignados — accede a todos según rol base.

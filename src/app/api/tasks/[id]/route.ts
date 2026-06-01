@@ -225,8 +225,13 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const belongs = await taskBelongsToBusiness(id, user.businessId);
   if (!belongs) {
     // Keep consistent with other tenant-guard failures.
+    // If we can't infer a businessId, return an explicit 404 (task not found/indeterminate).
+    const inferred = await getTaskBusinessId(id);
+    if (!inferred) {
+      return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
+    }
     // This will be surfaced as { reason: 'tenant_mismatch' } by the handle() wrapper.
-    assertResourceBelongsToBusiness(user.data, await getTaskBusinessId(id));
+    assertResourceBelongsToBusiness(user.data, inferred);
   }
 
   const activeMembership = user.data.memberships?.find(

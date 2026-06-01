@@ -22,10 +22,13 @@ export const GET = handle(async (request: NextRequest) => {
   }
 
   try {
+    const startedAt = process.env.NODE_ENV !== 'production' ? Date.now() : 0;
     const decoded = await verifyToken(token);
     const decodedEmail = decoded.email?.toLowerCase().trim();
     let user = await userRepository.findById(decoded.uid);
-    console.log('[profile] findById:', user ? 'FOUND' : 'NOT FOUND');
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[profile] findById:', user ? 'FOUND' : 'NOT FOUND');
+    }
 
     if (!user && decoded.email) {
       // Invited user: exists by email but has a different Firebase UID
@@ -106,11 +109,17 @@ export const GET = handle(async (request: NextRequest) => {
       user = await userRepository.update(user.id, { avatar: decoded.picture });
     }
 
-    const ownedCount = await prisma.business.count({ where: { ownerId: user.id } });
+    const [ownedCount, business] = await Promise.all([
+      prisma.business.count({ where: { ownerId: user.id } }),
+      user.businessId ? businessRepository.findById(user.businessId) : Promise.resolve(null),
+    ]);
     const hasOwnedBusiness = ownedCount > 0;
-    const isOwner = user.businessId
-      ? (await businessRepository.findById(user.businessId))?.ownerId === user.id
-      : false;
+    const isOwner = Boolean(user.businessId && business?.ownerId === user.id);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const elapsedMs = Date.now() - startedAt;
+      console.debug(`[perf] profile GET ${elapsedMs}ms`);
+    }
 
     return NextResponse.json({
       ...user,

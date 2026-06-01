@@ -146,7 +146,7 @@ describe('useUpdateTask', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskKeys.all });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskKeys.detail('t-1') });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [...taskKeys.all, 'detail'] });
   });
 });
 

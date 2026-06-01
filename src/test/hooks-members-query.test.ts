@@ -73,7 +73,7 @@ describe('useMembersQuery()', () => {
     const { result } = renderHook(() => useMembersQuery(), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockGetByBusiness).toHaveBeenCalledWith('biz-1');
+    expect(mockGetByBusiness).toHaveBeenCalledWith('biz-1', expect.any(AbortSignal));
     expect(result.current.data).toEqual(mockMembers);
   });
 

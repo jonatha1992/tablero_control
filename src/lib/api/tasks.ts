@@ -26,23 +26,24 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const tasksApi = {
-  getByBusiness: (businessId: string, filters?: TaskFilters) => {
+  getByBusiness: (businessId: string, signal?: AbortSignal, filters?: TaskFilters) => {
     const params = new URLSearchParams({ businessId });
     if (filters) {
       Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
     }
-    return fetchJsonAuth<Task[]>(`/api/tasks?${params}`);
+    return fetchJsonAuth<Task[]>(`/api/tasks?${params}`, { signal });
   },
 
-  getByCreator: (userId: string, filters?: TaskFilters) => {
+  getByCreator: (userId: string, signal?: AbortSignal, filters?: TaskFilters) => {
     const params = new URLSearchParams({ creatorId: userId });
     if (filters) {
       Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
     }
-    return fetchJsonAuth<Task[]>(`/api/tasks?${params}`);
+    return fetchJsonAuth<Task[]>(`/api/tasks?${params}`, { signal });
   },
 
-  getById: (id: string) => fetchJsonAuth<Task>(`/api/tasks/${id}`),
+  getById: (id: string, signal?: AbortSignal) =>
+    fetchJsonAuth<Task>(`/api/tasks/${id}`, { signal }),
 
   create: (dto: CreateTaskDTO, creatorId: string, businessId: string) =>
     fetchJsonAuth<Task>('/api/tasks', {
@@ -78,7 +79,24 @@ export const tasksApi = {
     const headers: HeadersInit = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const r = await fetch(`/api/tasks/${id}`, { method: 'DELETE', headers });
-    if (!r.ok) throw new ApiError('Error al eliminar tarea', r.status);
+    if (!r.ok) {
+      let message = 'Error al eliminar tarea';
+      try {
+        const text = await r.text();
+        try {
+          const parsed = JSON.parse(text) as { error?: string; reason?: string; detail?: string };
+          const error = parsed.error ?? text;
+          const reason = parsed.reason ? ` (${parsed.reason})` : '';
+          const detail = parsed.detail ? ` — ${parsed.detail}` : '';
+          message = `${error}${reason}${detail}`;
+        } catch {
+          message = text || message;
+        }
+      } catch {
+        // ignore and keep default
+      }
+      throw new ApiError(message, r.status);
+    }
   },
 
   fromAudio: async (audioFile: File, token: string): Promise<FromAudioResponse> => {

@@ -105,8 +105,11 @@ export async function resetPassword(email: string) {
 
 async function getCurrentUser(): Promise<FirebaseUser | null> {
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
+    // `onAuthStateChanged` may invoke the callback synchronously (e.g. in tests/mocks).
+    // If we call `unsubscribe()` inline, it can run before the variable is assigned.
+    const unsub = { current: undefined as undefined | (() => void) };
+    unsub.current = onAuthStateChanged(auth, (user) => {
+      queueMicrotask(() => unsub.current?.());
       resolve(user);
     });
   });

@@ -77,7 +77,7 @@ describe('useTasksQuery()', () => {
     const { result } = renderHook(() => useTasksQuery(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockGetByBusiness).toHaveBeenCalledWith('biz-1', undefined);
+    expect(mockGetByBusiness).toHaveBeenCalledWith('biz-1', expect.any(AbortSignal));
     expect(result.current.data).toHaveLength(2);
   });
 
@@ -91,7 +91,7 @@ describe('useTasksQuery()', () => {
     const { result } = renderHook(() => useTasksQuery(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockGetByBusiness).toHaveBeenCalledWith('all', undefined);
+    expect(mockGetByBusiness).toHaveBeenCalledWith('all', expect.any(AbortSignal));
   });
 
   it('usa getByCreator cuando el usuario no tiene businessId', async () => {
@@ -104,7 +104,7 @@ describe('useTasksQuery()', () => {
     const { result } = renderHook(() => useTasksQuery(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockGetByCreator).toHaveBeenCalledWith('user-1', undefined);
+    expect(mockGetByCreator).toHaveBeenCalledWith('user-1', expect.any(AbortSignal));
   });
 
   it('queryKey cambia con filtros distintos (no reutiliza cache)', () => {
@@ -141,7 +141,7 @@ describe('useTaskQuery()', () => {
     const { result } = renderHook(() => useTaskQuery('t-1'), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockGetById).toHaveBeenCalledWith('t-1');
+    expect(mockGetById).toHaveBeenCalledWith('t-1', expect.any(AbortSignal));
     expect(result.current.data).toMatchObject({ id: 't-1' });
   });
 });

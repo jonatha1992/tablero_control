@@ -110,17 +110,33 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
   const switchBusiness = async (businessId: string) => {
     const fbUser = auth.currentUser;
     if (!fbUser) return;
+    const isDev = process.env.NODE_ENV !== 'production';
+    const startedAt = isDev ? performance.now() : 0;
+
     const token = await fbUser.getIdToken();
     const res = await fetch('/api/users/switch-business', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ businessId }),
     });
-    if (res.ok) {
-      await refreshProfile();
-      window.location.reload();
-    } else {
+
+    if (!res.ok) {
       console.error('switchBusiness failed');
+      return;
+    }
+
+    await refreshProfile();
+
+    // Notify app-level caches/stores to drop cross-tenant data.
+    window.dispatchEvent(new CustomEvent('business:switched', { detail: { businessId } }));
+
+    // Keep behavior compatible with tests/non-Next runtimes.
+    // (Avoid importing Next navigation hooks inside this provider.)
+    window.location.reload();
+
+    if (isDev) {
+      const elapsedMs = performance.now() - startedAt;
+      console.info(`[perf] switchBusiness total ${Math.round(elapsedMs)}ms`);
     }
   };
 
