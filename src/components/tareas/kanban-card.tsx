@@ -19,6 +19,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import { formatMonthDay, formatTimeHHMM } from '@/lib/utils/date';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSubtasksQuery, subtaskKeys } from '@/hooks/queries/use-subtasks-query';
@@ -404,11 +405,11 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
             >
               <Clock className="h-3.5 w-3.5" />
               <span>
-                {new Date(task.dueDate).toLocaleDateString('es', { month: 'short', day: 'numeric' })}
+                {formatMonthDay(task.dueDate, 'es')}
                 {(() => {
                   const d = new Date(task.dueDate);
                   return (d.getHours() !== 0 || d.getMinutes() !== 0)
-                    ? ` ${d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
+                    ? ` ${formatTimeHHMM(d)}`
                     : null;
                 })()}
               </span>
