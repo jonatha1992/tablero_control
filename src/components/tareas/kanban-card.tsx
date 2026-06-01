@@ -8,7 +8,6 @@ import {
   Paperclip,
   Clock,
   MoreVertical,
-  CheckSquare,
   AlertTriangle,
   ChevronUp,
   Check,
