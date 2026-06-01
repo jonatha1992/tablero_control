@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -211,10 +211,16 @@ describe('POST /api/users/switch-business', () => {
 // ─── POST /api/users/fcm-token ────────────────────────────────────────────────
 
 describe('POST /api/users/fcm-token', () => {
-  async function callFcm(body: unknown) {
-    const { POST } = await import('@/app/api/users/fcm-token/route');
+  let postFcmToken: (req: NextRequest) => Promise<Response>;
+
+  beforeAll(async () => {
+    const mod = await import('@/app/api/users/fcm-token/route');
+    postFcmToken = mod.POST;
+  });
+
+  function callFcm(body: unknown) {
     const req = makeRequest('/api/users/fcm-token', body, 'POST');
-    return POST(req);
+    return postFcmToken(req);
   }
 
   it('agrega un token FCM nuevo', async () => {

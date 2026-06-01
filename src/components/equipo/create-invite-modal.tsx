@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { Copy, Check, Link2, Loader2, Share2, X } from 'lucide-react';
+import { Copy, Check, Link2, Loader2, Mail, Share2, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,14 @@ interface Props {
   businessId?: string;
 }
 
+type DeliveryMethod = 'link' | 'email';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function CreateInviteModal({ open, onClose, businessId }: Props) {
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('link');
+  const [inviteeEmail, setInviteeEmail] = useState('');
+  const [inviteeName, setInviteeName] = useState('');
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [role, setRole] = useState<string>('miembro');
   const [maxUses, setMaxUses] = useState('0');
@@ -36,8 +43,20 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     if (!businessId) return;
     setError('');
 
+    const trimmedEmail = inviteeEmail.trim().toLowerCase();
+    if (deliveryMethod === 'email') {
+      if (!trimmedEmail) {
+        setError('El correo es obligatorio para enviar la invitación');
+        return;
+      }
+      if (!EMAIL_REGEX.test(trimmedEmail)) {
+        setError('El correo no es válido');
+        return;
+      }
+    }
+
     const parsedMaxUses = parseInt(maxUses, 10) || 0;
-    if (parsedMaxUses < 0) {
+    if (deliveryMethod === 'link' && parsedMaxUses < 0) {
       setError('El límite de usos no puede ser negativo');
       return;
     }
@@ -47,8 +66,11 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
         businessId,
         role,
         locationIds: selectedLocationIds.length > 0 ? selectedLocationIds : undefined,
-        maxUses: parsedMaxUses,
+        maxUses: deliveryMethod === 'email' ? 1 : parsedMaxUses,
         expiresInDays: parseInt(expiresInDays, 10) || 0,
+        ...(deliveryMethod === 'email'
+          ? { email: trimmedEmail, inviteeName: inviteeName.trim() || undefined }
+          : {}),
       },
       {
         onError: (err) => setError((err as Error).message || 'No se pudo generar el link'),
@@ -56,7 +78,8 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     );
   }
 
-  const inviteLink = data ? `${window.location.origin}/i/${data.id}` : '';
+  const inviteLink = data?.link ?? (data ? `${window.location.origin}/i/${data.id}` : '');
+  const emailSent = data?.emailSent ?? false;
 
   async function handleCopy() {
     if (!inviteLink) return;
@@ -67,6 +90,9 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
 
   function handleClose() {
     if (isPending) return;
+    setDeliveryMethod('link');
+    setInviteeEmail('');
+    setInviteeName('');
     setSelectedLocationIds([]);
     setRole('miembro');
     setMaxUses('0');
@@ -83,13 +109,22 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Link2 className="h-5 w-5" />
-                Link generado
+                {emailSent ? <Mail className="h-5 w-5" /> : <Link2 className="h-5 w-5" />}
+                {emailSent ? 'Invitación enviada' : 'Link generado'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
+              {emailSent && inviteeEmail && (
+                <p className="text-sm text-muted-foreground">
+                  Enviamos un correo a <span className="font-medium text-foreground">{inviteeEmail}</span> con
+                  el link de invitación (un solo uso).
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
-                Compartí este link con quienes querés que se unan al equipo. Al ingresar, recibirán el rol <strong>{data.role}</strong>.
+                {emailSent
+                  ? 'También podés copiar el link si necesitás reenviarlo manualmente.'
+                  : 'Compartí este link con quienes querés que se unan al equipo.'}{' '}
+                Al ingresar, recibirán el rol <strong>{data.role}</strong>.
               </p>
               <div className="flex items-center gap-2">
                 <Input value={inviteLink} readOnly className="font-mono text-sm" />
@@ -149,12 +184,74 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Link2 className="h-5 w-5" />
-                Generar link de invitación
+                Invitar al equipo
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Cómo invitar</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod('link')}
+                    className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                      deliveryMethod === 'link'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-input hover:bg-muted/50'
+                    }`}
+                  >
+                    <span className="font-medium block">Link compartible</span>
+                    <span className="text-xs text-muted-foreground">WhatsApp, QR, etc.</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod('email')}
+                    className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                      deliveryMethod === 'email'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-input hover:bg-muted/50'
+                    }`}
+                  >
+                    <span className="font-medium block">Por correo</span>
+                    <span className="text-xs text-muted-foreground">Un solo uso · más privado</span>
+                  </button>
+                </div>
+                {role === 'admin' && deliveryMethod === 'link' && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    Para administradores recomendamos invitar por correo personal.
+                  </p>
+                )}
+              </div>
+
+              {deliveryMethod === 'email' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Correo del invitado</label>
+                    <Input
+                      type="email"
+                      placeholder="juan@empresa.com"
+                      value={inviteeEmail}
+                      onChange={(e) => setInviteeEmail(e.target.value)}
+                      maxLength={150}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Nombre (opcional)</label>
+                    <Input
+                      placeholder="Juan García"
+                      value={inviteeName}
+                      onChange={(e) => setInviteeName(e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                </>
+              )}
+
               <p className="text-sm text-muted-foreground">
-                La persona que ingrese por este link recibirá el rol que elijas. Podés cambiarlo después desde el equipo.
+                {deliveryMethod === 'email'
+                  ? 'Se enviará un correo con un link de un solo uso.'
+                  : 'Quien ingrese por el link recibirá el rol que elijas. Podés cambiarlo después desde el equipo.'}
               </p>
 
               <div className="space-y-1.5">
@@ -204,19 +301,21 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Límite de usos</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={maxUses}
-                    onChange={(e) => setMaxUses(e.target.value)}
-                    placeholder="0 = ilimitado"
-                    maxLength={10}
-                  />
-                  <p className="text-xs text-muted-foreground">0 = ilimitado</p>
-                </div>
+              <div className={`grid gap-3 ${deliveryMethod === 'link' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {deliveryMethod === 'link' && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Límite de usos</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={maxUses}
+                      onChange={(e) => setMaxUses(e.target.value)}
+                      placeholder="0 = ilimitado"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground">0 = ilimitado</p>
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Expira en (días)</label>
                   <Input
@@ -247,7 +346,11 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
                   ) : (
                     <Link2 className="mr-1.5 h-4 w-4" />
                   )}
-                  {isPending ? 'Generando...' : 'Generar link'}
+                  {isPending
+                    ? 'Procesando...'
+                    : deliveryMethod === 'email'
+                      ? 'Enviar invitación'
+                      : 'Generar link'}
                 </Button>
               </DialogFooter>
             </form>

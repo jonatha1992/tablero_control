@@ -191,7 +191,9 @@ Métricas del negocio:
 - Distribución por prioridad
 - Actividad semanal últimas 6 semanas (barras)
 - Carga de trabajo por miembro
-- Resumen de proyectos
+- KPIs: tasa de completado, total, bloqueadas, urgentes activas
+
+**Exportar Excel:** descarga un archivo `.xlsx` con hojas Resumen, Actividad, Por estado, Por prioridad, Equipo y Tareas. El selector Semana / Mes / Trimestre filtra la hoja Tareas. Requiere al menos una tarea en el espacio.
 
 ---
 

@@ -2,7 +2,6 @@ import { format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Task } from '@/types/domain/task';
 import type { User } from '@/types/domain/user';
-import { downloadCsv } from '@/lib/csv-download';
 
 const STATUS_LABELS: Record<string, string> = {
   done: 'Completadas',
@@ -60,69 +59,69 @@ export type ReportExportData = {
   weeklyActivity: { semana: string; creadas: number; completadas: number; bloqueadas: number }[];
 };
 
-export function buildReportCsvRows(data: ReportExportData): string[][] {
-  const rows: string[][] = [];
+function buildResumenRows(data: ReportExportData): (string | number)[][] {
   const generatedAt = format(new Date(), "d 'de' MMMM yyyy, HH:mm", { locale: es });
+  return [
+    ['Reporte — Tablero de Control'],
+    ['Generado', generatedAt],
+    ['Período', PERIOD_LABELS[data.period]],
+    [],
+    ['Métrica', 'Valor'],
+    ['Tasa de completado', `${data.completionRate}%`],
+    ['Tareas completadas', data.completedTasks],
+    ['Total tareas', data.totalTasks],
+    ['Bloqueadas', data.blockedTasks],
+    ['Urgentes activas', data.urgentTasks],
+  ];
+}
 
-  rows.push(['Reporte — Tablero de Control']);
-  rows.push(['Generado', generatedAt]);
-  rows.push(['Período', PERIOD_LABELS[data.period]]);
-  rows.push([]);
+function buildActividadRows(data: ReportExportData): (string | number)[][] {
+  return [
+    ['Semana', 'Creadas', 'Completadas', 'Bloqueadas'],
+    ...data.weeklyActivity.map((w) => [w.semana, w.creadas, w.completadas, w.bloqueadas]),
+  ];
+}
 
-  rows.push(['Resumen']);
-  rows.push(['Métrica', 'Valor']);
-  rows.push(['Tasa de completado', `${data.completionRate}%`]);
-  rows.push(['Tareas completadas', String(data.completedTasks)]);
-  rows.push(['Total tareas (vista actual)', String(data.totalTasks)]);
-  rows.push(['Bloqueadas', String(data.blockedTasks)]);
-  rows.push(['Urgentes activas', String(data.urgentTasks)]);
-  rows.push([]);
+function buildEstadoRows(data: ReportExportData): (string | number)[][] {
+  return [
+    ['Estado', 'Cantidad'],
+    ...data.statusDist.map((s) => [s.name, s.value]),
+  ];
+}
 
-  rows.push(['Actividad semanal (últimas 6 semanas)']);
-  rows.push(['Semana', 'Creadas', 'Completadas', 'Bloqueadas']);
-  for (const w of data.weeklyActivity) {
-    rows.push([w.semana, String(w.creadas), String(w.completadas), String(w.bloqueadas)]);
-  }
-  rows.push([]);
+function buildPrioridadRows(data: ReportExportData): (string | number)[][] {
+  return [
+    ['Prioridad', 'Cantidad'],
+    ...data.priorityDist.map((p) => [p.name, p.value]),
+  ];
+}
 
-  rows.push(['Distribución por estado']);
-  rows.push(['Estado', 'Cantidad']);
-  for (const s of data.statusDist) {
-    rows.push([s.name, String(s.value)]);
-  }
-  rows.push([]);
+function buildEquipoRows(data: ReportExportData): (string | number)[][] {
+  return [
+    ['Miembro', 'Asignadas', 'Completadas', 'Tasa %'],
+    ...data.teamWorkload.map((m) => [m.fullName, m.asignadas, m.completadas, m.rate]),
+  ];
+}
 
-  rows.push(['Distribución por prioridad']);
-  rows.push(['Prioridad', 'Cantidad']);
-  for (const p of data.priorityDist) {
-    rows.push([p.name, String(p.value)]);
-  }
-  rows.push([]);
-
-  rows.push(['Carga por miembro']);
-  rows.push(['Miembro', 'Asignadas', 'Completadas', 'Tasa %']);
-  for (const m of data.teamWorkload) {
-    rows.push([m.fullName, String(m.asignadas), String(m.completadas), String(m.rate)]);
-  }
-  rows.push([]);
-
+function buildTareasRows(data: ReportExportData): string[][] {
   const periodTasks = filterTasksByPeriod(data.tasks, data.period);
   const names = memberNameMap(data.members);
 
-  rows.push(['Detalle de tareas', `(${PERIOD_LABELS[data.period]} — ${periodTasks.length} registros)`]);
-  rows.push([
-    'ID',
-    'Título',
-    'Estado',
-    'Prioridad',
-    'Asignados',
-    'Creada',
-    'Actualizada',
-    'Vencimiento',
-  ]);
+  const rows: string[][] = [
+    [
+      'ID',
+      'Título',
+      'Estado',
+      'Prioridad',
+      'Asignados',
+      'Creada',
+      'Actualizada',
+      'Vencimiento',
+    ],
+  ];
 
   for (const t of periodTasks) {
-    const assignees = t.assigneeIds.map((id) => names.get(id) ?? id).join('; ');
+    const assignees = t.assigneeIds.map((id) => names.get(id) ?? id).join(', ');
     rows.push([
       t.id,
       t.title,
@@ -138,8 +137,35 @@ export function buildReportCsvRows(data: ReportExportData): string[][] {
   return rows;
 }
 
-export function exportReportCsv(data: ReportExportData): void {
-  const rows = buildReportCsvRows(data);
+/** Exporta un libro Excel (.xlsx) con una hoja por sección del reporte. */
+export async function exportReportExcel(data: ReportExportData): Promise<void> {
+  const XLSX = await import('xlsx');
+  const wb = XLSX.utils.book_new();
+
+  const append = (name: string, rows: (string | number)[][]) => {
+    const sheet = XLSX.utils.aoa_to_sheet(rows);
+    if (name === 'Tareas' && rows.length > 1) {
+      sheet['!cols'] = [
+        { wch: 38 },
+        { wch: 48 },
+        { wch: 16 },
+        { wch: 12 },
+        { wch: 28 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+      ];
+    }
+    XLSX.utils.book_append_sheet(wb, sheet, name);
+  };
+
+  append('Resumen', buildResumenRows(data));
+  append('Actividad', buildActividadRows(data));
+  append('Por estado', buildEstadoRows(data));
+  append('Por prioridad', buildPrioridadRows(data));
+  append('Equipo', buildEquipoRows(data));
+  append('Tareas', buildTareasRows(data));
+
   const stamp = format(new Date(), 'yyyy-MM-dd');
-  downloadCsv(`reporte-tareas-${data.period}-${stamp}.csv`, rows);
+  XLSX.writeFile(wb, `reporte-tareas-${data.period}-${stamp}.xlsx`);
 }

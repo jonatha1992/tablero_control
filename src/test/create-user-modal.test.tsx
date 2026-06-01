@@ -36,13 +36,33 @@ beforeEach(() => {
 });
 
 describe('CreateUserModal — invitación por link', () => {
-  it('muestra formulario simple sin pestañas de modo', () => {
+  it('muestra opción de invitar por correo o solo link', () => {
     render(<CreateUserModal {...defaultProps} />);
     expect(screen.getByText('Invitar usuario')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Con correo/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Por correo/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Solo link/i })).toBeInTheDocument();
     expect(screen.queryByText('Contraseña inicial')).not.toBeInTheDocument();
     expect(screen.getByText('Correo electrónico')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Enviar invitación/i })).toBeInTheDocument();
+  });
+
+  it('modo solo link no exige correo', async () => {
+    const user = userEvent.setup();
+    render(<CreateUserModal {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: /Solo link/i }));
+    expect(screen.queryByText('Correo electrónico')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Generar link/i }));
+
+    expect(mockInviteMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        businessId: 'biz-1',
+        maxUses: 1,
+        expiresInDays: 7,
+      }),
+      expect.any(Object)
+    );
+    expect(mockInviteMutate.mock.calls[0][0]).not.toHaveProperty('email');
   });
 
   it('envía invitación personalizada con email y sectores', async () => {

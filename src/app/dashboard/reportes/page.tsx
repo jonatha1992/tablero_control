@@ -16,7 +16,7 @@ import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { exportReportCsv } from '@/lib/reports-export';
+import { exportReportExcel } from '@/lib/reports-export';
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -162,9 +162,9 @@ export default function ReportesPage() {
   const urgentTasks = tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      exportReportCsv({
+      await exportReportExcel({
         period,
         tasks,
         members,
@@ -183,7 +183,7 @@ export default function ReportesPage() {
         })),
         weeklyActivity,
       });
-      toast.success('Reporte exportado correctamente');
+      toast.success('Archivo Excel descargado');
     } catch {
       toast.error('No se pudo exportar el reporte');
     }
@@ -218,9 +218,9 @@ export default function ReportesPage() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={totalTasks === 0}>
+          <Button variant="outline" size="sm" onClick={() => void handleExport()} disabled={totalTasks === 0}>
             <Download className="h-4 w-4 mr-2" />
-            Exportar
+            Exportar Excel
           </Button>
       </div>
 
