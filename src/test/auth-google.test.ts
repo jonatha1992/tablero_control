@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { loginWithGoogle, checkGoogleRedirectResult } from '@/lib/firebase/auth';
+import { loginWithGoogle } from '@/lib/firebase/auth';
 import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -71,8 +71,14 @@ describe('loginWithGoogle()', () => {
 // ─── checkGoogleRedirectResult ────────────────────────────────────────────────
 
 describe('checkGoogleRedirectResult()', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_USE_EMULATOR', 'true');
+    vi.resetModules();
+  });
+
   it('retorna user y token si hay resultado de redirección', async () => {
     mockGetRedirectResult.mockResolvedValueOnce({ user: mockUser } as never);
+    const { checkGoogleRedirectResult } = await import('@/lib/firebase/auth');
 
     const result = await checkGoogleRedirectResult();
 
@@ -84,6 +90,7 @@ describe('checkGoogleRedirectResult()', () => {
 
   it('retorna null si no hay resultado de redirección', async () => {
     mockGetRedirectResult.mockResolvedValueOnce(null);
+    const { checkGoogleRedirectResult } = await import('@/lib/firebase/auth');
 
     const result = await checkGoogleRedirectResult();
 
