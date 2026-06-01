@@ -97,7 +97,7 @@ export function SectorModal({ open, onClose, businessId, location }: Props) {
           ...(location?.type ? [location.type] : []),
         ],
       ),
-    [business?.settings?.localeTypes, locations, location?.type],
+    [business?.settings?.localeTypes, locations, location],
   );
 
   const createMutation = useCreateLocation();
