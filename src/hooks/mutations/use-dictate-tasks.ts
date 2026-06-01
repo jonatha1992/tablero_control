@@ -28,6 +28,8 @@ export interface ConfirmTasksOptions {
   defaultProjectId?: string;
   /** Override when task has no cycleId */
   defaultCycleId?: string;
+  /** Sector del usuario (p. ej. operaciones) cuando la extracción no trae locationId */
+  defaultLocationId?: string;
 }
 
 function toCreateDto(t: ExtractedTask, projectId: string | undefined, opts: ConfirmTasksOptions): CreateTaskDTO {
@@ -40,7 +42,7 @@ function toCreateDto(t: ExtractedTask, projectId: string | undefined, opts: Conf
     assigneeIds: t.assigneeIds,
     tags: t.tags,
     estimatedHours: t.estimatedHours,
-    locationId: t.locationId,
+    locationId: t.locationId ?? opts.defaultLocationId,
     projectId,
     cycleId: t.cycleId ?? opts.defaultCycleId,
     objectiveId: t.objectiveId,

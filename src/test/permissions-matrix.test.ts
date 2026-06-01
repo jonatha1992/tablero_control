@@ -41,10 +41,24 @@ describe('can() — superadmin', () => {
     expect(can(superadmin, 'business.reports.read', resourceA)).toBe(true);
   });
 
-  it('NO puede hacer acciones de escritura de negocio no listadas', () => {
-    expect(can(superadmin, 'task.create')).toBe(false);
-    expect(can(superadmin, 'task.delete')).toBe(false);
-    expect(can(superadmin, 'business.settings.update')).toBe(false);
+  it('NO puede escribir en negocio sin businessId activo', () => {
+    const noBiz = { ...superadmin, businessId: undefined };
+    expect(can(noBiz, 'task.create')).toBe(false);
+    expect(can(noBiz, 'task.delete')).toBe(false);
+    expect(can(noBiz, 'business.settings.update')).toBe(false);
+  });
+
+  it('con negocio activo puede crear, editar y eliminar tareas', () => {
+    const saInBiz = { ...superadmin, businessId: 'biz-A' };
+    expect(can(saInBiz, 'task.create')).toBe(true);
+    expect(can(saInBiz, 'task.delete')).toBe(true);
+    expect(can(saInBiz, 'task.update.any')).toBe(true);
+  });
+
+  it('con negocio activo puede gestionar miembros del espacio', () => {
+    const saInBiz = { ...superadmin, businessId: 'biz-A' };
+    expect(can(saInBiz, 'business.users.crud', resourceA)).toBe(true);
+    expect(can(saInBiz, 'business.users.changeRole', resourceA)).toBe(true);
   });
 });
 
@@ -110,9 +124,14 @@ describe('can() — miembro', () => {
     expect(can(miembro, 'task.update.assigned', resource)).toBe(true);
   });
 
-  it('NO puede task.update.assigned si no está en assigneeIds', () => {
-    const resource = { businessId: 'biz-A', assigneeIds: ['otro-user'] };
+  it('NO puede task.update.assigned si no está en assigneeIds ni es creador', () => {
+    const resource = { businessId: 'biz-A', assigneeIds: ['otro-user'], creatorId: 'otro-user' };
     expect(can(miembro, 'task.update.assigned', resource)).toBe(false);
+  });
+
+  it('puede task.update.assigned si es creador aunque no esté asignado', () => {
+    const resource = { businessId: 'biz-A', assigneeIds: [], creatorId: 'mem-1' };
+    expect(can(miembro, 'task.update.assigned', resource)).toBe(true);
   });
 
   it('puede comentar y leer tareas', () => {

@@ -8,6 +8,14 @@ describe('createUserFormFields', () => {
     expect(f.showUsername).toBe(false);
     expect(f.showPasswordToggle).toBe(true);
     expect(f.emailLabel).toBe('Correo electrónico');
+    expect(f.passwordLabel).toBe('Contraseña inicial');
+    expect(f.emailRequired).toBe(true);
+  });
+
+  it('email sin createAccess: contraseña opcional en metadata', () => {
+    const f = createUserFormFields('email', { createAccess: false });
+    expect(f.passwordRequired).toBe(false);
+    expect(f.passwordLabel).toBe('Contraseña inicial (Opcional)');
   });
 
   it('username: solo usuario, sin email ni toggle', () => {

@@ -6,7 +6,9 @@ import { prisma } from '@/lib/prisma';
 import { getEffectivePlanConfig } from '@/lib/mercadopago/plan-config';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
+import { userRepository } from '@/repositories';
 import type { UserRole } from '@/types/domain/user';
+import type { LocationAssignmentInput } from '@/types/dto/team.dto';
 
 export type CreateUserMode = 'email' | 'username' | 'google' | 'ghost';
 
@@ -17,6 +19,7 @@ export interface CreateUserBody {
   role: UserRole;
   businessId?: string;
   locationId?: string;
+  locationAssignments?: LocationAssignmentInput[];
   mode?: CreateUserMode;
   username?: string;
 }
@@ -54,7 +57,11 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
   }
 
-  const { name, role, businessId, locationId, password } = body;
+  const { name, role, businessId, password } = body;
+  const assignments: LocationAssignmentInput[] =
+    body.locationAssignments ??
+    (body.locationId ? [{ locationId: body.locationId, role }] : []);
+  const primaryLocationId = assignments[0]?.locationId ?? body.locationId ?? null;
   const mode: CreateUserMode = body.mode ?? 'email';
   const email = body.email?.toLowerCase().trim() ?? '';
   const username = body.username?.toLowerCase().trim() ?? '';
@@ -69,6 +76,9 @@ export const POST = handle(async (req: NextRequest) => {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
   if (mode === 'username' && !username) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+  if (mode === 'google' && !email) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
   if (password !== undefined && password.length < 6) {
@@ -171,7 +181,7 @@ export const POST = handle(async (req: NextRequest) => {
         username: mode === 'username' ? username : undefined,
         role,
         businessId: targetBusinessId ?? null,
-        locationId: locationId ?? null,
+        locationId: primaryLocationId,
         preferences: DEFAULT_PREFERENCES,
         isActive: true,
         isGuest: isGhost,
@@ -183,10 +193,13 @@ export const POST = handle(async (req: NextRequest) => {
           userId: uid,
           businessId: targetBusinessId,
           role,
-          locationId: locationId ?? null,
+          locationId: primaryLocationId,
           isActive: true,
         },
       });
+    }
+    if (assignments.length > 0) {
+      await userRepository.setLocationAssignments(uid, assignments);
     }
   } catch {
     if (!isGhost) await adminAuth.deleteUser(uid).catch(() => { });
@@ -208,7 +221,13 @@ export const POST = handle(async (req: NextRequest) => {
     action: 'user.create',
     targetType: 'USER',
     targetId: uid,
-    metadata: { email: isSyntheticEmail ? undefined : firebaseEmail, username: mode === 'username' ? username : undefined, mode, role, locationId },
+    metadata: {
+      email: isSyntheticEmail ? undefined : firebaseEmail,
+      username: mode === 'username' ? username : undefined,
+      mode,
+      role,
+      locationAssignments: assignments.length > 0 ? assignments : undefined,
+    },
   });
 
   if (targetBusinessId && !isSyntheticEmail && mode !== 'google') {

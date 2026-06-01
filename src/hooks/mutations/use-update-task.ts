@@ -3,7 +3,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tasksApi } from '@/lib/api/tasks';
+import { ApiError } from '@/lib/api/errors';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
+import { taskUpdateErrorMessage } from '@/lib/task-update-access';
 import type { UpdateTaskDTO } from '@/types/dto/task.dto';
 import type { Task } from '@/types/domain/task';
 
@@ -56,7 +58,10 @@ export function useUpdateTask() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.error('Error al actualizar tarea', { description: (err as Error).message });
+      const reason = err instanceof ApiError ? err.message : undefined;
+      toast.error('Error al actualizar tarea', {
+        description: taskUpdateErrorMessage(reason) || (err as Error).message,
+      });
     },
     onSettled: (_data, _error, { id: _id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all });

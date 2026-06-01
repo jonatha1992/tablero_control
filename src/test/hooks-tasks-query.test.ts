@@ -113,6 +113,19 @@ describe('useTasksQuery()', () => {
     expect(key1).not.toEqual(key2);
   });
 
+  it('re-lanza AbortError (cancelación) sin loguear ni devolver []', async () => {
+    mockUseAuth.mockReturnValue({ user: mockUser, isSuperAdmin: false } as never);
+    const abortErr = new DOMException('signal is aborted without reason', 'AbortError');
+    mockGetByBusiness.mockRejectedValueOnce(abortErr);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useTasksQuery(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isError || result.current.isFetching === false).toBe(true));
+
+    expect(consoleSpy).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
   it('retorna [] ante error sin propagar la excepción', async () => {
     mockUseAuth.mockReturnValue({ user: mockUser, isSuperAdmin: false } as never);
     mockGetByBusiness.mockRejectedValueOnce(new Error('Network error'));
@@ -121,6 +134,37 @@ describe('useTasksQuery()', () => {
     // El hook captura el error en el queryFn y retorna [], por lo que isSuccess=true
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
+  });
+
+  it('pasa el AbortSignal de React Query al API (cancelación sin crash)', async () => {
+    mockUseAuth.mockReturnValue({ user: mockUser, isSuperAdmin: false } as never);
+    mockGetByBusiness.mockImplementation(
+      (_businessId, abortSignal) =>
+        new Promise((resolve, reject) => {
+          if (abortSignal?.aborted) {
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+          }
+          abortSignal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+          setTimeout(() => resolve(mockTasks as never), 50);
+        }),
+    );
+
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const Wrapper = ({ children }: { children: React.ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { unmount } = renderHook(() => useTasksQuery(), { wrapper: Wrapper });
+    await waitFor(() => expect(mockGetByBusiness).toHaveBeenCalled());
+    const passedSignal = mockGetByBusiness.mock.calls[0]?.[1] as AbortSignal;
+    expect(passedSignal).toBeInstanceOf(AbortSignal);
+
+    unmount();
+    await waitFor(() => expect(passedSignal.aborted).toBe(true));
   });
 });
 

@@ -36,7 +36,8 @@ export default function EquipoPage() {
 
   const [bulkLocationId, setBulkLocationId] = useState('');
 
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isOwner } = useAuth();
+  const canManageTeam = isAdmin || isOwner;
   const { data: members = [], isLoading } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
   const removeMember = useRemoveMember();
@@ -83,7 +84,7 @@ export default function EquipoPage() {
       {/* Top controls — fixed, no scroll */}
       <div className="flex-none space-y-3">
         <div className="flex items-start justify-end gap-4">
-          {isAdmin && !isSelectMode && (
+          {canManageTeam && !isSelectMode && (
             <>
               <Button size="sm" variant="outline" onClick={() => setSelectMode(true)}>
                 <CheckSquare className="mr-1.5 h-4 w-4" />
@@ -209,8 +210,9 @@ export default function EquipoPage() {
           <MemberTable
             members={filtered}
             locations={locations}
-            onRemove={isAdmin && !isSelectMode ? (id) => removeMember.mutate(id) : undefined}
-            canManage={isAdmin}
+            actorId={user?.id}
+            onRemove={canManageTeam && !isSelectMode ? (id) => removeMember.mutate(id) : undefined}
+            canManage={canManageTeam}
             isSelectMode={isSelectMode}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
@@ -219,7 +221,7 @@ export default function EquipoPage() {
           />
         )}
 
-        {isAdmin && (
+        {canManageTeam && (
           <InviteLinksSection businessId={user?.businessId} />
         )}
       </div>

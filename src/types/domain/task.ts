@@ -84,6 +84,8 @@ export interface TaskFilters {
   assigneeId?: string[];
   projectId?: string[];
   locationId?: string[];
+  /** Visible para usuarios con sector: tareas del sector o creadas por el usuario sin sector. */
+  locationOrCreator?: { locationId: string; creatorId: string };
   cycleId?: string[];
   noCycle?: boolean;
   tags?: string[];

@@ -123,8 +123,17 @@ export function can(
   if (role === 'superadmin') {
     if (action === 'platform.impersonate') return true;
     if (ROLE_MATRIX.superadmin.has(action)) return true;
-    // superadmin puede leer, no escribir en datos de clientes salvo suspender (audit)
+    // superadmin puede leer; con negocio activo puede gestionar tareas de ese espacio
     if (action === 'task.read' || action === 'business.reports.read') return true;
+    if (businessId && (action === 'task.delete' || action === 'task.update.any' || action === 'task.create')) {
+      return true;
+    }
+    if (
+      businessId &&
+      (action === 'business.users.crud' || action === 'business.users.changeRole')
+    ) {
+      return true;
+    }
     return false;
   }
 
@@ -136,10 +145,11 @@ export function can(
   // acciones de plataforma solo superadmin
   if (action.startsWith('platform.')) return false;
 
-  // task.update.assigned: solo si el user está en assigneeIds
+  // task.update.assigned: asignado o creador de la tarea
   if (action === 'task.update.assigned') {
-    if (!resource?.assigneeIds?.includes(userId)) {
-      // puede caer al permiso .any del rol
+    const isAssignee = resource?.assigneeIds?.includes(userId) ?? false;
+    const isCreator = resource?.creatorId === userId;
+    if (!isAssignee && !isCreator) {
       if (ROLE_MATRIX[role].has('task.update.any')) return checkGranular(action, role, effectivePermissions);
       return false;
     }

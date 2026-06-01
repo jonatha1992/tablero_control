@@ -6,6 +6,7 @@ import { useSubtasksQuery, subtaskKeys } from '@/hooks/queries/use-subtasks-quer
 import { useCreateSubtask } from '@/hooks/mutations/use-create-subtask';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useDeleteTask } from '@/hooks/mutations/use-delete-task';
+import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, ListTree, Trash2, ExternalLink } from 'lucide-react';
 import type { Task } from '@/types';
@@ -22,6 +23,7 @@ export function TaskSubtasks({ task, onOpenSubtask }: TaskSubtasksProps) {
   const createSubtask = useCreateSubtask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const { canDeleteTask: canDelete } = useCanDeleteTask();
   const queryClient = useQueryClient();
 
   const completedCount = subtasks.filter((s) => s.status === 'done').length;
@@ -95,17 +97,19 @@ export function TaskSubtasks({ task, onOpenSubtask }: TaskSubtasksProps) {
                 <ExternalLink className="h-3.5 w-3.5" />
               </button>
             )}
-            <button
-              onClick={() =>
-                deleteTask.mutate(subtask.id, {
-                  onSettled: () => queryClient.invalidateQueries({ queryKey: subtaskKeys.byTask(task.id) }),
-                })
-              }
-              className="opacity-0 group-hover/sub:opacity-100 transition-opacity p-0.5 rounded hover:text-destructive text-muted-foreground"
-              title="Eliminar subtarea"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {canDelete(subtask) && (
+              <button
+                onClick={() =>
+                  deleteTask.mutate(subtask.id, {
+                    onSettled: () => queryClient.invalidateQueries({ queryKey: subtaskKeys.byTask(task.id) }),
+                  })
+                }
+                className="opacity-0 group-hover/sub:opacity-100 transition-opacity p-0.5 rounded hover:text-destructive text-muted-foreground"
+                title="Eliminar subtarea"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         ))}
       </div>

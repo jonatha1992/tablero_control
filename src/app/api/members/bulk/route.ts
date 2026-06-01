@@ -1,15 +1,22 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
-import { can } from '@/lib/permissions';
+import { canManageBusinessUsers } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  if (!can(user.data, 'business.users.crud')) {
+  const operatingBusinessId = user.businessId;
+  if (!operatingBusinessId) {
+    return NextResponse.json({ error: 'No business' }, { status: 400 });
+  }
+
+  const business = await businessRepository.findById(operatingBusinessId);
+  if (!canManageBusinessUsers(user.data, business?.ownerId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

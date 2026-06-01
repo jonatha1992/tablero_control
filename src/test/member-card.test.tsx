@@ -106,28 +106,40 @@ describe('MemberCard', () => {
   });
 
   it('con canManage=true y onRemove: botón eliminar está en el DOM', () => {
-    render(<MemberCard member={activeMember} canManage={true} onRemove={vi.fn()} />);
-    // El botón tiene `title="Eliminar miembro"`
+    render(
+      <MemberCard member={activeMember} actorId="user-1" canManage={true} onRemove={vi.fn()} />
+    );
     const removeBtn = screen.getByTitle('Eliminar miembro');
     expect(removeBtn).toBeInTheDocument();
   });
 
   it('con canManage=true: clic en eliminar abre ConfirmDialog', () => {
-    render(<MemberCard member={activeMember} canManage={true} onRemove={vi.fn()} />);
+    render(
+      <MemberCard member={activeMember} actorId="user-1" canManage={true} onRemove={vi.fn()} />
+    );
     const removeBtn = screen.getByTitle('Eliminar miembro');
     fireEvent.click(removeBtn);
-    // El ConfirmDialog con el título del miembro debe aparecer
     expect(screen.getByText(/¿Eliminar a Ana García\?/i)).toBeInTheDocument();
   });
 
   it('confirmar en ConfirmDialog llama onRemove con el id', () => {
     const onRemove = vi.fn();
-    render(<MemberCard member={activeMember} canManage={true} onRemove={onRemove} />);
+    render(
+      <MemberCard member={activeMember} actorId="user-1" canManage={true} onRemove={onRemove} />
+    );
     fireEvent.click(screen.getByTitle('Eliminar miembro'));
-    // Botón confirmar en el diálogo
     const confirmBtn = screen.getByText(/sí, eliminar/i);
     fireEvent.click(confirmBtn);
     expect(onRemove).toHaveBeenCalledWith('mem-1');
+  });
+
+  it('deshabilita eliminar al propietario del espacio', () => {
+    const ownerMember = { ...activeMember, id: 'owner-1', isOwner: true } as User;
+    render(
+      <MemberCard member={ownerMember} actorId="user-1" canManage={true} onRemove={vi.fn()} />
+    );
+    const removeBtn = screen.getByTitle('No se puede eliminar al propietario del espacio');
+    expect(removeBtn).toBeDisabled();
   });
 
   it('sin onRemove prop: botón eliminar no aparece aunque canManage=true', () => {

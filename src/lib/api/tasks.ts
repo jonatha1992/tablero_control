@@ -86,7 +86,7 @@ export const tasksApi = {
         try {
           const parsed = JSON.parse(text) as { error?: string; reason?: string; detail?: string };
           const error = parsed.error ?? text;
-          const reason = parsed.reason ? ` (${parsed.reason})` : '';
+          const reason = parsed.reason ? ` (reason: ${parsed.reason})` : '';
           const detail = parsed.detail ? ` — ${parsed.detail}` : '';
           message = `${error}${reason}${detail}`;
         } catch {

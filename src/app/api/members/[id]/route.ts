@@ -2,7 +2,7 @@
 import { teamService } from '@/services/team.service';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
-import { can } from '@/lib/permissions';
+import { canManageBusinessUsers } from '@/lib/permissions';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 import { sendNotification } from '@/lib/notifications';
@@ -11,7 +11,11 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  if (!can(user.data, 'business.users.crud')) {
+  const operatingBusinessId = user.data.businessId;
+  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
+
+  const business = await businessRepository.findById(operatingBusinessId);
+  if (!canManageBusinessUsers(user.data, business?.ownerId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -21,10 +25,6 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const { id } = await params;
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
-  const operatingBusinessId = user.data.businessId;
-  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
 
   const membership = target.memberships?.find((m) => m.businessId === operatingBusinessId);
   if (!membership) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -72,7 +72,11 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
 
-  if (!can(user.data, 'business.users.crud')) {
+  const operatingBusinessId = user.data.businessId;
+  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
+
+  const business = await businessRepository.findById(operatingBusinessId);
+  if (!canManageBusinessUsers(user.data, business?.ownerId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -88,15 +92,9 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   const target = await userRepository.findById(id);
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Use admin's businessId — target.businessId is a cached field that may point to a different active business
-  const operatingBusinessId = user.data.businessId;
-  if (!operatingBusinessId) return NextResponse.json({ error: 'No business' }, { status: 400 });
-
   const membership = target.memberships?.find((m) => m.businessId === operatingBusinessId && m.isActive);
   if (!membership) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Prevent removing the owner
-  const business = await businessRepository.findById(operatingBusinessId);
   if (business?.ownerId === id) {
     return NextResponse.json({ error: 'cannot_remove_owner' }, { status: 403 });
   }

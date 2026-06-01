@@ -10,11 +10,13 @@ import { cn } from '@/lib/utils';
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/constants/user';
 import { getInitials } from '@/lib/utils/string';
 import { EditMemberModal } from './edit-member-modal';
-import { Edit2, Mail, UserX, MapPin } from 'lucide-react';
+import { MemberRemoveButton } from './member-remove-button';
+import { Edit2, Mail, MapPin } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 
 interface MemberCardProps {
   member: User;
+  actorId?: string;
   onRemove?: (id: string) => void;
   onChangeRole?: (id: string, role: UserRole) => void;
   canManage?: boolean;
@@ -23,7 +25,7 @@ interface MemberCardProps {
   onToggleSelect?: (id: string) => void;
 }
 
-export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelected, onToggleSelect }: MemberCardProps) {
+export function MemberCard({ member, actorId, onRemove, canManage, isSelectMode, isSelected, onToggleSelect }: MemberCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
@@ -76,6 +78,11 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
                 >
                   {ROLE_LABELS[member.role]}
                 </span>
+                {member.isOwner && (
+                  <span className="inline-flex shrink-0 items-center rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                    Propietario
+                  </span>
+                )}
               </div>
               <p className="truncate text-xs text-muted-foreground">{member.email}</p>
               {member.locationId && (
@@ -106,17 +113,13 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
                 >
                   <Mail className="h-3.5 w-3.5" />
                 </Button>
-                {onRemove && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => setConfirmOpen(true)}
-                    title="Eliminar miembro"
-                  >
-                    <UserX className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+                <MemberRemoveButton
+                  member={member}
+                  actorId={actorId}
+                  onRemove={onRemove}
+                  variant="icon"
+                  onRequestConfirm={() => setConfirmOpen(true)}
+                />
               </div>
             )}
           </div>
@@ -142,6 +145,7 @@ export function MemberCard({ member, onRemove, canManage, isSelectMode, isSelect
           member={member}
           open={editOpen}
           onClose={() => setEditOpen(false)}
+          actorId={actorId}
           onRemove={onRemove}
         />
       )}

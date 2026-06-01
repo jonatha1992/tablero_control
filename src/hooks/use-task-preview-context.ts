@@ -9,6 +9,7 @@ import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
+import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
 import type { ConfirmTasksOptions } from '@/hooks/mutations/use-dictate-tasks';
 
 export function useTaskPreviewContext() {
@@ -47,11 +48,13 @@ export function useTaskPreviewContext() {
     const defaultProjectId =
       projectsData.find((p) => p.name === DEFAULT_BOARD_NAME)?.id ?? projectsData[0]?.id;
     const activeCycleId = cyclesData.find((c) => c.status === 'active')?.id;
+    const defaultLocationId = getActiveMembershipLocationId(user ?? undefined);
     return {
       defaultProjectId,
       defaultCycleId: selectedSprintId ?? activeCycleId,
+      defaultLocationId,
     };
-  }, [projectsData, cyclesData, selectedSprintId]);
+  }, [projectsData, cyclesData, selectedSprintId, user]);
 
   return {
     members,
