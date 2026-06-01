@@ -132,7 +132,7 @@ function MemberRow({
                 <span
                   key={s.id}
                   className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary/80"
-                  title={s.role ? `Rol en sector: ${s.role}` : undefined}
+                  title={s.role ? `Rol por sector: ${s.role}` : undefined}
                 >
                   <MapPin className="h-2.5 w-2.5 shrink-0" />
                   {s.name}

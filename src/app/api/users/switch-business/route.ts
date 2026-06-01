@@ -3,6 +3,8 @@ import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { writeAuditLog } from '@/lib/api/audit';
 import { handle } from '@/lib/api/route-handler';
+import { cachedUserRoleForBusiness } from '@/lib/platform-superadmin';
+import type { UserRole } from '@/types/domain/user';
 
 export const POST = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
@@ -23,11 +25,19 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'not_a_member' }, { status: 403 });
   }
 
+  const membershipRole =
+    membership.role === 'superadmin' ? 'admin' : (membership.role as UserRole);
+  const cachedRole = cachedUserRoleForBusiness(
+    user.email ?? user.data.email,
+    user.data.role,
+    membershipRole
+  );
+
   const updated = await prisma.user.update({
     where: { id: user.uid },
     data: {
       businessId: membership.businessId,
-      role: membership.role,
+      role: cachedRole,
       locationId: membership.locationId,
       customRoleIds: [],
     },

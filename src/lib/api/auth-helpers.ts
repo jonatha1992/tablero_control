@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/firebase/admin';
 import { prisma } from '@/lib/prisma';
 import type { User, UserRole } from '@/types/domain/user';
+import {
+  cachedUserRoleForBusiness,
+  isPlatformSuperAdmin,
+  isPlatformSuperAdminEmail,
+} from '@/lib/platform-superadmin';
 
 export interface AuthedUser {
   uid: string;
@@ -37,26 +42,36 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
   if (!row) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
 
   const memberships = row.memberships ?? [];
-  let effectiveRole = row.role as UserRole;
+  const platformSuperAdmin = isPlatformSuperAdmin({ email: row.email, role: row.role as UserRole });
+  let businessRole = row.role as UserRole;
+  let effectiveRole = platformSuperAdmin ? ('superadmin' as UserRole) : businessRole;
   let effectiveBusinessId = row.businessId ?? undefined;
 
-  // Resolve effective role from active membership
+  // Resolve business membership role (never overwrites platform superadmin)
   if (effectiveBusinessId) {
     const activeMembership = memberships.find(
       (m) => m.businessId === effectiveBusinessId && m.isActive
     );
     if (activeMembership) {
-      effectiveRole = activeMembership.role as UserRole;
+      businessRole =
+        activeMembership.role === 'superadmin' ? 'admin' : (activeMembership.role as UserRole);
+      effectiveRole = platformSuperAdmin ? 'superadmin' : businessRole;
     } else {
       // No active membership for cached businessId → fallback to another active membership
       const fallback = memberships.find((m) => m.isActive);
       if (fallback) {
         effectiveBusinessId = fallback.businessId;
-        effectiveRole = fallback.role as UserRole;
-        // Update cache asynchronously (fire-and-forget)
+        businessRole =
+          fallback.role === 'superadmin' ? 'admin' : (fallback.role as UserRole);
+        effectiveRole = platformSuperAdmin ? 'superadmin' : businessRole;
+        const cachedRole = cachedUserRoleForBusiness(
+          row.email,
+          row.role as UserRole,
+          businessRole
+        );
         prisma.user.update({
           where: { id: row.id },
-          data: { businessId: fallback.businessId, role: fallback.role },
+          data: { businessId: fallback.businessId, role: cachedRole },
         }).catch(() => { /* ignore */ });
       } else {
         effectiveBusinessId = undefined;
@@ -69,6 +84,8 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     email: row.email,
     name: row.name,
     role: effectiveRole,
+    businessRole: platformSuperAdmin ? businessRole : undefined,
+    isPlatformSuperAdmin: platformSuperAdmin,
     businessId: effectiveBusinessId,
     locationId: row.locationId ?? undefined,
     customRoleIds: row.customRoleIds ?? [],
@@ -126,7 +143,10 @@ export function requireActiveSubscription(user: AuthedUser, req: NextRequest): N
 }
 
 export function requireRole(user: AuthedUser, roles: UserRole[]): NextResponse | null {
-  if (!roles.includes(user.role)) {
+  const allowed =
+    roles.includes(user.role) ||
+    (roles.includes('superadmin') && isPlatformSuperAdminEmail(user.email));
+  if (!allowed) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   return null;

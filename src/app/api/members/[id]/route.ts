@@ -3,6 +3,7 @@ import { teamService } from '@/services/team.service';
 import { requireUser, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { canManageBusinessUsers } from '@/lib/permissions';
+import { isBusinessMemberRole, isPlatformSuperAdmin } from '@/lib/platform-superadmin';
 import { userRepository, businessRepository } from '@/repositories';
 import { handle } from '@/lib/api/route-handler';
 import { sendNotification } from '@/lib/notifications';
@@ -46,14 +47,32 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   }
 
   if (data.role) {
-    if (user.role !== 'superadmin' && data.role === 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!isBusinessMemberRole(data.role)) {
+      return NextResponse.json(
+        { error: 'invalid_business_role', detail: 'El rol de empresa no puede ser superadmin del sistema.' },
+        { status: 400 }
+      );
     }
-    await teamService.changeRole(id, operatingBusinessId, data.role);
+    try {
+      await teamService.changeRole(id, operatingBusinessId, data.role);
+    } catch {
+      return NextResponse.json({ error: 'invalid_business_role' }, { status: 400 });
+    }
     sendNotification({ userId: id, title: 'Tu rol fue actualizado', body: `Tu rol cambió a ${data.role}`, type: 'info', link: '/dashboard' }).catch(() => {});
   }
 
   const member = await teamService.updateMember(id, data);
+  const refreshed = await userRepository.findById(id);
+  const membershipRole = refreshed?.memberships?.find(
+    (m) => m.businessId === operatingBusinessId && m.isActive
+  )?.role;
+  const displayRole =
+    membershipRole === 'superadmin' ? 'admin' : membershipRole ?? member.role;
+  const responseMember = {
+    ...(refreshed ?? member),
+    role: displayRole,
+    isPlatformSuperAdmin: refreshed ? isPlatformSuperAdmin(refreshed) : false,
+  };
 
   await writeAuditLog({
     actorId: user.uid,
@@ -65,7 +84,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     metadata: { ...data },
   });
 
-  return NextResponse.json(member);
+  return NextResponse.json(responseMember);
 });
 
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {

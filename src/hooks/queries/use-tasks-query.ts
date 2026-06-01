@@ -26,13 +26,6 @@ export function useTasksQuery(filters?: TaskFilters) {
     queryKey: taskKeys.byBusiness(queryKey, filters),
     queryFn: async ({ signal }): Promise<Task[]> => {
       if (!user) return [];
-      // Ensure we pass a native AbortSignal to API layer (tests assert AbortSignal instance).
-      const controller = new AbortController();
-      if (signal) {
-        if (signal.aborted) controller.abort();
-        else signal.addEventListener('abort', () => controller.abort(), { once: true });
-      }
-      const apiSignal = controller.signal;
       try {
         if (businessId) {
           return filters

@@ -149,9 +149,16 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
   };
 
   const role = user?.role || null;
-  const isSuperAdmin = role === 'superadmin';
-  const isAdmin = role === 'superadmin' || role === 'admin';
-  const isManager = role === 'superadmin' || role === 'admin' || role === 'responsable';
+  const businessRole = user?.businessRole ?? role;
+  const isSuperAdmin = user?.isPlatformSuperAdmin === true || role === 'superadmin';
+  const isAdmin =
+    isSuperAdmin || businessRole === 'admin' || role === 'admin';
+  const isManager =
+    isSuperAdmin ||
+    businessRole === 'admin' ||
+    businessRole === 'responsable' ||
+    role === 'admin' ||
+    role === 'responsable';
   const isOwner = user?.isOwner ?? false;
 
   return (

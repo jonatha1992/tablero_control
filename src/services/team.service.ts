@@ -2,6 +2,10 @@
 import { prisma } from '@/lib/prisma';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
+import {
+  cachedUserRoleForBusiness,
+  isBusinessMemberRole,
+} from '@/lib/platform-superadmin';
 
 class TeamService {
   async getMembersByBusiness(businessId: string): Promise<User[]> {
@@ -84,7 +88,7 @@ class TeamService {
   }
 
   async updateMember(id: string, dto: UpdateMemberDTO): Promise<User> {
-    const { locationAssignments, ...rest } = dto;
+    const { locationAssignments, role: _role, ...rest } = dto;
     const updated = await userRepository.update(id, rest);
     if (locationAssignments !== undefined) {
       await userRepository.setLocationAssignments(id, locationAssignments);
@@ -103,14 +107,26 @@ class TeamService {
   }
 
   async changeRole(userId: string, businessId: string, role: UserRole): Promise<void> {
+    if (!isBusinessMemberRole(role)) {
+      throw new Error('invalid_business_role');
+    }
+
     await prisma.userBusiness.update({
       where: { userId_businessId: { userId, businessId } },
       data: { role },
     });
-    // Update cache if this is the active business
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { businessId: true } });
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { businessId: true, email: true, role: true },
+    });
     if (user?.businessId === businessId) {
-      await prisma.user.update({ where: { id: userId }, data: { role } });
+      const cachedRole = cachedUserRoleForBusiness(
+        user.email,
+        user.role as UserRole,
+        role
+      );
+      await prisma.user.update({ where: { id: userId }, data: { role: cachedRole } });
     }
   }
 

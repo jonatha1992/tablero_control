@@ -2,6 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { canUpdateTask } from '@/lib/task-update-access';
 import type { User } from '@/types/domain/user';
 
+const preferences: User['preferences'] = {
+  theme: 'system',
+  locale: 'es',
+  timezone: 'America/Argentina/Buenos_Aires',
+  notifications: {
+    email: true,
+    push: true,
+    agentReports: true,
+    agentAlerts: true,
+  },
+  dashboardLayout: [],
+};
+
 const baseUser = (role: User['role'], overrides?: Partial<User>): User => ({
   id: 'u-1',
   email: 'a@b.com',
@@ -20,6 +33,7 @@ const baseUser = (role: User['role'], overrides?: Partial<User>): User => ({
     ...(overrides?.memberships?.[0] ?? {}),
   }],
   customRoleIds: [],
+  preferences,
   isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),

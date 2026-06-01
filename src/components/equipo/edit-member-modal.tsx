@@ -24,7 +24,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { MemberRemoveButton } from './member-remove-button';
 import { useAuth } from '@/hooks/auth-context';
 import type { User, UserRole, UserLocationAssignment } from '@/types/domain/user';
-import { SectorAssignmentsField, type SectorAssignmentRow } from './sector-assignments-field';
+import { SectorAssignmentsField, type SectorAssignmentRow, type SectorScope } from './sector-assignments-field';
 
 const ROLES: {
   value: UserRole;
@@ -33,7 +33,7 @@ const ROLES: {
   icon: React.ElementType;
   color: string;
 }[] = [
-    { value: 'admin', label: 'Administrador', description: 'Gestión completa de la empresa', icon: Crown, color: 'text-amber-500' },
+    { value: 'admin', label: 'Administrador', description: 'Gestión completa del espacio', icon: Crown, color: 'text-amber-500' },
     { value: 'responsable', label: 'Responsable', description: 'Gestión de locales/sectores', icon: Star, color: 'text-blue-500' },
     { value: 'miembro', label: 'Miembro', description: 'Trabaja en tareas asignadas', icon: Users, color: 'text-green-500' },
     { value: 'viewer', label: 'Visualizador', description: 'Solo lectura', icon: Eye, color: 'text-muted-foreground' },
@@ -80,6 +80,8 @@ export function EditMemberModal({ member, open, onClose, actorId, onRemove }: Pr
   const [customRoleIds, setCustomRoleIds] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [locationAssignments, setLocationAssignments] = useState<SectorAssignmentRow[]>([]);
+  const [scope, setScope] = useState<SectorScope>('all');
+  const [advancedPerms, setAdvancedPerms] = useState(false);
 
   const { user: authUser } = useAuth();
   const { mutate, isPending } = useUpdateMember();
@@ -94,28 +96,28 @@ export function EditMemberModal({ member, open, onClose, actorId, onRemove }: Pr
     setName(member.name);
     setRole(member.role);
     setCustomRoleIds(member.customRoleIds ?? []);
+
+    let resolved: SectorAssignmentRow[] = [];
     if (member.locationAssignments?.length) {
       const businessLocationIds = new Set(locations.map((l) => l.id));
-      setLocationAssignments(
-        member.locationAssignments
-          .filter((a: UserLocationAssignment) => businessLocationIds.has(a.locationId))
-          .map((a: UserLocationAssignment) => ({
-            locationId: a.locationId,
-            locationName: a.locationName ?? a.locationId,
-            role: a.role,
-            customRoleIds: a.customRoleIds,
-          }))
-      );
+      resolved = member.locationAssignments
+        .filter((a: UserLocationAssignment) => businessLocationIds.has(a.locationId))
+        .map((a: UserLocationAssignment) => ({
+          locationId: a.locationId,
+          locationName: a.locationName ?? a.locationId,
+          role: a.role,
+          customRoleIds: a.customRoleIds,
+        }));
     } else if (member.locationId) {
       const loc = locations.find((l) => l.id === member.locationId);
       if (loc) {
-        setLocationAssignments([{ locationId: loc.id, locationName: loc.name, role: member.role }]);
-      } else {
-        setLocationAssignments([]);
+        resolved = [{ locationId: loc.id, locationName: loc.name, role: member.role }];
       }
-    } else {
-      setLocationAssignments([]);
     }
+
+    setLocationAssignments(resolved);
+    setScope(resolved.length > 0 ? 'specific' : 'all');
+    setAdvancedPerms(resolved.length > 0 && resolved.some((a) => a.role !== member.role));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId, open]);
 
@@ -160,7 +162,7 @@ export function EditMemberModal({ member, open, onClose, actorId, onRemove }: Pr
                   Editar miembro
                 </DialogTitle>
                 <DialogDescription className="text-xs mt-0.5">
-                  Modificá permisos y sectores del miembro.
+                  Modificá el rol en el espacio y las asignaciones por sector.
                 </DialogDescription>
               </div>
             </div>
@@ -198,12 +200,10 @@ export function EditMemberModal({ member, open, onClose, actorId, onRemove }: Pr
               </div>
             </div>
 
-            {/* Global Role */}
             <div className="space-y-1.5">
               <label className="flex items-center gap-1.5 text-sm font-medium">
                 <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                Rol base
-                <span className="ml-1 text-xs font-normal text-muted-foreground">(aplica globalmente)</span>
+                Rol en el espacio
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {ROLES.map((r) => {
@@ -240,6 +240,10 @@ export function EditMemberModal({ member, open, onClose, actorId, onRemove }: Pr
               onChange={setLocationAssignments}
               locations={locations}
               baseRole={role}
+              scope={scope}
+              onScopeChange={setScope}
+              advancedPerms={advancedPerms}
+              onAdvancedPermsChange={setAdvancedPerms}
             />
 
             {/* Custom roles */}

@@ -1,8 +1,18 @@
 import type { UserRole } from '@/types/domain/user';
 
+/** Labels for business membership roles (team / empresa). */
+export const BUSINESS_ROLE_LABELS: Record<UserRole, string> = {
+  superadmin: 'Superadmin (sistema)',
+  admin: 'Administrador',
+  responsable: 'Responsable',
+  miembro: 'Miembro',
+  viewer: 'Visualizador',
+  pending: 'Pendiente',
+};
+
 export const ROLE_LABELS: Record<UserRole, string> = {
-  superadmin: 'Super Admin',
-  admin: 'Admin',
+  superadmin: 'Superadmin (sistema)',
+  admin: 'Administrador',
   responsable: 'Responsable',
   miembro: 'Miembro',
   viewer: 'Solo lectura',

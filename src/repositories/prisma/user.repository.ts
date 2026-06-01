@@ -3,6 +3,7 @@ import type { IUserRepository } from '../interfaces/IUserRepository';
 import type { User, UserRole, UserBusiness, UserLocationAssignment } from '@/types/domain/user';
 import type { LocationAssignmentInput } from '@/types/dto/team.dto';
 import type { Prisma } from '@prisma/client';
+import { cachedUserRoleForBusiness, isPlatformSuperAdmin } from '@/lib/platform-superadmin';
 
 type PrismaUser = Prisma.UserGetPayload<{
   include: {
@@ -109,12 +110,14 @@ export class PrismaUserRepository implements IUserRepository {
     });
     return rows.map((r) => {
       const user = toDomain(r.user as unknown as PrismaUser);
+      const membershipRole = (r.role === 'superadmin' ? 'admin' : r.role) as UserRole;
       return {
         ...user,
-        role: r.role as UserRole,
+        role: membershipRole,
         businessId: r.businessId,
         locationId: r.locationId ?? undefined,
         isActive: r.isActive,
+        isPlatformSuperAdmin: isPlatformSuperAdmin(user),
       };
     });
   }
@@ -184,11 +187,22 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async updateActiveBusiness(userId: string, businessId: string | null, role?: UserRole): Promise<void> {
+    let cachedRole = role;
+    if (role !== undefined) {
+      const row = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, role: true },
+      });
+      if (row) {
+        const membershipRole = role === 'superadmin' ? 'admin' : role;
+        cachedRole = cachedUserRoleForBusiness(row.email, row.role as UserRole, membershipRole);
+      }
+    }
     await prisma.user.update({
       where: { id: userId },
       data: {
         ...(businessId !== undefined && { businessId }),
-        ...(role !== undefined && { role }),
+        ...(cachedRole !== undefined && { role: cachedRole }),
       },
     });
   }

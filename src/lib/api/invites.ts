@@ -1,13 +1,28 @@
 import { getToken } from '@/lib/firebase/auth';
 import type { BusinessInvite } from '@prisma/client';
-import { ApiError } from './errors';
+import { ApiError, parseApiErrorBody } from './errors';
 
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers = new Headers(init?.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
   const res = await fetch(url, { ...init, headers });
-  if (!res.ok) throw new ApiError(await res.text(), res.status);
+  if (!res.ok) {
+    const text = await res.text();
+    const { message, code } = parseApiErrorBody(text);
+    if (code === 'members_limit_exceeded') {
+      try {
+        const body = JSON.parse(text) as { limit?: number; current?: number };
+        const err = new Error('members_limit_exceeded') as Error & { limit?: number; current?: number };
+        err.limit = body.limit;
+        err.current = body.current;
+        throw err;
+      } catch (e) {
+        if (e instanceof Error && e.message === 'members_limit_exceeded') throw e;
+      }
+    }
+    throw new ApiError(message, res.status, code);
+  }
   return res.json();
 }
 
@@ -17,10 +32,14 @@ export interface CreateInviteInput {
   locationIds?: string[];
   maxUses?: number;
   expiresInDays?: number;
+  /** Si se indica, se envía el link `/i/{id}` a este correo (invitación personal). */
+  email?: string;
+  inviteeName?: string;
 }
 
 export interface InviteWithLink extends BusinessInvite {
   link: string;
+  emailSent?: boolean;
 }
 
 export const invitesApi = {
