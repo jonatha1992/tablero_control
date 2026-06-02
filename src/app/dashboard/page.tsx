@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
+import { isPending } from '@/lib/tasks/task-status';
 import { AlertCircle, CheckCircle2, Clock, Zap, TrendingUp } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -11,10 +12,10 @@ export default function DashboardPage() {
   const { data: locations = [] } = useLocationsQuery();
 
   const metrics = {
-    active: tasks.filter((t) => t.status !== 'done').length,
+    active: tasks.filter(isPending).length,
     done: tasks.filter((t) => t.status === 'done').length,
     blocked: tasks.filter((t) => t.status === 'blocked').length,
-    urgent: tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length,
+    urgent: tasks.filter((t) => t.priority === 'urgent' && isPending(t)).length,
   };
 
   // Group by location/sector

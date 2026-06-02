@@ -6,6 +6,7 @@ import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useTodayEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import { isPending } from '@/lib/tasks/task-status';
 import { TaskDetailModal } from './task-detail-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -262,6 +263,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   const [showDone, setShowDone] = useState(false);
   const [showNoDate, setShowNoDate] = useState(true);
   const [showLater, setShowLater] = useState(true);
+  const [showFuture, setShowFuture] = useState(false);
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -292,6 +294,8 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         done.push(task);
         continue;
       }
+      // Backlog = ideas, no trabajo comprometido → no es pendiente (feedback #13).
+      if (!isPending(task)) continue;
       if (!task.dueDate) {
         noDate.push(task);
         continue;
@@ -320,8 +324,9 @@ export function AgendaView({ tasks }: AgendaViewProps) {
     noDate.sort(byScore);
     done.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
-    const allActive = [...overdue, ...todayTimed, ...todayAllDay, ...thisWeek, ...later, ...noDate];
-    const focus = [...allActive].sort(byScore).slice(0, 3);
+    // Foco del día = solo lo accionable hasta hoy (sin futuras) (feedback #1/#3).
+    const actionableNow = [...overdue, ...todayTimed, ...todayAllDay, ...noDate];
+    const focus = [...actionableNow].sort(byScore).slice(0, 3);
 
     return { overdue, todayTimed, todayAllDay, thisWeek, later, noDate, done, focus };
   }, [tasks, userId, now]);
@@ -334,15 +339,15 @@ export function AgendaView({ tasks }: AgendaViewProps) {
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const totalActive =
+  // Accionable hasta hoy (sin futuras) — define si la bandeja está "al día" (feedback #1/#3).
+  const pendingNow =
     sections.overdue.length +
     sections.todayTimed.length +
     sections.todayAllDay.length +
-    sections.thisWeek.length +
-    sections.later.length +
     sections.noDate.length;
+  const futureCount = sections.thisWeek.length + sections.later.length;
 
-  if (totalActive === 0 && sections.done.length === 0) {
+  if (pendingNow === 0 && futureCount === 0 && sections.done.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
         <CheckCircle2 className="h-12 w-12 opacity-20" />
@@ -354,6 +359,40 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   return (
     <>
       <div className="space-y-6 pb-12 max-w-3xl">
+
+        {/* TOGGLE HASTA HOY / TODAS */}
+        {futureCount > 0 && (
+          <div className="flex items-center justify-end gap-2 text-xs">
+            <span className="text-muted-foreground">Mostrar:</span>
+            <div className="inline-flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setShowFuture(false)}
+                className={cn('px-3 py-1 transition-colors', !showFuture ? 'bg-primary text-primary-foreground' : 'hover:bg-muted')}
+              >
+                Hasta hoy
+              </button>
+              <button
+                onClick={() => setShowFuture(true)}
+                className={cn('px-3 py-1 transition-colors', showFuture ? 'bg-primary text-primary-foreground' : 'hover:bg-muted')}
+              >
+                Todas ({futureCount} futura{futureCount !== 1 ? 's' : ''})
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* BANNER AL DÍA */}
+        {pendingNow === 0 && (futureCount > 0 || sections.done.length > 0) && (
+          <div className="flex items-center gap-2.5 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 px-3 py-2 text-sm text-green-700 dark:text-green-300">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span className="font-medium">Todo al día.</span>
+            {futureCount > 0 && (
+              <span className="text-green-600 dark:text-green-400">
+                No hay nada pendiente para hoy{!showFuture ? ` — ${futureCount} tarea${futureCount !== 1 ? 's' : ''} futura${futureCount !== 1 ? 's' : ''}.` : '.'}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* BANNER EVENTOS HOY */}
         {todayEvents.length > 0 && (
@@ -449,7 +488,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         )}
 
         {/* ESTA SEMANA */}
-        {sections.thisWeek.length > 0 && (
+        {showFuture && sections.thisWeek.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Calendar} label="Esta semana" count={sections.thisWeek.length} />
             <div className="space-y-2 pl-6">
@@ -467,7 +506,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         )}
 
         {/* PRÓXIMAMENTE */}
-        {sections.later.length > 0 && (
+        {showFuture && sections.later.length > 0 && (
           <section className="space-y-2">
             <SectionHeader
               icon={Timer}

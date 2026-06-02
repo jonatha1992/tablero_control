@@ -37,7 +37,7 @@ export default function TareasPage() {
   const taskFilters = useMemo((): TaskFilters | undefined => {
     const f: TaskFilters = {};
     if (selectedProjectIds.length) f.projectId = selectedProjectIds;
-    if (sprintMode === 'backlog') f.noCycle = true;
+    if (sprintMode === 'backlog') f.status = ['backlog'];
     else if (sprintMode === 'board' && selectedSprintId) f.cycleId = [selectedSprintId];
     return Object.keys(f).length > 0 ? f : undefined;
   }, [selectedProjectIds, sprintMode, selectedSprintId]);

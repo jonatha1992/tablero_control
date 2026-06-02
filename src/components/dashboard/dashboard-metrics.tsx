@@ -91,6 +91,7 @@ export function DashboardMetrics() {
       // - No está en estado 'done' 
       // - O si está en estado 'done' pero se completó DESPUÉS del final de este día
       const remaining = tasks.filter(t => {
+        if (t.status === 'backlog' || t.status === 'archived') return false;
         if (t.status !== 'done') return true;
         const completedDate = new Date(t.updatedAt || t.createdAt);
         return isAfter(completedDate, dayEnd);
