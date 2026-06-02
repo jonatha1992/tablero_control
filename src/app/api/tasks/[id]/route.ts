@@ -257,7 +257,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
     return NextResponse.json({ error: 'forbidden', reason: 'missing_permission' }, { status: 403 });
   }
 
-  await taskService.deleteTask(id);
+  await taskService.deleteTask(id, user.uid);
 
   await writeAuditLog({
     actorId: user.uid,

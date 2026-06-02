@@ -33,6 +33,8 @@ export type AuditAction =
   | 'task.update'
   | 'task.move'
   | 'task.delete'
+  | 'task.restore'
+  | 'task.hard_delete'
   | 'attachment.upload'
   | 'attachment.delete'
   | 'plan_config.update'
