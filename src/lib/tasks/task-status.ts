@@ -1,15 +1,18 @@
 import type { Task, TaskStatus } from '@/types/domain/task';
 
-/** Estados que NO representan trabajo en curso. */
-export const DONE_STATUSES: TaskStatus[] = ['done', 'archived'];
+/** Estados que no representan trabajo accionable. */
+export const NON_PENDING_STATUSES: TaskStatus[] = ['done', 'archived', 'backlog'];
+
+export function isPendingStatus(status: TaskStatus): boolean {
+  return !NON_PENDING_STATUSES.includes(status);
+}
 
 /**
  * Tarea "pendiente"/activa = trabajo comprometido sin terminar.
  * Excluye `done`/`archived` (terminadas) y `backlog` (ideas, no comprometido).
- * Ver docs/decisions y feedback #13.
  */
 export function isPending(task: Pick<Task, 'status'>): boolean {
-  return !DONE_STATUSES.includes(task.status) && task.status !== 'backlog';
+  return isPendingStatus(task.status);
 }
 
 /** Fin del día de `now` (23:59:59.999). */
@@ -26,13 +29,33 @@ export function isActionableUpToToday(
   task: Pick<Task, 'status' | 'dueDate'>,
   now: Date,
 ): boolean {
-  if (!isPending(task)) return false;
+  if (!isPendingStatus(task.status)) return false;
   if (!task.dueDate) return true;
   return new Date(task.dueDate).getTime() <= endOfToday(now).getTime();
 }
 
-/** Tarea con fecha futura (después de hoy). */
-export function isFuture(task: Pick<Task, 'dueDate'>, now: Date): boolean {
-  if (!task.dueDate) return false;
-  return new Date(task.dueDate).getTime() > endOfToday(now).getTime();
+/**
+ * Tarea accionable al cierre de un día arbitrario.
+ * Útil para métricas históricas: no cuenta backlog ni futuras.
+ */
+export function isActionableByEndOfDay(
+  task: Pick<Task, 'status' | 'dueDate'>,
+  day: Date,
+): boolean {
+  if (!isPendingStatus(task.status)) return false;
+  if (!task.dueDate) return true;
+  return new Date(task.dueDate).getTime() <= endOfToday(day).getTime();
+}
+
+/**
+ * Trabajo comprometido para métricas: incluye completadas, pero excluye ideas
+ * de backlog, archivadas y tareas con vencimiento futuro.
+ */
+export function isCommittedByEndOfDay(
+  task: Pick<Task, 'status' | 'dueDate'>,
+  day: Date,
+): boolean {
+  if (task.status === 'backlog' || task.status === 'archived') return false;
+  if (!task.dueDate) return true;
+  return new Date(task.dueDate).getTime() <= endOfToday(day).getTime();
 }

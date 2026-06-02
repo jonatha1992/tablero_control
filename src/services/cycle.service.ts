@@ -36,9 +36,15 @@ class CycleService {
   async startCycle(id: string): Promise<Cycle> {
     const cycle = await cycleRepository.findById(id);
     if (!cycle) throw new Error('Período no encontrado');
-    const activeCycles = await cycleRepository.findActiveByBusiness(cycle.businessId);
+
+    // #16: constraint 1 activo por proyecto (o global si sin proyecto).
+    const activeCycles = await cycleRepository.findActiveByProject(
+      cycle.businessId,
+      cycle.projectId ?? null,
+    );
     if (activeCycles.length > 0) {
-      throw new Error('Ya existe un período activo. Completalo antes de iniciar uno nuevo.');
+      const scope = cycle.projectId ? 'este tablero' : 'el espacio';
+      throw new Error(`Ya existe un período activo en ${scope}. Completalo antes de iniciar uno nuevo.`);
     }
     return cycleRepository.update(id, { status: 'active' });
   }

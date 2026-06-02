@@ -32,6 +32,7 @@ import {
 } from '@/components/tareas/project-multi-picker';
 import { useReplicateTaskToProjects } from '@/hooks/mutations/use-replicate-task';
 import { cn } from '@/lib/utils';
+import { validateTaskCompletion } from '@/lib/task-validation';
 import { TaskAttachments } from './task-attachments';
 import { TaskComments } from './task-comments';
 import { TaskChecklist } from './task-checklist';
@@ -130,6 +131,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
+    if (newStatus === 'done' && !validateTaskCompletion(task, business?.settings)) {
+      return;
+    }
     moveTask.mutate({ taskId: task.id, newStatus });
   };
 
@@ -323,7 +327,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                       />
                     </div>
 
-                    {frequency === 'weekly' && (
+                    {(frequency === 'weekly' || frequency === 'biweekly') && ( // B3: biweekly también elige día (#9)
                       <div className="col-span-2">
                         <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
                         <select

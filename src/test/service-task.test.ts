@@ -163,7 +163,7 @@ describe('TaskService.deleteTask', () => {
 
     await taskService.deleteTask('task-1');
 
-    expect(mockRepo.delete).toHaveBeenCalledWith('task-1');
+    expect(mockRepo.delete).toHaveBeenCalledWith('task-1', undefined);
     expect(mockRepo.delete).toHaveBeenCalledOnce();
   });
 });
@@ -246,12 +246,13 @@ describe('TaskService.moveTask', () => {
     expect(mockRepo.create).not.toHaveBeenCalled();
   });
 
-  it('no crea otra ocurrencia si la tarea ya estaba en done (re-finalizar)', async () => {
+  it('no crea otra ocurrencia si la tarea ya spawneó (re-finalizar)', async () => {
     const taskAlreadyDone = {
       ...baseTask,
       status: 'done' as const,
       dueDate: new Date('2026-05-29'),
       recurrence: { frequency: 'daily' as const, interval: 1 },
+      recurrenceSpawnedAt: new Date('2026-05-29'), // ya generó su próxima
     };
     mockRepo.findById.mockResolvedValueOnce(taskAlreadyDone as never);
     mockRepo.update.mockResolvedValueOnce({ ...taskAlreadyDone, status: 'done' } as never);

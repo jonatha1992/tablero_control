@@ -26,6 +26,8 @@ export interface BusinessSettings {
   maxUsers?: number;
   /** When false (default), one auto-created tablero; project picker hidden in UI. */
   multipleBoards?: boolean;
+  /** Si es true, exige que las tareas tengan al menos 1 adjunto para poder pasar a "done" */
+  requireAttachmentToFinalize?: boolean;
   /** User-chosen labels for locations (sede, sucursal, departamento, etc.) */
   terminology?: SpaceTerminology;
   customDomain?: string;

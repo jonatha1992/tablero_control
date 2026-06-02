@@ -22,7 +22,7 @@ DELETE /api/invites/[token]           ← revocar
 
 ## Tasks
 ```
-GET    /api/tasks               ← TaskFilters: cycleId[]?, noCycle?, priority?, status?, etc.
+GET    /api/tasks               ← TaskFilters: cycleId[]?, noCycle?, priority?, status?, assigneeId?, dueDateFrom?, dueDateTo?, etc.
 POST   /api/tasks
 PATCH  /api/tasks/[id]
 DELETE /api/tasks/[id]

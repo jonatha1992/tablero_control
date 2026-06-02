@@ -16,7 +16,7 @@ attachments (Attachment[]), comments (Comment[]), subtasks (Task[] legacy/pausad
 ```
 
 Enums:
-- `TaskStatus`: `backlog | todo | in_progress | in_review | done | blocked`
+- `TaskStatus`: `backlog | todo | in_progress | in_review | done | blocked | archived`
 - `TaskPriority`: `low | medium | high | urgent`
 - `TaskType`: `feature | bug | improvement | task | documentation`
 

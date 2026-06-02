@@ -9,6 +9,7 @@ function toDomain(c: Awaited<ReturnType<typeof prisma.cycle.findUnique>>): Cycle
     name: c.name,
     goal: c.goal ?? undefined,
     teamId: c.teamId ?? undefined,
+    projectId: c.projectId ?? undefined,
     businessId: c.businessId,
     status: c.status as Cycle['status'],
     startDate: c.startDate ?? undefined,
@@ -36,6 +37,15 @@ export class PrismaCycleRepository implements ICycleRepository {
     const cycles = await prisma.cycle.findMany({
       where: { businessId, status: 'active' },
       orderBy: { createdAt: 'desc' }
+    });
+    return cycles.map((c) => toDomain(c)!).filter(Boolean);
+  }
+
+  /** #16: buscar activos filtrando por projectId (null = sin proyecto). */
+  async findActiveByProject(businessId: string, projectId: string | null): Promise<Cycle[]> {
+    const cycles = await prisma.cycle.findMany({
+      where: { businessId, status: 'active', projectId: projectId ?? null },
+      orderBy: { createdAt: 'desc' },
     });
     return cycles.map((c) => toDomain(c)!).filter(Boolean);
   }

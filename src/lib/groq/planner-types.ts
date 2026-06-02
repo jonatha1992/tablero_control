@@ -10,4 +10,5 @@ export type PlannerResponse =
       planType: 'cycle' | 'objective';
       description: string;
       plan: GeneratedPlan;
-    };
+    }
+  | { type: 'query' };

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/tareas/kanban-board';
@@ -37,7 +37,7 @@ export default function TareasPage() {
   const taskFilters = useMemo((): TaskFilters | undefined => {
     const f: TaskFilters = {};
     if (selectedProjectIds.length) f.projectId = selectedProjectIds;
-    if (sprintMode === 'backlog') f.status = ['backlog'];
+    if (sprintMode === 'backlog') f.status = ['backlog']; // A3: filtrar por status, no por cycleId (issue #14)
     else if (sprintMode === 'board' && selectedSprintId) f.cycleId = [selectedSprintId];
     return Object.keys(f).length > 0 ? f : undefined;
   }, [selectedProjectIds, sprintMode, selectedSprintId]);

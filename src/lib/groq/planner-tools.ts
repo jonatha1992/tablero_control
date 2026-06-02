@@ -72,6 +72,7 @@ export async function runIntentPipeline(
   | { type: 'preview_tasks'; tasks: ExtractedTask[]; parseError: boolean }
   | { type: 'preview_plan'; planType: 'cycle' | 'objective'; description: string; plan: GeneratedPlan }
   | { type: 'message'; content: string }
+  | { type: 'query' }
 > {
   if (intent.missingSlots.length > 0 && intent.clarificationQuestion) {
     return {
@@ -123,10 +124,7 @@ export async function runIntentPipeline(
   }
 
   if (intent.intent === 'query') {
-    return {
-      type: 'message',
-      content: 'Para consultas sobre tareas existentes usá la pestaña Asistente. Acá puedo ayudarte a crear tareas, sprints u objetivos.',
-    };
+    return { type: 'query' };
   }
 
   return {

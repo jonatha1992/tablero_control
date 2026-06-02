@@ -18,6 +18,7 @@ import { Plus, CheckCircle, X, Target, Trash2, Calendar, Archive, Edit2 } from '
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Objective, ObjectiveStatus } from '@/types/domain/objective';
+import { ObjectiveDetailModal } from '@/components/tareas/objective-detail-modal';
 
 type FilterTab = 'active' | 'completed' | 'archived' | 'all';
 
@@ -52,6 +53,9 @@ export default function ObjetivosPage() {
   const todayStr = () => new Date().toISOString().split('T')[0];
 
   const [filterTab, setFilterTab] = useState<FilterTab>('active');
+
+  // A5: estado para modal de detalle de objetivo (#15)
+  const [detailObjective, setDetailObjective] = useState<ObjectiveWithProgress | null>(null);
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
@@ -196,6 +200,7 @@ export default function ObjetivosPage() {
             onDelete={() => deleteObjective.mutate(obj.id)}
             onArchive={() => archiveObjective.mutate(obj.id)}
             onEdit={() => openEdit(obj)}
+            onViewDetail={() => setDetailObjective(obj)} // A5: abrir modal detalle
           />
         ))}
       </div>
@@ -349,6 +354,15 @@ export default function ObjetivosPage() {
           </div>
         </div>
       )}
+      {/* A5: Modal de detalle de objetivo */}
+      {detailObjective && (
+        <ObjectiveDetailModal
+          objective={detailObjective}
+          tasks={tasks}
+          open={!!detailObjective}
+          onClose={() => setDetailObjective(null)}
+        />
+      )}
     </div>
   );
 }
@@ -359,12 +373,14 @@ function ObjectiveCard({
   onDelete,
   onArchive,
   onEdit,
+  onViewDetail,
 }: {
   objective: ObjectiveWithProgress;
   onComplete: () => void;
   onDelete: () => void;
   onArchive: () => void;
   onEdit: () => void;
+  onViewDetail: () => void; // A5
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isActive = objective.status === 'active';
@@ -384,7 +400,13 @@ function ObjectiveCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold truncate">{objective.name}</h3>
+              <h3
+                className="font-semibold truncate cursor-pointer hover:text-primary transition-colors"
+                onClick={onViewDetail}
+                title="Ver tareas del objetivo"
+              >
+                {objective.name}
+              </h3>
               {!isActive && (
                 <span className={cn(
                   'shrink-0 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium',

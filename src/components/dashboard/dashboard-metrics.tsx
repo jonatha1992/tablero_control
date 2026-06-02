@@ -13,6 +13,7 @@ import {
   eachDayOfInterval, subWeeks, startOfWeek, endOfWeek, isWithinInterval 
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { isCommittedByEndOfDay } from '@/lib/tasks/task-status';
 
 const STATUS_COLORS: Record<string, string> = {
   done: '#10b981', in_progress: '#f59e0b', todo: '#3b82f6',
@@ -81,7 +82,7 @@ export function DashboardMetrics() {
       end: new Date(),
     });
 
-    const totalTasks = tasks.length;
+    const totalTasks = tasks.filter((t) => isCommittedByEndOfDay(t, new Date())).length;
     
     return days.map((day, index) => {
       const dayEnd = endOfDay(day);
@@ -91,7 +92,7 @@ export function DashboardMetrics() {
       // - No está en estado 'done' 
       // - O si está en estado 'done' pero se completó DESPUÉS del final de este día
       const remaining = tasks.filter(t => {
-        if (t.status === 'backlog' || t.status === 'archived') return false;
+        if (!isCommittedByEndOfDay(t, day)) return false;
         if (t.status !== 'done') return true;
         const completedDate = new Date(t.updatedAt || t.createdAt);
         return isAfter(completedDate, dayEnd);

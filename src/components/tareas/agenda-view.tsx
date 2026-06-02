@@ -2,11 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth-context';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useTodayEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import { isPending } from '@/lib/tasks/task-status';
+import { validateTaskCompletion } from '@/lib/task-validation';
 import { TaskDetailModal } from './task-detail-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -257,6 +259,7 @@ interface AgendaViewProps {
 
 export function AgendaView({ tasks }: AgendaViewProps) {
   const { user } = useAuth();
+  const { data: business } = useBusinessQuery(user?.businessId);
   const moveTask = useMoveTask();
   const { data: todayEvents = [] } = useTodayEventsQuery();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -294,7 +297,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         done.push(task);
         continue;
       }
-      // Backlog = ideas, no trabajo comprometido → no es pendiente (feedback #13).
+      // #13: backlog = ideas, no trabajo comprometido → no mostrar como pendiente.
       if (!isPending(task)) continue;
       if (!task.dueDate) {
         noDate.push(task);
@@ -324,7 +327,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
     noDate.sort(byScore);
     done.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
-    // Foco del día = solo lo accionable hasta hoy (sin futuras) (feedback #1/#3).
+    // #1/#3: foco solo hasta hoy (sin futuras).
     const actionableNow = [...overdue, ...todayTimed, ...todayAllDay, ...noDate];
     const focus = [...actionableNow].sort(byScore).slice(0, 3);
 
@@ -332,6 +335,12 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   }, [tasks, userId, now]);
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
+    if (status === 'done') {
+      const task = tasks.find((t) => t.id === taskId);
+      if (task && !validateTaskCompletion(task, business?.settings)) {
+        return; // B1, B2, B4
+      }
+    }
     moveTask.mutate({ taskId, newStatus: status });
   };
 
@@ -339,7 +348,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Accionable hasta hoy (sin futuras) — define si la bandeja está "al día" (feedback #1/#3).
+  // #1/#3: pendientes accionables hasta hoy (sin futuras).
   const pendingNow =
     sections.overdue.length +
     sections.todayTimed.length +
@@ -360,7 +369,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
     <>
       <div className="space-y-6 pb-12 max-w-3xl">
 
-        {/* TOGGLE HASTA HOY / TODAS */}
+        {/* #1/#3: Toggle hasta hoy / todas */}
         {futureCount > 0 && (
           <div className="flex items-center justify-end gap-2 text-xs">
             <span className="text-muted-foreground">Mostrar:</span>
@@ -381,14 +390,14 @@ export function AgendaView({ tasks }: AgendaViewProps) {
           </div>
         )}
 
-        {/* BANNER AL DÍA */}
+        {/* Banner: todo al día */}
         {pendingNow === 0 && (futureCount > 0 || sections.done.length > 0) && (
           <div className="flex items-center gap-2.5 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 px-3 py-2 text-sm text-green-700 dark:text-green-300">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span className="font-medium">Todo al día.</span>
-            {futureCount > 0 && (
+            {futureCount > 0 && !showFuture && (
               <span className="text-green-600 dark:text-green-400">
-                No hay nada pendiente para hoy{!showFuture ? ` — ${futureCount} tarea${futureCount !== 1 ? 's' : ''} futura${futureCount !== 1 ? 's' : ''}.` : '.'}
+                {futureCount} tarea{futureCount !== 1 ? 's' : ''} futura{futureCount !== 1 ? 's' : ''}.
               </span>
             )}
           </div>
@@ -487,7 +496,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
           </section>
         )}
 
-        {/* ESTA SEMANA */}
+        {/* ESTA SEMANA — oculto por defecto (#1/#3) */}
         {showFuture && sections.thisWeek.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Calendar} label="Esta semana" count={sections.thisWeek.length} />
@@ -505,7 +514,7 @@ export function AgendaView({ tasks }: AgendaViewProps) {
           </section>
         )}
 
-        {/* PRÓXIMAMENTE */}
+        {/* PRÓXIMAMENTE — oculto por defecto (#1/#3) */}
         {showFuture && sections.later.length > 0 && (
           <section className="space-y-2">
             <SectionHeader

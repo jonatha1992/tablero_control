@@ -38,7 +38,11 @@ function toDomain(t: PrismaTask): Task {
     estimatedHours: t.estimatedHours ?? undefined,
     actualHours: t.actualHours ?? undefined,
     recurrence: t.recurrence as unknown as Task['recurrence'],
+    recurrenceSpawnedAt: t.recurrenceSpawnedAt ?? undefined,
+    recurrenceGroupId: t.recurrenceGroupId ?? undefined,
     checklist: (t.checklist as unknown as Task['checklist']) ?? [],
+    deletedAt: t.deletedAt ?? undefined,
+    deletedBy: t.deletedBy ?? undefined,
     subtaskIds: t.subtasks.map((s) => s.id),
     subtasksCompleted: t.subtasks.filter((s) => s.status === 'done').length,
     attachmentUrls: t.attachments.map((a: { url: string }) => a.url),
@@ -58,7 +62,8 @@ const include = {
 } satisfies Prisma.TaskInclude;
 
 function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhereInput {
-  const conditions: Prisma.TaskWhereInput[] = [{ parentId: null }];
+  // #8: excluir soft-deleted por defecto
+  const conditions: Prisma.TaskWhereInput[] = [{ parentId: null }, { deletedAt: null }];
 
   if (businessId !== 'all') {
     conditions.push({
@@ -261,7 +266,35 @@ export class PrismaTaskRepository implements ITaskRepository {
     );
   }
 
-  async delete(id: string): Promise<void> {
+  /** #8: soft-delete — marca deletedAt en vez de borrar. */
+  async delete(id: string, deletedBy?: string): Promise<void> {
+    await prisma.task.update({
+      where: { id },
+      data: { deletedAt: new Date(), deletedBy: deletedBy ?? null },
+    });
+  }
+
+  /** Restaurar tarea soft-deleted. */
+  async restore(id: string): Promise<void> {
+    await prisma.task.update({
+      where: { id },
+      data: { deletedAt: null, deletedBy: null },
+    });
+  }
+
+  /** Borrado definitivo (admin). */
+  async hardDelete(id: string): Promise<void> {
     await prisma.task.delete({ where: { id } });
+  }
+
+  /** #8: listar tareas eliminadas de un business. */
+  async findDeleted(businessId: string): Promise<Task[]> {
+    const tasks = await prisma.task.findMany({
+      where: { businessId, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
+      take: 100,
+      include,
+    });
+    return tasks.map((t) => toDomain(t as PrismaTask));
   }
 }

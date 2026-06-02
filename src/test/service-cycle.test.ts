@@ -5,6 +5,7 @@ vi.mock('@/repositories', () => ({
   cycleRepository: {
     findByBusiness: vi.fn(),
     findActiveByBusiness: vi.fn(),
+    findActiveByProject: vi.fn(),
     findById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -129,7 +130,7 @@ describe('CycleService.deleteCycle', () => {
 describe('CycleService estado — startCycle / completeCycle / closeCycle', () => {
   it('startCycle establece status active', async () => {
     mockRepo.findById.mockResolvedValueOnce(mockCycle as never);
-    mockRepo.findActiveByBusiness.mockResolvedValueOnce([] as never);
+    mockRepo.findActiveByProject.mockResolvedValueOnce([] as never);
     mockRepo.update.mockResolvedValueOnce({ ...mockCycle, status: 'active' } as never);
     const result = await cycleService.startCycle('cycle-1');
     expect(mockRepo.update).toHaveBeenCalledWith('cycle-1', { status: 'active' });
@@ -138,7 +139,7 @@ describe('CycleService estado — startCycle / completeCycle / closeCycle', () =
 
   it('startCycle lanza si ya hay un ciclo activo', async () => {
     mockRepo.findById.mockResolvedValueOnce(mockCycle as never);
-    mockRepo.findActiveByBusiness.mockResolvedValueOnce([{ ...mockCycle, status: 'active', id: 'other' }] as never);
+    mockRepo.findActiveByProject.mockResolvedValueOnce([{ ...mockCycle, status: 'active', id: 'other' }] as never);
     await expect(cycleService.startCycle('cycle-1')).rejects.toThrow('Ya existe un período activo');
   });
 

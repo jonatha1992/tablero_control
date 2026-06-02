@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CalendarDays, Clock } from 'lucide-react';
+import { CalendarDays, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCreateCalendarEvent } from '@/hooks/mutations/use-create-calendar-event';
+import { useMembersQuery } from '@/hooks/queries/use-members-query';
 
 interface CreateEventModalProps {
   open: boolean;
@@ -34,7 +35,9 @@ export function CreateEventModal({ open, onOpenChange }: CreateEventModalProps) 
   const [end, setEnd] = useState(toLocalDateTimeValue(oneHourLater));
   const [allDay, setAllDay] = useState(false);
   const [color, setColor] = useState('#3b82f6');
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
 
+  const { data: members = [] } = useMembersQuery();
   const createMutation = useCreateCalendarEvent();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,7 +52,7 @@ export function CreateEventModal({ open, onOpenChange }: CreateEventModalProps) 
       : new Date(end);
 
     createMutation.mutate(
-      { title: title.trim(), description: description.trim() || undefined, start: startDate, end: endDate, allDay, color },
+      { title: title.trim(), description: description.trim() || undefined, start: startDate, end: endDate, allDay, color, assigneeIds: selectedAssignees.length ? selectedAssignees : undefined },
       {
         onSuccess: () => {
           setTitle('');
@@ -57,6 +60,7 @@ export function CreateEventModal({ open, onOpenChange }: CreateEventModalProps) 
           setStart(toLocalDateTimeValue(new Date()));
           setEnd(toLocalDateTimeValue(new Date(Date.now() + 60 * 60 * 1000)));
           setAllDay(false);
+          setSelectedAssignees([]);
           onOpenChange(false);
         },
       },
@@ -140,6 +144,39 @@ export function CreateEventModal({ open, onOpenChange }: CreateEventModalProps) 
                 onChange={(e) => setStart(e.target.value + 'T00:00')}
                 className="rounded-md border border-input bg-background px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
+            </div>
+          )}
+
+          {/* #11: Participantes */}
+          {members.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Users className="h-3 w-3" /> Participantes
+              </span>
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                {members.map((m) => {
+                  const selected = selectedAssignees.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedAssignees((prev) =>
+                          selected ? prev.filter((id) => id !== m.id) : [...prev, m.id],
+                        )
+                      }
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
+                        selected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted',
+                      )}
+                    >
+                      {m.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

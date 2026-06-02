@@ -17,6 +17,8 @@ import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from 'date
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { exportReportExcel } from '@/lib/reports-export';
+import { isPending } from '@/lib/tasks/task-status';
+import type { TaskFilters } from '@/types/domain/task';
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -96,9 +98,22 @@ function KpiCard({
 
 export default function ReportesPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month');
-  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery();
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [memberId, setMemberId] = useState('');
+
+  const taskFilters = useMemo((): TaskFilters | undefined => {
+    const filters: TaskFilters = {};
+    if (dateFrom) filters.dueDateFrom = new Date(`${dateFrom}T00:00:00`);
+    if (dateTo) filters.dueDateTo = new Date(`${dateTo}T23:59:59.999`);
+    if (memberId) filters.assigneeId = [memberId];
+    return Object.keys(filters).length ? filters : undefined;
+  }, [dateFrom, dateTo, memberId]);
+
+  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(taskFilters);
   const { data: members = [], isLoading: loadingMembers } = useMembersQuery();
   const isLoading = loadingTasks || loadingMembers;
+  const hasFilters = Boolean(dateFrom || dateTo || memberId);
 
   // ── Métricas ────────────────────────────────────────────────────────────────
 
@@ -159,7 +174,7 @@ export default function ReportesPage() {
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.status === 'done').length;
   const blockedTasks = tasks.filter((t) => t.status === 'blocked').length;
-  const urgentTasks = tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length;
+  const urgentTasks = tasks.filter((t) => t.priority === 'urgent' && isPending(t)).length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const handleExport = async () => {
@@ -189,6 +204,12 @@ export default function ReportesPage() {
     }
   };
 
+  const resetFilters = () => {
+    setDateFrom('');
+    setDateTo('');
+    setMemberId('');
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center gap-2 text-muted-foreground">
@@ -201,7 +222,49 @@ export default function ReportesPage() {
   return (
     <div className="space-y-6 h-full overflow-auto">
       {/* Header */}
-      <div className="flex items-center justify-end flex-wrap gap-3">
+      <div className="flex items-end justify-between flex-wrap gap-3">
+          <div className="flex items-end flex-wrap gap-2">
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+              Desde
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+              Hasta
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+              Persona
+              <select
+                value={memberId}
+                onChange={(e) => setMemberId(e.target.value)}
+                className="h-9 min-w-44 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Todas</option>
+                {members
+                  .filter((m) => m.isActive)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+              </select>
+            </label>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={resetFilters}>
+                Limpiar
+              </Button>
+            )}
+          </div>
           <div className="flex rounded-lg border bg-muted p-1 gap-1">
             {(['week', 'month', 'quarter'] as const).map((p) => (
               <button
