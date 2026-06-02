@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -35,7 +35,6 @@ import { cn } from '@/lib/utils';
 import { TaskAttachments } from './task-attachments';
 import { TaskComments } from './task-comments';
 import { TaskChecklist } from './task-checklist';
-import { TaskSubtasks } from './task-subtasks';
 import { TaskTimeTracking } from './task-time-tracking';
 import type { RecurrenceConfig } from '@/types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS } from '@/lib/constants/task-colors';
@@ -53,7 +52,6 @@ interface TaskDetailModalProps {
 }
 
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
-  const [subtaskOpen, setSubtaskOpen] = useState<Task | null>(null);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -500,11 +498,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               <TaskChecklist task={task} />
             </div>
 
-            {/* Subtareas */}
-            <div className="py-3 border-b">
-              <TaskSubtasks task={task} onOpenSubtask={(sub) => setSubtaskOpen(sub)} />
-            </div>
-
             {/* Registro de tiempos */}
             <div className="py-3 border-b">
               <TaskTimeTracking
@@ -669,7 +662,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <DialogHeader>
             <DialogTitle>Duplicar en tableros</DialogTitle>
             <DialogDescription>
-              Se crearán copias independientes de &quot;{task.title}&quot; en cada tablero elegido (incluye subtareas).
+              Se crearán copias independientes de &quot;{task.title}&quot; en cada tablero elegido (incluye checklist).
             </DialogDescription>
           </DialogHeader>
           <ProjectMultiPicker
@@ -709,7 +702,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           <DialogHeader>
             <DialogTitle>Duplicar en sectores</DialogTitle>
             <DialogDescription>
-              Se crearán copias independientes de &quot;{task.title}&quot; en cada sector/local elegido (incluye subtareas).
+              Se crearán copias independientes de &quot;{task.title}&quot; en cada sector/local elegido (incluye checklist).
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-72 overflow-y-auto border rounded-md p-1">
@@ -769,12 +762,6 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
       />
     </Dialog>
 
-    {/* Modal anidado para subtarea */}
-    <TaskDetailModal
-      task={subtaskOpen}
-      open={!!subtaskOpen}
-      onOpenChange={(o) => { if (!o) setSubtaskOpen(null); }}
-    />
     </>
   );
 }

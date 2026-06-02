@@ -84,7 +84,6 @@ Devuelve ÚNICAMENTE JSON válido:
       "cycleId": "id exacto o null",
       "objectiveId": "id exacto o null",
       "checklist": [{ "id": "c1", "text": "paso", "done": false }],
-      "subtasks": ["título subtarea"],
       "recurrence": {
         "frequency": "daily" | "weekly" | "biweekly" | "monthly",
         "interval": 1,
@@ -103,7 +102,7 @@ Reglas:
 - Si menciona sprint → cycleId.
 - status backlog si es idea futura; todo por defecto; in_progress si ya en curso.
 - recurrence: rutinas ("todos los viernes", "quincenal", "cada mes"). Sin repetición → null.
-- checklist: pasos mencionados dentro de una tarea. subtasks: tareas hijas con título propio.
+- checklist: pasos o desgloses mencionados dentro de una tarea. No crear subtareas; usá checklist.
 - Sin tareas reconocibles → { "tasks": [] }.
 - Solo JSON raw, sin markdown.
 `.trim();
@@ -142,6 +141,25 @@ function sanitizeTask(raw: ExtractedTask, ctx: ExtractContext): ExtractedTask {
     }
   }
 
+  const checklistFromModel = Array.isArray(raw.checklist)
+    ? raw.checklist.map((c, i) => ({
+        id: c.id ?? `c${i + 1}`,
+        text: String(c.text ?? ''),
+        done: Boolean(c.done),
+      }))
+    : [];
+  const legacySubtasks = Array.isArray(raw.subtasks)
+    ? raw.subtasks.map(String).filter(Boolean)
+    : [];
+  const checklist = [
+    ...checklistFromModel,
+    ...legacySubtasks.map((text, i) => ({
+      id: `st${i + 1}`,
+      text,
+      done: false,
+    })),
+  ];
+
   return {
     ...raw,
     title: String(raw.title ?? '').slice(0, 120),
@@ -154,14 +172,8 @@ function sanitizeTask(raw: ExtractedTask, ctx: ExtractContext): ExtractedTask {
     objectiveId:
       raw.objectiveId && objectiveIds.has(raw.objectiveId) ? raw.objectiveId : undefined,
     tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
-    checklist: Array.isArray(raw.checklist)
-      ? raw.checklist.map((c, i) => ({
-          id: c.id ?? `c${i + 1}`,
-          text: String(c.text ?? ''),
-          done: Boolean(c.done),
-        }))
-      : undefined,
-    subtasks: Array.isArray(raw.subtasks) ? raw.subtasks.map(String).filter(Boolean) : undefined,
+    checklist: checklist.length ? checklist : undefined,
+    subtasks: undefined,
     recurrence: raw.recurrence ?? undefined,
   };
 }

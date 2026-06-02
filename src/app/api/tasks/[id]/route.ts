@@ -17,6 +17,7 @@ export const GET = handle(async (request: NextRequest, { params }: { params: Pro
   if (!task) return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
 
   const businessId = await getTaskBusinessId(id);
+  if (!businessId) return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
   assertResourceBelongsToBusiness(user.data, businessId);
 
   const activeMembership = user.data.memberships?.find(
@@ -44,6 +45,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   const { _move, creatorId: _creatorId, ...data } = body;
 
   const businessId = await getTaskBusinessId(id);
+  if (!businessId) return NextResponse.json({ error: 'No encontrada' }, { status: 404 });
   assertResourceBelongsToBusiness(user.data, businessId);
 
   const activeMembership = user.data.memberships?.find(
@@ -103,7 +105,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     await writeAuditLog({
       actorId: user.uid,
       actorRole: user.role,
-      businessId: user.businessId,
+      businessId,
       action: 'task.move',
       targetType: 'TASK',
       targetId: id,
@@ -114,7 +116,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       await writeAuditLog({
         actorId: user.uid,
         actorRole: user.role,
-        businessId: user.businessId,
+        businessId,
         action: 'task.create',
         targetType: 'TASK',
         targetId: nextTask.id,
@@ -140,24 +142,24 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       where: { id: data.locationId },
       select: { businessId: true },
     });
-    if (!loc || loc.businessId !== user.businessId) {
+    if (!loc || loc.businessId !== businessId) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
   }
 
   if (data.projectId) {
     const proj = await prisma.project.findUnique({ where: { id: data.projectId }, select: { businessId: true } });
-    if (!proj || proj.businessId !== user.businessId)
+    if (!proj || proj.businessId !== businessId)
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (data.cycleId) {
     const cycle = await prisma.cycle.findUnique({ where: { id: data.cycleId }, select: { businessId: true } });
-    if (!cycle || cycle.businessId !== user.businessId)
+    if (!cycle || cycle.businessId !== businessId)
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (data.objectiveId) {
     const obj = await prisma.objective.findUnique({ where: { id: data.objectiveId }, select: { businessId: true } });
-    if (!obj || obj.businessId !== user.businessId)
+    if (!obj || obj.businessId !== businessId)
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -169,7 +171,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   await writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,
-    businessId: user.businessId,
+    businessId,
     action: 'task.update',
     targetType: 'TASK',
     targetId: id,
@@ -223,8 +225,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   const { id } = await params;
 
-  // Tenant guard: tasks don't store businessId directly; infer from relations.
-  // Use the current user's business context so DELETE doesn't fail on tasks with mixed relations.
+  // Use the current user's business context; legacy rows may still infer from relations.
   if (!user.businessId) {
     return NextResponse.json({ error: 'forbidden', reason: 'no_business_context' }, { status: 403 });
   }

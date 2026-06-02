@@ -31,11 +31,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
     const validCount = await (await import('@/lib/prisma')).prisma.task.count({
       where: {
         id: { in: taskIds },
-        OR: [
-          { project: { businessId: objective.businessId } },
-          { location: { businessId: objective.businessId } },
-          { creator: { businessId: objective.businessId } },
-        ],
+        businessId: objective.businessId,
       },
     });
     if (validCount !== taskIds.length) {

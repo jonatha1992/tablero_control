@@ -208,6 +208,7 @@ model Business {
   projects        Project[]
   cycles          Cycle[]
   objectives      Objective[]
+  tasks           Task[]
   subscription    Subscription?
   invoices        Invoice[]
   auditLogs       AuditLog[]
@@ -303,6 +304,7 @@ model Task {
   priority       TaskPriority @default(medium)
   type           TaskType     @default(task)
   creatorId      String
+  businessId     String?
   projectId      String?
   locationId     String?
   parentId       String?
@@ -322,6 +324,7 @@ model Task {
   updatedAt      DateTime     @updatedAt
 
   creator     User         @relation("TaskCreator", fields: [creatorId], references: [id], onUpdate: Cascade)
+  business    Business?    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   assignees   User[]       @relation("TaskAssignees")
   project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   location    Location?    @relation(fields: [locationId], references: [id])
@@ -334,6 +337,7 @@ model Task {
   timeEntries TimeEntry[]
 
   @@index([projectId])
+  @@index([businessId])
   @@index([locationId])
   @@index([creatorId])
   @@index([status])

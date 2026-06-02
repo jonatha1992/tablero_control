@@ -5,14 +5,14 @@
 ```
 id, title, description
 status (TaskStatus), priority (TaskPriority), type (TaskType)
-creatorId, projectId?, locationId?, parentId?   ← subtareas via parentId
+creatorId, businessId?, projectId?, locationId?, parentId?   ← parentId legacy pausado
 cycleId?, objectiveId?
 assignees (User[]), tags (String[])
 startDate?, dueDate? (DateTime — incluye hora), completedDate?
 estimatedHours?, actualHours?
 recurrence (JSON): { frequency, interval, dayOfWeek?, dayOfMonth?, endDate?, count? }
 position (Int — orden en kanban), commentCount
-attachments (Attachment[]), comments (Comment[]), subtasks (Task[])
+attachments (Attachment[]), comments (Comment[]), subtasks (Task[] legacy/pausado)
 ```
 
 Enums:

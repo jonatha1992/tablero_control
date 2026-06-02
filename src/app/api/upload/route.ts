@@ -50,11 +50,7 @@ export const POST = handle(async (request: NextRequest) => {
             const count = await prisma.attachment.count({
               where: {
                 createdAt: { gte: startOfMonth },
-                task: { OR: [
-                  { project: { businessId } },
-                  { location: { businessId } },
-                  { creator: { businessId } },
-                ]},
+                task: { businessId },
               },
             });
             if (count >= limit) {

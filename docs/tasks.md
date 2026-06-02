@@ -5,14 +5,14 @@
 ```
 id, title, description
 status (TaskStatus), priority (TaskPriority), type (TaskType)
-creatorId, projectId?, locationId?, parentId?   ← subtareas via parentId
+creatorId, businessId?, projectId?, locationId?, parentId?   ← parentId queda como soporte legacy pausado
 cycleId?, objectiveId?                          ← asociación a sprint/objetivo
 assignees (User[]), tags (String[])
 startDate?, dueDate? (DateTime — incluye hora), completedDate?
 estimatedHours?, actualHours?
 recurrence (JSON): { frequency, interval, dayOfWeek?, dayOfMonth?, endDate?, count? }
 position (para orden en kanban), commentCount
-attachments (Attachment[]), comments (Comment[]), subtasks (Task[])
+attachments (Attachment[]), comments (Comment[]), subtasks (Task[] legacy/pausado)
 ```
 
 **Enums:**
@@ -118,7 +118,7 @@ Modal legacy de dictado: `dictate-tasks-modal.tsx` (misma preview compartida).
    - `preview_tasks` — tarjetas editables (`TaskPreviewCard`)
    - `preview_plan` — planificación de sprint/objetivo antes de confirmar
    - `message` — texto informativo
-4. Usuario confirma → `useConfirmDictatedTasks` → `POST /api/tasks` (+ subtareas vía `POST /api/tasks/[id]/subtasks`).
+4. Usuario confirma → `useConfirmDictatedTasks` → `POST /api/tasks`.
 5. **Editar en formulario** — prellena `CreateTaskModal` vía `openCreateModalWithDraft` (`CreateTaskDraft` en `kanban-ui.store`).
 
 ### Extracción directa (fast-path)
@@ -130,7 +130,9 @@ Contexto inyectado server-side (`loadExtractContext`): miembros, sedes, tableros
 
 ### Campos soportados en extracción / confirmación
 
-Título, descripción, status, prioridad, tipo, tags, fecha+hora, assignees, location, project / **projectIds** (varios tableros), cycle, objective, checklist, subtareas, recurrencia (`weekly`, `biweekly`, `monthly`, etc.).
+Título, descripción, status, prioridad, tipo, tags, fecha+hora, assignees, location, project / **projectIds** (varios tableros), cycle, objective, checklist, recurrencia (`weekly`, `biweekly`, `monthly`, etc.).
+
+**Subtareas:** el concepto queda pausado para evitar confusión con checklist. La UI no muestra ni crea subtareas; si una extracción legacy devuelve `subtasks`, se transforman en items de checklist. Las rutas `/api/tasks/[id]/subtasks` y `parentId` quedan como soporte técnico dormido para retomar más adelante.
 
 Defaults al confirmar: si falta tablero → tablero Principal; si falta `cycleId` → sprint seleccionado en UI (`useTaskPreviewContext.confirmOptions`).
 
@@ -143,11 +145,17 @@ No hay tarea compartida entre tableros: cada tablero recibe su **propia fila** `
 | Planificador / voz / texto | El LLM puede devolver `projectIds: ["id1","id2"]` si el usuario nombra varios tableros; en preview, `ProjectMultiPicker` permite ajustar la selección antes de confirmar. |
 | Confirmar preview | `useConfirmDictatedTasks` expande cada ítem a N `POST /api/tasks` (uno por tablero). |
 | Modal «Nueva tarea» | Multi-select de tableros; si hay más de uno → `POST /api/tasks/replicate` con plantilla. |
-| Detalle de tarea | «Duplicar en tableros» → `POST /api/tasks/replicate` con `sourceTaskId` (copia checklist reseteado, subtareas por título, estado `todo`). |
+| Detalle de tarea | «Duplicar en tableros» → `POST /api/tasks/replicate` con `sourceTaskId` (copia checklist reseteado, estado `todo`). |
 
 API: `POST /api/tasks/replicate` — body `{ projectIds: string[], template?: CreateTaskDTO, sourceTaskId?: string }`. Valida que todos los `projectIds` pertenezcan al `businessId` del usuario.
 
 Helpers: `src/lib/tasks/resolve-project-targets.ts`, `src/lib/tasks/task-to-create-dto.ts`.
+
+## Aislamiento por espacio
+
+`Task.businessId` es la fuente principal del tenant. Ver ADR [`docs/decisions/007-task-business-id-isolation.md`](decisions/007-task-business-id-isolation.md).
+
+Para filas legacy con `businessId = null`, el backend solo infiere pertenencia por `project.businessId` o `location.businessId`; nunca por `creator.businessId`. Ejecutar `npx tsx --env-file=.env.local scripts/backfill-task-business-id.ts --execute` para completar filas inferibles por tablero/sector.
 
 **No incluye:** sincronizar copias entre tableros, copiar adjuntos/comentarios, ni un solo Kanban card visible en múltiples tableros sin duplicar.
 

@@ -153,6 +153,22 @@ Eliminados: 2/2
 
 El script reasigna `user.businessId` al negocio invitador si apuntaba al fantasma. Usuarios afectados pueden necesitar cerrar sesión y volver a entrar para refrescar el perfil.
 
+## Backfill de businessId en tareas
+
+Para aislar correctamente espacios en usuarios multi-espacio, las tareas nuevas guardan `Task.businessId`. Si existen tareas legacy sin ese campo, ejecutar primero dry-run:
+
+```bash
+npx tsx --env-file=.env.local scripts/backfill-task-business-id.ts
+```
+
+Aplicar solo las filas inferibles por tablero o sector:
+
+```bash
+npx tsx --env-file=.env.local scripts/backfill-task-business-id.ts --execute
+```
+
+Las tareas sin tablero/sector quedan reportadas como ambiguas y deben revisarse manualmente.
+
 Documentación: [`docs/permissions.md`](permissions.md), [`docs/invites-and-accounts.md`](invites-and-accounts.md), ADR 006.
 
 ## Acceso superadmin

@@ -12,6 +12,7 @@ async function getTimeEntryBusinessId(entryId: string): Promise<string | null> {
     select: {
       task: {
         select: {
+          businessId: true,
           project: { select: { businessId: true } },
           location: { select: { businessId: true } },
           creator: { select: { businessId: true } },
@@ -19,7 +20,7 @@ async function getTimeEntryBusinessId(entryId: string): Promise<string | null> {
       },
     },
   });
-  return entry?.task?.project?.businessId ?? entry?.task?.location?.businessId ?? entry?.task?.creator?.businessId ?? null;
+  return entry?.task?.businessId ?? entry?.task?.project?.businessId ?? entry?.task?.location?.businessId ?? entry?.task?.creator?.businessId ?? null;
 }
 
 export const DELETE = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {

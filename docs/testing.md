@@ -158,7 +158,7 @@ describe('can()', () => {
 | Archivo | Qué cubre |
 |---------|-----------|
 | `api-tasks.test.ts` | GET /tasks (filtros, businessId, creatorId), POST /tasks (RBAC creatorId) |
-| `api-task-detail.test.ts` | GET/PATCH/DELETE /tasks/[id], subtareas |
+| `api-task-detail.test.ts` | GET/PATCH/DELETE /tasks/[id], soporte legacy de subtareas |
 | `api-comments.test.ts` | GET/POST /tasks/[id]/comments, 404 si tarea no existe |
 | `api-time-entries.test.ts` | GET/POST /tasks/[id]/time-entries, validación hours > 0 |
 | `api-members.test.ts` | CRUD de miembros, límite por plan (429) |

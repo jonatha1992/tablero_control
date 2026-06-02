@@ -13,6 +13,7 @@ async function getCommentWithBusinessId(commentId: string) {
       authorId: true,
       task: {
         select: {
+          businessId: true,
           project: { select: { businessId: true } },
           location: { select: { businessId: true } },
           creator: { select: { businessId: true } },
@@ -21,7 +22,7 @@ async function getCommentWithBusinessId(commentId: string) {
     },
   });
   if (!comment) return null;
-  const businessId = comment.task?.project?.businessId ?? comment.task?.location?.businessId ?? comment.task?.creator?.businessId ?? null;
+  const businessId = comment.task?.businessId ?? comment.task?.project?.businessId ?? comment.task?.location?.businessId ?? comment.task?.creator?.businessId ?? null;
   return { authorId: comment.authorId, businessId };
 }
 

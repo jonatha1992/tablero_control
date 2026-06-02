@@ -42,7 +42,6 @@ export const POST = handle(async (request: NextRequest) => {
   assertSameTenant(user.data, { businessId: effectiveBusinessId });
 
   let template: CreateTaskDTO;
-  let subtaskTitles: string[] = [];
 
   if (body.sourceTaskId) {
     const source = await taskService.getTaskById(body.sourceTaskId);
@@ -50,10 +49,11 @@ export const POST = handle(async (request: NextRequest) => {
       return NextResponse.json({ error: 'task_not_found' }, { status: 404 });
     }
     const sourceBusinessId = await getTaskBusinessId(body.sourceTaskId);
+    if (!sourceBusinessId) {
+      return NextResponse.json({ error: 'task_not_found' }, { status: 404 });
+    }
     assertResourceBelongsToBusiness(user.data, sourceBusinessId);
     template = taskToReplicateTemplate(source);
-    const subtasks = await taskService.getSubtasks(body.sourceTaskId);
-    subtaskTitles = subtasks.map((s) => s.title);
   } else if (body.template?.title?.trim()) {
     template = body.template;
   } else {
@@ -115,25 +115,6 @@ export const POST = handle(async (request: NextRequest) => {
       },
     });
 
-    for (const title of subtaskTitles) {
-      const subtask = await taskService.createTask(
-        {
-          title,
-          status: 'todo',
-          priority: template.priority,
-          type: 'task',
-          assigneeIds: [],
-          tags: [],
-        },
-        effectiveCreatorId,
-        effectiveBusinessId,
-      );
-      await taskService.updateTask(subtask.id, {
-        parentId: task.id,
-        projectId: task.projectId,
-        locationId: task.locationId,
-      });
-    }
   }
 
   return NextResponse.json({ tasks: created, count: created.length }, { status: 201 });
