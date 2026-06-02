@@ -16,7 +16,7 @@ attachments (Attachment[]), comments (Comment[]), subtasks (Task[] legacy/pausad
 ```
 
 **Enums:**
-- `TaskStatus`: `backlog | todo | in_progress | in_review | done | blocked`
+- `TaskStatus`: `backlog | todo | in_progress | in_review | done | blocked | archived`
 - `TaskPriority`: `low | medium | high | urgent`
 - `TaskType`: `feature | bug | improvement | task | documentation`
 
@@ -48,17 +48,27 @@ Store: `useScrumUIStore` (`src/stores/scrum-ui.store.ts`) — `selectedSprintId`
 
 **Tabs:**
 - **Todas** — `viewMode: 'board'`, `selectedSprintId: null`
-- **Backlog** — `viewMode: 'backlog'` → filter `noCycle: true`
+- **Backlog** — `viewMode: 'backlog'` → filter `status: ['backlog']`
 - **[Nombre ciclo activo]** — tab dinámico, punto verde, solo si `status: 'active'`
 - **Otros ▾** — dropdown con planning/completed/closed
 
-**Filtros server-side:** `TaskFilters` acepta `cycleId?: string[]` y `noCycle?: boolean`. Fluyen: `tasksApi` → `GET /api/tasks` → `taskRepository.buildWhere()`.
+**Filtros server-side:** `TaskFilters` acepta `status?: TaskStatus[]`, `cycleId?: string[]`, `noCycle?: boolean`, `assigneeId?: string[]`, `dueDateFrom?: Date` y `dueDateTo?: Date`. Fluyen: `tasksApi` → `GET /api/tasks` → `taskRepository.buildWhere()`.
 
 **Regla:** NO crear estado local para filtro de sprint — `useScrumUIStore` es la fuente de verdad compartida entre `page.tsx` y `CreateTaskModal`.
 
 **CreateTaskModal:** si tab activo es sprint (`viewMode: 'board'` + `selectedSprintId`), "Período/Sprint" se pre-selecciona automáticamente. Field aparece solo si el negocio tiene ≥ 1 ciclo.
 
 `CreateTaskDTO` incluye `cycleId?: string` — el repositorio lo pasa a Prisma por spread (`...rest`).
+
+## Criterio de pendientes
+
+Helper compartido: `src/lib/tasks/task-status.ts`.
+
+- **Pendiente / activa:** status no está en `done`, `archived` ni `backlog`.
+- **Accionable hasta hoy:** pendiente y sin fecha, vencida o con `dueDate` hasta el final del día actual.
+- **Trabajo comprometido para burndown:** incluye completadas, pero excluye `backlog`, `archived` y tareas con vencimiento futuro.
+
+Dashboard, agenda, reportes y burndown deben usar este helper para evitar que backlog o tareas futuras inflen los contadores de trabajo pendiente.
 
 ## Agenda Inteligente (`/dashboard/tareas/agenda`)
 
@@ -70,7 +80,7 @@ Componente: `src/components/tareas/agenda-view.tsx`.
 3. 🕐 **Hoy con hora** — `dueDate = hoy` con hora ≠ 00:00, orden cronológico
 4. 🎯 **Para hoy** — `dueDate = hoy` todo-día, orden por score
 5. 📅 **Esta semana** — próximos 7 días, orden por fecha
-6. ⏱ **Próximamente** — próximos 30 días, colapsable
+6. ⏱ **Próximamente** — próximos 30 días, visible con toggle "Todas"
 7. 📥 **Sin fecha** — sin `dueDate`, colapsable, orden por score
 8. ✅ **Completadas** — colapsadas por defecto, últimas 30
 
@@ -79,6 +89,8 @@ Componente: `src/components/tareas/agenda-view.tsx`.
 **Quick actions:** click en círculo → dropdown de status (usa `useMoveTask`).
 
 **`now` reactivo:** se actualiza cada 60s y en `window.focus`.
+
+**Toggle "Hasta hoy / Todas":** por defecto la agenda muestra el trabajo accionable hasta hoy. Las tareas futuras quedan ocultas del conteo principal y se muestran intencionalmente con "Todas".
 
 ## Ciclos y Objetivos
 

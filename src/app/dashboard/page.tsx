@@ -5,16 +5,19 @@ import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
 import { AlertCircle, CheckCircle2, Clock, Zap, TrendingUp } from 'lucide-react';
+import { isActionableUpToToday } from '@/lib/tasks/task-status';
 
 export default function DashboardPage() {
   const { data: tasks = [], isLoading } = useTasksQuery();
   const { data: locations = [] } = useLocationsQuery();
 
+  const now = new Date();
   const metrics = {
-    active: tasks.filter((t) => t.status !== 'done').length,
+    // A1/A2: excluir backlog y tareas con dueDate futuro (issue #1, #3, #13)
+    active: tasks.filter((t) => isActionableUpToToday(t, now)).length,
     done: tasks.filter((t) => t.status === 'done').length,
     blocked: tasks.filter((t) => t.status === 'blocked').length,
-    urgent: tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length,
+    urgent: tasks.filter((t) => t.priority === 'urgent' && isActionableUpToToday(t, now)).length,
   };
 
   // Group by location/sector

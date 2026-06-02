@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useMemo, useState } from 'react';
 import {
@@ -21,6 +21,7 @@ import { SECTOR_ICONS } from '@/components/sectores/sector-modal';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
+import { validateTaskCompletion } from '@/lib/task-validation';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -47,6 +48,7 @@ import { useBulkDeleteTasks } from '@/hooks/mutations/use-bulk-delete-tasks';
 import { useBulkAssignTaskLocation } from '@/hooks/mutations/use-bulk-assign-task-location';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
@@ -117,6 +119,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const bulkDelete = useBulkDeleteTasks();
   const bulkAssignLocation = useBulkAssignTaskLocation();
   const { data: locations = [] } = useLocationsQuery();
+  const { data: business } = useBusinessQuery(user?.businessId);
   const { data: objectives = [] } = useObjectivesQuery(user?.businessId ?? '');
 
   const selectedTask = selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null;
@@ -186,6 +189,10 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     }
 
     if (targetColumn && targetColumn !== task.status) {
+      if (targetColumn === 'done' && !validateTaskCompletion(task, business?.settings)) {
+        return; // Detener el drag si no cumple requisitos (B1, B2, B4)
+      }
+
       if (selectedTaskIds.length > 1 && selectedTaskIds.includes(taskId)) {
         bulkMove.mutate(
           { taskIds: selectedTaskIds, newStatus: targetColumn },

@@ -290,6 +290,7 @@ model Project {
   team     Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   business Business? @relation(fields: [businessId], references: [id])
   tasks    Task[]
+  cycles   Cycle[]
 
   @@index([teamId])
   @@index([businessId])
@@ -315,11 +316,15 @@ model Task {
   estimatedHours Float?
   actualHours    Float?
   recurrence     Json?
+  recurrenceSpawnedAt DateTime?   // A4: marca que ya generó su próxima ocurrencia (#7)
+  recurrenceGroupId  String?     // #10: agrupa instancias de una misma recurrencia
   checklist      Json         @default("[]")
   cycleId        String?
   objectiveId    String?
   position       Int          @default(0)
   commentCount   Int          @default(0)
+  deletedAt      DateTime?     // #8: soft-delete — null = activa
+  deletedBy      String?       // #8: userId que eliminó
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -383,6 +388,7 @@ model Cycle {
   goal        String?
   teamId      String?
   businessId  String
+  projectId   String?  // #16: sprint por proyecto → permite múltiples activos
   status      String   @default("planning") // planning | active | completed | closed
   startDate   DateTime?
   endDate     DateTime?
@@ -391,8 +397,10 @@ model Cycle {
 
   tasks    Task[]
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  project  Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
+  @@index([projectId])
   @@index([status])
   @@index([startDate])
 }

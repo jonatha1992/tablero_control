@@ -172,6 +172,12 @@ describe('can()', () => {
 | `api-auth-register.test.ts` | POST /auth/register |
 | `api-upload.test.ts` | POST /upload — avatar, attachment, tenant guard |
 
+### Helpers de dominio
+
+| Archivo | Qué cubre |
+|---------|-----------|
+| `task-status.test.ts` | Criterio compartido de tareas pendientes/accionables: excluye backlog, done, archived y futuras según vista |
+
 ### Auth & Permisos
 
 | Archivo | Qué cubre |

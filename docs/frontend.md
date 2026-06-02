@@ -83,7 +83,7 @@ src/app/
 │   ├── equipo/
 │   │   └── roles/
 │   ├── sectores/          ← UI de Location (label configurable: Sedes, Sectores, etc.); ruta /equipo/sectores
-│   ├── reportes/          # métricas + export Excel .xlsx (ver sección Reportes)
+│   ├── reportes/          # métricas + filtros fecha/persona + export Excel .xlsx (ver sección Reportes)
 │   ├── billing/
 │   ├── config/
 │   └── ayuda/
@@ -183,7 +183,9 @@ Página client (`src/app/dashboard/reportes/page.tsx`). Datos en vivo con `useTa
 
 **KPIs** en la parte superior: tasa de completado, total de tareas, bloqueadas, urgentes activas.
 
-**Período** (Semana / Mes / Trimestre): control en el header. Los gráficos usan el universo completo de tareas del negocio; el período **sí filtra** la hoja *Tareas* del Excel exportado.
+**Filtros server-side:** rango de vencimiento (`dueDateFrom`, `dueDateTo`) y persona asignada (`assigneeId`). Se aplican con `useTasksQuery(filters)` y afectan KPIs, gráficos, carga de equipo y export Excel.
+
+**Período** (Semana / Mes / Trimestre): control en el header. Los gráficos usan el universo filtrado de tareas del negocio; el período filtra la hoja *Tareas* del Excel exportado.
 
 **Exportar Excel** (botón con icono de descarga):
 - Handler: `handleExport` → `exportReportExcel()` en `src/lib/reports-export.ts` (import dinámico de `xlsx`).

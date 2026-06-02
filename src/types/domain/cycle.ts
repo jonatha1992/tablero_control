@@ -5,6 +5,7 @@ export interface Cycle {
   name: string;
   goal?: string;
   teamId?: string;
+  projectId?: string; // #16: sprint por proyecto
   businessId: string;
   status: CycleStatus;
   startDate?: Date;

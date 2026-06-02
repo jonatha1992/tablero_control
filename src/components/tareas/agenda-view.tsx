@@ -2,10 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth-context';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useTodayEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
+import { isPending } from '@/lib/tasks/task-status';
+import { validateTaskCompletion } from '@/lib/task-validation';
 import { TaskDetailModal } from './task-detail-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -256,12 +259,14 @@ interface AgendaViewProps {
 
 export function AgendaView({ tasks }: AgendaViewProps) {
   const { user } = useAuth();
+  const { data: business } = useBusinessQuery(user?.businessId);
   const moveTask = useMoveTask();
   const { data: todayEvents = [] } = useTodayEventsQuery();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDone, setShowDone] = useState(false);
   const [showNoDate, setShowNoDate] = useState(true);
   const [showLater, setShowLater] = useState(true);
+  const [showFuture, setShowFuture] = useState(false);
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -292,6 +297,8 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         done.push(task);
         continue;
       }
+      // #13: backlog = ideas, no trabajo comprometido → no mostrar como pendiente.
+      if (!isPending(task)) continue;
       if (!task.dueDate) {
         noDate.push(task);
         continue;
@@ -320,13 +327,20 @@ export function AgendaView({ tasks }: AgendaViewProps) {
     noDate.sort(byScore);
     done.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
-    const allActive = [...overdue, ...todayTimed, ...todayAllDay, ...thisWeek, ...later, ...noDate];
-    const focus = [...allActive].sort(byScore).slice(0, 3);
+    // #1/#3: foco solo hasta hoy (sin futuras).
+    const actionableNow = [...overdue, ...todayTimed, ...todayAllDay, ...noDate];
+    const focus = [...actionableNow].sort(byScore).slice(0, 3);
 
     return { overdue, todayTimed, todayAllDay, thisWeek, later, noDate, done, focus };
   }, [tasks, userId, now]);
 
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
+    if (status === 'done') {
+      const task = tasks.find((t) => t.id === taskId);
+      if (task && !validateTaskCompletion(task, business?.settings)) {
+        return; // B1, B2, B4
+      }
+    }
     moveTask.mutate({ taskId, newStatus: status });
   };
 
@@ -334,15 +348,15 @@ export function AgendaView({ tasks }: AgendaViewProps) {
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const totalActive =
+  // #1/#3: pendientes accionables hasta hoy (sin futuras).
+  const pendingNow =
     sections.overdue.length +
     sections.todayTimed.length +
     sections.todayAllDay.length +
-    sections.thisWeek.length +
-    sections.later.length +
     sections.noDate.length;
+  const futureCount = sections.thisWeek.length + sections.later.length;
 
-  if (totalActive === 0 && sections.done.length === 0) {
+  if (pendingNow === 0 && futureCount === 0 && sections.done.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
         <CheckCircle2 className="h-12 w-12 opacity-20" />
@@ -354,6 +368,40 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   return (
     <>
       <div className="space-y-6 pb-12 max-w-3xl">
+
+        {/* #1/#3: Toggle hasta hoy / todas */}
+        {futureCount > 0 && (
+          <div className="flex items-center justify-end gap-2 text-xs">
+            <span className="text-muted-foreground">Mostrar:</span>
+            <div className="inline-flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setShowFuture(false)}
+                className={cn('px-3 py-1 transition-colors', !showFuture ? 'bg-primary text-primary-foreground' : 'hover:bg-muted')}
+              >
+                Hasta hoy
+              </button>
+              <button
+                onClick={() => setShowFuture(true)}
+                className={cn('px-3 py-1 transition-colors', showFuture ? 'bg-primary text-primary-foreground' : 'hover:bg-muted')}
+              >
+                Todas ({futureCount} futura{futureCount !== 1 ? 's' : ''})
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Banner: todo al día */}
+        {pendingNow === 0 && (futureCount > 0 || sections.done.length > 0) && (
+          <div className="flex items-center gap-2.5 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 px-3 py-2 text-sm text-green-700 dark:text-green-300">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span className="font-medium">Todo al día.</span>
+            {futureCount > 0 && !showFuture && (
+              <span className="text-green-600 dark:text-green-400">
+                {futureCount} tarea{futureCount !== 1 ? 's' : ''} futura{futureCount !== 1 ? 's' : ''}.
+              </span>
+            )}
+          </div>
+        )}
 
         {/* BANNER EVENTOS HOY */}
         {todayEvents.length > 0 && (
@@ -448,8 +496,8 @@ export function AgendaView({ tasks }: AgendaViewProps) {
           </section>
         )}
 
-        {/* ESTA SEMANA */}
-        {sections.thisWeek.length > 0 && (
+        {/* ESTA SEMANA — oculto por defecto (#1/#3) */}
+        {showFuture && sections.thisWeek.length > 0 && (
           <section className="space-y-2">
             <SectionHeader icon={Calendar} label="Esta semana" count={sections.thisWeek.length} />
             <div className="space-y-2 pl-6">
@@ -466,8 +514,8 @@ export function AgendaView({ tasks }: AgendaViewProps) {
           </section>
         )}
 
-        {/* PRÓXIMAMENTE */}
-        {sections.later.length > 0 && (
+        {/* PRÓXIMAMENTE — oculto por defecto (#1/#3) */}
+        {showFuture && sections.later.length > 0 && (
           <section className="space-y-2">
             <SectionHeader
               icon={Timer}

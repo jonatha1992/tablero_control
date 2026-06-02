@@ -46,7 +46,14 @@ export interface Task {
   estimatedHours?: number;
   actualHours?: number;
   recurrence?: RecurrenceConfig;
+  /** A4: timestamp en que esta ocurrencia generó su próxima (evita duplicados al re-finalizar). */
+  recurrenceSpawnedAt?: Date;
+  /** #10: agrupa instancias de una misma recurrencia. */
+  recurrenceGroupId?: string;
   checklist: ChecklistItem[];
+  /** #8: soft-delete. */
+  deletedAt?: Date;
+  deletedBy?: string;
   subtaskIds: string[];
   subtasksCompleted: number;
   attachmentUrls: string[];

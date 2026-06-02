@@ -57,6 +57,12 @@ export async function login(email: string, password: string) {
   }
 }
 
+/** Detect mobile/tablet where popups are unreliable. */
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+}
+
 export async function loginWithGoogle() {
   if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
     throw new Error(
@@ -64,6 +70,13 @@ export async function loginWithGoogle() {
       'Usá email y contraseña con las credenciales de prueba.',
     );
   }
+
+  // #18: Mobile browsers block popups almost always → use redirect directly.
+  if (isMobileDevice()) {
+    await signInWithRedirect(auth, googleProvider);
+    return null;
+  }
+
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return { user: result.user, token: await result.user.getIdToken() };

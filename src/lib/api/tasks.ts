@@ -25,11 +25,20 @@ async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+function serializeFilterValue(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.join(',');
+  return String(value);
+}
+
 export const tasksApi = {
   getByBusiness: (businessId: string, signal?: AbortSignal, filters?: TaskFilters) => {
     const params = new URLSearchParams({ businessId });
     if (filters) {
-      Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v == null) return;
+        params.set(k, serializeFilterValue(v));
+      });
     }
     return fetchJsonAuth<Task[]>(`/api/tasks?${params}`, { signal });
   },
@@ -37,7 +46,10 @@ export const tasksApi = {
   getByCreator: (userId: string, signal?: AbortSignal, filters?: TaskFilters) => {
     const params = new URLSearchParams({ creatorId: userId });
     if (filters) {
-      Object.entries(filters).forEach(([k, v]) => v != null && params.set(k, String(v)));
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v == null) return;
+        params.set(k, serializeFilterValue(v));
+      });
     }
     return fetchJsonAuth<Task[]>(`/api/tasks?${params}`, { signal });
   },

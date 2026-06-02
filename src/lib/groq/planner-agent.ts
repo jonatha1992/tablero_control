@@ -46,6 +46,9 @@ export async function runPlannerAgent(
         plan: result.plan,
       };
     }
+    if (result.type === 'query') {
+      return result;
+    }
     return { type: 'message', content: result.content };
   }
 

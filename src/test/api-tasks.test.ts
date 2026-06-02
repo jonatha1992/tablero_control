@@ -102,6 +102,28 @@ describe('GET /api/tasks', () => {
     );
   });
 
+  it('pasa filtros de asignado y rango de vencimiento correctamente', async () => {
+    mockGetByBusiness.mockResolvedValueOnce([mockTasks[0]] as never);
+    const req = makeRequest(
+      'http://localhost/api/tasks?businessId=biz-1&assigneeId=u-1&dueDateFrom=2026-06-01&dueDateTo=2026-06-02'
+    );
+
+    await GET(req);
+
+    expect(mockGetByBusiness).toHaveBeenCalledWith(
+      'biz-1',
+      expect.objectContaining({
+        assigneeId: ['u-1'],
+        dueDateFrom: expect.any(Date),
+        dueDateTo: expect.any(Date),
+      })
+    );
+    const filters = mockGetByBusiness.mock.calls[0][1];
+    expect(filters?.dueDateFrom?.getHours()).toBe(0);
+    expect(filters?.dueDateTo?.getHours()).toBe(23);
+    expect(filters?.dueDateTo?.getMinutes()).toBe(59);
+  });
+
   it('retorna 500 si el service lanza error', async () => {
     mockGetByBusiness.mockRejectedValueOnce(new Error('DB error'));
     const req = makeRequest('http://localhost/api/tasks?businessId=biz-1');

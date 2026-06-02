@@ -15,3 +15,7 @@ export const DEFAULT_BUSINESS_SETTINGS: BusinessSettings = {
 export function hasMultipleBoards(settings?: BusinessSettings | null): boolean {
   return settings?.multipleBoards === true;
 }
+
+export function isAttachmentRequiredToFinalize(settings?: BusinessSettings | null): boolean {
+  return settings?.requireAttachmentToFinalize === true;
+}

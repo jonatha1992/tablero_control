@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -49,13 +49,9 @@ function toTextMessages(messages: DisplayMessage[]): AssistantMessage[] {
     .map((m) => ({ role: m.role, content: m.content }));
 }
 
-export function useAssistantChat(mode: AssistantMode = 'assistant') {
+export function useAssistantChat(_mode: AssistantMode = 'assistant') {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [pendingSlots, setPendingSlots] = useState<Record<string, string>>({});
-
-  const chatMutation = useMutation({
-    mutationFn: (msgs: AssistantMessage[]) => assistantApi.chat(msgs, mode),
-  });
 
   const plannerMutation = useMutation({
     mutationFn: ({ message, history }: { message: string; history: AssistantMessage[] }) =>
@@ -109,24 +105,6 @@ export function useAssistantChat(mode: AssistantMode = 'assistant') {
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
 
-    const textOnly = toTextMessages(nextMessages);
-
-    try {
-      const result = await chatMutation.mutateAsync(textOnly);
-      setMessages((prev) => [...prev, { role: 'assistant', content: result.message }]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Lo siento, ocurrió un error. Intentá de nuevo.' },
-      ]);
-    }
-  };
-
-  const sendPlanner = async (userText: string) => {
-    const userMsg: AssistantMessage = { role: 'user', content: userText };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
-
     const history = toTextMessages(nextMessages.slice(0, -1));
 
     try {
@@ -142,7 +120,7 @@ export function useAssistantChat(mode: AssistantMode = 'assistant') {
 
   const answerClarify = (field: string, answer: string) => {
     setPendingSlots((prev) => ({ ...prev, [field]: answer }));
-    void sendPlanner(answer);
+    void send(answer);
   };
 
   const addAction = (result: GeneratePlanResponse) => {
@@ -212,7 +190,6 @@ export function useAssistantChat(mode: AssistantMode = 'assistant') {
     messages,
     pendingSlots,
     send,
-    sendPlanner,
     answerClarify,
     addAction,
     addPreview,
@@ -224,6 +201,6 @@ export function useAssistantChat(mode: AssistantMode = 'assistant') {
     updateTaskInMessage,
     removeTaskFromMessage,
     clear,
-    isPending: chatMutation.isPending || plannerMutation.isPending,
+    isPending: plannerMutation.isPending,
   };
 }

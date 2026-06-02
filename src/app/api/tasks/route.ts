@@ -8,6 +8,26 @@ import { prisma } from '@/lib/prisma';
 import { sendNotification } from '@/lib/notifications';
 import type { TaskFilters, TaskStatus, TaskPriority } from '@/types/domain/task';
 
+function parseDateFilter(value: string | null, endOfDay = false): Date | undefined {
+  if (!value) return undefined;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly;
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0
+    );
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date;
+}
+
 export const GET = handle(async (request: NextRequest) => {
   const user = await requireUser(request);
   if (user instanceof NextResponse) return user;
@@ -30,9 +50,12 @@ export const GET = handle(async (request: NextRequest) => {
   const priority = searchParams.get('priority');
   const projectId = searchParams.get('projectId');
   const locationId = searchParams.get('locationId');
+  const assigneeId = searchParams.get('assigneeId');
   const cycleId = searchParams.get('cycleId');
   const noCycle = searchParams.get('noCycle');
   const search = searchParams.get('search');
+  const dueDateFrom = parseDateFilter(searchParams.get('dueDateFrom'));
+  const dueDateTo = parseDateFilter(searchParams.get('dueDateTo'), true);
   const activeMembership = user.data.memberships?.find(
     (m) => m.businessId === businessId && m.isActive
   );
@@ -43,6 +66,7 @@ export const GET = handle(async (request: NextRequest) => {
   else if (!includeArchived) { filters.excludeStatus = ['archived']; }
   if (priority) { const ids = priority.split(',').filter(Boolean); if (ids.length) filters.priority = ids as TaskPriority[]; }
   if (projectId) { const ids = projectId.split(',').filter(Boolean); if (ids.length) filters.projectId = ids; }
+  if (assigneeId) { const ids = assigneeId.split(',').filter(Boolean); if (ids.length) filters.assigneeId = ids; }
   
   // Sector-scoped users: su sector + tareas propias sin sector (p. ej. creadas por IA sin locationId)
   if (userLocationId && user.role !== 'admin' && user.role !== 'superadmin') {
@@ -54,6 +78,8 @@ export const GET = handle(async (request: NextRequest) => {
 
   if (cycleId) { const ids = cycleId.split(',').filter(Boolean); if (ids.length) filters.cycleId = ids; }
   if (noCycle === 'true') filters.noCycle = true;
+  if (dueDateFrom) filters.dueDateFrom = dueDateFrom;
+  if (dueDateTo) filters.dueDateTo = dueDateTo;
   if (search) filters.search = search;
 
   if (creatorId && !businessId) {

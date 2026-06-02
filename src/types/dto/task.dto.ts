@@ -15,6 +15,7 @@ export interface CreateTaskDTO {
   dueDate?: Date;
   estimatedHours?: number;
   recurrence?: RecurrenceConfig;
+  recurrenceGroupId?: string; // #10
   checklist?: ChecklistItem[];
 }
 
@@ -31,6 +32,8 @@ export type UpdateTaskDTO = Partial<Omit<CreateTaskDTO, 'locationId' | 'projectI
   objectiveId?: string | null;
   parentId?: string | null;
   checklist?: ChecklistItem[];
+  recurrenceSpawnedAt?: Date | null;
+  recurrenceGroupId?: string | null;
 };
 
 export interface MoveTaskDTO {

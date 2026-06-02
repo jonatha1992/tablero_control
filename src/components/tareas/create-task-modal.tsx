@@ -125,6 +125,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
   const [dayOfMonth, setDayOfMonth] = useState<number | undefined>(undefined);
   const [estimatedHours, setEstimatedHours] = useState<number | undefined>(undefined);
+  const [objectiveIdDraft, setObjectiveIdDraft] = useState<string | undefined>(undefined);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newCheckItem, setNewCheckItem] = useState('');
   const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
@@ -184,6 +185,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     if (d.projectIds?.length) setSelectedProjectIds(d.projectIds);
     else if (d.projectId) setSelectedProjectIds([d.projectId]);
     if (d.cycleId) setCycleId(d.cycleId);
+    if (d.objectiveId) setObjectiveIdDraft(d.objectiveId); // A5: precargar objetivo desde draft
     if (d.estimatedHours != null) setEstimatedHours(d.estimatedHours);
     if (d.checklist?.length || d.subtasks?.length) {
       setChecklist([
@@ -217,6 +219,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setStatus(defaultStatus ?? 'todo'); setPriority('medium'); setType('task');
     setLocationId(''); setSelectedProjectIds([]); setCycleId('');
     setEstimatedHours(undefined);
+    setObjectiveIdDraft(undefined); // A5
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
     setChecklist([]); setNewCheckItem('');
@@ -301,6 +304,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         projectIds: boardTargets.length > 1 ? boardTargets : undefined,
         projectId: boardTargets.length === 1 ? boardTargets[0] : undefined,
         cycleId: cycleId || undefined,
+        objectiveId: objectiveIdDraft || undefined, // A5
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         estimatedHours: estimatedHours || undefined,
         dueDate: dueDate ? new Date(`${dueDate}T${dueTime || '00:00'}`) : undefined,
@@ -517,7 +521,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               <label className="text-sm font-medium mb-1 block">Horas est.</label>
               <input
                 type="number"
-                min={0}
+                min={0.5}         // B5: mínimo 0.5h (#2)
                 max={99}
                 step={0.25}
                 value={estimatedHours ?? ''}
@@ -578,7 +582,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                   />
                 </div>
 
-                {frequency === 'weekly' && (
+                {(frequency === 'weekly' || frequency === 'biweekly') && ( // B3: biweekly también elige día (#9)
                   <div className="col-span-2">
                     <label className="text-xs text-muted-foreground mb-1 block">Día de la semana</label>
                     <select

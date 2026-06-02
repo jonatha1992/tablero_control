@@ -107,7 +107,9 @@ class TaskService {
     const task = await taskRepository.findById(taskId);
     if (!task) throw new Error('Tarea no encontrada');
 
-    const wasAlreadyDone = task.status === 'done';
+    // #7: guard persistente. La ocurrencia genera su próxima UNA sola vez.
+    // Mover a in_progress y re-finalizar ya no duplica (recurrenceSpawnedAt persiste).
+    const alreadySpawned = !!task.recurrenceSpawnedAt;
     const updates: UpdateTaskDTO = { status: newStatus };
     if (newStatus === 'done') {
       updates.completedDate = new Date();
@@ -115,10 +117,13 @@ class TaskService {
 
     await taskRepository.update(taskId, updates);
 
-    // Lógica de recurrencia — solo al pasar a done por primera vez (evita duplicados al re-finalizar)
-    if (newStatus === 'done' && !wasAlreadyDone && task.recurrence) {
+    if (newStatus === 'done' && !alreadySpawned && task.recurrence) {
       if (this.isRecurrenceExhausted(task.recurrence)) return null;
       const nextTask = await this.createNextOccurrence(task);
+      // #10: propagar groupId al origen si no lo tenía
+      const patchOrigin: UpdateTaskDTO = { recurrenceSpawnedAt: new Date() };
+      if (!task.recurrenceGroupId) patchOrigin.recurrenceGroupId = task.id;
+      await taskRepository.update(taskId, patchOrigin);
       return nextTask;
     }
 
@@ -139,6 +144,9 @@ class TaskService {
     
     const resetChecklist = (task.checklist ?? []).map((item) => ({ ...item, done: false }));
 
+    // #10: propagar recurrenceGroupId (o crearlo desde la tarea origen).
+    const groupId = task.recurrenceGroupId ?? task.id;
+
     const dto: CreateTaskDTO = {
       title: task.title,
       description: task.description,
@@ -148,9 +156,12 @@ class TaskService {
       assigneeIds: task.assigneeIds,
       projectId: task.projectId,
       locationId: task.locationId,
+      cycleId: task.cycleId,
+      objectiveId: task.objectiveId,
       tags: task.tags,
       dueDate: nextDueDate,
       recurrence: this.decrementRecurrenceCount(task.recurrence!) as RecurrenceConfig,
+      recurrenceGroupId: groupId,
       checklist: resetChecklist.length > 0 ? resetChecklist : undefined,
     };
 
@@ -159,6 +170,7 @@ class TaskService {
 
     return this.createTask(dto, task.creatorId, businessId);
   }
+
 
   private decrementRecurrenceCount(recurrence: RecurrenceConfig): RecurrenceConfig {
     if (typeof recurrence.count === 'number') {
@@ -184,6 +196,10 @@ class TaskService {
         break;
       case 'biweekly':
         date.setDate(date.getDate() + (interval * 14));
+        if (config.dayOfWeek !== undefined) { // B3: respetar día elegido (#9)
+          const diff = (config.dayOfWeek + 7 - date.getDay()) % 7;
+          date.setDate(date.getDate() + diff);
+        }
         break;
       case 'monthly':
         date.setMonth(date.getMonth() + interval);
@@ -199,8 +215,21 @@ class TaskService {
     return taskRepository.batchUpdatePositions(moves);
   }
 
-  async deleteTask(id: string): Promise<void> {
-    return taskRepository.delete(id);
+  /** #8: soft-delete. */
+  async deleteTask(id: string, deletedBy?: string): Promise<void> {
+    return taskRepository.delete(id, deletedBy);
+  }
+
+  async restoreTask(id: string): Promise<void> {
+    return taskRepository.restore(id);
+  }
+
+  async hardDeleteTask(id: string): Promise<void> {
+    return taskRepository.hardDelete(id);
+  }
+
+  async getDeletedTasks(businessId: string) {
+    return taskRepository.findDeleted(businessId);
   }
 }
 
