@@ -68,7 +68,7 @@ describe('DELETE /api/tasks/[id]', () => {
     const res = await DELETE(makeReq('t-1'), { params: Promise.resolve({ id: 't-1' }) });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
-    expect(mockDeleteTask).toHaveBeenCalledWith('t-1');
+    expect(mockDeleteTask).toHaveBeenCalledWith('t-1', 'u-1');
   });
 
   it('returns 403 with reason no_business_context when user.businessId missing', async () => {
