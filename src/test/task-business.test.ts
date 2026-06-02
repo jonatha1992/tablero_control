@@ -33,8 +33,9 @@ describe('getTaskBusinessId', () => {
     expect(result).toBe('biz-from-location');
   });
 
-  it('returns creator.businessId when task has no project or location', async () => {
+  it('returns null when task has no businessId, project or location', async () => {
     mockFindUnique.mockResolvedValue({
+      businessId: null,
       project: null,
       location: null,
       creator: { businessId: 'biz-from-creator', memberships: [] },
@@ -42,11 +43,12 @@ describe('getTaskBusinessId', () => {
 
     const result = await getTaskBusinessId('task-1');
 
-    expect(result).toBe('biz-from-creator');
+    expect(result).toBeNull();
   });
 
-  it("returns creator's active membership businessId when creator.businessId is null", async () => {
+  it("does not infer businessId from creator memberships", async () => {
     mockFindUnique.mockResolvedValue({
+      businessId: null,
       project: null,
       location: null,
       creator: {
@@ -57,7 +59,7 @@ describe('getTaskBusinessId', () => {
 
     const result = await getTaskBusinessId('task-1');
 
-    expect(result).toBe('biz-from-membership');
+    expect(result).toBeNull();
   });
 
   it('returns null when task is not found', async () => {
@@ -80,9 +82,23 @@ describe('getTaskBusinessId', () => {
     expect(result).toBeNull();
   });
 
-  it('respects priority order: project > location > creator.businessId > membership', async () => {
+  it('respects priority order: task.businessId > project > location', async () => {
     // All sources present — project should win
     mockFindUnique.mockResolvedValue({
+      businessId: 'biz-task',
+      project: { businessId: 'biz-project' },
+      location: { businessId: 'biz-location' },
+      creator: {
+        businessId: 'biz-creator',
+        memberships: [{ businessId: 'biz-membership' }],
+      },
+    } as never);
+
+    expect(await getTaskBusinessId('task-1')).toBe('biz-task');
+
+    // No task businessId — project wins
+    mockFindUnique.mockResolvedValue({
+      businessId: null,
       project: { businessId: 'biz-project' },
       location: { businessId: 'biz-location' },
       creator: {
@@ -93,8 +109,9 @@ describe('getTaskBusinessId', () => {
 
     expect(await getTaskBusinessId('task-1')).toBe('biz-project');
 
-    // No project — location wins
+    // No task businessId, no project — location wins
     mockFindUnique.mockResolvedValue({
+      businessId: null,
       project: null,
       location: { businessId: 'biz-location' },
       creator: {
@@ -105,8 +122,9 @@ describe('getTaskBusinessId', () => {
 
     expect(await getTaskBusinessId('task-1')).toBe('biz-location');
 
-    // No project, no location — creator.businessId wins
+    // No task businessId, no project, no location — do not infer by creator
     mockFindUnique.mockResolvedValue({
+      businessId: null,
       project: null,
       location: null,
       creator: {
@@ -115,18 +133,6 @@ describe('getTaskBusinessId', () => {
       },
     } as never);
 
-    expect(await getTaskBusinessId('task-1')).toBe('biz-creator');
-
-    // No project, no location, no creator.businessId — membership wins
-    mockFindUnique.mockResolvedValue({
-      project: null,
-      location: null,
-      creator: {
-        businessId: null,
-        memberships: [{ businessId: 'biz-membership' }],
-      },
-    } as never);
-
-    expect(await getTaskBusinessId('task-1')).toBe('biz-membership');
+    expect(await getTaskBusinessId('task-1')).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 ﻿'use client';
 
-import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -13,8 +12,6 @@ import {
   Check,
   MapPin,
   Trash2,
-  ListTree,
-  ChevronDown,
   Archive,
   ListChecks,
 } from 'lucide-react';
@@ -22,10 +19,6 @@ import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import { formatMonthDay, formatTimeHHMM } from '@/lib/utils/date';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useSubtasksQuery, subtaskKeys } from '@/hooks/queries/use-subtasks-query';
-import { useMoveTask } from '@/hooks/mutations/use-move-task';
-import { useQueryClient } from '@tanstack/react-query';
-import { TaskDetailModal } from './task-detail-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,8 +88,6 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
-  const [subtasksExpanded, setSubtasksExpanded] = useState(false);
-  const hasSubtasks = (task.subtaskIds?.length ?? 0) > 0;
   const checklistTotal = task.checklist?.length ?? 0;
   const checklistDone = task.checklist?.filter((i) => i.done).length ?? 0;
 
@@ -355,7 +346,7 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Meta: id, comentarios, adjuntos, checklist, subtareas, fecha */}
+        {/* Meta: id, comentarios, adjuntos, checklist, fecha */}
         <div className="flex items-center gap-2 text-muted-foreground flex-wrap justify-end">
           <span className="font-mono text-[10px] text-muted-foreground/40">#{shortId}</span>
           {task.commentCount > 0 && (
@@ -378,22 +369,6 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
               <ListChecks className="h-3.5 w-3.5" />
               <span className="tabular-nums">{checklistDone}/{checklistTotal}</span>
             </div>
-          )}
-          {hasSubtasks && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setSubtasksExpanded((v) => !v); }}
-              className={cn(
-                'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors',
-                subtasksExpanded
-                  ? 'bg-primary/15 text-primary'
-                  : 'hover:bg-muted hover:text-foreground'
-              )}
-              title="Ver subtareas"
-            >
-              <ListTree className="h-3.5 w-3.5" />
-              <span>{task.subtasksCompleted}/{task.subtaskIds!.length}</span>
-              <ChevronDown className={cn('h-3 w-3 transition-transform', subtasksExpanded && 'rotate-180')} />
-            </button>
           )}
           {task.dueDate && (
             <div
@@ -419,63 +394,6 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
         </div>
 
       </div>
-
-      {/* Subtareas inline expandibles */}
-      {hasSubtasks && subtasksExpanded && (
-        <SubtaskInlineList taskId={task.id} />
-      )}
     </div>
-  );
-}
-
-function SubtaskInlineList({ taskId }: { taskId: string }) {
-  const { data: subtasks = [], isLoading } = useSubtasksQuery(taskId);
-  const moveTask = useMoveTask();
-  const queryClient = useQueryClient();
-  const [openSubtask, setOpenSubtask] = useState<Task | null>(null);
-
-  if (isLoading) return <p className="text-[10px] text-muted-foreground mt-2 px-0.5">Cargando...</p>;
-  if (!subtasks.length) return null;
-
-  return (
-    <>
-      <div className="mt-2 space-y-1 border-t pt-2">
-        {subtasks.map((sub) => (
-          <div key={sub.id} className="group/isub flex items-center gap-1.5">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                moveTask.mutate(
-                  { taskId: sub.id, newStatus: sub.status === 'done' ? 'todo' : 'done' },
-                  { onSettled: () => queryClient.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) }) }
-                );
-              }}
-              className={cn(
-                'h-3.5 w-3.5 shrink-0 rounded border border-muted-foreground/40 flex items-center justify-center transition-colors hover:border-primary',
-                sub.status === 'done' && 'bg-primary border-primary'
-              )}
-              title={sub.status === 'done' ? 'Marcar pendiente' : 'Marcar completada'}
-            >
-              {sub.status === 'done' && <Check className="h-2 w-2 text-primary-foreground" />}
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setOpenSubtask(sub); }}
-              className={cn(
-                'text-[10px] flex-1 text-left leading-tight hover:text-primary transition-colors',
-                sub.status === 'done' && 'line-through text-muted-foreground'
-              )}
-            >
-              {sub.title}
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <TaskDetailModal
-        task={openSubtask}
-        open={!!openSubtask}
-        onOpenChange={(o) => { if (!o) setOpenSubtask(null); }}
-      />
-    </>
   );
 }

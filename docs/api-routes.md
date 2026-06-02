@@ -28,8 +28,8 @@ PATCH  /api/tasks/[id]
 DELETE /api/tasks/[id]
 GET    /api/tasks/[id]/comments
 POST   /api/tasks/[id]/comments
-GET    /api/tasks/[id]/subtasks
-POST   /api/tasks/[id]/subtasks
+GET    /api/tasks/[id]/subtasks    ← legacy pausado; UI no lo usa
+POST   /api/tasks/[id]/subtasks    ← legacy pausado; UI no lo usa
 GET    /api/tasks/[id]/time-entries
 POST   /api/tasks/[id]/time-entries
 POST   /api/tasks/from-audio    ← Groq Whisper → extracción con LLM + contexto tenant

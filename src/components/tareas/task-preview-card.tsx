@@ -393,24 +393,6 @@ export function TaskPreviewCard({
           </ul>
         )}
 
-        {task.subtasks && task.subtasks.length > 0 && (
-          <ul className="space-y-0.5 text-[10px]">
-            {task.subtasks.map((st, i) => (
-              <li key={i} className="flex items-center gap-1">
-                <span className="text-muted-foreground">↳</span>
-                <input
-                  value={st}
-                  onChange={(e) => {
-                    const subtasks = [...(task.subtasks ?? [])];
-                    subtasks[i] = e.target.value;
-                    onChange({ ...task, subtasks });
-                  }}
-                  className="flex-1 bg-transparent border-b border-border/50 outline-none"
-                />
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   );

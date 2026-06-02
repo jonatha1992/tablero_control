@@ -118,7 +118,7 @@ loadExtractContext(businessId): Promise<ExtractContext>
 // extract-tasks.ts
 extractTasksFromTranscription(text, ctx: ExtractContext): Promise<ExtractedTask[]>
 // Extrae: título, descripción, prioridad, status, assignees, tags, dueDate, dueTime,
-// location, project, cycle, objective, checklist, subtareas, recurrencia, estimatedHours
+// location, project, cycle, objective, checklist, recurrencia, estimatedHours
 
 // planner-intent.ts + planner-tools.ts + planner-agent.ts
 runPlannerAgent(message, ctx, history): Promise<PlannerResponse>

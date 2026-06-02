@@ -120,16 +120,13 @@ describe('POST /api/tasks/replicate', () => {
       checklist: [{ id: 'c1', text: 'Paso', done: true }],
     } as never);
     mockGetBusinessId.mockResolvedValueOnce('biz-1');
-    mockGetSubtasks.mockResolvedValueOnce([{ id: 'sub1', title: 'Sub A' }] as never);
-    mockCreate
-      .mockResolvedValueOnce({ id: 't1', title: 'Original', projectId: 'p1' } as never)
-      .mockResolvedValueOnce({ id: 'sub-new', title: 'Sub A' } as never);
-    vi.mocked(taskService.updateTask).mockResolvedValueOnce({ id: 'sub-new' } as never);
+    mockCreate.mockResolvedValueOnce({ id: 't1', title: 'Original', projectId: 'p1' } as never);
 
     const res = await POST(makeRequest({ projectIds: ['p1'], sourceTaskId: 'src' }));
     expect(res.status).toBe(201);
     expect(mockCreate.mock.calls[0][0].status).toBe('todo');
     expect(mockCreate.mock.calls[0][0].checklist?.[0].done).toBe(false);
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockGetSubtasks).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ type PrismaTask = Prisma.TaskGetPayload<{
     assignees: { select: { id: true; name: true; avatar: true } };
     subtasks: { select: { id: true; status: true } };
     attachments: { select: { url: true; filename: true } };
+    business: { select: { id: true } };
   };
 }>;
 
@@ -24,6 +25,7 @@ function toDomain(t: PrismaTask): Task {
     assigneeIds: t.assignees.map((a) => a.id),
     assignees: t.assignees.map((a) => ({ id: a.id, name: a.name, avatar: a.avatar ?? undefined })),
     creatorId: t.creatorId,
+    businessId: t.businessId ?? undefined,
     projectId: t.projectId ?? undefined,
     locationId: t.locationId ?? undefined,
     cycleId: t.cycleId ?? undefined,
@@ -52,18 +54,23 @@ const include = {
   assignees: { select: { id: true, name: true, avatar: true } },
   subtasks: { select: { id: true, status: true } },
   attachments: { select: { url: true, filename: true } },
+  business: { select: { id: true } },
 } satisfies Prisma.TaskInclude;
 
 function buildWhere(businessId: string, filters?: TaskFilters): Prisma.TaskWhereInput {
   const conditions: Prisma.TaskWhereInput[] = [{ parentId: null }];
 
-  // Filtro por negocio
   if (businessId !== 'all') {
     conditions.push({
       OR: [
-        { location: { businessId } },
-        { project: { businessId } },
-        { creator: { businessId } },
+        { businessId },
+        {
+          businessId: null,
+          OR: [
+            { project: { businessId } },
+            { location: { businessId } },
+          ],
+        },
       ],
     });
   }
@@ -194,11 +201,12 @@ export class PrismaTaskRepository implements ITaskRepository {
   async create(
     data: CreateTaskDTO & { creatorId: string; businessId: string }
   ): Promise<Task> {
-    const { assigneeIds, businessId: _businessId, creatorId, checklist, ...rest } = data;
+    const { assigneeIds, businessId, creatorId, checklist, ...rest } = data;
     const t = await prisma.task.create({
       data: {
         ...rest,
         creatorId,
+        businessId,
         position: Math.floor(Date.now() / 1000),
         recurrence: rest.recurrence as Prisma.InputJsonValue | undefined,
         checklist: checklist as Prisma.InputJsonValue | undefined,

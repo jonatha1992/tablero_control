@@ -12,6 +12,7 @@ export const GET = handle(async (request: NextRequest, { params }: { params: Pro
 
   const { id } = await params;
   const businessId = await getTaskBusinessId(id);
+  if (!businessId) return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
   assertResourceBelongsToBusiness(user.data, businessId);
 
   const subtasks = await taskService.getSubtasks(id);
@@ -34,6 +35,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
   }
 
   const businessId = await getTaskBusinessId(parentId);
+  if (!businessId) return NextResponse.json({ error: 'Tarea padre no encontrada' }, { status: 404 });
   assertResourceBelongsToBusiness(user.data, businessId);
 
   const subtask = await taskService.createTask(
@@ -46,7 +48,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
       tags: [],
     },
     user.uid,
-    user.businessId ?? ''
+    businessId
   );
 
   await taskService.updateTask(subtask.id, { parentId });
@@ -54,7 +56,7 @@ export const POST = handle(async (request: NextRequest, { params }: { params: Pr
   await writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,
-    businessId: user.businessId,
+    businessId,
     action: 'task.create',
     targetType: 'TASK',
     targetId: subtask.id,

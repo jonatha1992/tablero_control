@@ -23,8 +23,9 @@ describe('useConfirmDictatedTasks DTO mapping', () => {
     expect(draft.projectId).toBe('p1');
     expect(draft.cycleId).toBe('c1');
     expect(draft.objectiveId).toBe('o1');
-    expect(draft.checklist).toHaveLength(1);
-    expect(draft.subtasks).toEqual(['Borrador']);
+    expect(draft.checklist).toHaveLength(2);
+    expect(draft.checklist?.[1]).toEqual({ id: 'st-1', text: 'Borrador', done: false });
+    expect(draft.subtasks).toBeUndefined();
     expect(draft.recurrence?.frequency).toBe('weekly');
   });
 

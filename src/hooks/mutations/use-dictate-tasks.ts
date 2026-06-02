@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tasksApi } from '@/lib/api/tasks';
-import { subtasksApi } from '@/lib/api/subtasks';
 import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import { useAuth } from '@/hooks/auth-context';
 import { getToken } from '@/lib/firebase/auth';
@@ -121,11 +120,6 @@ export function useConfirmDictatedTasks() {
         for (const projectId of targets) {
           const dto = toCreateDto(t, projectId, options);
           const created = await tasksApi.create(dto, user!.id, user?.businessId ?? '');
-          if (t.subtasks?.length) {
-            for (const subTitle of t.subtasks) {
-              await subtasksApi.create(created.id, subTitle);
-            }
-          }
           results.push(created);
         }
       }

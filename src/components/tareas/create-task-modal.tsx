@@ -28,14 +28,13 @@ import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
-import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer, CheckSquare, ListTree, Plus } from 'lucide-react';
+import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer, CheckSquare, Plus } from 'lucide-react';
 import { tasksApi } from '@/lib/api/tasks';
 import { getToken } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 import type { TaskStatus, TaskPriority, TaskType, RecurrenceConfig, ChecklistItem } from '@/types';
-import { useCreateSubtask } from '@/hooks/mutations/use-create-subtask';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS, type SelectOption } from '@/lib/constants/task-colors';
 import {
   DropdownMenu,
@@ -128,13 +127,10 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const [estimatedHours, setEstimatedHours] = useState<number | undefined>(undefined);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newCheckItem, setNewCheckItem] = useState('');
-  const [pendingSubtasks, setPendingSubtasks] = useState<string[]>([]);
-  const [newSubtask, setNewSubtask] = useState('');
   const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const createTask = useCreateTask();
-  const createSubtask = useCreateSubtask();
   const { data: members = [] } = useMembersQuery();
   const { data: locations = [] } = useLocationsQuery();
   const { user } = useAuth();
@@ -189,8 +185,16 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     else if (d.projectId) setSelectedProjectIds([d.projectId]);
     if (d.cycleId) setCycleId(d.cycleId);
     if (d.estimatedHours != null) setEstimatedHours(d.estimatedHours);
-    if (d.checklist?.length) setChecklist(d.checklist);
-    if (d.subtasks?.length) setPendingSubtasks(d.subtasks);
+    if (d.checklist?.length || d.subtasks?.length) {
+      setChecklist([
+        ...(d.checklist ?? []),
+        ...(d.subtasks ?? []).map((text, index) => ({
+          id: `draft-st-${index + 1}`,
+          text,
+          done: false,
+        })),
+      ]);
+    }
     if (d.recurrence) {
       setIsRecurring(true);
       setFrequency(d.recurrence.frequency);
@@ -216,7 +220,6 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     setIsRecurring(false); setFrequency('weekly'); setIntervalValue(1);
     setDayOfWeek(undefined); setDayOfMonth(undefined);
     setChecklist([]); setNewCheckItem('');
-    setPendingSubtasks([]); setNewSubtask('');
   };
 
   const handleMicClick = async () => {
@@ -310,13 +313,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
         checklist: checklist.length > 0 ? checklist : undefined,
       },
       {
-        onSuccess: (result) => {
-          const created = Array.isArray(result) ? result : [result];
-          for (const t of created) {
-            pendingSubtasks.forEach((subtaskTitle) =>
-              createSubtask.mutate({ taskId: t.id, title: subtaskTitle })
-            );
-          }
+        onSuccess: () => {
           onOpenChange(false);
           reset();
         },
@@ -672,67 +669,6 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
                   }
                 }}
                 disabled={!newCheckItem.trim()}
-                className="h-8 px-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Subtareas */}
-          <div className="pt-2 border-t border-border space-y-2">
-            <div className="flex items-center gap-2">
-              <ListTree className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Subtareas</span>
-              {pendingSubtasks.length > 0 && (
-                <span className="text-xs text-muted-foreground">({pendingSubtasks.length})</span>
-              )}
-              <span className="text-xs text-muted-foreground ml-auto">(se crearán al guardar)</span>
-            </div>
-            <div className="space-y-1">
-              {pendingSubtasks.map((title, idx) => (
-                <div key={idx} className="flex items-center gap-2 group rounded-md hover:bg-muted/50 px-1.5 py-1">
-                  <span className="h-3.5 w-3.5 rounded border border-muted-foreground/40 shrink-0" />
-                  <span className="text-sm flex-1">{title}</span>
-                  <button
-                    type="button"
-                    onClick={() => setPendingSubtasks((prev) => prev.filter((_, i) => i !== idx))}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-destructive transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSubtask}
-                onChange={(e) => setNewSubtask(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const text = newSubtask.trim();
-                    if (text) {
-                      setPendingSubtasks((prev) => [...prev, text]);
-                      setNewSubtask('');
-                    }
-                  }
-                }}
-                placeholder="Nueva subtarea..."
-                maxLength={200}
-                className="flex-1 h-8 rounded-md border border-input bg-background px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const text = newSubtask.trim();
-                  if (text) {
-                    setPendingSubtasks((prev) => [...prev, text]);
-                    setNewSubtask('');
-                  }
-                }}
-                disabled={!newSubtask.trim()}
                 className="h-8 px-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 <Plus className="h-3.5 w-3.5" />

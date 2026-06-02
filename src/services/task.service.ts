@@ -154,9 +154,8 @@ class TaskService {
       checklist: resetChecklist.length > 0 ? resetChecklist : undefined,
     };
 
-    // Obtenemos el businessId del creador original para asegurar consistencia
-    // Aunque taskRepository.create lo requiere por separado
-    const businessId = task.businessId || ''; // Si no tiene, el repo lo inferirá o fallará según lógica
+    const businessId = task.businessId;
+    if (!businessId) throw new Error('La tarea no tiene businessId');
 
     return this.createTask(dto, task.creatorId, businessId);
   }
