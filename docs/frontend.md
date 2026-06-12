@@ -22,6 +22,12 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 - filtros de rol/ubicación
 - modal de invitación
 
+### `task-filters-ui.store.ts`
+- Filtros compartidos por Agenda y Calendario: `assigneeIds[]`, `objectiveId`, `priority`, `locationId`, `excludeStatuses[]`
+- Slices independientes por vista (`agenda` / `calendar`) — defaults distintos: calendario oculta `done` por defecto
+- UI: `TaskFilterBar` (`src/components/tareas/task-filter-bar.tsx`); predicado puro en `src/types/ui/task-filters.ui.ts`
+- Ver `docs/tasks.md` → "Filtros de Agenda y Calendario"
+
 ## React Query (`src/hooks/`)
 
 - Queries: `src/hooks/queries/` — query keys co-localizados en el archivo

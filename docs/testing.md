@@ -204,6 +204,10 @@ describe('can()', () => {
 | `kanban-column.test.tsx` | KanbanColumn — lista de cards, drop zone |
 | `member-card.test.tsx` | MemberCard |
 | `create-task-modal.test.tsx` | CreateTaskModal — formulario, submit, validación |
+| `task-filter-bar.test.tsx` | TaskFilterBar — filtros de Agenda/Calendario, onChange/onClear, toggle ocultar finalizadas |
+| `dropdown-menu-zindex.test.tsx` | Regresión: DropdownMenuContent z-[320] por encima del Dialog (z-300/310) |
+| `task-filters.test.ts` | matchesTaskFilters / hasActiveFilters — predicado puro por dimensión y combinado |
+| `task-filters-ui-store.test.ts` | useTaskFiltersUIStore — defaults por vista, merge, clear |
 
 ### Servicios
 
