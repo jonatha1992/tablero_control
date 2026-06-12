@@ -92,6 +92,20 @@ Componente: `src/components/tareas/agenda-view.tsx`.
 
 **Toggle "Hasta hoy / Todas":** por defecto la agenda muestra el trabajo accionable hasta hoy. Las tareas futuras quedan ocultas del conteo principal y se muestran intencionalmente con "Todas".
 
+## Filtros de Agenda y Calendario
+
+Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterBar`), renderizado por las pages `tareas/agenda/page.tsx` y `tareas/calendario/page.tsx`.
+
+**Filtros:** persona asignada (multi-select), objetivo, prioridad, local/sector, y en Calendario un toggle "Ocultar finalizadas".
+
+**Estado:** `useTaskFiltersUIStore` (`src/stores/task-filters-ui.store.ts`) — slices independientes por vista (`agenda` / `calendar`) con la misma forma `TaskFilterState` (`src/types/ui/task-filters.ui.ts`). Defaults: agenda sin filtros; calendario con `excludeStatuses: ['done']` (oculta finalizadas por defecto). `clearFilters(view)` restaura el default de cada vista.
+
+**Filtrado client-side:** la page filtra la lista ya fetcheada con el predicado puro `matchesTaskFilters(task, filters)` (semántica AND) y pasa la lista filtrada a `AgendaView` / `CalendarView` — las vistas no conocen los filtros. Se mantiene la query sin filtros (`useTasksQuery()`) para preservar el cache compartido de React Query, los conteos de secciones de la agenda y el drag-drop del calendario.
+
+**Decisión:** el Calendario NO lleva el toggle "Hasta hoy / Todas" — la navegación por fechas es propia de FullCalendar.
+
+**Gap conocido (pre-existente):** `taskRepository.findByCreator` solo aplica `status`, `priority`, `cycleId`, `noCycle` y `search` — no afecta a estos filtros porque son client-side, pero importa si algún día se pasa a filtrado server-side en el path sin `businessId`.
+
 ## Ciclos y Objetivos
 
 ### Cycle (Sprints)
