@@ -23,7 +23,7 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive, Copy } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive, Copy, Pencil, Check } from 'lucide-react';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { hasMultipleBoards } from '@/lib/business-defaults';
 import {
@@ -67,6 +67,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
+  const [editingInlineDueDate, setEditingInlineDueDate] = useState(false);
+  const [inlineDueDate, setInlineDueDate] = useState('');
+  const [inlineDueTime, setInlineDueTime] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<RecurrenceConfig['frequency']>('weekly');
   const [interval, setIntervalValue] = useState(1);
@@ -156,6 +159,29 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   const handleTypeChange = (type: TaskType) => {
     updateTask.mutate({ id: task.id, data: { type } });
+  };
+
+  const startInlineDueDateEdit = () => {
+    if (task.dueDate) {
+      const d = new Date(task.dueDate);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setInlineDueDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+      setInlineDueTime(d.getHours() !== 0 || d.getMinutes() !== 0 ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : '');
+    } else {
+      setInlineDueDate('');
+      setInlineDueTime('');
+    }
+    setEditingInlineDueDate(true);
+  };
+
+  const handleInlineDueDateSave = () => {
+    updateTask.mutate(
+      {
+        id: task.id,
+        data: { dueDate: inlineDueDate ? new Date(`${inlineDueDate}T${inlineDueTime || '00:00'}`) : undefined },
+      },
+      { onSuccess: () => setEditingInlineDueDate(false) }
+    );
   };
 
   const toggleAssignee = (memberId: string) => {
@@ -387,7 +413,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {STATUS_OPTIONS.map(opt => (
-                  <DropdownMenuItem key={opt.value} onClick={() => handleStatusChange(opt.value)} className="gap-2">
+                  <DropdownMenuItem key={opt.value} onSelect={() => handleStatusChange(opt.value)} className="gap-2">
                     <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
                     {opt.label}
                   </DropdownMenuItem>
@@ -408,7 +434,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {PRIORITY_OPTIONS.map(opt => (
-                  <DropdownMenuItem key={opt.value} onClick={() => handlePriorityChange(opt.value)} className="gap-2">
+                  <DropdownMenuItem key={opt.value} onSelect={() => handlePriorityChange(opt.value)} className="gap-2">
                     <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
                     {opt.label}
                   </DropdownMenuItem>
@@ -429,7 +455,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {TYPE_OPTIONS.map(opt => (
-                  <DropdownMenuItem key={opt.value} onClick={() => handleTypeChange(opt.value)} className="gap-2">
+                  <DropdownMenuItem key={opt.value} onSelect={() => handleTypeChange(opt.value)} className="gap-2">
                     <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
                     {opt.label}
                   </DropdownMenuItem>
@@ -438,15 +464,56 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </DropdownMenu>
           </div>
 
-          {task.dueDate && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
-              <p className="text-sm">
-                {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
-                {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground ml-1.5">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
-              </p>
-            </div>
-          )}
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
+            {editingInlineDueDate ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={inlineDueDate}
+                  onChange={(e) => setInlineDueDate(e.target.value)}
+                  className="flex h-8 rounded-md border border-input bg-background px-2 py-1 text-sm"
+                />
+                <input
+                  type="time"
+                  value={inlineDueTime}
+                  onChange={(e) => setInlineDueTime(e.target.value)}
+                  className="flex h-8 w-22 rounded-md border border-input bg-background px-2 py-1 text-sm"
+                />
+                <button
+                  onClick={handleInlineDueDateSave}
+                  disabled={updateTask.isPending}
+                  className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-accent disabled:opacity-50"
+                  title="Guardar fecha"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setEditingInlineDueDate(false)}
+                  className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background hover:bg-accent"
+                  title="Cancelar"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={startInlineDueDateEdit}
+                className="group inline-flex items-center gap-1.5 h-8 px-2.5 -ml-2.5 text-sm rounded-md hover:bg-accent"
+                title="Cambiar fecha límite"
+              >
+                {task.dueDate ? (
+                  <>
+                    {new Date(task.dueDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {(() => { const d = new Date(task.dueDate); return (d.getHours() !== 0 || d.getMinutes() !== 0) ? <span className="text-muted-foreground">· {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span> : null; })()}
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Agregar fecha</span>
+                )}
+                <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            )}
+          </div>
 
           {task.recurrence && (
             <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md self-center">
