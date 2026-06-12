@@ -1,5 +1,6 @@
 ﻿import { userRepository, locationRepository } from '@/repositories';
 import { prisma } from '@/lib/prisma';
+import { getAdminAuth } from '@/lib/firebase/admin';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
 import {
@@ -127,6 +128,19 @@ class TeamService {
         role
       );
       await prisma.user.update({ where: { id: userId }, data: { role: cachedRole } });
+
+      // Sync Firebase custom claims so Firestore rules see the new role immediately.
+      // requireUser() reads role from PostgreSQL, but firestore.rules prefer the token
+      // claim — a stale claim would keep a demoted user's elevated Firestore access
+      // until their next token refresh. See docs/permissions.md (role change steps).
+      try {
+        await getAdminAuth().setCustomUserClaims(userId, {
+          role: cachedRole,
+          businessId,
+        });
+      } catch (err) {
+        console.error('[changeRole] setCustomUserClaims failed (non-fatal):', err);
+      }
     }
   }
 
