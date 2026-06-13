@@ -4,7 +4,15 @@ import { useDroppable } from '@dnd-kit/core';
 import { cn, TASK_STATUS_LABELS } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { KanbanCard } from './kanban-card';
-import { Plus, Check, Minus } from 'lucide-react';
+import { ArrowUpDown, Check, Minus, Plus } from 'lucide-react';
+import type { KanbanSortMode } from '@/types/ui/kanban.ui';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface KanbanColumnProps {
   status: TaskStatus;
@@ -20,13 +28,26 @@ interface KanbanColumnProps {
   onDelete?: (taskId: string) => void;
   onToggleSelect: (taskId: string) => void;
   locations: { id: string; name: string }[];
+  sortMode: KanbanSortMode;
+  onSortModeChange: (mode: KanbanSortMode) => void;
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete: _onBulkDelete, onDelete, onToggleSelect, locations }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete: _onBulkDelete, onDelete, onToggleSelect, locations, sortMode, onSortModeChange }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
-  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-  const sortedTasks = [...tasks].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  const priorityOrder: Record<TaskPriority, number> = {
+    urgent: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
+  };
+  const sortedTasks = [...tasks].sort(
+    (a, b) =>
+      (sortMode === 'priority'
+        ? priorityOrder[a.priority] - priorityOrder[b.priority]
+        : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) ||
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   const getLocationName = (locationId: string | null | undefined) =>
     locationId ? (locations.find((l) => l.id === locationId)?.name ?? '') : '';
@@ -78,12 +99,39 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
             {tasks.length}
           </span>
         </div>
-        <button
-          onClick={onAddClick}
-          className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all"
-        >
-          <Plus className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                title={`Orden: ${sortMode === 'priority' ? 'prioridad' : 'fecha'}`}
+                aria-label={`Ordenar columna ${TASK_STATUS_LABELS[status]}`}
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={sortMode}
+                onValueChange={(value) => onSortModeChange(value as KanbanSortMode)}
+              >
+                <DropdownMenuRadioItem value="priority">
+                  Por prioridad
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="date">
+                  Por fecha
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <button
+            onClick={onAddClick}
+            className="opacity-0 group-hover:opacity-100 hover:bg-accent rounded p-1 transition-all"
+            aria-label={`Agregar tarea en ${TASK_STATUS_LABELS[status]}`}
+          >
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Scrollable tasks area */}

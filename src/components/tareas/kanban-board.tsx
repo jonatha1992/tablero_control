@@ -85,6 +85,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     clearSelection,
     activeColumns,
     toggleColumn,
+    columnSortModes,
+    setColumnSortMode,
   } = useKanbanUIStore();
 
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
@@ -511,6 +513,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 onDelete={canDeleteAny ? handleDeleteOne : undefined}
                 onToggleSelect={handleToggleSelect}
                 locations={locations}
+                sortMode={columnSortModes[column]}
+                onSortModeChange={(mode) => setColumnSortMode(column, mode)}
 
               />
             ))}
