@@ -46,6 +46,13 @@ Para cambios de status, **siempre usar `useMoveTask`** (no `useUpdateTask`) — 
 
 Store: `useScrumUIStore` (`src/stores/scrum-ui.store.ts`) — `selectedSprintId` + `viewMode: 'board' | 'backlog'`.
 
+Cada columna tiene su propio botón **Ordenar** en el encabezado y recuerda independientemente el criterio elegido:
+
+- **Por prioridad:** `urgent`, `high`, `medium`, `low`; dentro de cada prioridad muestra primero las tareas más antiguas.
+- **Por fecha:** usa `createdAt` ascendente, desde la tarea más antigua hasta la más nueva.
+
+En prioridad, `createdAt` ascendente desempata tareas con la misma prioridad.
+
 **Tabs:**
 - **Todas** — `viewMode: 'board'`, `selectedSprintId: null`
 - **Backlog** — `viewMode: 'backlog'` → filter `status: ['backlog']`

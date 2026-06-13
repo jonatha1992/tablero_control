@@ -10,6 +10,15 @@ describe('KanbanUIStore', () => {
       isDetailModalOpen: false,
       selectedTaskId: null,
       filters: { searchQuery: '', priority: '', locationId: '', objectiveId: '', cycleId: '' },
+      columnSortModes: {
+        backlog: 'priority',
+        todo: 'priority',
+        in_progress: 'priority',
+        in_review: 'priority',
+        done: 'priority',
+        blocked: 'priority',
+        archived: 'priority',
+      },
     });
   });
 
@@ -90,6 +99,16 @@ describe('KanbanUIStore', () => {
       expect(filters.searchQuery).toBe('');
       expect(filters.priority).toBe('');
       expect(filters.locationId).toBe('');
+    });
+  });
+
+  describe('orden por columna', () => {
+    it('cambia una columna sin afectar las demás', () => {
+      useKanbanUIStore.getState().setColumnSortMode('todo', 'date');
+
+      const { columnSortModes } = useKanbanUIStore.getState();
+      expect(columnSortModes.todo).toBe('date');
+      expect(columnSortModes.in_progress).toBe('priority');
     });
   });
 });

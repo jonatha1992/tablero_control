@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import type { KanbanDragState, KanbanUIFilters } from '@/types/ui/kanban.ui';
+import { persist } from 'zustand/middleware';
+import type {
+  KanbanColumnSortModes,
+  KanbanDragState,
+  KanbanSortMode,
+  KanbanUIFilters,
+} from '@/types/ui/kanban.ui';
 import type { TaskStatus } from '@/types/domain/task';
 import type { CreateTaskDraft } from '@/types/ui/create-task-draft';
 
@@ -44,6 +50,8 @@ interface KanbanUIStore {
   // View Settings
   activeColumns: TaskStatus[];
   toggleColumn: (column: TaskStatus) => void;
+  columnSortModes: KanbanColumnSortModes;
+  setColumnSortMode: (column: TaskStatus, mode: KanbanSortMode) => void;
 }
 
 const defaultDragState: KanbanDragState = {
@@ -60,7 +68,17 @@ const defaultFilters: KanbanUIFilters = {
   cycleId: '',
 };
 
-export const useKanbanUIStore = create<KanbanUIStore>((set) => ({
+const defaultColumnSortModes: KanbanColumnSortModes = {
+  backlog: 'priority',
+  todo: 'priority',
+  in_progress: 'priority',
+  in_review: 'priority',
+  done: 'priority',
+  blocked: 'priority',
+  archived: 'priority',
+};
+
+export const useKanbanUIStore = create<KanbanUIStore>()(persist((set) => ({
   dragState: defaultDragState,
   setDraggedTask: (taskId, from) =>
     set((s) => ({ dragState: { ...s.dragState, draggedTaskId: taskId, draggedFrom: from } })),
@@ -119,4 +137,11 @@ export const useKanbanUIStore = create<KanbanUIStore>((set) => ({
       ? s.activeColumns.filter((c) => c !== column)
       : [...s.activeColumns, column],
   })),
+  columnSortModes: defaultColumnSortModes,
+  setColumnSortMode: (column, mode) => set((s) => ({
+    columnSortModes: { ...s.columnSortModes, [column]: mode },
+  })),
+}), {
+  name: 'kanban-column-sort-modes',
+  partialize: (state) => ({ columnSortModes: state.columnSortModes }),
 }));

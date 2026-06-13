@@ -1,5 +1,9 @@
 import type { TaskStatus, TaskPriority } from '../domain/task';
 
+export type KanbanSortMode = 'priority' | 'date';
+
+export type KanbanColumnSortModes = Record<TaskStatus, KanbanSortMode>;
+
 export interface KanbanDragState {
   draggedTaskId: string | null;
   draggedFrom: TaskStatus | null;

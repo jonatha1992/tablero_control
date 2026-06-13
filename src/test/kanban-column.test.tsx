@@ -25,10 +25,10 @@ vi.mock('@/components/tareas/kanban-card', () => ({
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
 const makeTasks = (status: TaskStatus = 'todo'): Task[] => [
-  { id: 't-1', title: 'Tarea Urgente', status, priority: 'urgent', businessId: 'biz-1', createdAt: new Date(), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
-  { id: 't-2', title: 'Tarea Baja', status, priority: 'low', businessId: 'biz-1', createdAt: new Date(), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
-  { id: 't-3', title: 'Tarea Media', status, priority: 'medium', businessId: 'biz-1', createdAt: new Date(), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
-  { id: 't-4', title: 'Tarea Alta', status, priority: 'high', businessId: 'biz-1', createdAt: new Date(), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
+  { id: 't-1', title: 'Tarea Urgente', status, priority: 'urgent', position: 400, businessId: 'biz-1', createdAt: new Date('2026-01-04'), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
+  { id: 't-2', title: 'Tarea Baja', status, priority: 'low', position: 100, businessId: 'biz-1', createdAt: new Date('2026-01-01'), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
+  { id: 't-3', title: 'Tarea Media', status, priority: 'medium', position: 300, businessId: 'biz-1', createdAt: new Date('2026-01-03'), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
+  { id: 't-4', title: 'Tarea Alta', status, priority: 'high', position: 200, businessId: 'biz-1', createdAt: new Date('2026-01-02'), updatedAt: new Date(), creatorId: 'u-1', assigneeIds: [], tags: [], attachments: [] } as unknown as Task,
 ];
 
 const defaultProps = {
@@ -44,6 +44,8 @@ const defaultProps = {
   onBulkDelete: vi.fn(),
   onDelete: vi.fn(),
   onToggleSelect: vi.fn(),
+  sortMode: 'priority' as const,
+  onSortModeChange: vi.fn(),
 };
 
 beforeEach(() => {
@@ -84,15 +86,39 @@ describe('KanbanColumn', () => {
     expect(screen.queryByText('Sin tareas')).not.toBeInTheDocument();
   });
 
-  it('ordena por prioridad: urgent > high > medium > low', () => {
+  it('ordena primero por prioridad', () => {
     const tasks = makeTasks('todo');
     render(<KanbanColumn {...defaultProps} tasks={tasks} />);
     const cards = screen.getAllByTestId('kanban-card');
-    // El primero debe ser 'urgent', el último 'low'
     expect(cards[0]).toHaveTextContent('Tarea Urgente');
     expect(cards[1]).toHaveTextContent('Tarea Alta');
     expect(cards[2]).toHaveTextContent('Tarea Media');
     expect(cards[3]).toHaveTextContent('Tarea Baja');
+  });
+
+  it('ordena por fecha dentro de la misma prioridad', () => {
+    const tasks = makeTasks('todo').map((task) => ({ ...task, priority: 'medium' as const }));
+    render(<KanbanColumn {...defaultProps} tasks={tasks} />);
+    const cards = screen.getAllByTestId('kanban-card');
+    expect(cards[0]).toHaveTextContent('Tarea Baja');
+    expect(cards[1]).toHaveTextContent('Tarea Alta');
+    expect(cards[2]).toHaveTextContent('Tarea Media');
+    expect(cards[3]).toHaveTextContent('Tarea Urgente');
+  });
+
+  it('ordena por fecha de más antigua a más nueva', () => {
+    const tasks = makeTasks('todo');
+    render(<KanbanColumn {...defaultProps} sortMode="date" tasks={tasks} />);
+    const cards = screen.getAllByTestId('kanban-card');
+    expect(cards[0]).toHaveTextContent('Tarea Baja');
+    expect(cards[1]).toHaveTextContent('Tarea Alta');
+    expect(cards[2]).toHaveTextContent('Tarea Media');
+    expect(cards[3]).toHaveTextContent('Tarea Urgente');
+  });
+
+  it('muestra el botón de orden de la columna', () => {
+    render(<KanbanColumn {...defaultProps} tasks={[]} />);
+    expect(screen.getByRole('button', { name: 'Ordenar columna Por hacer' })).toBeInTheDocument();
   });
 
   it('muestra el contador correcto (0 cuando tasks vacío)', () => {
