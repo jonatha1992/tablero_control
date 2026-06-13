@@ -570,30 +570,10 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               )}
             </DialogHeader>
 
-            {!editing && (
-              <>
-                {/* Status & Priority */}
-                <div className="flex flex-wrap gap-3 py-3 border-y">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Estado</p>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="inline-flex items-center gap-2 h-8 px-2.5 text-sm border border-input rounded-md bg-background hover:bg-accent">
-                          <span className={cn('h-2 w-2 rounded-full shrink-0', STATUS_OPTIONS.find(o => o.value === task.status)?.dot)} />
-                          {STATUS_OPTIONS.find(o => o.value === task.status)?.label}
-                          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        {STATUS_OPTIONS.map(opt => (
-                          <DropdownMenuItem key={opt.value} onSelect={() => handleStatusChange(opt.value)} className="gap-2">
-                            <span className={cn('h-2 w-2 rounded-full shrink-0', opt.dot)} />
-                            {opt.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+            {/* Checklist */}
+            <div className="py-3 border-b">
+              <TaskChecklist task={task} />
+            </div>
 
             {/* Registro de tiempos */}
             <div className="py-3 border-b">
