@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser } from '@/lib/api/auth-helpers';
 import { prisma } from '@/lib/prisma';
+import { handle } from '@/lib/api/route-handler';
 
 // GET /api/notifications — últimas 30 notificaciones del usuario
-export async function GET(req: NextRequest) {
+export const GET = handle(async (req: NextRequest) => {
   const userOrResponse = await requireUser(req);
   if (userOrResponse instanceof NextResponse) return userOrResponse;
   const user = userOrResponse;
@@ -19,10 +20,10 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json({ notifications, unreadCount });
-}
+});
 
 // PATCH /api/notifications — marcar todas como leídas
-export async function PATCH(req: NextRequest) {
+export const PATCH = handle(async (req: NextRequest) => {
   const userOrResponse = await requireUser(req);
   if (userOrResponse instanceof NextResponse) return userOrResponse;
   const user = userOrResponse;
@@ -33,4 +34,4 @@ export async function PATCH(req: NextRequest) {
   });
 
   return NextResponse.json({ ok: true });
-}
+});

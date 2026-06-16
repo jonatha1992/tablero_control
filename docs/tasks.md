@@ -113,6 +113,44 @@ Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterB
 
 **Gap conocido (pre-existente):** `taskRepository.findByCreator` solo aplica `status`, `priority`, `cycleId`, `noCycle` y `search` — no afecta a estos filtros porque son client-side, pero importa si algún día se pasa a filtrado server-side en el path sin `businessId`.
 
+## CalendarEvents en Vistas de Calendario y Agenda
+
+`CalendarEvent` es una entidad separada de `Task` — representa eventos de calendario (reuniones, bloqueos de tiempo) sin lógica de tareas ni recurrencia automática.
+
+**Tipo TS:** `src/types/domain/calendar.ts` → `CalendarEvent` (campos: `id, title, description?, start, end, allDay, color?, assigneeIds?`).
+
+### Vista Calendario FullCalendar (`/dashboard/tareas/calendario`)
+
+`CalendarView` acepta `calendarEvents?: CalendarEvent[]` además de `tasks`. Los eventos se renderizan visualmente distintos:
+- Fondo semi-transparente (`color + '33'`), borde sólido del color del evento, texto del mismo color
+- Clase CSS `fc-event-calendar`: cursiva, borde 2px sólido
+- Las tareas siguen con fondo sólido por prioridad, sin cambios
+
+La página fetcha eventos con ventana de 1 mes atrás → 2 meses adelante (`useCalendarEventsQuery(eventsFrom, eventsTo)`).
+
+**Interacción:**
+- Hover → `CalendarEventTooltip` (título, fecha, rango horario, descripción)
+- Click → abre `CalendarEventSheet` (modal de edición completo)
+- Click en fecha vacía → abre `CreateTaskModal` con fecha pre-seleccionada (`onDateClick`)
+- Drag/drop solo aplica a tareas — los CalendarEvents tienen `editable: false`
+
+**`CalendarEventSheet`** (`src/components/calendario/calendar-event-sheet.tsx`): modal Dialog (no Sheet — ese componente no existe en este proyecto) con formulario de edición: título, descripción, todo-el-día, inicio/fin, participantes, color. Usa `useUpdateCalendarEvent` y `useDeleteCalendarEvent` con confirmación antes de eliminar. El inner `EditForm` se monta con `key={event.id}` para resetear estado al cambiar de evento.
+
+**Hooks de mutación:**
+- `src/hooks/mutations/use-update-calendar-event.ts`
+- `src/hooks/mutations/use-delete-calendar-event.ts`
+
+### Vista Agenda (`/dashboard/tareas/agenda`)
+
+La agenda muestra tareas y eventos en secciones separadas. Los eventos del próximo mes se cargan con `useCalendarEventsQuery(eventsFrom, eventsTo)` (ventana: hoy → hoy+30d).
+
+**Secciones de eventos (debajo de tareas):**
+- 📅 **Hoy** — eventos con start en el día actual
+- 📅 **Esta semana** — eventos de los próximos 7 días
+- 📅 **Próximos 30 días** — eventos más adelante
+
+Los eventos muestran franja de color lateral, rango horario (o "Todo el día"), y descripción si existe. No tienen acciones — son solo lectura en la agenda.
+
 ## Ciclos y Objetivos
 
 ### Cycle (Sprints)

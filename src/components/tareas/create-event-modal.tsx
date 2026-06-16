@@ -18,6 +18,7 @@ import { useMembersQuery } from '@/hooks/queries/use-members-query';
 interface CreateEventModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialDate?: Date;
 }
 
 function toLocalDateTimeValue(d: Date) {
@@ -25,13 +26,13 @@ function toLocalDateTimeValue(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function CreateEventModal({ open, onOpenChange }: CreateEventModalProps) {
-  const now = new Date();
-  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+export function CreateEventModal({ open, onOpenChange, initialDate }: CreateEventModalProps) {
+  const base = initialDate ?? new Date();
+  const oneHourLater = new Date(base.getTime() + 60 * 60 * 1000);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [start, setStart] = useState(toLocalDateTimeValue(now));
+  const [start, setStart] = useState(toLocalDateTimeValue(base));
   const [end, setEnd] = useState(toLocalDateTimeValue(oneHourLater));
   const [allDay, setAllDay] = useState(false);
   const [color, setColor] = useState('#3b82f6');

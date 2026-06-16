@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -8,12 +8,15 @@ import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import type { EventInput } from '@fullcalendar/core';
 import type { Task, TaskPriority } from '@/types';
+import type { CalendarEvent } from '@/types/domain/calendar';
 import { cn } from '@/lib/utils';
 
 interface CalendarViewProps {
   tasks: Task[];
+  calendarEvents?: CalendarEvent[];
   onEventDrop?: (taskId: string, newDate: Date) => void;
   onEventClick?: (taskId: string) => void;
+  onCalendarEventClick?: (event: CalendarEvent) => void;
   onDateClick?: (date: Date) => void;
 }
 
@@ -35,9 +38,16 @@ interface TooltipState {
   y: number;
 }
 
-export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: CalendarViewProps) {
+interface CalendarEventTooltipState {
+  event: CalendarEvent;
+  x: number;
+  y: number;
+}
+
+export function CalendarView({ tasks, calendarEvents = [], onEventDrop, onEventClick, onCalendarEventClick, onDateClick }: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [calEventTooltip, setCalEventTooltip] = useState<CalendarEventTooltipState | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const events: EventInput[] = [];
@@ -97,16 +107,33 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
     }
   });
 
-  const showTooltip = useCallback((taskId: string, x: number, y: number) => {
+  calendarEvents.forEach((ev) => {
+    const color = ev.color ?? '#8b5cf6';
+    events.push({
+      id: `cal-${ev.id}`,
+      title: ev.title,
+      start: ev.start,
+      end: ev.end,
+      allDay: ev.allDay,
+      backgroundColor: color + '33',
+      borderColor: color,
+      textColor: color,
+      classNames: ['fc-event-calendar'],
+      editable: false,
+      extendedProps: { type: 'calendar-event', calendarEventData: ev },
+    });
+  });
+
+  const showTooltip = (taskId: string, x: number, y: number) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
     if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
     setTooltip({ task, x, y });
-  }, [tasks]);
+  };
 
-  const hideTooltip = useCallback(() => {
+  const hideTooltip = () => {
     tooltipTimeout.current = setTimeout(() => setTooltip(null), 120);
-  }, []);
+  };
 
   return (
     <div className="relative h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4">
@@ -225,6 +252,13 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
         .fc-list-event:hover td { background: hsl(var(--muted) / 0.5) !important; }
         .fc-list-day-cushion { background: hsl(var(--muted) / 0.4) !important; }
         .fc-list-empty { color: hsl(var(--muted-foreground)); padding: 2rem; text-align: center; }
+
+        /* Calendar events (distinct from tasks) */
+        .fc-event-calendar {
+          font-style: italic;
+          border-width: 2px !important;
+          border-style: solid !important;
+        }
       `}</style>
 
       <FullCalendar
@@ -246,6 +280,10 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
         }}
         eventClick={(info) => {
           if (info.event.extendedProps.isGhost) return;
+          if (info.event.extendedProps.type === 'calendar-event') {
+            onCalendarEventClick?.(info.event.extendedProps.calendarEventData as CalendarEvent);
+            return;
+          }
           if (onEventClick) onEventClick(info.event.id);
         }}
         dateClick={(info) => { if (onDateClick) onDateClick(info.date); }}
@@ -260,15 +298,23 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
         eventMouseEnter={(info) => {
           if (info.event.extendedProps.isGhost) return;
           const rect = info.el.getBoundingClientRect();
+          if (info.event.extendedProps.type === 'calendar-event') {
+            if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+            setCalEventTooltip({ event: info.event.extendedProps.calendarEventData as CalendarEvent, x: rect.left, y: rect.bottom + 6 });
+            return;
+          }
           showTooltip(info.event.extendedProps.taskId as string, rect.left, rect.bottom + 6);
         }}
-        eventMouseLeave={() => hideTooltip()}
+        eventMouseLeave={() => {
+          hideTooltip();
+          tooltipTimeout.current = setTimeout(() => setCalEventTooltip(null), 120);
+        }}
         height="auto"
         locale="es"
         dayMaxEvents={3}
       />
 
-      {/* Hover tooltip */}
+      {/* Hover tooltip — tasks */}
       {tooltip && (
         <TaskTooltip
           task={tooltip.task}
@@ -276,6 +322,17 @@ export function CalendarView({ tasks, onEventDrop, onEventClick, onDateClick }: 
           y={tooltip.y}
           onMouseEnter={() => { if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current); }}
           onMouseLeave={hideTooltip}
+        />
+      )}
+
+      {/* Hover tooltip — calendar events */}
+      {calEventTooltip && (
+        <CalendarEventTooltip
+          event={calEventTooltip.event}
+          x={calEventTooltip.x}
+          y={calEventTooltip.y}
+          onMouseEnter={() => { if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current); }}
+          onMouseLeave={() => { tooltipTimeout.current = setTimeout(() => setCalEventTooltip(null), 120); }}
         />
       )}
     </div>
@@ -344,6 +401,46 @@ function TaskTooltip({
 
         {task.description && (
           <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CalendarEventTooltip({
+  event,
+  x,
+  y,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  event: CalendarEvent;
+  x: number;
+  y: number;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  const color = event.color ?? '#8b5cf6';
+  const start = new Date(event.start);
+  const end = new Date(event.end);
+  const timeLabel = event.allDay
+    ? 'Todo el día'
+    : `${start.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`;
+  const dateLabel = start.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
+
+  return (
+    <div
+      className="fixed z-50 w-64 rounded-lg border border-border bg-popover p-3 shadow-xl text-sm"
+      style={{ left: Math.min(x, window.innerWidth - 272), top: y }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ backgroundColor: color }} />
+      <div className="pl-2">
+        <p className="font-semibold leading-snug text-foreground line-clamp-2 italic">{event.title}</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{dateLabel} · {timeLabel}</p>
+        {event.description && (
+          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{event.description}</p>
         )}
       </div>
     </div>

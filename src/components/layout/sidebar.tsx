@@ -26,7 +26,7 @@ import {
   Timer,
   Target,
   HelpCircle,
-  Trash2,
+  Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
@@ -64,7 +64,7 @@ const navItems: NavItem[] = [
       { href: '/dashboard/tareas/calendario', label: 'Calendario',  icon: Calendar },
       { href: '/dashboard/tareas/cronograma', label: 'Cronograma',  icon: GanttChart },
       { href: '/dashboard/eventos',           label: 'Eventos',     icon: CalendarDays },
-      { href: '/dashboard/tareas/papelera',  label: 'Papelera',    icon: Trash2 },
+      { href: '/dashboard/tareas/archivadas', label: 'Archivadas',  icon: Archive },
     ],
   },
   {

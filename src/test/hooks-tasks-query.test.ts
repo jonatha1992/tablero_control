@@ -126,14 +126,44 @@ describe('useTasksQuery()', () => {
     consoleSpy.mockRestore();
   });
 
-  it('retorna [] ante error sin propagar la excepción', async () => {
+  it('propaga el error a React Query (isError=true) cuando la API falla', async () => {
     mockUseAuth.mockReturnValue({ user: mockUser, isSuperAdmin: false } as never);
     mockGetByBusiness.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useTasksQuery(), { wrapper: createWrapper() });
-    // El hook captura el error en el queryFn y retorna [], por lo que isSuccess=true
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([]);
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it('pasa el AbortSignal de React Query al API (cancelación sin crash)', async () => {
+    mockUseAuth.mockReturnValue({ user: mockUser, isSuperAdmin: false } as never);
+    mockGetByBusiness.mockImplementation(
+      (_businessId, abortSignal) =>
+        new Promise((resolve, reject) => {
+          if (abortSignal?.aborted) {
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+          }
+          abortSignal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+          setTimeout(() => resolve(mockTasks as never), 50);
+        }),
+    );
+
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const Wrapper = ({ children }: { children: React.ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { unmount } = renderHook(() => useTasksQuery(), { wrapper: Wrapper });
+    await waitFor(() => expect(mockGetByBusiness).toHaveBeenCalled());
+    const passedSignal = mockGetByBusiness.mock.calls[0]?.[1] as AbortSignal;
+    expect(passedSignal).toBeInstanceOf(AbortSignal);
+
+    unmount();
+    await waitFor(() => expect(passedSignal.aborted).toBe(true));
   });
 
   it('pasa el AbortSignal de React Query al API (cancelación sin crash)', async () => {

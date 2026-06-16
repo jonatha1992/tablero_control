@@ -56,36 +56,40 @@ export function AuthProvider({ children, onSignOut }: AuthProviderProps) {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
-        const token = await fbUser.getIdToken();
-        const res = await fetch('/api/auth/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        try {
+          const token = await fbUser.getIdToken();
+          const res = await fetch('/api/auth/profile', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        if (res.ok) {
-          const profile = await res.json();
-          setUser({ ...profile, avatar: profile.avatar || fbUser.photoURL || undefined });
-          setNotInvited(false);
-        } else if (res.status === 404) {
-          const onRegisterPage = typeof window !== 'undefined' &&
-            window.location.pathname.startsWith('/register');
-          // Invite pages handle user creation themselves via accept-invite API
-          const redirectParam =
-            typeof window !== 'undefined'
-              ? new URLSearchParams(window.location.search).get('redirect')
-              : null;
-          const onInvitePage =
-            typeof window !== 'undefined' &&
-            (window.location.pathname.startsWith('/i/') || isInviteRedirectPath(redirectParam));
-
-          if (onRegisterPage || onInvitePage) {
-            // register: refreshProfile tras POST /api/auth/register
-            // invite: usuario se provisiona en POST /api/invites/[token]/accept
-            setUser(null);
+          if (res.ok) {
+            const profile = await res.json();
+            setUser({ ...profile, avatar: profile.avatar || fbUser.photoURL || undefined });
             setNotInvited(false);
-          } else {
-            setUser(null);
-            setNotInvited(true);
+          } else if (res.status === 404) {
+            const onRegisterPage = typeof window !== 'undefined' &&
+              window.location.pathname.startsWith('/register');
+            // Invite pages handle user creation themselves via accept-invite API
+            const redirectParam =
+              typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('redirect')
+                : null;
+            const onInvitePage =
+              typeof window !== 'undefined' &&
+              (window.location.pathname.startsWith('/i/') || isInviteRedirectPath(redirectParam));
+
+            if (onRegisterPage || onInvitePage) {
+              // register: refreshProfile tras POST /api/auth/register
+              // invite: usuario se provisiona en POST /api/invites/[token]/accept
+              setUser(null);
+              setNotInvited(false);
+            } else {
+              setUser(null);
+              setNotInvited(true);
+            }
           }
+        } catch {
+          setUser(null);
         }
       } else {
         setUser(null);

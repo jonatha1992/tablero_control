@@ -2,21 +2,33 @@
 
 import { useMemo, useState } from 'react';
 import { CalendarView } from '@/components/calendario/calendar-view';
+import { CalendarEventSheet } from '@/components/calendario/calendar-event-sheet';
 import { TaskFilterBar } from '@/components/tareas/task-filter-bar';
+import { CreateTaskModal } from '@/components/tareas/create-task-modal';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
+import { useCalendarEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import { TaskDetailModal } from '@/components/tareas/task-detail-modal';
 import { useTaskFiltersUIStore } from '@/stores/task-filters-ui.store';
 import { matchesTaskFilters } from '@/types/ui/task-filters.ui';
 import type { Task } from '@/types';
+import type { CalendarEvent } from '@/types/domain/calendar';
 
 export default function CalendarioPage() {
   const { data: tasks = [], isLoading } = useTasksQuery();
   const updateTask = useUpdateTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createDate, setCreateDate] = useState<Date | undefined>();
+
   const filters = useTaskFiltersUIStore((s) => s.filters.calendar);
   const setFilter = useTaskFiltersUIStore((s) => s.setFilter);
   const clearFilters = useTaskFiltersUIStore((s) => s.clearFilters);
+
+  const eventsFrom = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); d.setDate(1); return d; }, []);
+  const eventsTo   = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() + 2); d.setDate(0); return d; }, []);
+  const { data: calendarEvents = [] } = useCalendarEventsQuery(eventsFrom, eventsTo);
 
   const filteredTasks = useMemo(
     () => tasks.filter((t) => matchesTaskFilters(t, filters)),
@@ -30,6 +42,11 @@ export default function CalendarioPage() {
   const handleEventClick = (taskId: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (task) setSelectedTask(task);
+  };
+
+  const handleDateClick = (date: Date) => {
+    setCreateDate(date);
+    setCreateOpen(true);
   };
 
   return (
@@ -48,8 +65,11 @@ export default function CalendarioPage() {
         ) : (
           <CalendarView
             tasks={filteredTasks}
+            calendarEvents={calendarEvents}
             onEventDrop={handleEventDrop}
             onEventClick={handleEventClick}
+            onCalendarEventClick={(ev) => setSelectedCalendarEvent(ev)}
+            onDateClick={handleDateClick}
           />
         )}
       </div>
@@ -58,6 +78,18 @@ export default function CalendarioPage() {
         task={selectedTask}
         open={!!selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
+      />
+
+      <CreateTaskModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        defaultDueDate={createDate?.toISOString().split('T')[0]}
+      />
+
+      <CalendarEventSheet
+        event={selectedCalendarEvent}
+        open={!!selectedCalendarEvent}
+        onOpenChange={(open) => { if (!open) setSelectedCalendarEvent(null); }}
       />
     </div>
   );

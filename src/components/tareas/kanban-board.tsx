@@ -54,7 +54,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
 import { X } from 'lucide-react';
 
-const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked'];
+const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked', 'archived'];
 
 interface KanbanBoardProps {
   tasks: Task[];
