@@ -126,14 +126,13 @@ describe('useTasksQuery()', () => {
     consoleSpy.mockRestore();
   });
 
-  it('retorna [] ante error sin propagar la excepción', async () => {
+  it('propaga el error a React Query (isError=true) cuando la API falla', async () => {
     mockUseAuth.mockReturnValue({ user: mockUser, isSuperAdmin: false } as never);
     mockGetByBusiness.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useTasksQuery(), { wrapper: createWrapper() });
-    // El hook captura el error en el queryFn y retorna [], por lo que isSuccess=true
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual([]);
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.data).toBeUndefined();
   });
 
   it('pasa el AbortSignal de React Query al API (cancelación sin crash)', async () => {

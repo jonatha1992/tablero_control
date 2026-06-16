@@ -43,7 +43,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   assertResourceBelongsToBusiness(user.data, objective.businessId);
 
   if (!can(user.data, 'task.update.any')) {
-    return NextResponse.json({ error: 'Sin permisos para modificar objetivos' }, { status: 403 });
+    return NextResponse.json({ error: 'forbidden', reason: 'missing_permission' }, { status: 403 });
   }
 
   const validActions = ['complete', 'archive', undefined];
@@ -101,7 +101,7 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   assertResourceBelongsToBusiness(user.data, objective.businessId);
 
   if (!can(user.data, 'task.delete')) {
-    return NextResponse.json({ error: 'Sin permisos para eliminar objetivos' }, { status: 403 });
+    return NextResponse.json({ error: 'forbidden', reason: 'missing_permission' }, { status: 403 });
   }
 
   await objectiveService.deleteObjective(id);

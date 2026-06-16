@@ -14,12 +14,7 @@ export function useCommentsQuery(taskId: string) {
     queryKey: commentKeys.byTask(taskId),
     queryFn: async (): Promise<Comment[]> => {
       if (!taskId) return [];
-      try {
-        return await commentsApi.getByTask(taskId);
-      } catch (e) {
-        console.error('[useCommentsQuery] Error:', e);
-        return [];
-      }
+      return commentsApi.getByTask(taskId);
     },
     enabled: !!taskId,
   });

@@ -4,8 +4,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/auth-context';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
-import { useTodayEventsQuery } from '@/hooks/queries/use-calendar-events-query';
+import { useCalendarEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
+import type { CalendarEvent } from '@/types/domain/calendar';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import { isPending } from '@/lib/tasks/task-status';
 import { validateTaskCompletion } from '@/lib/task-validation';
@@ -220,6 +221,38 @@ function TaskRow({ task, showDate, overdueLabel, onClick, onStatusChange }: Task
   );
 }
 
+// --- EventRow ---
+
+interface EventRowProps {
+  event: CalendarEvent;
+  showDate?: boolean;
+}
+
+function EventRow({ event, showDate }: EventRowProps) {
+  const start = new Date(event.start);
+  const end = new Date(event.end);
+  const timeLabel = event.allDay
+    ? 'Todo el día'
+    : `${formatTime(start)} – ${formatTime(end)}`;
+  const dateLabel = showDate ? formatDateShort(start) : null;
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-2.5 rounded-r-lg border-l-4 border-y border-r border-y-border/35 border-r-border/35 bg-card/70 shadow-sm select-none"
+      style={{ borderLeftColor: event.color ?? '#8b5cf6' }}
+    >
+      <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="flex-1 text-sm font-medium truncate">{event.title}</span>
+      {dateLabel && (
+        <span className="text-xs text-muted-foreground shrink-0">{dateLabel}</span>
+      )}
+      <span className="text-xs text-muted-foreground shrink-0 font-mono tabular-nums">
+        {timeLabel}
+      </span>
+    </div>
+  );
+}
+
 // --- SectionHeader ---
 
 interface SectionHeaderProps {
@@ -261,7 +294,6 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   const { user } = useAuth();
   const { data: business } = useBusinessQuery(user?.businessId);
   const moveTask = useMoveTask();
-  const { data: todayEvents = [] } = useTodayEventsQuery();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDone, setShowDone] = useState(false);
   const [showNoDate, setShowNoDate] = useState(true);
@@ -269,6 +301,10 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   const [showFuture, setShowFuture] = useState(false);
 
   const [now, setNow] = useState(() => new Date());
+
+  const eventsFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventsTo = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30);
+  const { data: events = [] } = useCalendarEventsQuery(eventsFrom, eventsTo);
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 60_000);
     const onFocus = () => setNow(new Date());
@@ -334,6 +370,37 @@ export function AgendaView({ tasks }: AgendaViewProps) {
     return { overdue, todayTimed, todayAllDay, thisWeek, later, noDate, done, focus };
   }, [tasks, userId, now]);
 
+  const eventSections = useMemo(() => {
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 86_400_000 - 1);
+    const weekEnd = new Date(todayStart.getTime() + 7 * 86_400_000 - 1);
+
+    const today: CalendarEvent[] = [];
+    const thisWeek: CalendarEvent[] = [];
+    const later: CalendarEvent[] = [];
+
+    for (const event of events) {
+      const start = new Date(event.start);
+      const end = new Date(event.end);
+      if (start <= todayEnd && end >= todayStart) {
+        today.push(event);
+      } else if (start > todayEnd && start <= weekEnd) {
+        thisWeek.push(event);
+      } else if (start > weekEnd) {
+        later.push(event);
+      }
+    }
+
+    const byStart = (a: CalendarEvent, b: CalendarEvent) =>
+      new Date(a.start).getTime() - new Date(b.start).getTime();
+
+    return {
+      today: today.sort(byStart),
+      thisWeek: thisWeek.sort(byStart),
+      later: later.sort(byStart),
+    };
+  }, [events, now]);
+
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     if (status === 'done') {
       const task = tasks.find((t) => t.id === taskId);
@@ -356,11 +423,13 @@ export function AgendaView({ tasks }: AgendaViewProps) {
     sections.noDate.length;
   const futureCount = sections.thisWeek.length + sections.later.length;
 
-  if (pendingNow === 0 && futureCount === 0 && sections.done.length === 0) {
+  const hasEvents = eventSections.today.length + eventSections.thisWeek.length + eventSections.later.length > 0;
+
+  if (pendingNow === 0 && futureCount === 0 && sections.done.length === 0 && !hasEvents) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
         <CheckCircle2 className="h-12 w-12 opacity-20" />
-        <p className="text-sm font-medium">Sin tareas pendientes</p>
+        <p className="text-sm font-medium">Sin tareas ni eventos pendientes</p>
       </div>
     );
   }
@@ -403,23 +472,34 @@ export function AgendaView({ tasks }: AgendaViewProps) {
           </div>
         )}
 
-        {/* BANNER EVENTOS HOY */}
-        {todayEvents.length > 0 && (
-          <a
-            href="/dashboard/tareas/calendario"
-            className="flex items-center gap-2.5 rounded-lg border border-violet-200 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/30 px-3 py-2 text-sm text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors"
-          >
-            <CalendarDays className="h-4 w-4 shrink-0" />
-            <span>
-              <span className="font-medium">{todayEvents.length} evento{todayEvents.length !== 1 ? 's' : ''} hoy</span>
-              {todayEvents.length <= 3 && (
-                <span className="text-violet-500 dark:text-violet-400">
-                  {' — '}{todayEvents.map((e) => e.title).join(', ')}
-                </span>
-              )}
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 ml-auto shrink-0 opacity-60" />
-          </a>
+        {/* EVENTOS HOY */}
+        {eventSections.today.length > 0 && (
+          <section className="space-y-2">
+            <SectionHeader icon={CalendarDays} label="Eventos hoy" count={eventSections.today.length} color="text-violet-500" />
+            <div className="space-y-2 pl-6">
+              {eventSections.today.map((e) => <EventRow key={e.id} event={e} />)}
+            </div>
+          </section>
+        )}
+
+        {/* EVENTOS ESTA SEMANA */}
+        {showFuture && eventSections.thisWeek.length > 0 && (
+          <section className="space-y-2">
+            <SectionHeader icon={CalendarDays} label="Eventos esta semana" count={eventSections.thisWeek.length} color="text-violet-400" />
+            <div className="space-y-2 pl-6">
+              {eventSections.thisWeek.map((e) => <EventRow key={e.id} event={e} showDate />)}
+            </div>
+          </section>
+        )}
+
+        {/* PRÓXIMOS EVENTOS */}
+        {showFuture && eventSections.later.length > 0 && (
+          <section className="space-y-2">
+            <SectionHeader icon={CalendarDays} label="Próximos eventos" count={eventSections.later.length} color="text-violet-400" />
+            <div className="space-y-2 pl-6">
+              {eventSections.later.map((e) => <EventRow key={e.id} event={e} showDate />)}
+            </div>
+          </section>
         )}
 
         {/* FOCO DEL DÍA */}

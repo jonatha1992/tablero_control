@@ -697,6 +697,19 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <Archive className="h-4 w-4" />
               </Button>
             )}
+            {task.status === 'archived' && canUpdate(task) && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={() => moveTask.mutate({ taskId: task.id, newStatus: 'done' })}
+                disabled={moveTask.isPending}
+                title="Desarchivar tarea"
+              >
+                <Archive className="h-3.5 w-3.5" />
+                Desarchivar
+              </Button>
+            )}
             {canDelete(task) && (
               <Button
                 size="icon"
