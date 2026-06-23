@@ -23,7 +23,6 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
   const isUpdating = updateTask.isPending;
 
   const handleToggle = (itemId: string) => {
-    if (isUpdating) return;
     const next = checklist.map((item) =>
       item.id === itemId ? { ...item, done: !item.done } : item
     );
@@ -42,7 +41,6 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
   };
 
   const handleDelete = (itemId: string) => {
-    if (isUpdating) return;
     const next = checklist.filter((item) => item.id !== itemId);
     updateTask.mutate({ id: task.id, data: { checklist: next } });
   };

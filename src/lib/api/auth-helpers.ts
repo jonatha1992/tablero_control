@@ -17,6 +17,13 @@ export interface AuthedUser {
   data: User;
 }
 
+const AUTHED_USER_CACHE_TTL_MS = 5000;
+const authedUserCache = new Map<string, { user: AuthedUser; expiresAt: number }>();
+
+export function invalidateAuthedUserCache(uid: string): void {
+  authedUserCache.delete(uid);
+}
+
 export async function requireUser(req: NextRequest): Promise<AuthedUser | NextResponse> {
   const authz = req.headers.get('authorization');
   if (!authz?.startsWith('Bearer ')) {
@@ -28,6 +35,11 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     decoded = await verifyToken(token);
   } catch {
     return NextResponse.json({ error: 'invalid_token' }, { status: 401 });
+  }
+
+  const cached = authedUserCache.get(decoded.uid);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.user;
   }
 
   const row = await prisma.user.findUnique({
@@ -119,7 +131,7 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     businessStatus = biz?.status ?? undefined;
   }
 
-  return {
+  const authedUser: AuthedUser = {
     uid: decoded.uid,
     role: effectiveRole,
     businessId: effectiveBusinessId,
@@ -127,6 +139,9 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     email: decoded.email,
     data,
   };
+
+  authedUserCache.set(decoded.uid, { user: authedUser, expiresAt: Date.now() + AUTHED_USER_CACHE_TTL_MS });
+  return authedUser;
 }
 
 export function requireActiveSubscription(user: AuthedUser, req: NextRequest): NextResponse | null {

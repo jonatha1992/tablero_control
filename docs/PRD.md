@@ -8,7 +8,7 @@
 | Empresa dueña | TecnoFusión |
 | Tipo | SaaS multi-tenant (B2B) |
 | Estado | En producción (rama `test` → Railway) |
-| Última actualización | 2026-06-11 |
+| Última actualización | 2026-06-23 |
 | Doc relacionado | [SCOPE_AND_REQUIREMENTS.md](functional/SCOPE_AND_REQUIREMENTS.md) · [GLOSSARY_AND_MODELS.md](functional/GLOSSARY_AND_MODELS.md) |
 
 ---
@@ -87,7 +87,7 @@ Referencia canónica: [SCOPE_AND_REQUIREMENTS.md](functional/SCOPE_AND_REQUIREME
 ### 5.2 Tareas (core)
 - Kanban de 6 columnas con drag & drop: Backlog → Por hacer → En progreso → En revisión → Completada → Bloqueada.
 - Creación con título, descripción, prioridad, tipo, fecha/hora límite, asignación múltiple, tablero, ciclo y objetivo.
-- Subtareas jerárquicas (`parentId`), checklists con progreso, comentarios con menciones `@usuario`, adjuntos (Cloudinary), registro de tiempo.
+- Checklists con progreso, comentarios con menciones `@usuario`, adjuntos (Cloudinary), registro de tiempo. (Subtareas jerárquicas vía `parentId` quedaron pausadas como concepto de producto — la UI no las muestra ni crea; se transforman en ítems de checklist.)
 - **Recurrencia** (diaria/semanal/mensual/personalizada): al completar una tarea recurrente el sistema genera la siguiente ocurrencia.
 - Selección múltiple con acciones bulk; filtros por texto, prioridad, local, proyecto, ciclo y objetivo.
 
@@ -112,7 +112,7 @@ Referencia canónica: [SCOPE_AND_REQUIREMENTS.md](functional/SCOPE_AND_REQUIREME
 ### 5.7 Facturación
 - 4 planes: Free · Basic · Pro · Enterprise.
 - Precios y límites **dinámicos**, editables por superadmin sin deploy.
-- Suscripciones recurrentes vía MercadoPago Preapproval; historial de facturas.
+- Pagos vía MercadoPago **Checkout Pro** (no Preapproval: la API de preapproval exige `payer_email` fijo, lo que rompe el flujo cuando quien paga no es quien inicia el checkout). Renovación manual al vencer el período; historial de facturas.
 - Límites por plan: usuarios, locales, proyectos, adjuntos.
 
 ### 5.8 Superadmin (TecnoFusión)
@@ -174,6 +174,7 @@ src/lib/prisma.ts → PostgreSQL
 | Fuga cross-tenant en arrays de IDs | Validación de `businessId` antes de operar ([ADR-003](decisions/003-cross-tenant-task-injection.md), [ADR-007](decisions/007-task-business-id-isolation.md)) |
 | Límites por plan sin enforcement completo | Pendiente: `limitProjects` / `limitAttachments` aún sin gate (gap conocido) |
 | Costos de IA (Groq) escalando con uso | Monitorear consumo; asociar a plan en el futuro |
+| **Tarea madre de recurrencia mutable**: mientras una tarea con `recurrence` no generó su primera ocurrencia (`recurrenceSpawnedAt = null`), puede editarse o borrarse sin guard en `PATCH`/`DELETE` (`/api/tasks/[id]`), perdiendo la regla de repetición para toda la cadena futura — no existe plantilla inmutable separada | Confirmado, sin fix implementado; pendiente decisión de producto (guard en API y/o aviso en UI) |
 
 ---
 
@@ -182,8 +183,8 @@ src/lib/prisma.ts → PostgreSQL
 Capturado del feedback de cliente (2026-05-29) y backlog:
 
 - Dashboard de tareas futuras.
-- Fix de recurrencia que duplica ocurrencias.
 - Backlog dedicado y mejoras de filtros.
+- Resolver mutabilidad de la "tarea madre" en cadenas de recurrencia (ver Riesgos, §9).
 - Enforcement de límites `limitProjects` / `limitAttachments` (modelo pago por uso).
 
 ---

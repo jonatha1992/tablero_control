@@ -136,17 +136,19 @@ describe('useUpdateTask', () => {
     expect(mockUpdate).toHaveBeenCalledWith('t-1', { title: 'Actualizada' });
   });
 
-  it('invalida detail y all en onSettled', async () => {
+  it('en onSuccess escribe la respuesta del servidor en cache sin invalidar queries', async () => {
     const { wrapper, qc } = createWrapper();
-    mockUpdate.mockResolvedValueOnce({ id: 't-1' } as never);
+    const serverTask = { id: 't-1', title: 'X', updatedAt: '2026-06-23T00:00:00.000Z' };
+    mockUpdate.mockResolvedValueOnce(serverTask as never);
+    qc.setQueryData(taskKeys.all, [{ id: 't-1', title: 'Vieja' }]);
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
 
     const { result } = renderHook(() => useUpdateTask(), { wrapper });
     await act(async () => { result.current.mutate({ id: 't-1', data: { title: 'X' } }); });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: taskKeys.all });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: [...taskKeys.all, 'detail'] });
+    expect(invalidateSpy).not.toHaveBeenCalled();
+    expect(qc.getQueryData(taskKeys.all)).toEqual([serverTask]);
   });
 });
 

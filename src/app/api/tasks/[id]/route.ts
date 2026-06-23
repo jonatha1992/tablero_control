@@ -163,12 +163,13 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const prevTask = await taskService.getTaskById(id);
+  const needsPrevTask = data.assigneeIds !== undefined || data.status !== undefined;
+  const prevTask = needsPrevTask ? await taskService.getTaskById(id) : null;
   const prevAssigneeIds = prevTask?.assigneeIds ?? [];
 
   const task = await taskService.updateTask(id, data);
 
-  await writeAuditLog({
+  writeAuditLog({
     actorId: user.uid,
     actorRole: user.role,
     businessId,
@@ -176,7 +177,7 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     targetType: 'TASK',
     targetId: id,
     metadata: { ...data },
-  });
+  }).catch((err: unknown) => console.error('[audit] task.update failed:', (err as Error)?.message ?? err));
 
   const newAssigneeIds = task.assigneeIds.filter((uid: string) => !prevAssigneeIds.includes(uid));
   if (newAssigneeIds.length > 0) {
