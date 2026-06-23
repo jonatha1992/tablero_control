@@ -63,10 +63,16 @@ export function useUpdateTask() {
         description: taskUpdateErrorMessage(reason) || (err as Error).message,
       });
     },
-    onSettled: (_data, _error, { id: _id }) => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      // Detail keys are tenant-scoped; invalidate them all to avoid missing the active one.
-      queryClient.invalidateQueries({ queryKey: [...taskKeys.all, 'detail'] });
+    onSuccess: (task) => {
+      // Reemplazar el dato optimista por la respuesta real del servidor sin refetch.
+      queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
+        if (!old) return old;
+        return old.map((t) => (t.id === task.id ? task : t));
+      });
+      queryClient.setQueriesData<Task>({ queryKey: [...taskKeys.all, 'detail'] }, (old) => {
+        if (!old || old.id !== task.id) return old;
+        return task;
+      });
     },
   });
 }

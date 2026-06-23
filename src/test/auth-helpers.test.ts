@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { requireUser, requireRole } from '@/lib/api/auth-helpers';
+import { requireUser, requireRole, invalidateAuthedUserCache } from '@/lib/api/auth-helpers';
 import { verifyToken } from '@/lib/firebase/admin';
 import { prisma } from '@/lib/prisma';
 
@@ -43,6 +43,7 @@ const dbUser = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  invalidateAuthedUserCache('uid-1');
 });
 
 // ─── requireUser ──────────────────────────────────────────────────────────────
