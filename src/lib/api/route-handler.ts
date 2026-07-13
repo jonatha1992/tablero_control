@@ -6,13 +6,19 @@ export function handle<TArgs extends unknown[]>(
 ): (...args: TArgs) => Promise<NextResponse> {
   return async (...args) => {
     try {
-      return await fn(...args);
+      const response = await fn(...args);
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      return response;
     } catch (err) {
       if (err instanceof TenantMismatchError) {
-        return NextResponse.json({ error: 'forbidden', reason: 'tenant_mismatch' }, { status: 403 });
+        const response = NextResponse.json({ error: 'forbidden', reason: 'tenant_mismatch' }, { status: 403 });
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        return response;
       }
       console.error('[api-error]', err);
-      return NextResponse.json({ error: 'internal_server_error' }, { status: 500 });
+      const response = NextResponse.json({ error: 'internal_server_error' }, { status: 500 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      return response;
     }
   };
 }
