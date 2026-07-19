@@ -456,13 +456,13 @@ export function checkTaskCompletion(task: Task, settings?: BusinessSettings | nu
 - Attachment required → toast/block (no dialog bypass).
 - Checklist incomplete → open dialog listing items; on confirm call `moveTask`/`update` to `done`.
 
-- [ ] **Step 1: Unit tests for `checkTaskCompletion`**
+- [x] **Step 1: Unit tests for `checkTaskCompletion`**
 
-- [ ] **Step 2: Implement checker + dialog**
+- [x] **Step 2: Implement checker + dialog**
 
-- [ ] **Step 3: Wire three call sites**
+- [x] **Step 3: Wire three call sites** (+ Kanban bulk toast block)
 
-- [ ] **Step 4: PASS + docs + Commit**
+- [x] **Step 4: PASS + docs + Commit**
 
 ```bash
 git commit -m "feat: allow completing tasks with incomplete checklist after confirm"
@@ -472,17 +472,19 @@ git commit -m "feat: allow completing tasks with incomplete checklist after conf
 
 ### Task 11: Final verification + docs sync
 
-- [ ] **Step 1: Run** `npm run check` (or lint + `npm run type:check` + `npm run test:run` if check too heavy)
+- [x] **Step 1: Run** `npm run check` (or lint + `npm run type:check` + `npm run test:run` if check too heavy)
 
-- [ ] **Step 2: Skim spec — every phase has matching commits**
+- [x] **Step 2: Skim spec — every phase has matching commits**
 
-- [ ] **Step 3: Ensure cron route listed in deploy/docs if Railway cron config exists (`docs/deploy.md`)**
+- [x] **Step 3: Ensure cron route listed in deploy/docs if Railway cron config exists (`docs/deploy.md`)**
 
-- [ ] **Step 4: Commit any doc leftovers**
+- [x] **Step 4: Commit any doc leftovers**
 
 ```bash
 git commit -m "docs: sync domain docs after six-phase UX delivery"
 ```
+
+**Commits de cobertura (dev):** `831fa04` extract events → `50dd35e`/`249e892` planner+preview → `b6dfa8d` cron → `d445066`/`6e7ae4d` active+archive → `33abd67` h+min → `1daa8b4` sectores → `9284878` install → `bacf878`/`e7893e4` checklist+bulk.
 
 ---
 
