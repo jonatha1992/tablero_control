@@ -187,6 +187,7 @@ Modal legacy de dictado: `dictate-tasks-modal.tsx` (misma preview compartida).
 3. Respuesta estructurada:
    - `clarify` — pregunta + chips opcionales (assignee, fecha, sprint, etc.)
    - `preview_tasks` — tarjetas editables (`TaskPreviewCard`)
+   - `preview_events` — preview estructurada de eventos detectados antes de confirmar calendario
    - `preview_plan` — planificación de sprint/objetivo antes de confirmar
    - `message` — texto informativo
 4. Usuario confirma → `useConfirmDictatedTasks` → `POST /api/tasks`.

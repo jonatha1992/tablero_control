@@ -39,7 +39,7 @@ POST   /api/tasks/from-text     ← extracción LLM desde texto + contexto tenan
 ## Assistant (IA)
 ```
 POST   /api/assistant/chat           ← chat informativo; body: { messages, mode?: 'assistant'|'planner' }
-POST   /api/assistant/planner        ← Planificador: intent → clarify | preview_tasks | preview_plan
+POST   /api/assistant/planner        ← Planificador: intent → clarify | preview_tasks | preview_events | preview_plan
 POST   /api/assistant/generate-plan  ← genera planificación sprint/objetivo
 ```
 

@@ -126,7 +126,7 @@ extractEventsFromText(text, ctx: ExtractContext): Promise<ExtractedEvent[]>
 
 // planner-intent.ts + planner-tools.ts + planner-agent.ts
 runPlannerAgent(message, ctx, history): Promise<PlannerResponse>
-// clarify | preview_tasks | preview_plan | message
+// clarify | preview_tasks | preview_events | preview_plan | message
 ```
 
 API routes — tareas:
@@ -135,7 +135,7 @@ API routes — tareas:
 
 API routes — asistente:
 - `POST /api/assistant/chat` — chat informativo (modo `assistant` | `planner` legacy texto)
-- `POST /api/assistant/planner` — agente Planificador (intent + preview + clarify)
+- `POST /api/assistant/planner` — agente Planificador (intent + preview de tareas/eventos + clarify)
 - `POST /api/assistant/generate-plan` — generación de planificación sprint/objetivo
 
 Variable: `GROQ_API_KEY` (rotación multi-provider vía `src/lib/ai/providers.ts` cuando aplica)

@@ -1,4 +1,6 @@
 import type { ExtractContext } from './extract-context';
+import type { ExtractedEvent } from './extract-events';
+import { extractEventsFromText } from './extract-events';
 import type { ExtractedTask } from './extract-tasks';
 import { extractTasksFromTranscription } from './extract-tasks';
 import { generatePlanFromDescription, type GeneratedPlan } from './generate-plan';
@@ -7,6 +9,7 @@ import type { PlannerIntentResult } from './planner-intent';
 export type PlannerToolName =
   | 'list_context'
   | 'extract_tasks'
+  | 'extract_events'
   | 'preview_plan'
   | 'ask_clarification';
 
@@ -44,6 +47,11 @@ export async function executePlannerTool(
       const tasks = await extractTasksFromTranscription(text, ctx);
       return { tool: 'extract_tasks', data: { tasks } };
     }
+    case 'extract_events': {
+      const text = call.args.text ?? '';
+      const events = await extractEventsFromText(text, ctx);
+      return { tool: 'extract_events', data: { events } };
+    }
     case 'preview_plan': {
       const type = (call.args.type === 'objective' ? 'objective' : 'cycle') as 'cycle' | 'objective';
       const description = call.args.description ?? '';
@@ -70,6 +78,7 @@ export async function runIntentPipeline(
 ): Promise<
   | { type: 'clarify'; question: string; options?: string[]; field: string }
   | { type: 'preview_tasks'; tasks: ExtractedTask[]; parseError: boolean }
+  | { type: 'preview_events'; events: ExtractedEvent[]; parseError: boolean }
   | { type: 'preview_plan'; planType: 'cycle' | 'objective'; description: string; plan: GeneratedPlan }
   | { type: 'message'; content: string }
   | { type: 'query' }
@@ -119,6 +128,30 @@ export async function runIntentPipeline(
       return {
         type: 'message',
         content: 'Hubo un error al procesar las tareas. Intentá de nuevo con más detalle.',
+      };
+    }
+  }
+
+  if (intent.intent === 'create_event') {
+    try {
+      const result = await executePlannerTool(
+        { tool: 'extract_events', args: { text: intent.extractionText ?? '' } },
+        ctx,
+      );
+      const events = (result.data as { events: ExtractedEvent[] }).events;
+      if (events.length === 0) {
+        return {
+          type: 'clarify',
+          question: 'No pude detectar un evento concreto. ¿Podés decirme qué evento es y cuándo sería?',
+          field: 'startDate',
+          options: ['Todo el día', 'Con horario', 'Esta semana'],
+        };
+      }
+      return { type: 'preview_events', events, parseError: false };
+    } catch {
+      return {
+        type: 'message',
+        content: 'Hubo un error al procesar el evento. Intentá de nuevo con más detalle.',
       };
     }
   }
