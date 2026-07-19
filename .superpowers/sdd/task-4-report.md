@@ -33,7 +33,7 @@
 - Lints on edited files: no linter errors
 
 ## Commit
-- Pending
+- `b6dfa8d feat: add cron event reminders`
 
 ## Notes / concerns
 - Browser/manual smoke for actual cron delivery path was not run.
