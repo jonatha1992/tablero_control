@@ -113,6 +113,8 @@ Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterB
 
 **Gap conocido (pre-existente):** `taskRepository.findByCreator` solo aplica `status`, `priority`, `cycleId`, `noCycle` y `search` — no afecta a estos filtros porque son client-side, pero importa si algún día se pasa a filtrado server-side en el path sin `businessId`.
 
+**Filtro de entidades activas:** `src/lib/tasks/active-entity.ts` centraliza la regla para ocultar tareas ligadas a entidades archivadas. Si `project.status === 'archived'` o `location.status` está en `closed | inactive`, la tarea se excluye de Agenda, Calendario y la vista principal de `/dashboard/tareas`.
+
 ## CalendarEvents en Vistas de Calendario y Agenda
 
 `CalendarEvent` es una entidad separada de `Task` — representa eventos de calendario (reuniones, bloqueos de tiempo) sin lógica de tareas ni recurrencia automática.
@@ -228,6 +230,8 @@ No hay tarea compartida entre tableros: cada tablero recibe su **propia fila** `
 API: `POST /api/tasks/replicate` — body `{ projectIds: string[], template?: CreateTaskDTO, sourceTaskId?: string }`. Valida que todos los `projectIds` pertenezcan al `businessId` del usuario.
 
 Helpers: `src/lib/tasks/resolve-project-targets.ts`, `src/lib/tasks/task-to-create-dto.ts`.
+
+`ProjectMultiPicker` excluye tableros con `status: 'archived'` y sanea selecciones viejas para no mantener IDs ocultos en filtros, replicación o previews.
 
 ## Aislamiento por espacio
 

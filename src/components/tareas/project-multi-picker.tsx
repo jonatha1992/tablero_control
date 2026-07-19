@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useMemo } from 'react';
 import { FolderKanban, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +15,7 @@ import {
 interface NamedProject {
   id: string;
   name: string;
+  status?: string;
 }
 
 export interface ProjectMultiPickerProps {
@@ -32,22 +35,45 @@ export function ProjectMultiPicker({
   size = 'sm',
   placeholder = 'Tableros',
 }: ProjectMultiPickerProps) {
-  if (projects.length === 0) return null;
+  const visibleProjects = useMemo(
+    () => projects.filter((project) => !isArchivedProjectStatus(project.status)),
+    [projects],
+  );
+  const visibleProjectIds = useMemo(
+    () => new Set(visibleProjects.map((project) => project.id)),
+    [visibleProjects],
+  );
+  const sanitizedValue = useMemo(
+    () => value.filter((id) => visibleProjectIds.has(id)),
+    [value, visibleProjectIds],
+  );
+  const hasHiddenSelection = useMemo(
+    () => value.some((id) => !visibleProjectIds.has(id)),
+    [value, visibleProjectIds],
+  );
+
+  useEffect(() => {
+    if (hasHiddenSelection) {
+      onChange(sanitizedValue);
+    }
+  }, [hasHiddenSelection, onChange, sanitizedValue]);
+
+  if (visibleProjects.length === 0) return null;
 
   const toggle = (id: string, checked: boolean) => {
     if (checked) {
-      onChange([...value, id]);
+      onChange([...sanitizedValue, id]);
     } else {
-      onChange(value.filter((v) => v !== id));
+      onChange(sanitizedValue.filter((v) => v !== id));
     }
   };
 
   const label =
-    value.length === 0
+    sanitizedValue.length === 0
       ? placeholder
-      : value.length === 1
-        ? projects.find((p) => p.id === value[0])?.name ?? placeholder
-        : `${value.length} tableros`;
+      : sanitizedValue.length === 1
+        ? visibleProjects.find((p) => p.id === sanitizedValue[0])?.name ?? placeholder
+        : `${sanitizedValue.length} tableros`;
 
   const btnClass = size === 'sm'
     ? 'h-auto min-h-0 px-1 py-0.5 text-[10px] font-normal gap-0.5'
@@ -71,10 +97,10 @@ export function ProjectMultiPicker({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-56 overflow-y-auto">
-        {projects.map((p) => (
+        {visibleProjects.map((p) => (
           <DropdownMenuCheckboxItem
             key={p.id}
-            checked={value.includes(p.id)}
+            checked={sanitizedValue.includes(p.id)}
             onCheckedChange={(checked) => toggle(p.id, checked === true)}
             onSelect={(e) => e.preventDefault()}
             className="gap-2 text-xs"
@@ -93,5 +119,5 @@ export function shouldShowProjectMultiPicker(
   projectsCount: number,
   multipleBoards: boolean,
 ): boolean {
-  return multipleBoards || projectsCount > 1;
+  return projectsCount > 0 && (multipleBoards || projectsCount > 1);
 }

@@ -7,6 +7,7 @@ import {
   businessRepository,
 } from '@/repositories';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { resolveSpaceLabels } from '@/lib/terminology';
 
 export interface ExtractContextItem {
@@ -41,8 +42,9 @@ export async function loadExtractContext(businessId: string): Promise<ExtractCon
     ]);
 
   const labels = resolveSpaceLabels(business?.settings);
+  const activeProjects = projectsRaw.filter((project) => !isArchivedProjectStatus(project.status));
   const defaultProject =
-    projectsRaw.find((p) => p.name === DEFAULT_BOARD_NAME) ?? projectsRaw[0];
+    activeProjects.find((p) => p.name === DEFAULT_BOARD_NAME) ?? activeProjects[0];
   const activeCycle = cyclesRaw.find((c) => c.status === 'active');
 
   return {

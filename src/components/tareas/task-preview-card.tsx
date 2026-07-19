@@ -149,6 +149,7 @@ function PreviewIconSelect({
 interface NamedItem {
   id: string;
   name: string;
+  status?: string;
 }
 
 export interface TaskPreviewCardProps {

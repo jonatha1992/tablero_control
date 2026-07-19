@@ -24,6 +24,7 @@ import {
   ProjectMultiPicker,
   shouldShowProjectMultiPicker,
 } from '@/components/tareas/project-multi-picker';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
@@ -138,15 +139,16 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   const { data: business } = useBusinessQuery(user?.businessId);
   const labels = useSpaceLabels();
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const activeProjects = projects.filter((project) => !isArchivedProjectStatus(project.status));
   const showBoardPicker = shouldShowProjectMultiPicker(
-    projects.length,
+    activeProjects.length,
     hasMultipleBoards(business?.settings),
   );
   const { data: cycles = [] } = useCyclesQuery(user?.businessId ?? '');
   const { selectedSprintId, viewMode: sprintMode } = useScrumUIStore();
 
   const defaultBoardId =
-    projects.find((p) => p.name === DEFAULT_BOARD_NAME)?.id ?? projects[0]?.id ?? '';
+    activeProjects.find((p) => p.name === DEFAULT_BOARD_NAME)?.id ?? activeProjects[0]?.id ?? '';
 
   useEffect(() => {
     if (open && !showBoardPicker && defaultBoardId) {
@@ -433,7 +435,7 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
               <FolderKanban className="h-3.5 w-3.5" /> Tableros (podés elegir varios)
             </label>
             <ProjectMultiPicker
-              projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+              projects={activeProjects.map((p) => ({ id: p.id, name: p.name, status: p.status }))}
               value={selectedProjectIds}
               onChange={setSelectedProjectIds}
               size="md"

@@ -30,6 +30,7 @@ import {
   ProjectMultiPicker,
   shouldShowProjectMultiPicker,
 } from '@/components/tareas/project-multi-picker';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { useReplicateTaskToProjects } from '@/hooks/mutations/use-replicate-task';
 import { cn } from '@/lib/utils';
 import { validateTaskCompletion } from '@/lib/task-validation';
@@ -87,8 +88,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const { user } = useAuth();
   const { data: business } = useBusinessQuery(user?.businessId);
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const activeProjects = projects.filter((project) => !isArchivedProjectStatus(project.status));
   const showMultiBoardPicker = shouldShowProjectMultiPicker(
-    projects.length,
+    activeProjects.length,
     hasMultipleBoards(business?.settings),
   );
 
@@ -750,7 +752,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </DialogDescription>
           </DialogHeader>
           <ProjectMultiPicker
-            projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+            projects={activeProjects.map((p) => ({ id: p.id, name: p.name, status: p.status }))}
             value={replicateProjectIds}
             onChange={setReplicateProjectIds}
             size="md"

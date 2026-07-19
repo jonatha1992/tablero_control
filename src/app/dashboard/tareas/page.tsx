@@ -4,10 +4,12 @@ import { useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/tareas/kanban-board';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useAuth } from '@/hooks/auth-context';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { hasMultipleBoards } from '@/lib/business-defaults';
+import { isArchivedProjectStatus, isTaskFromActiveEntities } from '@/lib/tasks/active-entity';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import type { TaskFilters } from '@/types';
 import { ChevronDown, Timer, X } from 'lucide-react';
@@ -27,9 +29,22 @@ export default function TareasPage() {
   const businessId = user?.businessId ?? '';
   const { data: business } = useBusinessQuery(businessId);
   const showBoardPicker = hasMultipleBoards(business?.settings);
-  const { data: projects = [] } = useProjectsQuery(businessId);
+  const { data: projects = [], isLoading: isLoadingProjects } = useProjectsQuery(businessId);
+  const { data: locations = [], isLoading: isLoadingLocations } = useLocationsQuery();
   const { data: cycles = [] } = useCyclesQuery(businessId);
   const { selectedSprintId, viewMode: sprintMode, setSelectedSprint, setViewMode: setSprintMode } = useScrumUIStore();
+  const activeProjects = useMemo(
+    () => projects.filter((project) => !isArchivedProjectStatus(project.status)),
+    [projects],
+  );
+  const projectsById = useMemo(
+    () => new Map(projects.map((project) => [project.id, { status: project.status }])),
+    [projects],
+  );
+  const locationsById = useMemo(
+    () => new Map(locations.map((location) => [location.id, { status: location.status }])),
+    [locations],
+  );
 
   const activeCycle = cycles.find((c) => c.status === 'active');
   const otherCycles = cycles.filter((c) => c.status !== 'active');
@@ -43,8 +58,12 @@ export default function TareasPage() {
   }, [selectedProjectIds, sprintMode, selectedSprintId]);
 
   const { data: tasks = [], isLoading, isError, error } = useTasksQuery(taskFilters);
+  const visibleTasks = useMemo(
+    () => tasks.filter((task) => isTaskFromActiveEntities(task, projectsById, locationsById)),
+    [tasks, projectsById, locationsById],
+  );
 
-  if (isLoading) {
+  if (isLoading || isLoadingProjects || isLoadingLocations) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-3">
@@ -67,10 +86,10 @@ export default function TareasPage() {
     <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
 
       {/* Selector de tablero — solo con múltiples tableros habilitados */}
-      {showBoardPicker && projects.length > 0 && (
+      {showBoardPicker && activeProjects.length > 0 && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
           <ProjectMultiPicker
-            projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+            projects={activeProjects.map((p) => ({ id: p.id, name: p.name, status: p.status }))}
             value={selectedProjectIds}
             onChange={setSelectedProjectIds}
             size="md"
@@ -170,7 +189,7 @@ export default function TareasPage() {
 
       {/* Kanban board — handles its own modals internally */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        <KanbanBoard tasks={tasks} />
+        <KanbanBoard tasks={visibleTasks} />
       </div>
     </div>
   );
