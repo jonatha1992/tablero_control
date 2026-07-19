@@ -34,6 +34,7 @@ export default function SectoresPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<Location | undefined>();
   const [detailSector, setDetailSector] = useState<Location | null>(null);
+  const [sectorToArchive, setSectorToArchive] = useState<Location | null>(null);
   const [sectorToDelete, setSectorToDelete] = useState<Location | null>(null);
 
   const handleEdit = (sector: Location) => {
@@ -46,9 +47,12 @@ export default function SectoresPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteRequest = (id: string) => {
-    const sector = sectors.find((s) => s.id === id);
-    if (sector) setSectorToDelete(sector);
+  const handleArchiveConfirm = () => {
+    if (!sectorToArchive) return;
+    archiveMutation.mutate(
+      { id: sectorToArchive.id, data: { status: 'closed' } },
+      { onSettled: () => setSectorToArchive(null) }
+    );
   };
 
   const handleDeleteConfirm = () => {
@@ -59,17 +63,12 @@ export default function SectoresPage() {
     );
   };
 
-  const handleArchiveConfirm = () => {
-    if (!sectorToDelete) return;
-    archiveMutation.mutate(
-      { id: sectorToDelete.id, data: { status: 'closed' } },
-      { onSettled: () => setSectorToDelete(null) }
-    );
-  };
-
-  const taskCount = sectorToDelete?.taskIds.length ?? 0;
-  const isPending = deleteMutation.isPending || archiveMutation.isPending;
-  const taskCountLabel = `${taskCount} tarea${taskCount === 1 ? '' : 's'}`;
+  const archiveTaskCount = sectorToArchive?.taskIds.length ?? 0;
+  const deleteTaskCount = sectorToDelete?.taskIds.length ?? 0;
+  const archivePending = archiveMutation.isPending;
+  const deletePending = deleteMutation.isPending;
+  const archiveTaskLabel = `${archiveTaskCount} tarea${archiveTaskCount === 1 ? '' : 's'}`;
+  const deleteTaskLabel = `${deleteTaskCount} tarea${deleteTaskCount === 1 ? '' : 's'}`;
 
   return (
     <div className="space-y-6 h-full overflow-auto">
@@ -85,7 +84,8 @@ export default function SectoresPage() {
       <SectorList
         sectors={sectors}
         onEdit={handleEdit}
-        onDelete={handleDeleteRequest}
+        onArchive={(sector) => setSectorToArchive(sector)}
+        onDelete={(sector) => setSectorToDelete(sector)}
         onSelect={(sector) => setDetailSector(sector)}
         onCreate={handleCreate}
         isLoading={isLoading}
@@ -105,49 +105,88 @@ export default function SectoresPage() {
         onEdit={(sector) => { setDetailSector(null); handleEdit(sector); }}
       />
 
-      <Dialog open={!!sectorToDelete} onOpenChange={(open) => { if (!open && !isPending) setSectorToDelete(null); }}>
+      <Dialog
+        open={!!sectorToArchive}
+        onOpenChange={(open) => { if (!open && !archivePending) setSectorToArchive(null); }}
+      >
         <DialogContent
           className="sm:max-w-md"
           onInteractOutside={(event) => {
-            if (isPending) event.preventDefault();
+            if (archivePending) event.preventDefault();
           }}
         >
           <DialogHeader>
-            <DialogTitle>Archivar o eliminar {site.toLowerCase()}</DialogTitle>
+            <DialogTitle>Archivar {site.toLowerCase()}</DialogTitle>
             <DialogDescription>
-              {sectorToDelete
-                ? `"${sectorToDelete.name}" tiene ${taskCountLabel} asociadas.`
+              {sectorToArchive
+                ? `"${sectorToArchive.name}" tiene ${archiveTaskLabel} asociadas.`
                 : null}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Archivar cambia el estado a <span className="font-medium text-foreground">cerrado</span> y
-              oculta sus tareas activas de las vistas principales.
-            </p>
-            <p>
-              Eliminar borra el {site.toLowerCase()} y también sus tareas asociadas de forma permanente.
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Archivar cambia el estado a <span className="font-medium text-foreground">cerrado</span> y
+            oculta sus tareas activas de las vistas principales. Podés reactivarla editándola después.
+          </p>
 
-          <DialogFooter className="gap-2 sm:justify-between sm:space-x-0">
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
+              onClick={() => setSectorToArchive(null)}
+              disabled={archivePending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
               onClick={handleArchiveConfirm}
-              disabled={isPending}
-              className="sm:w-auto"
+              disabled={archivePending}
             >
               <Archive className="mr-2 h-4 w-4" />
               Archivar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!sectorToDelete}
+        onOpenChange={(open) => { if (!open && !deletePending) setSectorToDelete(null); }}
+      >
+        <DialogContent
+          className="sm:max-w-md"
+          onInteractOutside={(event) => {
+            if (deletePending) event.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Eliminar {site.toLowerCase()}</DialogTitle>
+            <DialogDescription>
+              {sectorToDelete
+                ? `"${sectorToDelete.name}" tiene ${deleteTaskLabel} asociadas.`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            Esta acción es permanente: borra el {site.toLowerCase()} y también sus tareas asociadas.
+          </p>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSectorToDelete(null)}
+              disabled={deletePending}
+            >
+              Cancelar
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={handleDeleteConfirm}
-              disabled={isPending}
-              className="sm:w-auto"
+              disabled={deletePending}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Eliminar

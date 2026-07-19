@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { Archive, Edit2, Eye, ListTodo, MapPin, MoreVertical, Users } from 'lucide-react';
+import { Archive, Edit2, Eye, ListTodo, MapPin, MoreVertical, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Location } from '@/types/domain/location';
@@ -16,7 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
@@ -24,7 +23,8 @@ import { cn } from '@/lib/utils';
 interface Props {
   sectors: Location[];
   onEdit: (sector: Location) => void;
-  onDelete: (id: string) => void;
+  onArchive: (sector: Location) => void;
+  onDelete: (sector: Location) => void;
   onSelect: (sector: Location) => void;
   onCreate?: () => void;
   isLoading: boolean;
@@ -58,7 +58,7 @@ const STATUS_META: Record<Location['status'], { label: string; className: string
   },
 };
 
-export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLoading }: Props) {
+export function SectorList({ sectors, onEdit, onArchive, onDelete, onSelect, onCreate, isLoading }: Props) {
   const { data: allMembers = [] } = useMembersQuery();
   const { data: tasks = [], isLoading: tasksLoading } = useTasksQuery();
   const labels = useSpaceLabels();
@@ -161,16 +161,16 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
   return (
     <div className="rounded-lg border overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="sr-only">
-            Listado de {labels.sites.toLowerCase()} con miembros y tareas asociadas.
-          </caption>
+        <table className="w-full text-sm" aria-label={`Listado de ${labels.sites.toLowerCase()} con miembros y tareas asociadas`}>
           <thead className="sticky top-0 z-10 bg-card border-b">
             <tr>
               {TABLE_COLUMNS.map((column) => (
                 <th
                   key={column}
-                  className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  className={cn(
+                    'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground',
+                    column === 'Acciones' ? 'text-right' : 'text-left',
+                  )}
                 >
                   {column}
                 </th>
@@ -261,50 +261,80 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                       </Link>
                     )}
                   </td>
-                  <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onSelect(sector)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Ver detalle
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/equipo?locationId=${sector.id}`}>
-                            <Users className="mr-2 h-4 w-4" />
-                            Ver miembros
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/tareas/agenda?locationId=${sector.id}`}>
-                            <ListTodo className="mr-2 h-4 w-4" />
-                            Ver pendientes (Agenda)
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/tareas/agenda?locationId=${sector.id}&status=done`}>
-                            <ListTodo className="mr-2 h-4 w-4" />
-                            Ver finalizadas (Agenda)
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onEdit(sector)}>
-                          <Edit2 className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-amber-700 focus:text-amber-700"
-                          onClick={() => onDelete(sector.id)}
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archivar o eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <td className="w-[1%] whitespace-nowrap px-2 py-3" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={`Editar ${sector.name}`}
+                        title="Editar"
+                        onClick={() => onEdit(sector)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-amber-700 hover:text-amber-800"
+                        aria-label={`Archivar ${sector.name}`}
+                        title={sector.status === 'closed' ? 'Ya archivada' : 'Archivar'}
+                        disabled={sector.status === 'closed'}
+                        onClick={() => onArchive(sector)}
+                      >
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        aria-label={`Eliminar ${sector.name}`}
+                        title="Eliminar"
+                        onClick={() => onDelete(sector)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label={`Más acciones de ${sector.name}`}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onSelect(sector)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver detalle
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/equipo?locationId=${sector.id}`}>
+                              <Users className="mr-2 h-4 w-4" />
+                              Gestionar miembros
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/tareas/agenda?locationId=${sector.id}`}>
+                              <ListTodo className="mr-2 h-4 w-4" />
+                              Ver pendientes (Agenda)
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/tareas/agenda?locationId=${sector.id}&status=done`}>
+                              <ListTodo className="mr-2 h-4 w-4" />
+                              Ver finalizadas (Agenda)
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               );
