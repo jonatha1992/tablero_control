@@ -17,6 +17,7 @@ import {
   type SelectOption,
 } from '@/lib/constants/task-colors';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
+import { hoursToParts, partsToHours } from '@/lib/tasks/estimated-hours';
 import type { TaskPriority, TaskStatus, TaskType } from '@/types/domain/task';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 import type { LucideIcon } from 'lucide-react';
@@ -302,25 +303,42 @@ export function TaskPreviewCard({
             onChange={(e) => onChange({ ...task, dueTime: e.target.value || undefined })}
             className="rounded border border-border bg-background px-1 py-0.5 text-[10px]"
           />
-          <label className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-            ⏱
-            <input
-              type="number"
-              min={0}
-              max={99}
-              step={0.25}
-              value={task.estimatedHours ?? ''}
-              onChange={(e) =>
-                onChange({
-                  ...task,
-                  estimatedHours: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
-              placeholder="h"
-              className="w-12 bg-transparent outline-none"
-            />
-            h
-          </label>
+          {(() => {
+            const parts = hoursToParts(task.estimatedHours);
+            return (
+              <label className="flex items-center gap-0.5 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
+                ⏱
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  value={parts?.h ?? ''}
+                  onChange={(e) => {
+                    const h = e.target.value === '' ? 0 : Number(e.target.value);
+                    const min = parts?.min ?? 0;
+                    onChange({ ...task, estimatedHours: partsToHours(h, min) });
+                  }}
+                  placeholder="h"
+                  className="w-8 bg-transparent outline-none"
+                />
+                h
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={parts?.min ?? ''}
+                  onChange={(e) => {
+                    const min = e.target.value === '' ? 0 : Number(e.target.value);
+                    const h = parts?.h ?? 0;
+                    onChange({ ...task, estimatedHours: partsToHours(h, min) });
+                  }}
+                  placeholder="m"
+                  className="w-8 bg-transparent outline-none"
+                />
+                m
+              </label>
+            );
+          })()}
 
           {recurrenceLabel && (
             <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1 py-0.5 text-[10px] text-primary font-medium">

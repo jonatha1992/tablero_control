@@ -26,6 +26,7 @@ import {
 } from '@/components/tareas/project-multi-picker';
 import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
+import { hoursToParts, partsToHours } from '@/lib/tasks/estimated-hours';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
@@ -520,17 +521,44 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">Horas est.</label>
-              <input
-                type="number"
-                min={0.5}         // B5: mínimo 0.5h (#2)
-                max={99}
-                step={0.25}
-                value={estimatedHours ?? ''}
-                onChange={(e) => setEstimatedHours(e.target.value ? Number(e.target.value) : undefined)}
-                placeholder="ej: 3"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium mb-1 block">Tiempo est.</label>
+              <div className="flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {(() => {
+                  const parts = hoursToParts(estimatedHours);
+                  return (
+                    <>
+                      <input
+                        type="number"
+                        min={0}
+                        max={99}
+                        value={parts?.h ?? ''}
+                        onChange={(e) => {
+                          const h = e.target.value === '' ? 0 : Number(e.target.value);
+                          const min = parts?.min ?? 0;
+                          setEstimatedHours(partsToHours(h, min));
+                        }}
+                        placeholder="h"
+                        className="w-12 bg-transparent outline-none"
+                      />
+                      <span className="text-muted-foreground">h</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={parts?.min ?? ''}
+                        onChange={(e) => {
+                          const min = e.target.value === '' ? 0 : Number(e.target.value);
+                          const h = parts?.h ?? 0;
+                          setEstimatedHours(partsToHours(h, min));
+                        }}
+                        placeholder="min"
+                        className="w-12 bg-transparent outline-none"
+                      />
+                      <span className="text-muted-foreground">min</span>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
 
             <div className="col-span-3">

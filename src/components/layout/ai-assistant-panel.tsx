@@ -25,6 +25,7 @@ import { extractedTaskToDraft } from '@/lib/create-task-draft';
 import type { CreateCalendarEventDTO } from '@/types/domain/calendar';
 import type { ExtractedEvent } from '@/lib/groq/extract-events';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
+import { formatEstimatedHours } from '@/lib/tasks/estimated-hours';
 import { toast } from 'sonner';
 
 const SUGGESTIONS = [
@@ -381,7 +382,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                       {msg.plan.tasks.map((t, j) => (
                         <li key={j} className="text-xs text-muted-foreground flex items-start gap-1.5">
                           <span className="text-primary mt-0.5">•</span>
-                          <span>{t.title} {t.estimatedHours && <span className="text-muted-foreground/60">({t.estimatedHours}h)</span>}</span>
+                          <span>{t.title} {t.estimatedHours != null && <span className="text-muted-foreground/60">({formatEstimatedHours(t.estimatedHours)})</span>}</span>
                         </li>
                       ))}
                     </ul>
