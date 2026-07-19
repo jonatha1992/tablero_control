@@ -255,13 +255,31 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     if (failedEvents.length === 0) {
       confirmEventMessage(msgIdx);
       toast.success(
-        createdCount === 1 ? 'Evento creado en calendario' : `${createdCount} eventos creados en calendario`,
+        createdCount === 1 ? 'Evento creado' : `${createdCount} eventos creados`,
+        {
+          description: 'Aviso por notificación y mail el día del evento.',
+          action: {
+            label: 'Ver eventos',
+            onClick: () => {
+              window.location.assign('/dashboard/eventos');
+            },
+          },
+        },
       );
     } else {
       setEventsInMessage(msgIdx, failedEvents);
       if (createdCount > 0) {
         toast.success(
-          createdCount === 1 ? '1 evento creado en calendario' : `${createdCount} eventos creados en calendario`,
+          createdCount === 1 ? '1 evento creado' : `${createdCount} eventos creados`,
+          {
+            description: 'Aviso por notificación y mail el día del evento.',
+            action: {
+              label: 'Ver eventos',
+              onClick: () => {
+                window.location.assign('/dashboard/eventos');
+              },
+            },
+          },
         );
       }
       toast.error(

@@ -56,3 +56,7 @@ key.json
 .claude/settings.local.json
 kimi-export-*.md
 /.claude/launch.json
+
+# Local SDD scratch (agent reviews)
+.superpowers/
+

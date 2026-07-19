@@ -38,7 +38,7 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 
 Layout principal `'use client'`. Contiene:
 
-- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Items: Dashboard, Tareas, Planificación, Equipo, Reportes, Facturación, Configuración, Ayuda.
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Archivadas); **Planificación** (Calendario, Eventos, Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario viven en Planificación (tiempo + metas), no bajo Tareas.
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para instalar PWA (solo si `canInstall` vía `usePwaInstall`), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar.
 - **FAB IA** (`id="tour-fab"`) — botón flotante bottom-right → abre `AiAssistantPanel`. Punto de entrada al asistente IA y al dictado de tareas.
 - **OnboardingTour** — componente invisible que gestiona el tour con driver.js.
@@ -176,7 +176,7 @@ El nivel superior siempre es **Espacio** (`Business`). Las unidades internas (`L
 
 Al crear o editar una unidad interna (`SectorModal`), el campo **Tipo** es un selector con los slugs de `business.settings.localeTypes` (o presets por defecto: local, sucursal, departamento, sector, área, negocio, sede) más tipos ya usados en locations existentes. Opción **Agregar otro tipo…** persiste el slug nuevo en `localeTypes` al guardar.
 
-La pantalla `/dashboard/equipo/sectores` usa `SectorList` como **tabla HTML semántica** (no grid de cards). Columnas: nombre, tipo, estado, miembros, tareas, finalizadas y acciones. Los contadores de tareas salen de `useTasksQuery()` agrupando por `locationId`; **finalizadas = `done` + `archived`**. La fila abre el detalle y el menú de acciones conserva editar + archivar/eliminar.
+La pantalla `/dashboard/equipo/sectores` usa `SectorList` como **tabla HTML semántica** (no grid de cards). Columnas: nombre, tipo, estado, miembros, tareas, **pendientes**, finalizadas y acciones. Los contadores salen de `useTasksQuery()` agrupando por `locationId`; **pendientes** usa `isPending()` (excluye `backlog`/`done`/`archived`); **finalizadas = `done` + `archived`**. Accesos rápidos: el conteo de miembros, pendientes y finalizadas son links a Equipo / Agenda filtrados (`?locationId=` y opcional `?status=done`). Al crear un evento, el toast indica aviso por mail+notificación y ofrece “Ver eventos”.
 
 **Código:** `src/lib/terminology.ts` (`resolveSpaceLabels`, presets), hook `useSpaceLabels()` (`src/hooks/use-space-labels.ts`), card `src/components/config/space-terminology-card.tsx`. Consumidores: sidebar Equipo, pantalla `/dashboard/equipo/sectores`, modales de location, campo location en create-task.
 

@@ -61,9 +61,7 @@ const navItems: NavItem[] = [
     children: [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
       { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
-      { href: '/dashboard/tareas/calendario', label: 'Calendario',  icon: Calendar },
       { href: '/dashboard/tareas/cronograma', label: 'Cronograma',  icon: GanttChart },
-      { href: '/dashboard/eventos',           label: 'Eventos',     icon: CalendarDays },
       { href: '/dashboard/tareas/archivadas', label: 'Archivadas',  icon: Archive },
     ],
   },
@@ -73,8 +71,10 @@ const navItems: NavItem[] = [
     icon: Layers,
     tourId: 'tour-nav-planificacion',
     children: [
-      { href: '/dashboard/planificacion',           label: 'Períodos',  icon: Timer, exact: true },
-      { href: '/dashboard/planificacion/objetivos', label: 'Objetivos', icon: Target },
+      { href: '/dashboard/tareas/calendario',       label: 'Calendario', icon: Calendar },
+      { href: '/dashboard/eventos',                 label: 'Eventos',    icon: CalendarDays },
+      { href: '/dashboard/planificacion',           label: 'Períodos',   icon: Timer, exact: true },
+      { href: '/dashboard/planificacion/objetivos', label: 'Objetivos',  icon: Target },
     ],
   },
   {
@@ -136,12 +136,13 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   }
 
   function isParentActive(item: NavItem): boolean {
+    // Parents with children activate only via an active child — children may live
+    // under different URL prefixes (e.g. Eventos under Planificación).
+    if (item.children && item.children.length > 0) {
+      return item.children.some((c) => isChildActive(c));
+    }
     if (item.exact) return pathname === item.href;
-    // Parent is active if current path starts with it OR any child is active
-    if (pathname.startsWith(item.href)) return true;
-    return item.children?.some((c) =>
-      c.exact ? pathname === c.href : pathname.startsWith(c.href)
-    ) ?? false;
+    return pathname.startsWith(item.href);
   }
 
   function isChildActive(child: ChildItem): boolean {

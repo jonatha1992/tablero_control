@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Archive, Edit2, Eye, MapPin, MoreVertical, Users } from 'lucide-react';
+import Link from 'next/link';
+import { Archive, Edit2, Eye, ListTodo, MapPin, MoreVertical, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Location } from '@/types/domain/location';
@@ -9,13 +10,16 @@ import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { formatLocationTypeLabel } from '@/lib/location-types';
+import { isPending } from '@/lib/tasks/task-status';
 import { SECTOR_ICONS } from './sector-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 interface Props {
   sectors: Location[];
@@ -76,18 +80,31 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
   }, [allMembers]);
 
   const taskCounts = useMemo(() => {
-    const counts = new Map<string, { total: number; completed: number }>();
+    const counts = new Map<string, { total: number; pending: number; completed: number }>();
     for (const task of tasks) {
       if (!task.locationId) continue;
-      const current = counts.get(task.locationId) ?? { total: 0, completed: 0 };
+      const current = counts.get(task.locationId) ?? { total: 0, pending: 0, completed: 0 };
       current.total += 1;
-      if (task.status === 'done' || task.status === 'archived') {
+      if (isPending(task)) {
+        current.pending += 1;
+      } else if (task.status === 'done' || task.status === 'archived') {
         current.completed += 1;
       }
       counts.set(task.locationId, current);
     }
     return counts;
   }, [tasks]);
+
+  const TABLE_COLUMNS = [
+    'Nombre',
+    'Tipo',
+    'Estado',
+    'Miembros',
+    'Tareas',
+    'Pendientes',
+    'Finalizadas',
+    'Acciones',
+  ] as const;
 
   if (isLoading) {
     return (
@@ -96,7 +113,7 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
           <table className="w-full text-sm">
             <thead className="bg-card border-b">
               <tr>
-                {['Nombre', 'Tipo', 'Estado', 'Miembros', 'Tareas', 'Finalizadas', 'Acciones'].map((column) => (
+                {TABLE_COLUMNS.map((column) => (
                   <th
                     key={column}
                     className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground"
@@ -109,7 +126,7 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
             <tbody>
               {[1, 2, 3].map((i) => (
                 <tr key={i} className="border-b">
-                  {Array.from({ length: 7 }).map((_, index) => (
+                  {Array.from({ length: TABLE_COLUMNS.length }).map((_, index) => (
                     <td key={index} className="px-4 py-3">
                       <div className="h-5 rounded bg-muted/40 animate-pulse" />
                     </td>
@@ -150,7 +167,7 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
           </caption>
           <thead className="sticky top-0 z-10 bg-card border-b">
             <tr>
-              {['Nombre', 'Tipo', 'Estado', 'Miembros', 'Tareas', 'Finalizadas', 'Acciones'].map((column) => (
+              {TABLE_COLUMNS.map((column) => (
                 <th
                   key={column}
                   className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground"
@@ -163,7 +180,7 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
           <tbody>
             {sectors.map((sector) => {
               const memberCount = memberCounts.get(sector.id) ?? 0;
-              const counts = taskCounts.get(sector.id) ?? { total: 0, completed: 0 };
+              const counts = taskCounts.get(sector.id) ?? { total: 0, pending: 0, completed: 0 };
               const statusMeta = STATUS_META[sector.status];
               const iconName = sector.metadata?.icon as string | undefined;
               const entry = SECTOR_ICONS.find((icon) => icon.name === iconName);
@@ -200,16 +217,49 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
+                    <Link
+                      href={`/dashboard/equipo?locationId=${sector.id}`}
+                      onClick={(event) => event.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-muted hover:text-foreground"
+                      title={`Ver miembros de ${sector.name}`}
+                    >
                       <Users className="h-3.5 w-3.5" />
                       {memberCount}
-                    </span>
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {tasksLoading ? <span className="text-muted-foreground">...</span> : counts.total}
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {tasksLoading ? <span className="text-muted-foreground">...</span> : counts.completed}
+                  <td className="px-4 py-3 text-sm tabular-nums">
+                    {tasksLoading ? (
+                      <span className="text-muted-foreground">...</span>
+                    ) : (
+                      <Link
+                        href={`/dashboard/tareas/agenda?locationId=${sector.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className={cn(
+                          'inline-flex min-w-[1.5rem] items-center rounded-md px-1.5 py-0.5 hover:bg-muted',
+                          counts.pending > 0 ? 'font-medium text-amber-700' : 'text-muted-foreground',
+                        )}
+                        title={`Ver pendientes de ${sector.name} en Agenda`}
+                      >
+                        {counts.pending}
+                      </Link>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground tabular-nums">
+                    {tasksLoading ? (
+                      <span className="text-muted-foreground">...</span>
+                    ) : (
+                      <Link
+                        href={`/dashboard/tareas/agenda?locationId=${sector.id}&status=done`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex min-w-[1.5rem] items-center rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title={`Ver finalizadas de ${sector.name}`}
+                      >
+                        {counts.completed}
+                      </Link>
+                    )}
                   </td>
                   <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
                     <DropdownMenu>
@@ -223,6 +273,25 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                           <Eye className="mr-2 h-4 w-4" />
                           Ver detalle
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/equipo?locationId=${sector.id}`}>
+                            <Users className="mr-2 h-4 w-4" />
+                            Ver miembros
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/tareas/agenda?locationId=${sector.id}`}>
+                            <ListTodo className="mr-2 h-4 w-4" />
+                            Ver pendientes (Agenda)
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/tareas/agenda?locationId=${sector.id}&status=done`}>
+                            <ListTodo className="mr-2 h-4 w-4" />
+                            Ver finalizadas (Agenda)
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onEdit(sector)}>
                           <Edit2 className="mr-2 h-4 w-4" />
                           Editar

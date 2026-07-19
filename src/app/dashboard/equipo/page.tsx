@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Users, UserPlus, Link2, CheckSquare, X, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,12 @@ export default function EquipoPage() {
   } = useTeamUIStore();
 
   const [bulkLocationId, setBulkLocationId] = useState('');
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const locationId = searchParams.get('locationId');
+    if (locationId) setLocationFilter(locationId);
+  }, [searchParams, setLocationFilter]);
 
   const { user, isAdmin, isOwner } = useAuth();
   const canManageTeam = isAdmin || isOwner;

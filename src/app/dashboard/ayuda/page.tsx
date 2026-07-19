@@ -42,20 +42,12 @@ const SECTIONS: Section[] = [
         description: 'Vista diaria inteligente que agrupa tus tareas en secciones: Foco del día (top 3), Vencidas, Hoy con hora, Para hoy, Esta semana, Próximamente y Sin fecha. Se actualiza automáticamente cada minuto.',
       },
       {
-        title: 'Calendario',
-        description: 'Vista mensual/semanal/lista con todas las tareas que tienen fecha. Podés arrastrar tareas para cambiar su fecha directamente desde el calendario.',
-      },
-      {
         title: 'Cronograma',
         description: 'Vista Gantt que muestra la duración y dependencias de las tareas en el tiempo. Útil para planificar proyectos largos.',
       },
       {
-        title: 'Eventos',
-        description: 'Eventos del calendario del espacio: reuniones, hitos y recordatorios que no son tareas de trabajo.',
-      },
-      {
         title: 'Crear tarea con IA',
-        description: 'Hacé clic en el botón ✨ (abajo a la derecha) y dictá una tarea por voz o escribila en texto libre. La IA extrae título, prioridad, fecha, asignados y etiquetas automáticamente.',
+        description: 'Hacé clic en el botón ✨ (abajo a la derecha) y dictá una tarea por voz o escribila en texto libre. La IA extrae título, prioridad, fecha, asignados y etiquetas automáticamente. También puede crear eventos (examen, reunión) cuando lo pedís o cuando detecta que no es una tarea.',
       },
       {
         title: 'Sprint tabs',
@@ -71,7 +63,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Horas estimadas',
-        description: 'Campo opcional al crear o editar una tarea. Podés dejarlo vacío o usar valores desde 0 h en adelante (incrementos de 0,25 h). Sirve para el registro de tiempo y la vista de cronograma.',
+        description: 'Campo opcional al crear o editar una tarea. Usá horas y minutos (o dejalo vacío). Sirve para el registro de tiempo y la vista de cronograma.',
       },
     ],
   },
@@ -80,6 +72,14 @@ const SECTIONS: Section[] = [
     title: 'Planificación',
     emoji: '📅',
     subsections: [
+      {
+        title: 'Calendario',
+        description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Está en Planificación (no en Tareas) porque combina trabajo y eventos en una línea temporal.',
+      },
+      {
+        title: 'Eventos',
+        description: 'Eventos del espacio (reuniones, exámenes, hitos) que no son tareas de trabajo. Se crean desde Planificación → Eventos o desde el Planificador IA. Reciben aviso por notificación y email.',
+      },
       {
         title: '¿Qué es un Período?',
         description: 'Un período es un bloque de tiempo con nombre, fecha de inicio y fecha de fin. Sirve para agrupar qué tareas vas a trabajar en esa franja (una semana, una quincena, un mes). Es equivalente a un "sprint" en metodologías ágiles.',

@@ -32,7 +32,15 @@ export function useCreateCalendarEvent(options: UseCreateCalendarEventOptions = 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: calendarEventKeys.all });
       if (successMessage) {
-        toast.success(successMessage);
+        toast.success(successMessage, {
+          description: 'Aviso por notificación y mail el día del evento.',
+          action: {
+            label: 'Ver eventos',
+            onClick: () => {
+              window.location.assign('/dashboard/eventos');
+            },
+          },
+        });
       }
     },
     onError: () => {

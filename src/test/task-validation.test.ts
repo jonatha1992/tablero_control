@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkTaskCompletion } from '@/lib/task-validation';
+import { checkBulkTaskCompletion, checkTaskCompletion } from '@/lib/task-validation';
 import type { BusinessSettings } from '@/types/domain/business';
 import type { Task } from '@/types/domain/task';
 
@@ -108,6 +108,100 @@ describe('checkTaskCompletion', () => {
     expect(result).toEqual({
       ok: false,
       reason: 'attachment_required',
+    });
+  });
+});
+
+describe('checkBulkTaskCompletion', () => {
+  it('allows bulk completion when every task passes validation', () => {
+    const result = checkBulkTaskCompletion([
+      buildTask({
+        id: 'task-1',
+        checklist: [{ id: 'c-1', text: 'Paso 1', done: true }],
+        attachments: [{ url: 'https://example.com/a.pdf', name: 'Adjunto' }],
+      }),
+      buildTask({
+        id: 'task-2',
+        checklist: [],
+        attachments: [{ url: 'https://example.com/b.pdf', name: 'Adjunto 2' }],
+      }),
+    ]);
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('blocks bulk completion when any selected task requires attachments', () => {
+    const settings: BusinessSettings = {
+      requireAttachmentToFinalize: true,
+    };
+
+    const result = checkBulkTaskCompletion(
+      [
+        buildTask({
+          id: 'task-1',
+          attachments: [],
+        }),
+        buildTask({
+          id: 'task-2',
+          attachments: [{ url: 'https://example.com/a.pdf', name: 'Adjunto' }],
+        }),
+      ],
+      settings,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'attachment_required',
+      blockedCount: 1,
+      totalCount: 2,
+    });
+  });
+
+  it('blocks bulk completion when any selected task has pending checklist items', () => {
+    const result = checkBulkTaskCompletion([
+      buildTask({
+        id: 'task-1',
+        checklist: [{ id: 'c-1', text: 'Pendiente', done: false }],
+      }),
+      buildTask({
+        id: 'task-2',
+        checklist: [{ id: 'c-2', text: 'Hecho', done: true }],
+      }),
+    ]);
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'checklist_incomplete',
+      blockedCount: 1,
+      totalCount: 2,
+    });
+  });
+
+  it('prioritizes attachment blocks over checklist blocks in bulk mode', () => {
+    const settings: BusinessSettings = {
+      requireAttachmentToFinalize: true,
+    };
+
+    const result = checkBulkTaskCompletion(
+      [
+        buildTask({
+          id: 'task-1',
+          attachments: [],
+        }),
+        buildTask({
+          id: 'task-2',
+          attachments: [{ url: 'https://example.com/a.pdf', name: 'Adjunto' }],
+          checklist: [{ id: 'c-1', text: 'Pendiente', done: false }],
+        }),
+      ],
+      settings,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'attachment_required',
+      blockedCount: 1,
+      totalCount: 2,
     });
   });
 });

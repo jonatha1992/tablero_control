@@ -1,8 +1,8 @@
 // Fuente centralizada de versión de la aplicación.
 // Se actualiza automáticamente en cada build (scripts/bump-version.ts).
 
-export const APP_VERSION = '0.1.12';
-export const BUILD_DATE = '2026-06-23';
+export const APP_VERSION = '0.1.13';
+export const BUILD_DATE = '2026-07-19';
 
 export const VERSION_INFO = {
   version: APP_VERSION,
