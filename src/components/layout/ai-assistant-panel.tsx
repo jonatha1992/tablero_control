@@ -161,7 +161,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   };
 
   const handleClose = () => {
-    if (isLoading || micState === 'recording') return;
+    if (isLoading || micState === 'recording' || confirmingEventIdx !== null) return;
     window.speechSynthesis.cancel();
     chat.clear();
     setInput('');
