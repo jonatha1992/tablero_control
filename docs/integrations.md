@@ -120,6 +120,10 @@ extractTasksFromTranscription(text, ctx: ExtractContext): Promise<ExtractedTask[
 // Extrae: título, descripción, prioridad, status, assignees, tags, dueDate, dueTime,
 // location, project, cycle, objective, checklist, recurrencia, estimatedHours
 
+// extract-events.ts
+extractEventsFromText(text, ctx: ExtractContext): Promise<ExtractedEvent[]>
+// Extrae: título, descripción, fecha/hora inicio-fin, allDay, assignees, color
+
 // planner-intent.ts + planner-tools.ts + planner-agent.ts
 runPlannerAgent(message, ctx, history): Promise<PlannerResponse>
 // clarify | preview_tasks | preview_plan | message
