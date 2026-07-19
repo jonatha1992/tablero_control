@@ -187,11 +187,17 @@ Modal legacy de dictado: `dictate-tasks-modal.tsx` (misma preview compartida).
 3. Respuesta estructurada:
    - `clarify` — pregunta + chips opcionales (assignee, fecha, sprint, etc.)
    - `preview_tasks` — tarjetas editables (`TaskPreviewCard`)
-   - `preview_events` — preview estructurada de eventos detectados antes de confirmar calendario
+   - `preview_events` — tarjetas editables (`EventPreviewCard`) para eventos detectados antes de confirmar calendario
    - `preview_plan` — planificación de sprint/objetivo antes de confirmar
    - `message` — texto informativo
 4. Usuario confirma → `useConfirmDictatedTasks` → `POST /api/tasks`.
-5. **Editar en formulario** — prellena `CreateTaskModal` vía `openCreateModalWithDraft` (`CreateTaskDraft` en `kanban-ui.store`).
+5. Si confirma `preview_events`, el panel crea `CalendarEvent` vía `useCreateCalendarEvent` / `POST /api/calendar-events`.
+   Defaults al confirmar eventos:
+   - si `assigneeIds` viene vacío → usa el usuario actual
+   - si es todo el día y falta fin → usa fin de día
+   - si tiene hora y falta fin → usa `start + 1h`
+   - siempre agrega reminders inmediatos (`notification` + `email`, `minutesBefore: 0`)
+6. **Editar en formulario** — prellena `CreateTaskModal` vía `openCreateModalWithDraft` (`CreateTaskDraft` en `kanban-ui.store`).
 
 ### Extracción directa (fast-path)
 
@@ -239,7 +245,9 @@ Para filas legacy con `businessId = null`, el backend solo infiere pertenencia p
 | `src/lib/groq/planner-intent.ts` | Clasificación de intención |
 | `src/lib/groq/planner-tools.ts` | Pipeline intent → clarify / preview |
 | `src/components/tareas/task-preview-card.tsx` | Preview editable unificada |
+| `src/components/tareas/event-preview-card.tsx` | Preview editable de eventos antes de crear en calendario |
 | `src/hooks/mutations/use-dictate-tasks.ts` | Confirmación → DTO completo (fan-out multi-tablero) |
+| `src/hooks/mutations/use-create-calendar-event.ts` | Crear `CalendarEvent` con invalidación y reminders default |
 | `src/components/tareas/project-multi-picker.tsx` | Selector multi-tablero |
 | `src/app/api/tasks/replicate/route.ts` | Duplicar plantilla o tarea existente en N tableros |
 | `src/hooks/mutations/use-replicate-task.ts` | Mutación cliente para replicate |

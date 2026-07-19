@@ -16,10 +16,16 @@ import {
   useConfirmDictatedTasks,
 } from '@/hooks/mutations/use-dictate-tasks';
 import { useTaskPreviewContext } from '@/hooks/use-task-preview-context';
+import { EventPreviewCard } from '@/components/tareas/event-preview-card';
 import { TaskPreviewCard } from '@/components/tareas/task-preview-card';
+import { useCreateCalendarEvent } from '@/hooks/mutations/use-create-calendar-event';
+import { useAuth } from '@/hooks/auth-context';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { extractedTaskToDraft } from '@/lib/create-task-draft';
+import type { CreateCalendarEventDTO } from '@/types/domain/calendar';
+import type { ExtractedEvent } from '@/lib/groq/extract-events';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
+import { toast } from 'sonner';
 
 const SUGGESTIONS = [
   '¿Qué tareas están vencidas?',
@@ -35,6 +41,41 @@ const EMPTY_STATE = {
 };
 
 const PLACEHOLDER = 'Describí qué querés hacer o preguntá algo…';
+const DEFAULT_EVENT_REMINDERS = [
+  { type: 'notification', minutesBefore: 0 },
+  { type: 'email', minutesBefore: 0 },
+] as const;
+
+function buildLocalDate(date: string, time?: string): Date {
+  return new Date(`${date}T${time ?? '00:00'}`);
+}
+
+function mapEventToCreateDto(event: ExtractedEvent, currentUserId?: string): CreateCalendarEventDTO {
+  const start = event.allDay
+    ? buildLocalDate(event.startDate)
+    : buildLocalDate(event.startDate, event.startTime ?? '09:00');
+
+  const end = event.allDay
+    ? new Date(buildLocalDate(event.endDate ?? event.startDate).setHours(23, 59, 59, 999))
+    : event.endTime
+      ? buildLocalDate(event.endDate ?? event.startDate, event.endTime)
+      : new Date(start.getTime() + 60 * 60 * 1000);
+
+  return {
+    title: event.title.trim(),
+    description: event.description?.trim() || undefined,
+    start,
+    end,
+    allDay: event.allDay,
+    color: event.color,
+    assigneeIds: event.assigneeIds.length
+      ? event.assigneeIds
+      : currentUserId
+        ? [currentUserId]
+        : undefined,
+    reminders: [...DEFAULT_EVENT_REMINDERS],
+  };
+}
 
 interface AiAssistantPanelProps {
   open: boolean;
@@ -47,6 +88,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
   const [recSeconds, setRecSeconds] = useState(0);
   const [confirmingIdx, setConfirmingIdx] = useState<number | null>(null);
+  const [confirmingEventIdx, setConfirmingEventIdx] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(() =>
     typeof window !== 'undefined' ? localStorage.getItem('ai_panel_muted') === 'true' : false
   );
@@ -62,12 +104,18 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const {
     messages, send, answerClarify, confirmPreview, cancelPreview,
     replacePreviewWithAction, addTaskPreview, confirmTaskMessage,
-    updateTaskInMessage, removeTaskFromMessage, isPending,
+    confirmEventMessage, updateTaskInMessage, removeTaskFromMessage,
+    updateEventInMessage, removeEventFromMessage, setEventsInMessage, isPending,
   } = chat;
 
   const uploadMutation = useDictateTasksUpload();
   const confirmMutation = useConfirmDictatedTasks();
+  const createCalendarEventMutation = useCreateCalendarEvent({
+    successMessage: null,
+    errorMessage: null,
+  });
   const openCreateModalWithDraft = useKanbanUIStore((s) => s.openCreateModalWithDraft);
+  const { user } = useAuth();
 
   const {
     members,
@@ -187,6 +235,42 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
         onError: () => setConfirmingIdx(null),
       },
     );
+  };
+
+  const handleConfirmEvents = async (events: ExtractedEvent[], msgIdx: number) => {
+    setConfirmingEventIdx(msgIdx);
+    const failedEvents: ExtractedEvent[] = [];
+    let createdCount = 0;
+
+    for (const event of events) {
+      try {
+        await createCalendarEventMutation.mutateAsync(mapEventToCreateDto(event, user?.id));
+        createdCount += 1;
+      } catch {
+        failedEvents.push(event);
+      }
+    }
+
+    if (failedEvents.length === 0) {
+      confirmEventMessage(msgIdx);
+      toast.success(
+        createdCount === 1 ? 'Evento creado en calendario' : `${createdCount} eventos creados en calendario`,
+      );
+    } else {
+      setEventsInMessage(msgIdx, failedEvents);
+      if (createdCount > 0) {
+        toast.success(
+          createdCount === 1 ? '1 evento creado en calendario' : `${createdCount} eventos creados en calendario`,
+        );
+      }
+      toast.error(
+        failedEvents.length === events.length
+          ? 'No pude crear los eventos'
+          : `Quedaron ${failedEvents.length} evento${failedEvents.length !== 1 ? 's' : ''} por crear`,
+      );
+    }
+
+    setConfirmingEventIdx(null);
   };
 
   const handleOpenInForm = (task: ExtractedTask) => {
@@ -340,6 +424,61 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                         </button>
                       ))}
                     </div>
+                  )}
+                </div>
+              );
+            }
+
+            /* ── Events preview (planner calendario) ── */
+            if (msg.role === 'events') {
+              const sorted = [...msg.events].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+              return (
+                <div key={i} className="flex flex-col gap-2">
+                  <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm self-start max-w-[85%]">
+                    {msg.parseError || msg.events.length === 0
+                      ? 'No detecté eventos. ¿Podés ser más específico?'
+                      : `Detecté ${msg.events.length} evento${msg.events.length !== 1 ? 's' : ''}:`}
+                  </div>
+                  {msg.events.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      {sorted.map((event) => {
+                        const ei = msg.events.indexOf(event);
+                        return (
+                          <EventPreviewCard
+                            key={ei}
+                            event={event}
+                            members={members}
+                            onChange={(updated) => updateEventInMessage(i, ei, updated)}
+                            onRemove={() => removeEventFromMessage(i, ei)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                  {msg.events.length > 0 && (
+                    msg.confirmed ? (
+                      <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                        <Check className="h-3.5 w-3.5" />
+                        {msg.events.length} evento{msg.events.length !== 1 ? 's' : ''} creado
+                        {msg.events.length !== 1 ? 's' : ''}
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="self-start"
+                        onClick={() => handleConfirmEvents(msg.events, i)}
+                        disabled={confirmingEventIdx === i}
+                      >
+                        {confirmingEventIdx === i ? (
+                          <>
+                            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                            Creando…
+                          </>
+                        ) : (
+                          `Crear ${msg.events.length} evento${msg.events.length !== 1 ? 's' : ''}`
+                        )}
+                      </Button>
+                    )
                   )}
                 </div>
               );
