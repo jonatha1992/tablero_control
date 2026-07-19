@@ -176,6 +176,8 @@ El nivel superior siempre es **Espacio** (`Business`). Las unidades internas (`L
 
 Al crear o editar una unidad interna (`SectorModal`), el campo **Tipo** es un selector con los slugs de `business.settings.localeTypes` (o presets por defecto: local, sucursal, departamento, sector, área, negocio, sede) más tipos ya usados en locations existentes. Opción **Agregar otro tipo…** persiste el slug nuevo en `localeTypes` al guardar.
 
+La pantalla `/dashboard/equipo/sectores` usa `SectorList` como **tabla HTML semántica** (no grid de cards). Columnas: nombre, tipo, estado, miembros, tareas, finalizadas y acciones. Los contadores de tareas salen de `useTasksQuery()` agrupando por `locationId`; **finalizadas = `done` + `archived`**. La fila abre el detalle y el menú de acciones conserva editar + archivar/eliminar.
+
 **Código:** `src/lib/terminology.ts` (`resolveSpaceLabels`, presets), hook `useSpaceLabels()` (`src/hooks/use-space-labels.ts`), card `src/components/config/space-terminology-card.tsx`. Consumidores: sidebar Equipo, pantalla `/dashboard/equipo/sectores`, modales de location, campo location en create-task.
 
 ## Reportes (`/dashboard/reportes`)
