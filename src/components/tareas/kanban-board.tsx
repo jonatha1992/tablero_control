@@ -21,7 +21,7 @@ import { SECTOR_ICONS } from '@/components/sectores/sector-modal';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
-import { validateTaskCompletion } from '@/lib/task-validation';
+import { checkBulkTaskCompletion, checkTaskCompletion } from '@/lib/task-validation';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -41,6 +41,7 @@ import {
 import { TaskDetailModal } from './task-detail-modal';
 import { CreateTaskModal } from './create-task-modal';
 import { DictateTasksModal } from './dictate-tasks-modal';
+import { IncompleteChecklistDialog } from './incomplete-checklist-dialog';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useBulkMoveTasks } from '@/hooks/mutations/use-bulk-move-tasks';
@@ -53,6 +54,7 @@ import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 
 const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked', 'archived'];
 
@@ -90,6 +92,11 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   } = useKanbanUIStore();
 
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+  const [pendingCompletion, setPendingCompletion] = useState<{
+    taskIds: string[];
+    pending: Task['checklist'];
+    doneItems: Task['checklist'];
+  } | null>(null);
 
   const requestDelete = (taskIds: string[]) => {
     const allowed = taskIds.filter((id) => {
@@ -171,6 +178,70 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     setDraggedTask(taskId, task?.status ?? null);
   };
 
+  const getTasksByIds = (taskIds: string[]) => {
+    const taskMap = new Map(tasks.map((task) => [task.id, task]));
+    return taskIds
+      .map((taskId) => taskMap.get(taskId))
+      .filter((task): task is Task => Boolean(task));
+  };
+
+  const validateBulkDone = (taskIds: string[]) => {
+    const completion = checkBulkTaskCompletion(getTasksByIds(taskIds), business?.settings);
+
+    if (completion.ok) return true;
+
+    if (completion.reason === 'attachment_required') {
+      toast.warning('Adjunto requerido en selección', {
+        description: `${completion.blockedCount} de ${completion.totalCount} tareas seleccionadas requieren al menos un comprobante/adjunto para finalizar.`,
+      });
+      return false;
+    }
+
+    toast.warning('Checklist incompleto en selección', {
+      description: `${completion.blockedCount} de ${completion.totalCount} tareas seleccionadas tienen pendientes. Finalizalas una por una o deseleccionalas antes de moverlas a Hecho.`,
+    });
+    return false;
+  };
+
+  const moveTaskIdsToColumn = (taskIds: string[], targetColumn: TaskStatus, draggedTaskId?: string) => {
+    if (taskIds.length === 0) return;
+
+    if (targetColumn === 'done') {
+      if (taskIds.length > 1) {
+        if (!validateBulkDone(taskIds)) return;
+      } else {
+        const task = tasks.find((candidate) => candidate.id === taskIds[0]);
+        if (!task) return;
+
+        const completion = checkTaskCompletion(task, business?.settings);
+        if (!completion.ok) {
+          if (completion.reason === 'attachment_required') {
+            toast.warning('Adjunto requerido', {
+              description: 'Este negocio requiere subir al menos un comprobante/adjunto para poder finalizar la tarea.',
+            });
+          } else {
+            setPendingCompletion({
+              taskIds,
+              pending: completion.pending,
+              doneItems: completion.doneItems,
+            });
+          }
+          return;
+        }
+      }
+    }
+
+    if (taskIds.length > 1) {
+      bulkMove.mutate(
+        { taskIds, newStatus: targetColumn },
+        { onSuccess: () => clearSelection() }
+      );
+      return;
+    }
+
+    moveTask.mutate({ taskId: draggedTaskId ?? taskIds[0], newStatus: targetColumn });
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     clearDrag();
@@ -191,18 +262,11 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     }
 
     if (targetColumn && targetColumn !== task.status) {
-      if (targetColumn === 'done' && !validateTaskCompletion(task, business?.settings)) {
-        return; // Detener el drag si no cumple requisitos (B1, B2, B4)
-      }
-
-      if (selectedTaskIds.length > 1 && selectedTaskIds.includes(taskId)) {
-        bulkMove.mutate(
-          { taskIds: selectedTaskIds, newStatus: targetColumn },
-          { onSuccess: () => clearSelection() }
-        );
-      } else {
-        moveTask.mutate({ taskId, newStatus: targetColumn });
-      }
+      const taskIdsToMove =
+        selectedTaskIds.length > 1 && selectedTaskIds.includes(taskId)
+          ? selectedTaskIds
+          : [taskId];
+      moveTaskIdsToColumn(taskIdsToMove, targetColumn, taskId);
     }
   };
 
@@ -212,6 +276,28 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
   const handleLocationChange = (taskId: string, locationId: string | null) => {
     updateTask.mutate({ id: taskId, data: { locationId } });
+  };
+
+  const confirmIncompleteChecklist = () => {
+    if (!pendingCompletion) return;
+
+    if (pendingCompletion.taskIds.length > 1) {
+      bulkMove.mutate(
+        { taskIds: pendingCompletion.taskIds, newStatus: 'done' },
+        {
+          onSuccess: () => {
+            clearSelection();
+            setPendingCompletion(null);
+          },
+        }
+      );
+      return;
+    }
+
+    moveTask.mutate(
+      { taskId: pendingCompletion.taskIds[0], newStatus: 'done' },
+      { onSuccess: () => setPendingCompletion(null) }
+    );
   };
 
   const activeTask = dragState.draggedTaskId
@@ -368,10 +454,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                       {BOARD_COLUMNS.map((col) => (
                         <DropdownMenuItem
                           key={col}
-                          onClick={() => bulkMove.mutate(
-                            { taskIds: selectedTaskIds, newStatus: col },
-                            { onSuccess: () => clearSelection() }
-                          )}
+                          onClick={() => moveTaskIdsToColumn(selectedTaskIds, col)}
                         >
                           {TASK_STATUS_LABELS[col]}
                         </DropdownMenuItem>
@@ -565,6 +648,17 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <IncompleteChecklistDialog
+        open={pendingCompletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingCompletion(null);
+        }}
+        pending={pendingCompletion?.pending ?? []}
+        doneItems={pendingCompletion?.doneItems ?? []}
+        onConfirm={confirmIncompleteChecklist}
+        isPending={moveTask.isPending || bulkMove.isPending}
+      />
 
       <TaskDetailModal
         task={selectedTask}

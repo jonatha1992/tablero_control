@@ -8,6 +8,12 @@ vi.mock('@/lib/groq/extract-tasks', () => ({
   ]),
 }));
 
+vi.mock('@/lib/groq/extract-events', () => ({
+  extractEventsFromText: vi.fn().mockResolvedValue([
+    { title: 'Examen', startDate: '2026-07-25', allDay: true, assigneeIds: [], order: 1 },
+  ]),
+}));
+
 vi.mock('@/lib/groq/generate-plan', () => ({
   generatePlanFromDescription: vi.fn().mockResolvedValue({
     name: 'Sprint 1',
@@ -60,6 +66,37 @@ describe('runIntentPipeline', () => {
     expect(result.type).toBe('preview_tasks');
     if (result.type === 'preview_tasks') {
       expect(result.tasks.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('devuelve preview_events para create_event', async () => {
+    const intent: PlannerIntentResult = {
+      intent: 'create_event',
+      confidence: 0.9,
+      extractionText: 'Examen final el viernes',
+      missingSlots: [],
+    };
+    const result = await runIntentPipeline(intent, baseCtx);
+    expect(result.type).toBe('preview_events');
+    if (result.type === 'preview_events') {
+      expect(result.events.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('clarify Evento|Tarea cuando intent unknown con pregunta de tipo', async () => {
+    const intent: PlannerIntentResult = {
+      intent: 'unknown',
+      confidence: 0.4,
+      missingSlots: ['kind'],
+      clarificationQuestion: '¿Lo anoto como evento o como tarea?',
+      suggestedOptions: ['Evento', 'Tarea'],
+    };
+    const result = await runIntentPipeline(intent, baseCtx);
+    expect(result.type).toBe('clarify');
+    if (result.type === 'clarify') {
+      expect(result.question).toBe('¿Lo anoto como evento o como tarea?');
+      expect(result.field).toBe('kind');
+      expect(result.options).toEqual(['Evento', 'Tarea']);
     }
   });
 });

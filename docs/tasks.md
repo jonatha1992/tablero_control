@@ -42,6 +42,16 @@ Hora se muestra en kanban card y detail modal **solo si ≠ medianoche local**. 
 
 Para cambios de status, **siempre usar `useMoveTask`** (no `useUpdateTask`) — garantiza que `moveTask()` se ejecute en backend. Ver decisions/002.
 
+## Finalizar tareas: checklist y adjuntos
+
+Helper compartido: `src/lib/task-validation.ts`.
+
+- `checkTaskCompletion(task, settings)` devuelve un resultado tipado (`ok`, `checklist_incomplete`, `attachment_required`) para reutilizar la misma regla en UI y tests.
+- Si el negocio tiene `settings.requireAttachmentToFinalize = true` y la tarea no tiene adjuntos, el cierre queda **bloqueado** con toast. No hay bypass desde la UI.
+- Si faltan items de checklist, Kanban, Agenda y `TaskDetailModal` abren `IncompleteChecklistDialog` con los pendientes y permiten **confirmar igualmente** el paso a `done`.
+- En **bulk move a done** (toolbar o drag multi-selección), Kanban valida **todas** las tareas seleccionadas: si alguna requiere adjunto o tiene checklist incompleto, aborta el movimiento completo con toast; para checklist, el usuario debe resolverlas una por una o deseleccionarlas.
+- El checklist no se auto-completa al confirmar: la tarea se cierra con los items pendientes visibles en el historial/detalle.
+
 ## Sprint Tabs en Kanban (`/dashboard/tareas`)
 
 Store: `useScrumUIStore` (`src/stores/scrum-ui.store.ts`) — `selectedSprintId` + `viewMode: 'board' | 'backlog'`.
@@ -112,6 +122,14 @@ Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterB
 **Decisión:** el Calendario NO lleva el toggle "Hasta hoy / Todas" — la navegación por fechas es propia de FullCalendar.
 
 **Gap conocido (pre-existente):** `taskRepository.findByCreator` solo aplica `status`, `priority`, `cycleId`, `noCycle` y `search` — no afecta a estos filtros porque son client-side, pero importa si algún día se pasa a filtrado server-side en el path sin `businessId`.
+
+**Filtro de entidades activas:** `src/lib/tasks/active-entity.ts` centraliza la regla para ocultar tareas ligadas a entidades archivadas. Si `project.status === 'archived'` o `location.status` está en `closed | inactive`, la tarea se excluye de Agenda, Calendario y la vista principal de `/dashboard/tareas`.
+
+**Archivar vs eliminar entidades:**
+- Archivar **Sector/Location** = `status: 'closed'` y sus tareas dejan de aparecer en vistas activas por el filtro de entidades.
+- Archivar **Tablero/Project** = `status: 'archived'`.
+- Eliminar **Sector/Location** hace hard delete del sector **y primero borra en transacción** todas las tareas con ese `locationId` para evitar huérfanas.
+- Mutaciones cliente de sectores/tableros invalidan cache de la entidad y `taskKeys.all` para refrescar agenda, calendario y tablero principal.
 
 ## CalendarEvents en Vistas de Calendario y Agenda
 
@@ -187,10 +205,17 @@ Modal legacy de dictado: `dictate-tasks-modal.tsx` (misma preview compartida).
 3. Respuesta estructurada:
    - `clarify` — pregunta + chips opcionales (assignee, fecha, sprint, etc.)
    - `preview_tasks` — tarjetas editables (`TaskPreviewCard`)
+   - `preview_events` — tarjetas editables (`EventPreviewCard`) para eventos detectados antes de confirmar calendario
    - `preview_plan` — planificación de sprint/objetivo antes de confirmar
    - `message` — texto informativo
 4. Usuario confirma → `useConfirmDictatedTasks` → `POST /api/tasks`.
-5. **Editar en formulario** — prellena `CreateTaskModal` vía `openCreateModalWithDraft` (`CreateTaskDraft` en `kanban-ui.store`).
+5. Si confirma `preview_events`, el panel crea `CalendarEvent` vía `useCreateCalendarEvent` / `POST /api/calendar-events`.
+   Defaults al confirmar eventos:
+   - si `assigneeIds` viene vacío → usa el usuario actual
+   - si es todo el día y falta fin → usa fin de día
+   - si tiene hora y falta fin → usa `start + 1h`
+   - siempre agrega reminders inmediatos (`notification` + `email`, `minutesBefore: 0`)
+6. **Editar en formulario** — prellena `CreateTaskModal` vía `openCreateModalWithDraft` (`CreateTaskDraft` en `kanban-ui.store`).
 
 ### Extracción directa (fast-path)
 
@@ -222,6 +247,8 @@ API: `POST /api/tasks/replicate` — body `{ projectIds: string[], template?: Cr
 
 Helpers: `src/lib/tasks/resolve-project-targets.ts`, `src/lib/tasks/task-to-create-dto.ts`.
 
+`ProjectMultiPicker` excluye tableros con `status: 'archived'` y sanea selecciones viejas para no mantener IDs ocultos en filtros, replicación o previews.
+
 ## Aislamiento por espacio
 
 `Task.businessId` es la fuente principal del tenant. Ver ADR [`docs/decisions/007-task-business-id-isolation.md`](decisions/007-task-business-id-isolation.md).
@@ -238,7 +265,9 @@ Para filas legacy con `businessId = null`, el backend solo infiere pertenencia p
 | `src/lib/groq/planner-intent.ts` | Clasificación de intención |
 | `src/lib/groq/planner-tools.ts` | Pipeline intent → clarify / preview |
 | `src/components/tareas/task-preview-card.tsx` | Preview editable unificada |
+| `src/components/tareas/event-preview-card.tsx` | Preview editable de eventos antes de crear en calendario |
 | `src/hooks/mutations/use-dictate-tasks.ts` | Confirmación → DTO completo (fan-out multi-tablero) |
+| `src/hooks/mutations/use-create-calendar-event.ts` | Crear `CalendarEvent` con invalidación y reminders default |
 | `src/components/tareas/project-multi-picker.tsx` | Selector multi-tablero |
 | `src/app/api/tasks/replicate/route.ts` | Duplicar plantilla o tarea existente en N tableros |
 | `src/hooks/mutations/use-replicate-task.ts` | Mutación cliente para replicate |

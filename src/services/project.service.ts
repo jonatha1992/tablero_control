@@ -87,6 +87,14 @@ class ProjectService {
     });
   }
 
+  async archive(id: string) {
+    return prisma.project.update({
+      where: { id },
+      data: { status: 'archived' },
+      include: { _count: { select: { tasks: true } } },
+    });
+  }
+
   async delete(id: string) {
     return prisma.project.delete({ where: { id } });
   }

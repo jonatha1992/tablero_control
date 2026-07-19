@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Search, LogOut, Menu, Download, HelpCircle } from 'lucide-react';
+import { Search, LogOut, Menu, Download } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +11,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { BusinessSwitcher } from '@/components/business-switcher';
 import { usePwaInstall } from '@/hooks/use-pwa-install';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
 
 interface HeaderProps {
   userName?: string;
@@ -21,6 +21,7 @@ interface HeaderProps {
 export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const { user, signOut, role } = useAuth();
   const { canInstall, install } = usePwaInstall();
+  const labels = useSpaceLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { filters, setFilters } = useKanbanUIStore();
@@ -36,11 +37,14 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const getPageContext = () => {
     if (!pathname) return { title: 'Tablero de Control' };
     if (pathname === '/dashboard') return { title: 'Dashboard' };
+    if (pathname === '/dashboard/tareas/calendario') return { title: 'Calendario' };
+    if (pathname === '/dashboard/eventos') return { title: 'Eventos' };
     if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
     if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
     if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };
-    if (pathname === '/dashboard/equipo/sectores') return { title: 'Departamentos y Sectores' };
-    if (pathname === '/dashboard/sectores') return { title: 'Departamentos y Sectores' };
+    if (pathname === '/dashboard/equipo/sectores' || pathname === '/dashboard/sectores') {
+      return { title: labels.sites };
+    }
     if (pathname === '/dashboard/calendario') return { title: 'Calendario' };
     if (pathname === '/dashboard/ciclos') return { title: 'Ciclos' };
     if (pathname === '/dashboard/objetivos') return { title: 'Objetivos' };
@@ -110,21 +114,14 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
       <div className="flex shrink-0 items-center gap-1">
         {canInstall && (
           <Button
-            variant="outline"
-            size="sm"
-            className="hidden sm:flex h-8 gap-1.5 text-xs"
+            variant="ghost"
+            size="icon"
             onClick={install}
             title="Instalar aplicación"
           >
-            <Download className="h-3.5 w-3.5" />
-            Instalar app
+            <Download className="h-4 w-4" />
           </Button>
         )}
-        <Link href="/dashboard/ayuda">
-          <Button variant="ghost" size="icon" title="Ayuda">
-            <HelpCircle className="h-4 w-4" />
-          </Button>
-        </Link>
         <NotificationBell />
         <BusinessSwitcher />
 

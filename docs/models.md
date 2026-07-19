@@ -38,6 +38,31 @@ progress (Int 0-100), dueDate?
 tasks (Task[])
 ```
 
+## Location (Sectores / Sedes)
+
+```
+id, businessId, name, type
+description?, address?, managerId?
+status (LocationStatus): active | inactive | maintenance | closed | incident
+operatingHours?, metadata
+teams (Team[]), tasks (Task[])
+```
+
+**Reglas:**
+- Archivar location = `status: 'closed'`
+- Hard delete de location borra primero las `Task` con ese `locationId` en una transacción antes de eliminar la fila `Location`
+
+## Project (Tableros)
+
+```
+id, name, description?, teamId?, businessId?
+status (ProjectStatus): planning | active | paused | completed | archived
+startDate?, endDate?
+tasks (Task[]), cycles (Cycle[])
+```
+
+**Regla:** archivar project = `status: 'archived'`
+
 ## User
 
 ```

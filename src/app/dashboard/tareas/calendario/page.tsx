@@ -5,17 +5,24 @@ import { CalendarView } from '@/components/calendario/calendar-view';
 import { CalendarEventSheet } from '@/components/calendario/calendar-event-sheet';
 import { TaskFilterBar } from '@/components/tareas/task-filter-bar';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
+import { useAuth } from '@/hooks/auth-context';
+import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useCalendarEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import { TaskDetailModal } from '@/components/tareas/task-detail-modal';
+import { isTaskFromActiveEntities } from '@/lib/tasks/active-entity';
 import { useTaskFiltersUIStore } from '@/stores/task-filters-ui.store';
 import { matchesTaskFilters } from '@/types/ui/task-filters.ui';
 import type { Task } from '@/types';
 import type { CalendarEvent } from '@/types/domain/calendar';
 
 export default function CalendarioPage() {
+  const { user } = useAuth();
   const { data: tasks = [], isLoading } = useTasksQuery();
+  const { data: locations = [], isLoading: isLoadingLocations } = useLocationsQuery();
+  const { data: projects = [], isLoading: isLoadingProjects } = useProjectsQuery(user?.businessId ?? '');
   const updateTask = useUpdateTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
@@ -29,10 +36,20 @@ export default function CalendarioPage() {
   const eventsFrom = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); d.setDate(1); return d; }, []);
   const eventsTo   = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() + 2); d.setDate(0); return d; }, []);
   const { data: calendarEvents = [] } = useCalendarEventsQuery(eventsFrom, eventsTo);
+  const projectsById = useMemo(
+    () => new Map(projects.map((project) => [project.id, { status: project.status }])),
+    [projects],
+  );
+  const locationsById = useMemo(
+    () => new Map(locations.map((location) => [location.id, { status: location.status }])),
+    [locations],
+  );
 
   const filteredTasks = useMemo(
-    () => tasks.filter((t) => matchesTaskFilters(t, filters)),
-    [tasks, filters]
+    () => tasks.filter((task) =>
+      matchesTaskFilters(task, filters) &&
+      isTaskFromActiveEntities(task, projectsById, locationsById)),
+    [tasks, filters, projectsById, locationsById]
   );
 
   const handleEventDrop = (taskId: string, newDate: Date) => {
@@ -58,7 +75,7 @@ export default function CalendarioPage() {
         showExcludeDoneToggle
       />
       <div className="flex-1 min-h-[600px] relative">
-        {isLoading ? (
+        {isLoading || isLoadingProjects || isLoadingLocations ? (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             Cargando calendario...
           </div>

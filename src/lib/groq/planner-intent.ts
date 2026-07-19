@@ -5,6 +5,7 @@ import type { AssistantMessage } from './assistant';
 export type PlannerIntentType =
   | 'create_task'
   | 'create_tasks_batch'
+  | 'create_event'
   | 'create_plan'
   | 'create_objective'
   | 'query'
@@ -48,9 +49,9 @@ Mensaje actual: "${userMessage}"
 
 Respondé SOLO JSON:
 {
-  "intent": "create_task" | "create_tasks_batch" | "create_plan" | "create_objective" | "query" | "unknown",
+  "intent": "create_task" | "create_tasks_batch" | "create_event" | "create_plan" | "create_objective" | "query" | "unknown",
   "confidence": 0.0-1.0,
-  "extractionText": "texto consolidado para extraer tareas (incluir contexto del hilo si aplica)",
+  "extractionText": "texto consolidado para extraer tareas o eventos (incluir contexto del hilo si aplica)",
   "planType": "cycle" | "objective" | null,
   "planDescription": "descripción del plan si aplica",
   "missingSlots": ["campo que falta"],
@@ -60,8 +61,10 @@ Respondé SOLO JSON:
 
 Reglas:
 - create_task/create_tasks_batch: quiere crear trabajo (aunque no diga "crear tarea").
+- create_event: quiere agendar un evento, examen, reunión, cita o recordatorio tipo "avisame del ...".
 - create_plan: sprint/ciclo/planificación. create_objective: objetivo/épica/meta/OKR.
 - query: pregunta sobre tareas existentes o cómo usar el sistema.
+- Si no queda claro si quiere tarea o evento, devolver intent "unknown", missingSlots ["kind"], clarificationQuestion preguntando si es Evento o Tarea y suggestedOptions ["Evento", "Tarea"].
 - Si el mensaje es muy vago ("hacé algo", "organizame") → missingSlots + clarificationQuestion.
 - extractionText: reescribí claro lo que hay que crear; no inventes assignees.
 `.trim();

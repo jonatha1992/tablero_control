@@ -24,6 +24,17 @@ export interface CreateProjectBody {
   endDate?: string;
 }
 
+export interface UpdateProjectBody {
+  name?: string;
+  description?: string;
+  teamId?: string | null;
+  businessId?: string;
+  status?: string;
+  action?: 'archive';
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
 async function fetchJsonAuth<T>(url: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers = new Headers(init?.headers);
@@ -44,7 +55,7 @@ export const projectsApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: Partial<CreateProjectBody>) =>
+  update: (id: string, data: UpdateProjectBody) =>
     fetchJsonAuth<Project>(`/api/projects/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

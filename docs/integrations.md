@@ -120,9 +120,13 @@ extractTasksFromTranscription(text, ctx: ExtractContext): Promise<ExtractedTask[
 // Extrae: título, descripción, prioridad, status, assignees, tags, dueDate, dueTime,
 // location, project, cycle, objective, checklist, recurrencia, estimatedHours
 
+// extract-events.ts
+extractEventsFromText(text, ctx: ExtractContext): Promise<ExtractedEvent[]>
+// Extrae: título, descripción, fecha/hora inicio-fin, allDay, assignees, color
+
 // planner-intent.ts + planner-tools.ts + planner-agent.ts
 runPlannerAgent(message, ctx, history): Promise<PlannerResponse>
-// clarify | preview_tasks | preview_plan | message
+// clarify | preview_tasks | preview_events | preview_plan | message
 ```
 
 API routes — tareas:
@@ -131,7 +135,7 @@ API routes — tareas:
 
 API routes — asistente:
 - `POST /api/assistant/chat` — chat informativo (modo `assistant` | `planner` legacy texto)
-- `POST /api/assistant/planner` — agente Planificador (intent + preview + clarify)
+- `POST /api/assistant/planner` — agente Planificador (intent + preview de tareas/eventos + clarify)
 - `POST /api/assistant/generate-plan` — generación de planificación sprint/objetivo
 
 Variable: `GROQ_API_KEY` (rotación multi-provider vía `src/lib/ai/providers.ts` cuando aplica)
@@ -167,12 +171,13 @@ CLOUDINARY_API_SECRET=
 ```
 WelcomeEmail, ResetPasswordEmail, TeamInviteEmail
 SubscriptionActivatedEmail, SubscriptionExpiryEmail
-PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail
+PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail, EventReminderEmail
 ```
 
 ### Delivery
 - **Resend** (`src/lib/resend.ts`) — primario si `RESEND_API_KEY` configurado
 - **Gmail SMTP** (`src/lib/gmail.ts`) — fallback automático
+- `MailService.sendEventReminderEmail()` envía recordatorios de eventos para el cron `GET /api/cron/event-reminders`
 
 Variables:
 ```env

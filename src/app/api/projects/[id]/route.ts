@@ -38,15 +38,18 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   assertResourceBelongsToBusiness(user.data, project.businessId);
 
   const body = await request.json();
+  const isArchiveAction = body?.action === 'archive';
 
-  const updated = await projectService.update(id, {
-    name: body.name,
-    description: body.description,
-    teamId: body.teamId,
-    status: body.status,
-    startDate: body.startDate ? new Date(body.startDate) : body.startDate === null ? null : undefined,
-    endDate: body.endDate ? new Date(body.endDate) : body.endDate === null ? null : undefined,
-  });
+  const updated = isArchiveAction
+    ? await projectService.archive(id)
+    : await projectService.update(id, {
+        name: body.name,
+        description: body.description,
+        teamId: body.teamId,
+        status: body.status,
+        startDate: body.startDate ? new Date(body.startDate) : body.startDate === null ? null : undefined,
+        endDate: body.endDate ? new Date(body.endDate) : body.endDate === null ? null : undefined,
+      });
 
   await writeAuditLog({
     actorId: user.uid,
@@ -55,7 +58,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     action: 'project.update',
     targetType: 'PROJECT',
     targetId: id,
-    metadata: { name: updated.name },
+    metadata: isArchiveAction
+      ? { action: 'archive', status: 'archived', name: updated.name }
+      : { name: updated.name },
   });
 
   return NextResponse.json(updated);
@@ -78,6 +83,23 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   }
 
   assertResourceBelongsToBusiness(user.data, project.businessId);
+
+  const body = await request.json().catch(() => null);
+  if (body?.action === 'archive') {
+    const archived = await projectService.archive(id);
+
+    await writeAuditLog({
+      actorId: user.uid,
+      actorRole: user.role,
+      businessId: user.businessId,
+      action: 'project.update',
+      targetType: 'PROJECT',
+      targetId: id,
+      metadata: { action: 'archive', status: 'archived', name: archived.name },
+    });
+
+    return NextResponse.json(archived);
+  }
 
   await projectService.delete(id);
 

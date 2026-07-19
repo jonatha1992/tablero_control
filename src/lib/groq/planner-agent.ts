@@ -38,6 +38,9 @@ export async function runPlannerAgent(
     if (result.type === 'preview_tasks') {
       return { type: 'preview_tasks', tasks: result.tasks, parseError: result.parseError };
     }
+    if (result.type === 'preview_events') {
+      return { type: 'preview_events', events: result.events, parseError: result.parseError };
+    }
     if (result.type === 'preview_plan') {
       return {
         type: 'preview_plan',

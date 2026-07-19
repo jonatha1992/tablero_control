@@ -174,6 +174,20 @@ describe('useUpdateLocation', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalled();
   });
+
+  it('invalida tasks al archivar un sector', async () => {
+    const { wrapper, qc } = createWrapper();
+    mockUpdate.mockResolvedValueOnce({ id: 'loc-1', name: 'X', businessId: 'biz-1', status: 'closed' } as never);
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+
+    const { result } = renderHook(() => useUpdateLocation(), { wrapper });
+    await act(async () => {
+      result.current.mutate({ id: 'loc-1', data: { status: 'closed' as const } });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+  });
 });
 
 // ─── useDeleteLocation ────────────────────────────────────────────────────────
@@ -200,6 +214,18 @@ describe('useDeleteLocation', () => {
     await act(async () => { result.current.mutate({ id: 'loc-1', businessId: 'biz-1' }); });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['locations', 'biz-1'] });
+  });
+
+  it('invalida tasks query en onSuccess', async () => {
+    const { wrapper, qc } = createWrapper();
+    mockDeleteApi.mockResolvedValueOnce(undefined as never);
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+
+    const { result } = renderHook(() => useDeleteLocation(), { wrapper });
+    await act(async () => { result.current.mutate({ id: 'loc-1', businessId: 'biz-1' }); });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
   });
 
   it('toast.success en onSuccess', async () => {

@@ -30,12 +30,14 @@ import {
   ProjectMultiPicker,
   shouldShowProjectMultiPicker,
 } from '@/components/tareas/project-multi-picker';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { useReplicateTaskToProjects } from '@/hooks/mutations/use-replicate-task';
 import { cn } from '@/lib/utils';
-import { validateTaskCompletion } from '@/lib/task-validation';
+import { checkTaskCompletion } from '@/lib/task-validation';
 import { TaskAttachments } from './task-attachments';
 import { TaskComments } from './task-comments';
 import { TaskChecklist } from './task-checklist';
+import { IncompleteChecklistDialog } from './incomplete-checklist-dialog';
 import { TaskTimeTracking } from './task-time-tracking';
 import type { RecurrenceConfig } from '@/types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, TYPE_OPTIONS } from '@/lib/constants/task-colors';
@@ -45,6 +47,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -62,6 +65,10 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const [replicateProjectIds, setReplicateProjectIds] = useState<string[]>([]);
   const [showReplicateLocations, setShowReplicateLocations] = useState(false);
   const [replicateLocationIds, setReplicateLocationIds] = useState<string[]>([]);
+  const [pendingCompletion, setPendingCompletion] = useState<{
+    pending: Task['checklist'];
+    doneItems: Task['checklist'];
+  } | null>(null);
   const [editLocationId, setEditLocationId] = useState('');
   const [editProjectId, setEditProjectId] = useState('');
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
@@ -87,8 +94,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   const { user } = useAuth();
   const { data: business } = useBusinessQuery(user?.businessId);
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const activeProjects = projects.filter((project) => !isArchivedProjectStatus(project.status));
   const showMultiBoardPicker = shouldShowProjectMultiPicker(
-    projects.length,
+    activeProjects.length,
     hasMultipleBoards(business?.settings),
   );
 
@@ -98,6 +106,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
       setShowConfirmDelete(false);
       setShowReplicate(false);
       setShowReplicateLocations(false);
+      setPendingCompletion(null);
     }
   }, [open]);
 
@@ -134,10 +143,30 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
-    if (newStatus === 'done' && !validateTaskCompletion(task, business?.settings)) {
-      return;
+    if (newStatus === 'done') {
+      const completion = checkTaskCompletion(task, business?.settings);
+      if (!completion.ok) {
+        if (completion.reason === 'attachment_required') {
+          toast.warning('Adjunto requerido', {
+            description: 'Este negocio requiere subir al menos un comprobante/adjunto para poder finalizar la tarea.',
+          });
+        } else {
+          setPendingCompletion({
+            pending: completion.pending,
+            doneItems: completion.doneItems,
+          });
+        }
+        return;
+      }
     }
     moveTask.mutate({ taskId: task.id, newStatus });
+  };
+
+  const confirmIncompleteChecklist = () => {
+    moveTask.mutate(
+      { taskId: task.id, newStatus: 'done' },
+      { onSuccess: () => setPendingCompletion(null) }
+    );
   };
 
   const handleDelete = () => {
@@ -1088,7 +1117,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             </DialogDescription>
           </DialogHeader>
           <ProjectMultiPicker
-            projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+            projects={activeProjects.map((p) => ({ id: p.id, name: p.name, status: p.status }))}
             value={replicateProjectIds}
             onChange={setReplicateProjectIds}
             size="md"
@@ -1181,6 +1210,16 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
         onConfirm={handleConfirmDelete}
         variant="destructive"
         loading={deleteTask.isPending}
+      />
+      <IncompleteChecklistDialog
+        open={pendingCompletion !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setPendingCompletion(null);
+        }}
+        pending={pendingCompletion?.pending ?? []}
+        doneItems={pendingCompletion?.doneItems ?? []}
+        onConfirm={confirmIncompleteChecklist}
+        isPending={moveTask.isPending}
       />
     </Dialog>
 

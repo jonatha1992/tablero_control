@@ -9,6 +9,7 @@ import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import { DEFAULT_BOARD_NAME } from '@/lib/constants/default-board';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
 import type { ConfirmTasksOptions } from '@/hooks/mutations/use-dictate-tasks';
 
@@ -32,7 +33,7 @@ export function useTaskPreviewContext() {
     [locationsData],
   );
   const projects = useMemo(
-    () => projectsData.map((p) => ({ id: p.id, name: p.name })),
+    () => projectsData.map((p) => ({ id: p.id, name: p.name, status: p.status })),
     [projectsData],
   );
   const cycles = useMemo(
@@ -45,8 +46,9 @@ export function useTaskPreviewContext() {
   );
 
   const confirmOptions: ConfirmTasksOptions = useMemo(() => {
+    const activeProjects = projectsData.filter((project) => !isArchivedProjectStatus(project.status));
     const defaultProjectId =
-      projectsData.find((p) => p.name === DEFAULT_BOARD_NAME)?.id ?? projectsData[0]?.id;
+      activeProjects.find((p) => p.name === DEFAULT_BOARD_NAME)?.id ?? activeProjects[0]?.id;
     const activeCycleId = cyclesData.find((c) => c.status === 'active')?.id;
     const defaultLocationId = getActiveMembershipLocationId(user ?? undefined);
     return {

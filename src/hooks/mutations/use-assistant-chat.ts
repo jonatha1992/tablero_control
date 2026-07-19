@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { assistantApi } from '@/lib/api/assistant';
 import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
+import type { ExtractedEvent } from '@/lib/groq/extract-events';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
 import type { GeneratedPlan } from '@/lib/groq/generate-plan';
 import type { GeneratePlanResponse } from '@/lib/api/assistant';
@@ -17,6 +18,13 @@ export interface ActionMessage {
 export interface TasksMessage {
   role: 'tasks';
   tasks: ExtractedTask[];
+  parseError: boolean;
+  confirmed: boolean;
+}
+
+export interface EventsMessage {
+  role: 'events';
+  events: ExtractedEvent[];
   parseError: boolean;
   confirmed: boolean;
 }
@@ -40,6 +48,7 @@ export type DisplayMessage =
   | AssistantMessage
   | ActionMessage
   | TasksMessage
+  | EventsMessage
   | PreviewMessage
   | ClarifyMessage;
 
@@ -80,6 +89,17 @@ export function useAssistantChat(_mode: AssistantMode = 'assistant') {
           {
             role: 'tasks',
             tasks: response.tasks,
+            parseError: response.parseError,
+            confirmed: false,
+          },
+        ]);
+        break;
+      case 'preview_events':
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'events',
+            events: response.events,
             parseError: response.parseError,
             confirmed: false,
           },
@@ -163,6 +183,12 @@ export function useAssistantChat(_mode: AssistantMode = 'assistant') {
     );
   };
 
+  const confirmEventMessage = (msgIdx: number) => {
+    setMessages((prev) =>
+      prev.map((m, i) => (i === msgIdx && m.role === 'events' ? { ...m, confirmed: true } : m)),
+    );
+  };
+
   const updateTaskInMessage = (msgIdx: number, taskIdx: number, updated: ExtractedTask) => {
     setMessages((prev) =>
       prev.map((m, i) => {
@@ -178,6 +204,30 @@ export function useAssistantChat(_mode: AssistantMode = 'assistant') {
         if (i !== msgIdx || m.role !== 'tasks') return m;
         return { ...m, tasks: m.tasks.filter((_, ti) => ti !== taskIdx) };
       }),
+    );
+  };
+
+  const updateEventInMessage = (msgIdx: number, eventIdx: number, updated: ExtractedEvent) => {
+    setMessages((prev) =>
+      prev.map((m, i) => {
+        if (i !== msgIdx || m.role !== 'events') return m;
+        return { ...m, events: m.events.map((event, ei) => (ei === eventIdx ? updated : event)) };
+      }),
+    );
+  };
+
+  const removeEventFromMessage = (msgIdx: number, eventIdx: number) => {
+    setMessages((prev) =>
+      prev.map((m, i) => {
+        if (i !== msgIdx || m.role !== 'events') return m;
+        return { ...m, events: m.events.filter((_, ei) => ei !== eventIdx) };
+      }),
+    );
+  };
+
+  const setEventsInMessage = (msgIdx: number, events: ExtractedEvent[]) => {
+    setMessages((prev) =>
+      prev.map((m, i) => (i === msgIdx && m.role === 'events' ? { ...m, events } : m)),
     );
   };
 
@@ -198,8 +248,12 @@ export function useAssistantChat(_mode: AssistantMode = 'assistant') {
     replacePreviewWithAction,
     addTaskPreview,
     confirmTaskMessage,
+    confirmEventMessage,
     updateTaskInMessage,
     removeTaskFromMessage,
+    updateEventInMessage,
+    removeEventFromMessage,
+    setEventsInMessage,
     clear,
     isPending: plannerMutation.isPending,
   };

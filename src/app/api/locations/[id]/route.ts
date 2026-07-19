@@ -43,7 +43,10 @@ export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
     }
 
     const body = await request.json();
-    const updated = await locationService.update(id, body);
+    const isArchiveAction = body?.action === 'archive';
+    const updated = isArchiveAction
+      ? await locationService.archive(id)
+      : await locationService.update(id, body);
 
     await writeAuditLog({
       actorId: user.uid,
@@ -52,7 +55,9 @@ export const PATCH = handle(async (request: NextRequest, { params }: Props) => {
       action: 'business.update',
       targetType: 'LOCATION',
       targetId: id,
-      metadata: body,
+      metadata: isArchiveAction
+        ? { action: 'archive', status: 'closed' }
+        : body,
     });
 
     return NextResponse.json(updated);
@@ -77,8 +82,28 @@ export const DELETE = handle(async (request: NextRequest, { params }: Props) => 
     }
     assertSameTenant(user.data, { businessId: location.businessId });
 
-    if (!canMutateLocation(user.data, 'delete', location)) {
+    const body = await request.json().catch(() => null);
+    const isArchiveAction = body?.action === 'archive';
+    const requiredPermission = isArchiveAction ? 'update' : 'delete';
+
+    if (!canMutateLocation(user.data, requiredPermission, location)) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+
+    if (isArchiveAction) {
+      const archived = await locationService.archive(id);
+
+      await writeAuditLog({
+        actorId: user.uid,
+        actorRole: user.role,
+        businessId: user.businessId,
+        action: 'business.update',
+        targetType: 'LOCATION',
+        targetId: id,
+        metadata: { action: 'archive', status: 'closed' },
+      });
+
+      return NextResponse.json(archived);
     }
 
     await locationService.delete(id);
