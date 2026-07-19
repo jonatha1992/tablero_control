@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Search, LogOut, Menu, Download, HelpCircle } from 'lucide-react';
+import { Search, LogOut, Menu, Download } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -110,21 +109,14 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
       <div className="flex shrink-0 items-center gap-1">
         {canInstall && (
           <Button
-            variant="outline"
-            size="sm"
-            className="hidden sm:flex h-8 gap-1.5 text-xs"
+            variant="ghost"
+            size="icon"
             onClick={install}
             title="Instalar aplicación"
           >
-            <Download className="h-3.5 w-3.5" />
-            Instalar app
+            <Download className="h-4 w-4" />
           </Button>
         )}
-        <Link href="/dashboard/ayuda">
-          <Button variant="ghost" size="icon" title="Ayuda">
-            <HelpCircle className="h-4 w-4" />
-          </Button>
-        </Link>
         <NotificationBell />
         <BusinessSwitcher />
 

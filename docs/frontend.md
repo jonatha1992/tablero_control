@@ -39,7 +39,7 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 Layout principal `'use client'`. Contiene:
 
 - **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Items: Dashboard, Tareas, Planificación, Equipo, Reportes, Facturación, Configuración, Ayuda.
-- **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón `?` (→ `/dashboard/ayuda`), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout.
+- **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para instalar PWA (solo si `canInstall` vía `usePwaInstall`), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar.
 - **FAB IA** (`id="tour-fab"`) — botón flotante bottom-right → abre `AiAssistantPanel`. Punto de entrada al asistente IA y al dictado de tareas.
 - **OnboardingTour** — componente invisible que gestiona el tour con driver.js.
 
