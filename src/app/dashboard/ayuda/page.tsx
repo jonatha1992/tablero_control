@@ -63,7 +63,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Checklist',
-        description: 'Cada tarea puede tener una lista de pasos con casillas. El progreso se ve en el detalle de la tarea. Al finalizar, el checklist de esa tarea se conserva. En tareas repetitivas, la próxima ocurrencia hereda el mismo checklist con todos los ítems sin marcar.',
+        description: 'Cada tarea puede tener una lista de pasos con casillas. El progreso se ve en el detalle de la tarea. Si quedan items pendientes y la marcás como Hecho, el sistema te pide confirmación antes de cerrarla. En tareas repetitivas, la próxima ocurrencia hereda el mismo checklist con todos los ítems sin marcar.',
       },
       {
         title: 'Tareas repetitivas',

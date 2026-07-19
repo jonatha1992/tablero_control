@@ -9,8 +9,9 @@ import type { Task, TaskStatus, TaskPriority } from '@/types';
 import type { CalendarEvent } from '@/types/domain/calendar';
 import { cn, TASK_PRIORITY_LABELS } from '@/lib/utils';
 import { isPending } from '@/lib/tasks/task-status';
-import { validateTaskCompletion } from '@/lib/task-validation';
+import { checkTaskCompletion } from '@/lib/task-validation';
 import { TaskDetailModal } from './task-detail-modal';
+import { IncompleteChecklistDialog } from './incomplete-checklist-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import {
   Zap,
   CalendarDays,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Scoring ---
 
@@ -295,6 +297,11 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   const { data: business } = useBusinessQuery(user?.businessId);
   const moveTask = useMoveTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [pendingCompletion, setPendingCompletion] = useState<{
+    taskId: string;
+    pending: Task['checklist'];
+    doneItems: Task['checklist'];
+  } | null>(null);
   const [showDone, setShowDone] = useState(false);
   const [showNoDate, setShowNoDate] = useState(true);
   const [showLater, setShowLater] = useState(true);
@@ -404,14 +411,35 @@ export function AgendaView({ tasks }: AgendaViewProps) {
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
     if (status === 'done') {
       const task = tasks.find((t) => t.id === taskId);
-      if (task && !validateTaskCompletion(task, business?.settings)) {
-        return; // B1, B2, B4
+      if (task) {
+        const completion = checkTaskCompletion(task, business?.settings);
+        if (!completion.ok) {
+          if (completion.reason === 'attachment_required') {
+            toast.warning('Adjunto requerido', {
+              description: 'Este negocio requiere subir al menos un comprobante/adjunto para poder finalizar la tarea.',
+            });
+          } else {
+            setPendingCompletion({
+              taskId,
+              pending: completion.pending,
+              doneItems: completion.doneItems,
+            });
+          }
+          return;
+        }
       }
     }
     moveTask.mutate({ taskId, newStatus: status });
   };
 
   const handleClick = (task: Task) => setSelectedTask(task);
+  const confirmIncompleteChecklist = () => {
+    if (!pendingCompletion) return;
+    moveTask.mutate(
+      { taskId: pendingCompletion.taskId, newStatus: 'done' },
+      { onSuccess: () => setPendingCompletion(null) }
+    );
+  };
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -682,6 +710,16 @@ export function AgendaView({ tasks }: AgendaViewProps) {
         task={selectedTask}
         open={!!selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
+      />
+      <IncompleteChecklistDialog
+        open={pendingCompletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingCompletion(null);
+        }}
+        pending={pendingCompletion?.pending ?? []}
+        doneItems={pendingCompletion?.doneItems ?? []}
+        onConfirm={confirmIncompleteChecklist}
+        isPending={moveTask.isPending}
       />
     </>
   );

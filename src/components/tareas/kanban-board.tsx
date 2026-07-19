@@ -21,7 +21,7 @@ import { SECTOR_ICONS } from '@/components/sectores/sector-modal';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './kanban-column';
 import { KanbanCard } from './kanban-card';
-import { validateTaskCompletion } from '@/lib/task-validation';
+import { checkTaskCompletion } from '@/lib/task-validation';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -41,6 +41,7 @@ import {
 import { TaskDetailModal } from './task-detail-modal';
 import { CreateTaskModal } from './create-task-modal';
 import { DictateTasksModal } from './dictate-tasks-modal';
+import { IncompleteChecklistDialog } from './incomplete-checklist-dialog';
 import { useMoveTask } from '@/hooks/mutations/use-move-task';
 import { useUpdateTask } from '@/hooks/mutations/use-update-task';
 import { useBulkMoveTasks } from '@/hooks/mutations/use-bulk-move-tasks';
@@ -53,6 +54,7 @@ import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 
 const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked', 'archived'];
 
@@ -90,6 +92,11 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   } = useKanbanUIStore();
 
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+  const [pendingCompletion, setPendingCompletion] = useState<{
+    taskIds: string[];
+    pending: Task['checklist'];
+    doneItems: Task['checklist'];
+  } | null>(null);
 
   const requestDelete = (taskIds: string[]) => {
     const allowed = taskIds.filter((id) => {
@@ -191,13 +198,32 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     }
 
     if (targetColumn && targetColumn !== task.status) {
-      if (targetColumn === 'done' && !validateTaskCompletion(task, business?.settings)) {
-        return; // Detener el drag si no cumple requisitos (B1, B2, B4)
+      const taskIdsToMove =
+        selectedTaskIds.length > 1 && selectedTaskIds.includes(taskId)
+          ? selectedTaskIds
+          : [taskId];
+
+      if (targetColumn === 'done') {
+        const completion = checkTaskCompletion(task, business?.settings);
+        if (!completion.ok) {
+          if (completion.reason === 'attachment_required') {
+            toast.warning('Adjunto requerido', {
+              description: 'Este negocio requiere subir al menos un comprobante/adjunto para poder finalizar la tarea.',
+            });
+          } else {
+            setPendingCompletion({
+              taskIds: taskIdsToMove,
+              pending: completion.pending,
+              doneItems: completion.doneItems,
+            });
+          }
+          return;
+        }
       }
 
-      if (selectedTaskIds.length > 1 && selectedTaskIds.includes(taskId)) {
+      if (taskIdsToMove.length > 1) {
         bulkMove.mutate(
-          { taskIds: selectedTaskIds, newStatus: targetColumn },
+          { taskIds: taskIdsToMove, newStatus: targetColumn },
           { onSuccess: () => clearSelection() }
         );
       } else {
@@ -212,6 +238,28 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
 
   const handleLocationChange = (taskId: string, locationId: string | null) => {
     updateTask.mutate({ id: taskId, data: { locationId } });
+  };
+
+  const confirmIncompleteChecklist = () => {
+    if (!pendingCompletion) return;
+
+    if (pendingCompletion.taskIds.length > 1) {
+      bulkMove.mutate(
+        { taskIds: pendingCompletion.taskIds, newStatus: 'done' },
+        {
+          onSuccess: () => {
+            clearSelection();
+            setPendingCompletion(null);
+          },
+        }
+      );
+      return;
+    }
+
+    moveTask.mutate(
+      { taskId: pendingCompletion.taskIds[0], newStatus: 'done' },
+      { onSuccess: () => setPendingCompletion(null) }
+    );
   };
 
   const activeTask = dragState.draggedTaskId
@@ -565,6 +613,17 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <IncompleteChecklistDialog
+        open={pendingCompletion !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingCompletion(null);
+        }}
+        pending={pendingCompletion?.pending ?? []}
+        doneItems={pendingCompletion?.doneItems ?? []}
+        onConfirm={confirmIncompleteChecklist}
+        isPending={moveTask.isPending || bulkMove.isPending}
+      />
 
       <TaskDetailModal
         task={selectedTask}

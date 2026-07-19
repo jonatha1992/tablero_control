@@ -42,6 +42,15 @@ Hora se muestra en kanban card y detail modal **solo si ≠ medianoche local**. 
 
 Para cambios de status, **siempre usar `useMoveTask`** (no `useUpdateTask`) — garantiza que `moveTask()` se ejecute en backend. Ver decisions/002.
 
+## Finalizar tareas: checklist y adjuntos
+
+Helper compartido: `src/lib/task-validation.ts`.
+
+- `checkTaskCompletion(task, settings)` devuelve un resultado tipado (`ok`, `checklist_incomplete`, `attachment_required`) para reutilizar la misma regla en UI y tests.
+- Si el negocio tiene `settings.requireAttachmentToFinalize = true` y la tarea no tiene adjuntos, el cierre queda **bloqueado** con toast. No hay bypass desde la UI.
+- Si faltan items de checklist, Kanban, Agenda y `TaskDetailModal` abren `IncompleteChecklistDialog` con los pendientes y permiten **confirmar igualmente** el paso a `done`.
+- El checklist no se auto-completa al confirmar: la tarea se cierra con los items pendientes visibles en el historial/detalle.
+
 ## Sprint Tabs en Kanban (`/dashboard/tareas`)
 
 Store: `useScrumUIStore` (`src/stores/scrum-ui.store.ts`) — `selectedSprintId` + `viewMode: 'board' | 'backlog'`.
