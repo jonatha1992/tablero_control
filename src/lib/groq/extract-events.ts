@@ -1,5 +1,5 @@
-import { groq } from './client';
-import type { ExtractContext } from './extract-context';
+import { groq } from '@/lib/groq/client';
+import type { ExtractContext } from '@/lib/groq/extract-context';
 
 export interface ExtractedEvent {
   title: string;
@@ -89,6 +89,7 @@ function sanitizeEvent(raw: RawExtractedEvent, ctx: ExtractContext, fallbackOrde
   const memberIds = new Set(ctx.members.map((member) => member.id));
   const startTime = asOptionalTime(raw.startTime);
   const endTime = asOptionalTime(raw.endTime);
+  const hasExplicitTime = Boolean(startTime || endTime);
 
   return {
     title,
@@ -97,7 +98,7 @@ function sanitizeEvent(raw: RawExtractedEvent, ctx: ExtractContext, fallbackOrde
     startTime,
     endDate: asOptionalString(raw.endDate),
     endTime,
-    allDay: !startTime && !endTime ? true : raw.allDay === true,
+    allDay: hasExplicitTime ? false : true,
     assigneeIds: Array.isArray(raw.assigneeIds)
       ? raw.assigneeIds.filter((id): id is string => typeof id === 'string' && memberIds.has(id))
       : [],
