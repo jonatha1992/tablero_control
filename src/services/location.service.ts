@@ -1,4 +1,5 @@
 import { locationRepository } from '@/repositories';
+import { prisma } from '@/lib/prisma';
 import type { Location, LocationStatus } from '@/types/domain/location';
 
 class LocationService {
@@ -26,8 +27,15 @@ class LocationService {
     return locationRepository.update(id, data);
   }
 
+  async archive(id: string): Promise<Location> {
+    return locationRepository.update(id, { status: 'closed' });
+  }
+
   async delete(id: string): Promise<void> {
-    return locationRepository.delete(id);
+    await prisma.$transaction(async (tx) => {
+      await tx.task.deleteMany({ where: { locationId: id } });
+      await tx.location.delete({ where: { id } });
+    });
   }
 }
 

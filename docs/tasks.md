@@ -115,6 +115,12 @@ Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterB
 
 **Filtro de entidades activas:** `src/lib/tasks/active-entity.ts` centraliza la regla para ocultar tareas ligadas a entidades archivadas. Si `project.status === 'archived'` o `location.status` está en `closed | inactive`, la tarea se excluye de Agenda, Calendario y la vista principal de `/dashboard/tareas`.
 
+**Archivar vs eliminar entidades:**
+- Archivar **Sector/Location** = `status: 'closed'` y sus tareas dejan de aparecer en vistas activas por el filtro de entidades.
+- Archivar **Tablero/Project** = `status: 'archived'`.
+- Eliminar **Sector/Location** hace hard delete del sector **y primero borra en transacción** todas las tareas con ese `locationId` para evitar huérfanas.
+- Mutaciones cliente de sectores/tableros invalidan cache de la entidad y `taskKeys.all` para refrescar agenda, calendario y tablero principal.
+
 ## CalendarEvents en Vistas de Calendario y Agenda
 
 `CalendarEvent` es una entidad separada de `Task` — representa eventos de calendario (reuniones, bloqueos de tiempo) sin lógica de tareas ni recurrencia automática.

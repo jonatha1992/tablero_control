@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { locationsApi } from '@/lib/api/locations';
 import { locationKeys } from '@/hooks/queries/use-locations-query';
+import { taskKeys } from '@/hooks/queries/use-tasks-query';
 import { toast } from 'sonner';
 import type { Location } from '@/types/domain/location';
 
@@ -38,10 +39,15 @@ export function useUpdateLocation() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Location> }) =>
       locationsApi.update(id, data),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: locationKeys.byBusiness(data.businessId) });
-      toast.success('Sector actualizado', {
-        description: `"${data.name}" fue actualizado correctamente.`,
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+
+      const isArchiveAction = variables.data.status === 'closed';
+      toast.success(isArchiveAction ? 'Sector archivado' : 'Sector actualizado', {
+        description: isArchiveAction
+          ? `"${data.name}" fue archivado correctamente.`
+          : `"${data.name}" fue actualizado correctamente.`,
       });
     },
     onError: (err) => {
@@ -66,6 +72,7 @@ export function useDeleteLocation() {
       locationsApi.delete(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: locationKeys.byBusiness(variables.businessId) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
       toast.success('Sector eliminado', {
         description: 'El sector fue eliminado del sistema.',
       });

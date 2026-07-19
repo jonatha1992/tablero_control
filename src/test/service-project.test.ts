@@ -112,6 +112,23 @@ describe('ProjectService.update', () => {
   });
 });
 
+describe('ProjectService.archive', () => {
+  it('marca proyecto como archived', async () => {
+    const archived = { ...mockProject, status: 'archived' };
+    vi.mocked(prisma.project.update).mockResolvedValueOnce(archived as never);
+
+    const result = await projectService.archive('proj-1');
+
+    expect(result.status).toBe('archived');
+    expect(prisma.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'proj-1' },
+        data: expect.objectContaining({ status: 'archived' }),
+      })
+    );
+  });
+});
+
 describe('ProjectService.delete', () => {
   it('elimina proyecto', async () => {
     vi.mocked(prisma.project.delete).mockResolvedValueOnce(mockProject as never);

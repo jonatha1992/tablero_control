@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, Edit2, Trash2, MoreVertical, Users } from 'lucide-react';
+import { Archive, MapPin, Edit2, Trash2, MoreVertical, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -97,11 +97,11 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                       Editar
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
+                      className="text-amber-700 focus:text-amber-700"
                       onClick={(e) => { e.stopPropagation(); onDelete(sector.id); }}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Eliminar
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archivar o eliminar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -119,6 +119,11 @@ export function SectorList({ sectors, onEdit, onDelete, onSelect, onCreate, isLo
                     <span className="flex items-center gap-1 text-green-600 font-medium">
                       <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
                       Activo
+                    </span>
+                  ) : sector.status === 'closed' ? (
+                    <span className="flex items-center gap-1 text-amber-600 font-medium">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
+                      Archivado
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-muted-foreground">

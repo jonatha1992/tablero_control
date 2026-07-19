@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectsApi, type CreateProjectBody, type Project } from '@/lib/api/projects';
+import { projectsApi, type CreateProjectBody, type Project, type UpdateProjectBody } from '@/lib/api/projects';
+import { taskKeys } from '@/hooks/queries/use-tasks-query';
 
 export const projectKeys = {
   all: ['projects'] as const,
@@ -34,12 +35,13 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateProjectBody> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateProjectBody }) =>
       projectsApi.update(id, data),
-    onSuccess: (_data, variables) => {
-      if (variables.data.businessId) {
-        queryClient.invalidateQueries({ queryKey: projectKeys.byBusiness(variables.data.businessId) });
+    onSuccess: (data) => {
+      if (data.businessId) {
+        queryClient.invalidateQueries({ queryKey: projectKeys.byBusiness(data.businessId) });
       }
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
 }
@@ -50,6 +52,7 @@ export function useDeleteProject() {
     mutationFn: (id: string) => projectsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });
 }
