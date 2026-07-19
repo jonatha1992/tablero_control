@@ -37,9 +37,12 @@ export async function register() {
     // Recordatorios de tareas — todos los días a las 8:00 AM
     cron.schedule('0 8 * * *', () => callCron('/api/cron/task-reminders'));
 
+    // Recordatorios de eventos — todos los días a las 8:05 AM
+    cron.schedule('5 8 * * *', () => callCron('/api/cron/event-reminders'));
+
     // Limpieza de adjuntos viejos — todos los domingos a las 2:00 AM
     cron.schedule('0 2 * * 0', () => callCron('/api/cron/attachment-cleanup'));
 
-    console.log('[cron] jobs programados: subscription-expiry (6am), task-reminders (8am), attachment-cleanup (dom 2am)');
+    console.log('[cron] jobs programados: subscription-expiry (6am), task-reminders (8am), event-reminders (8:05am), attachment-cleanup (dom 2am)');
   }
 }

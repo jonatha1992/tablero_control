@@ -171,12 +171,13 @@ CLOUDINARY_API_SECRET=
 ```
 WelcomeEmail, ResetPasswordEmail, TeamInviteEmail
 SubscriptionActivatedEmail, SubscriptionExpiryEmail
-PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail
+PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail, EventReminderEmail
 ```
 
 ### Delivery
 - **Resend** (`src/lib/resend.ts`) — primario si `RESEND_API_KEY` configurado
 - **Gmail SMTP** (`src/lib/gmail.ts`) — fallback automático
+- `MailService.sendEventReminderEmail()` envía recordatorios de eventos para el cron `GET /api/cron/event-reminders`
 
 Variables:
 ```env

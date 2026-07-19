@@ -8,6 +8,7 @@ import { SubscriptionActivatedEmail } from '@/lib/mail/templates/subscription-ac
 import { PaymentSuccessEmail } from '@/lib/mail/templates/payment-success-email';
 import { PaymentFailedEmail } from '@/lib/mail/templates/payment-failed-email';
 import { TaskAssignedEmail } from '@/lib/mail/templates/task-assigned-email';
+import { EventReminderEmail } from '@/lib/mail/templates/event-reminder-email';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -132,6 +133,20 @@ export class MailService {
       return { success: true };
     } catch (err) {
       console.error('Error enviando email de tarea asignada:', err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  static async sendEventReminderEmail(
+    to: string,
+    data: { eventTitle: string; whenLabel: 'mañana' | 'hoy' | 'pasó'; eventsUrl: string },
+  ) {
+    try {
+      const html = await render(React.createElement(EventReminderEmail, data));
+      await sendMail(to, `📅 Evento ${data.whenLabel}`, html);
+      return { success: true };
+    } catch (err) {
+      console.error('Error enviando email de recordatorio de evento:', err);
       return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
   }

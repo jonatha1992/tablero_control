@@ -156,6 +156,8 @@ POST   /api/mercadopago/webhook
 ```
 POST   /api/upload              ← Cloudinary: avatar o attachment de tarea
 POST   /api/cron/subscription-expiry  ← requiere CRON_SECRET header
+GET    /api/cron/task-reminders       ← requiere CRON_SECRET header; notifica tareas por vencer/vencidas
+GET    /api/cron/event-reminders      ← requiere CRON_SECRET header; notifica y envía email por eventos mañana/hoy/pasó
 GET    /api/test
 POST   /api/test/mail
 ```
