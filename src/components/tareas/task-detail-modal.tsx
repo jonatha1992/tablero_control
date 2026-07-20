@@ -240,7 +240,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               {task.description || 'Detalles de la tarea seleccionada.'}
             </DialogDescription>
           </div>
-          {editing ? (
+          {editing && (
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
@@ -419,10 +419,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                   </div>
                 )}
               </div>
-
             </div>
-          ) : (
-            null
           )}
         </DialogHeader>
 

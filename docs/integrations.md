@@ -175,16 +175,19 @@ PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail, EventReminderEmail
 ```
 
 ### Delivery
-- **Resend** (`src/lib/resend.ts`) — primario si `RESEND_API_KEY` configurado
-- **Gmail SMTP** (`src/lib/gmail.ts`) — fallback automático
+- **Resend** (`src/lib/resend.ts`) — primario si `RESEND_API_KEY` configurado (este proyecto usa Resend)
+- **Gmail SMTP** (`src/lib/gmail.ts`) — fallback automático si no hay `RESEND_API_KEY`
 - `MailService.sendEventReminderEmail()` envía recordatorios de eventos para el cron `GET /api/cron/event-reminders`
 
 Variables:
 ```env
-RESEND_API_KEY=         # si no está, usa Gmail SMTP
-GMAIL_USER=
+RESEND_API_KEY=              # si está, usa Resend (no Gmail)
+RESEND_FROM_EMAIL=           # default: onboarding@resend.dev — con dominio verificado: noreply@tudominio.com
+GMAIL_USER=                  # fallback SMTP
 GMAIL_APP_PASSWORD=
 ```
+
+**Resend sin dominio verificado:** `onboarding@resend.dev` solo entrega a la casilla del dueño de la cuenta Resend. Para mandar a cualquier usuario, verificá un dominio en Resend → Domains y poné ese FROM en `RESEND_FROM_EMAIL`.
 
 ---
 

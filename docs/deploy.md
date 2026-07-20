@@ -40,7 +40,8 @@ MP_ACCESS_TOKEN=APP_USR-...      # Credencial MercadoPago
 
 ```env
 CRON_SECRET=                     # Habilita cron jobs internos (ver instrumentation.ts)
-RESEND_API_KEY=                  # Email primario; sin esto usa Gmail SMTP
+RESEND_API_KEY=                  # Email primario (Resend); sin esto usa Gmail SMTP
+RESEND_FROM_EMAIL=               # Remitente Resend (default onboarding@resend.dev)
 GMAIL_USER=                      # Gmail SMTP fallback
 GMAIL_APP_PASSWORD=
 CLOUDINARY_CLOUD_NAME=

@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Search, LogOut, Menu, Download } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
@@ -20,12 +20,24 @@ interface HeaderProps {
 
 export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
   const { user, signOut, role } = useAuth();
-  const { canInstall, install } = usePwaInstall();
+  const { canInstall, isInstalled, install } = usePwaInstall();
   const labels = useSpaceLabels();
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { filters, setFilters } = useKanbanUIStore();
   const isTasksPage = pathname?.startsWith('/dashboard/tareas');
+  const showInstall = !isInstalled;
+
+  const handleInstallClick = () => {
+    if (canInstall) {
+      void install();
+      return;
+    }
+    // Sin beforeinstallprompt (Safari/iOS, Firefox, o PWA aún no instalable):
+    // ir a Configuración donde están las instrucciones.
+    router.push('/dashboard/config');
+  };
 
   const displayName = userName || user?.name || 'Usuario';
   const initials = getInitials(displayName);
@@ -112,12 +124,12 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex shrink-0 items-center gap-1">
-        {canInstall && (
+        {showInstall && (
           <Button
             variant="ghost"
             size="icon"
-            onClick={install}
-            title="Instalar aplicación"
+            onClick={handleInstallClick}
+            title={canInstall ? 'Instalar aplicación' : 'Cómo instalar la aplicación'}
           >
             <Download className="h-4 w-4" />
           </Button>
