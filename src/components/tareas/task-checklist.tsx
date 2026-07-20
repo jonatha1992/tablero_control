@@ -77,7 +77,10 @@ export function TaskChecklist({ task }: TaskChecklistProps) {
           >
             <Checkbox
               checked={item.done}
-              onChange={() => handleToggle(item.id)}
+              onChange={() => {
+                if (!isUpdating) handleToggle(item.id);
+              }}
+              disabled={isUpdating}
               className="h-4 w-4 shrink-0"
             />
             <span

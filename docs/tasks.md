@@ -42,7 +42,9 @@ Hora se muestra en kanban card y detail modal **solo si ≠ medianoche local**. 
 
 Para cambios de status, **siempre usar `useMoveTask`** (no `useUpdateTask`) — garantiza que `moveTask()` se ejecute en backend. Ver decisions/002.
 
-## Finalizar tareas: checklist y adjuntos
+## Checklist en detalle de tarea
+
+`TaskChecklist` actualiza vía `useUpdateTask` (`PATCH` con `checklist`). El modal (`TaskDetailModal`) **no** usa el snapshot stale de Agenda/Calendario: resuelve la tarea viva desde `useTasksQuery()` para que toggle/agregar/borrar se vean al instante tras el update optimista.
 
 Helper compartido: `src/lib/task-validation.ts`.
 

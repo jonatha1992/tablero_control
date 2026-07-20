@@ -22,9 +22,9 @@ export function useUpdateTask() {
       const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.all });
       const previousDetails = queryClient.getQueriesData<Task>({ queryKey: [...taskKeys.all, 'detail'] });
 
-      // Actualizar todas las listas (Kanban, etc)
+      // Actualizar solo caches de lista (Task[]). Keys `detail` son Task suelto — no mapear.
       queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
-        if (!old) return old;
+        if (!Array.isArray(old)) return old;
         return old.map((task) => {
           if (task.id === id) {
             const updated = { ...task, ...data } as Task;
@@ -38,7 +38,7 @@ export function useUpdateTask() {
 
       // Actualizar cualquier cache de "detalle" (incluye businessId en la key)
       queryClient.setQueriesData<Task>({ queryKey: [...taskKeys.all, 'detail'] }, (old) => {
-        if (!old || old.id !== id) return old;
+        if (!old || Array.isArray(old) || old.id !== id) return old;
         const updatedDetail = { ...old, ...data } as Task;
         if (updatedDetail.locationId === null) updatedDetail.locationId = undefined;
         if (updatedDetail.projectId === null) updatedDetail.projectId = undefined;
@@ -66,11 +66,11 @@ export function useUpdateTask() {
     onSuccess: (task) => {
       // Reemplazar el dato optimista por la respuesta real del servidor sin refetch.
       queryClient.setQueriesData<Task[]>({ queryKey: taskKeys.all }, (old) => {
-        if (!old) return old;
+        if (!Array.isArray(old)) return old;
         return old.map((t) => (t.id === task.id ? task : t));
       });
       queryClient.setQueriesData<Task>({ queryKey: [...taskKeys.all, 'detail'] }, (old) => {
-        if (!old || old.id !== task.id) return old;
+        if (!old || Array.isArray(old) || old.id !== task.id) return old;
         return task;
       });
     },
