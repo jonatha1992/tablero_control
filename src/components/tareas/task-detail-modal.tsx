@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
 import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive, Copy, Pencil, Check } from 'lucide-react';
@@ -55,7 +56,15 @@ interface TaskDetailModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
+export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDetailModalProps) {
+  // Prefer live task from React Query so checklist/comments stay in sync after mutations.
+  // Agenda/Calendario pass a stale snapshot via useState; Kanban already resolves from the list.
+  const { data: tasks = [] } = useTasksQuery();
+  const task = useMemo(() => {
+    if (!taskProp) return null;
+    return tasks.find((t) => t.id === taskProp.id) ?? taskProp;
+  }, [taskProp, tasks]);
+
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
