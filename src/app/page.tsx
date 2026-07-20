@@ -13,6 +13,7 @@ import {
   Bell,
   Globe,
 } from 'lucide-react';
+import { HomeInstallButton } from '@/components/layout/home-install-button';
 
 export default function HomePage() {
   return (
@@ -25,6 +26,7 @@ export default function HomePage() {
             <span className="text-xl font-bold whitespace-nowrap">Tablero de Control</span>
           </div>
           <div className="flex items-center gap-2">
+            <HomeInstallButton />
             <Link href="/login">
               <span className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 sm:px-4 text-sm font-medium hover:bg-accent whitespace-nowrap">
                 <LogIn className="h-4 w-4 shrink-0" />

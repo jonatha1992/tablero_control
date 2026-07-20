@@ -39,8 +39,9 @@ MP_ACCESS_TOKEN=APP_USR-...      # Credencial MercadoPago
 ## Variables opcionales
 
 ```env
-CRON_SECRET=                     # Habilita cron jobs internos (subscription-expiry)
-RESEND_API_KEY=                  # Email primario; sin esto usa Gmail SMTP
+CRON_SECRET=                     # Habilita cron jobs internos (ver instrumentation.ts)
+RESEND_API_KEY=                  # Email primario (Resend); sin esto usa Gmail SMTP
+RESEND_FROM_EMAIL=               # Remitente Resend (default onboarding@resend.dev)
 GMAIL_USER=                      # Gmail SMTP fallback
 GMAIL_APP_PASSWORD=
 CLOUDINARY_CLOUD_NAME=
@@ -60,7 +61,16 @@ NEXT_PUBLIC_USE_EMULATOR=false
 
 ## instrumentation.ts
 
-Al iniciar, conecta a DB y programa cron jobs si `CRON_SECRET` está configurado.
+Al iniciar, conecta a DB y programa cron jobs si `CRON_SECRET` está configurado:
+
+| Schedule | Endpoint | Qué hace |
+|----------|----------|----------|
+| 6:00 | `POST /api/cron/subscription-expiry` | Vence suscripciones |
+| 8:00 | `GET /api/cron/task-reminders` | Avisos de tareas (in-app + FCM) |
+| 8:05 | `GET /api/cron/event-reminders` | Avisos de eventos (in-app + FCM + email) |
+| Dom 2:00 | `GET /api/cron/attachment-cleanup` | Limpieza de adjuntos huérfanos |
+
+Todos requieren header `Authorization: Bearer {CRON_SECRET}`. Los mails de eventos además necesitan `RESEND_API_KEY` o Gmail SMTP.
 
 ## Rollback
 

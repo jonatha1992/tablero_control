@@ -223,18 +223,61 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
-            <DialogHeader>
-              <div className="pr-6">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <DialogTitle className={cn("text-xl leading-tight", editing && "sr-only")}>
-                    {editing ? `Editando: ${title}` : task.title}
-                  </DialogTitle>
-                  <span className="font-mono text-xs text-muted-foreground/60 shrink-0">
-                    #{task.id.slice(0, 6).toUpperCase()}
-                  </span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
+        <DialogHeader>
+          <div className="pr-6">
+            <div className="flex items-center gap-2 mb-0.5">
+              <DialogTitle className={cn("text-xl leading-tight", editing && "sr-only")}>
+                {editing ? `Editando: ${title}` : task.title}
+              </DialogTitle>
+              <span className="font-mono text-xs text-muted-foreground/60 shrink-0">
+                #{task.id.slice(0, 6).toUpperCase()}
+              </span>
+            </div>
+            <DialogDescription className={cn("mt-1", editing && "sr-only")}>
+              {task.description || 'Detalles de la tarea seleccionada.'}
+            </DialogDescription>
+          </div>
+          {editing && (
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
+                  className="w-full text-lg font-medium bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Descripción</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  maxLength={2000}
+                  className="w-full text-sm bg-muted/30 rounded-lg px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fecha límite</label>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  />
+                  <input
+                    type="time"
+                    value={editDueTime}
+                    onChange={(e) => setEditDueTime(e.target.value)}
+                    className="flex h-9 w-24 rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  />
                 </div>
                 <DialogDescription className={cn("mt-1", editing && "sr-only")}>
                   {task.description || 'Detalles de la tarea seleccionada.'}
@@ -423,10 +466,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                       </div>
                     )}
                   </div>
-
+                )}
+              </div>
             </div>
-          ) : (
-            null
           )}
         </DialogHeader>
 
