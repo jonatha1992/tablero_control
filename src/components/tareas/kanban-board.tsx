@@ -13,7 +13,20 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Plus, Filter, Settings2, CheckSquare, Trash2, ChevronDown, MapPin, MessageSquare } from 'lucide-react';
+import {
+  Plus,
+  Filter,
+  Settings2,
+  CheckSquare,
+  Trash2,
+  ChevronDown,
+  MapPin,
+  MessageSquare,
+  Flag,
+  Target,
+  LogOut,
+  X,
+} from 'lucide-react';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { TASK_STATUS_LABELS } from '@/lib/constants/task';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/lib/constants/task-colors';
@@ -53,7 +66,6 @@ import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
-import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'blocked', 'archived'];
@@ -316,10 +328,24 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background min-w-0 max-w-[200px]">
               {(() => {
                 const loc = locations.find((l) => l.id === filters.locationId);
-                if (!loc) return <><span className="truncate">Todos los locales/sectores</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+                if (!loc) {
+                  return (
+                    <>
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate">Todos los locales/sectores</span>
+                      <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                    </>
+                  );
+                }
                 const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
                 const Icon = iconEntry?.icon ?? MapPin;
-                return <><Icon className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="truncate">{loc.name}</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+                return (
+                  <>
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="truncate">{loc.name}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </>
+                );
               })()}
             </button>
           </DropdownMenuTrigger>
@@ -346,11 +372,15 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
               {filters.priority ? (
                 <>
+                  <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
                   <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
                 </>
               ) : (
-                <span>Todas las prioridades</span>
+                <>
+                  <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span>Todas las prioridades</span>
+                </>
               )}
               <ChevronDown className="h-3.5 w-3.5 opacity-50" />
             </button>
@@ -372,6 +402,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[180px]">
+              <Target className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               {filters.objectiveId ? (
                 <span className="truncate">{objectives.find((o) => o.id === filters.objectiveId)?.name ?? 'Objetivo'}</span>
               ) : (
@@ -525,9 +556,10 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             </div>
             <button
               onClick={toggleSelectMode}
-              className="inline-flex items-center h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
+              className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent"
               title="Salir del modo selección"
             >
+              <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
               Salir
             </button>
           </div>

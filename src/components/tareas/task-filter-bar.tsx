@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, MapPin, Users, X } from 'lucide-react';
+import { ChevronDown, Flag, MapPin, Target, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -86,6 +86,7 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[180px]">
+            <Target className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             {filters.objectiveId ? (
               <span className="truncate">{objectives.find((o) => o.id === filters.objectiveId)?.name ?? 'Objetivo'}</span>
             ) : (
@@ -113,11 +114,15 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
           <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
             {filters.priority ? (
               <>
+                <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
                 <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
               </>
             ) : (
-              <span>Todas las prioridades</span>
+              <>
+                <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span>Todas las prioridades</span>
+              </>
             )}
             <ChevronDown className="h-3.5 w-3.5 opacity-50" />
           </button>
@@ -141,10 +146,24 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
           <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background min-w-0 max-w-[200px]">
             {(() => {
               const loc = locations.find((l) => l.id === filters.locationId);
-              if (!loc) return <><span className="truncate">Todos los locales/sectores</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+              if (!loc) {
+                return (
+                  <>
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">Todos los locales/sectores</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </>
+                );
+              }
               const iconEntry = SECTOR_ICONS.find((i) => i.name === (loc.metadata?.icon as string));
               const Icon = iconEntry?.icon ?? MapPin;
-              return <><Icon className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="truncate">{loc.name}</span><ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" /></>;
+              return (
+                <>
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="truncate">{loc.name}</span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                </>
+              );
             })()}
           </button>
         </DropdownMenuTrigger>

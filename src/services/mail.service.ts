@@ -12,8 +12,8 @@ import { EventReminderEmail } from '@/lib/mail/templates/event-reminder-email';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-// Resend: se usa cuando RESEND_API_KEY está configurada (requiere dominio verificado)
-// Gmail:  se usa como fallback mientras no haya dominio propio
+// Resend: solo si RESEND_API_KEY está configurada (requiere dominio verificado).
+// Sin dominio: dejar RESEND_API_KEY vacío/comentado y usar Gmail SMTP (GMAIL_USER).
 const useResend = !!(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'no-key');
 
 async function sendMail(to: string, subject: string, html: string) {
