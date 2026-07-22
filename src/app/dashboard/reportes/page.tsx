@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, AlertTriangle, CheckCircle, Clock, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { SEMANTIC_ICON, NAV_ICON_COLORS } from '@/lib/constants/ui-icon-colors';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
@@ -77,7 +78,7 @@ function KpiCard({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-          <div className="text-muted-foreground">{icon}</div>
+          <div>{icon}</div>
         </div>
       </CardHeader>
       <CardContent>
@@ -282,7 +283,7 @@ export default function ReportesPage() {
             ))}
           </div>
           <Button variant="outline" size="sm" onClick={() => void handleExport()} disabled={totalTasks === 0}>
-            <Download className="h-4 w-4 mr-2" />
+            <Download className={cn('h-4 w-4 mr-2', NAV_ICON_COLORS.reportes)} />
             Exportar Excel
           </Button>
       </div>
@@ -293,27 +294,27 @@ export default function ReportesPage() {
           title="Tasa de completado"
           value={`${completionRate}%`}
           sub={`${completedTasks} de ${totalTasks} tareas`}
-          icon={<CheckCircle className="h-4 w-4" />}
+          icon={<CheckCircle className={cn('h-4 w-4', SEMANTIC_ICON.success)} />}
           highlight={completionRate >= 70 ? 'green' : undefined}
         />
         <KpiCard
           title="Total tareas"
           value={totalTasks}
           sub={`${members.filter((m) => m.isActive).length} miembros activos`}
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock className={cn('h-4 w-4', NAV_ICON_COLORS.tareas)} />}
         />
         <KpiCard
           title="Bloqueadas"
           value={blockedTasks}
           sub={blockedTasks > 0 ? 'Requieren atención' : 'Sin bloqueos'}
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle className={cn('h-4 w-4', SEMANTIC_ICON.danger)} />}
           highlight={blockedTasks > 0 ? 'red' : undefined}
         />
         <KpiCard
           title="Urgentes activas"
           value={urgentTasks}
           sub={urgentTasks > 0 ? 'Prioridad máxima' : 'Todo bajo control'}
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<TrendingUp className={cn('h-4 w-4', SEMANTIC_ICON.priority.urgent)} />}
           highlight={urgentTasks > 0 ? 'orange' : undefined}
         />
       </div>

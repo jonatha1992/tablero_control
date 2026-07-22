@@ -18,6 +18,7 @@ import { useTeamUIStore } from '@/stores/team-ui.store';
 import { useAuth } from '@/hooks/auth-context';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types/domain/user';
+import { NAV_ICON_COLORS, SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 
 const ROLE_TABS: { value: UserRole | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -122,7 +123,7 @@ export default function EquipoPage() {
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <MapPin className={cn('h-3.5 w-3.5', SEMANTIC_ICON.location)} />
                 <select
                   value={bulkLocationId}
                   onChange={(e) => setBulkLocationId(e.target.value)}
@@ -210,7 +211,7 @@ export default function EquipoPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-16 text-center text-muted-foreground">
-            <Users className="mb-2 h-8 w-8 opacity-40" />
+            <Users className={cn('mb-2 h-8 w-8', NAV_ICON_COLORS.equipo)} />
             <p className="text-sm">No se encontraron miembros</p>
           </div>
         ) : (

@@ -10,6 +10,7 @@ import {
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 import { PRIORITY_OPTIONS } from '@/lib/constants/task-colors';
+import { priorityIconClass, SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 import { SECTOR_ICONS } from '@/components/sectores/sector-modal';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
@@ -54,7 +55,7 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[200px]">
-            <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <Users className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.team)} />
             <span className="truncate">
               {filters.assigneeIds.length === 0
                 ? 'Todas las personas'
@@ -86,7 +87,7 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[180px]">
-            <Target className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <Target className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.objective)} />
             {filters.objectiveId ? (
               <span className="truncate">{objectives.find((o) => o.id === filters.objectiveId)?.name ?? 'Objetivo'}</span>
             ) : (
@@ -114,13 +115,13 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
           <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
             {filters.priority ? (
               <>
-                <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <Flag className={cn('h-3.5 w-3.5 shrink-0', priorityIconClass(filters.priority))} />
                 <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
                 <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
               </>
             ) : (
               <>
-                <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <Flag className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.priorityDefault)} />
                 <span>Todas las prioridades</span>
               </>
             )}
@@ -149,7 +150,7 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
               if (!loc) {
                 return (
                   <>
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <MapPin className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.location)} />
                     <span className="truncate">Todos los locales/sectores</span>
                     <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                   </>
@@ -159,7 +160,7 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
               const Icon = iconEntry?.icon ?? MapPin;
               return (
                 <>
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <Icon className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.location)} />
                   <span className="truncate">{loc.name}</span>
                   <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                 </>
@@ -176,7 +177,7 @@ export function TaskFilterBar({ filters, onChange, onClear, showExcludeDoneToggl
             const Icon = iconEntry?.icon ?? MapPin;
             return (
               <DropdownMenuItem key={loc.id} onSelect={() => onChange({ locationId: loc.id })}>
-                <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                <Icon className={cn('h-4 w-4 mr-2 shrink-0', SEMANTIC_ICON.location)} />
                 <span className={cn('flex-1 truncate', filters.locationId === loc.id && 'font-medium')}>{loc.name}</span>
               </DropdownMenuItem>
             );

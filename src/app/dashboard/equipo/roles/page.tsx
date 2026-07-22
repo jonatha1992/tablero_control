@@ -8,6 +8,8 @@ import { SystemRoleCard } from '@/components/roles/system-role-card';
 import { RoleEditorDrawer } from '@/components/roles/role-editor-drawer';
 import type { CustomRole } from '@/types/domain/custom-role';
 import { Plus, Loader2, ShieldCheck } from 'lucide-react';
+import { NAV_ICON_COLORS } from '@/lib/constants/ui-icon-colors';
+import { cn } from '@/lib/utils';
 
 const SYSTEM_ROLES = [
   {
@@ -103,7 +105,7 @@ export default function EquipoRolesPage() {
 
         {!isLoading && customRoles.length === 0 && (
           <div className="border-2 border-dashed rounded-xl p-10 text-center bg-card/30">
-            <ShieldCheck className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+            <ShieldCheck className={cn('h-8 w-8 mx-auto mb-3', NAV_ICON_COLORS.equipo)} />
             <p className="font-medium">Todavía no creaste roles personalizados</p>
             <p className="text-sm text-muted-foreground mt-1">
               Cloná un rol base y ajustá los permisos exactos que necesita tu equipo.

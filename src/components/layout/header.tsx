@@ -6,12 +6,13 @@ import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { getInitials, stringToColor, ROLE_LABELS, ROLE_COLORS } from '@/lib/utils';
+import { getInitials, stringToColor, ROLE_LABELS, ROLE_COLORS, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/auth-context';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { BusinessSwitcher } from '@/components/business-switcher';
 import { usePwaInstall } from '@/hooks/use-pwa-install';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
+import { SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 
 interface HeaderProps {
   userName?: string;
@@ -131,7 +132,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
             onClick={handleInstallClick}
             title={canInstall ? 'Instalar aplicación' : 'Cómo instalar la aplicación'}
           >
-            <Download className="h-4 w-4" />
+            <Download className={cn('h-4 w-4', SEMANTIC_ICON.install)} />
           </Button>
         )}
         <NotificationBell />
@@ -154,7 +155,13 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
           </div>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={signOut} title="Cerrar sesión">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={signOut}
+          title="Cerrar sesión"
+          className="text-muted-foreground hover:text-destructive"
+        >
           <LogOut className="h-4 w-4" />
         </Button>
       </div>

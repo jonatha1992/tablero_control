@@ -1,14 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Play } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Play,
+  LayoutDashboard,
+  CheckSquare,
+  Layers,
+  Users,
+  BarChart2,
+  CreditCard,
+  Settings,
+  Bell,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { startOnboardingTour } from '@/components/layout/onboarding-tour';
+import { NAV_ICON_COLORS, SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
+import { cn } from '@/lib/utils';
 
 interface Section {
   id: string;
   title: string;
-  emoji: string;
+  icon: LucideIcon;
+  iconClass: string;
   subsections: { title: string; description: string }[];
 }
 
@@ -16,7 +32,8 @@ const SECTIONS: Section[] = [
   {
     id: 'dashboard',
     title: 'Dashboard',
-    emoji: '📊',
+    icon: LayoutDashboard,
+    iconClass: NAV_ICON_COLORS.dashboard,
     subsections: [
       {
         title: 'Métricas principales',
@@ -31,7 +48,8 @@ const SECTIONS: Section[] = [
   {
     id: 'tareas',
     title: 'Tareas',
-    emoji: '✅',
+    icon: CheckSquare,
+    iconClass: NAV_ICON_COLORS.tareas,
     subsections: [
       {
         title: 'Kanban',
@@ -70,7 +88,8 @@ const SECTIONS: Section[] = [
   {
     id: 'planificacion',
     title: 'Planificación',
-    emoji: '📅',
+    icon: Layers,
+    iconClass: NAV_ICON_COLORS.planificacion,
     subsections: [
       {
         title: 'Calendario',
@@ -117,7 +136,8 @@ const SECTIONS: Section[] = [
   {
     id: 'equipo',
     title: 'Equipo',
-    emoji: '👥',
+    icon: Users,
+    iconClass: NAV_ICON_COLORS.equipo,
     subsections: [
       {
         title: 'Miembros',
@@ -148,7 +168,8 @@ const SECTIONS: Section[] = [
   {
     id: 'reportes',
     title: 'Reportes',
-    emoji: '📈',
+    icon: BarChart2,
+    iconClass: NAV_ICON_COLORS.reportes,
     subsections: [
       {
         title: 'Rendimiento del equipo',
@@ -164,7 +185,8 @@ const SECTIONS: Section[] = [
   {
     id: 'facturacion',
     title: 'Facturación',
-    emoji: '💳',
+    icon: CreditCard,
+    iconClass: NAV_ICON_COLORS.billing,
     subsections: [
       {
         title: 'Plan actual',
@@ -183,7 +205,8 @@ const SECTIONS: Section[] = [
   {
     id: 'configuracion',
     title: 'Configuración',
-    emoji: '⚙️',
+    icon: Settings,
+    iconClass: NAV_ICON_COLORS.config,
     subsections: [
       {
         title: 'Datos del espacio',
@@ -210,7 +233,8 @@ const SECTIONS: Section[] = [
   {
     id: 'notificaciones-push',
     title: 'Notificaciones push',
-    emoji: '🔔',
+    icon: Bell,
+    iconClass: SEMANTIC_ICON.notification,
     subsections: [
       {
         title: '¿Qué son las notificaciones push?',
@@ -238,6 +262,7 @@ const SECTIONS: Section[] = [
 
 function AccordionSection({ section }: { section: Section }) {
   const [open, setOpen] = useState(false);
+  const Icon = section.icon;
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -246,7 +271,7 @@ function AccordionSection({ section }: { section: Section }) {
         onClick={() => setOpen(!open)}
       >
         <span className="flex items-center gap-3 font-semibold text-base">
-          <span>{section.emoji}</span>
+          <Icon className={cn('h-5 w-5 shrink-0', section.iconClass)} />
           {section.title}
         </span>
         {open
@@ -284,7 +309,7 @@ export default function AyudaPage() {
             onClick={startOnboardingTour}
             className="shrink-0 flex items-center gap-2"
           >
-            <Play className="h-4 w-4" />
+            <Play className={cn('h-4 w-4', NAV_ICON_COLORS.ayuda)} />
             Ver tour
           </Button>
         </div>
@@ -298,15 +323,6 @@ export default function AyudaPage() {
         <p className="text-xs text-muted-foreground text-center pt-4">
           ¿Encontraste un problema? Contactá al soporte desde el chat del asistente IA.
         </p>
-
-        <div className="flex justify-center gap-4 pt-2">
-          <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline">
-            Términos y condiciones
-          </a>
-          <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline">
-            Política de privacidad
-          </a>
-        </div>
       </div>
     </div>
   );

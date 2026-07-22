@@ -10,6 +10,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { calendarEventKeys } from '@/hooks/queries/use-calendar-events-query';
 import { toast } from 'sonner';
 import type { CalendarEvent } from '@/types/domain/calendar';
+import { NAV_ICON_COLORS } from '@/lib/constants/ui-icon-colors';
+import { cn } from '@/lib/utils';
 
 function formatEventDate(event: CalendarEvent) {
   const start = new Date(event.start);
@@ -73,7 +75,7 @@ export default function EventosPage() {
       {!isLoading && events.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-muted-foreground">
           <div className="rounded-full bg-muted p-6">
-            <CalendarDays className="h-10 w-10 opacity-40" />
+            <CalendarDays className={cn('h-10 w-10', NAV_ICON_COLORS.planificacion)} />
           </div>
           <div className="text-center">
             <p className="text-sm font-medium text-foreground">Sin eventos</p>

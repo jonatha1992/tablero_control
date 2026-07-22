@@ -30,6 +30,7 @@ import {
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { TASK_STATUS_LABELS } from '@/lib/constants/task';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '@/lib/constants/task-colors';
+import { priorityIconClass, SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 import { SECTOR_ICONS } from '@/components/sectores/sector-modal';
 import { cn } from '@/lib/utils';
 import { KanbanColumn } from './kanban-column';
@@ -331,7 +332,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 if (!loc) {
                   return (
                     <>
-                      <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <MapPin className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.location)} />
                       <span className="truncate">Todos los locales/sectores</span>
                       <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                     </>
@@ -341,7 +342,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 const Icon = iconEntry?.icon ?? MapPin;
                 return (
                   <>
-                    <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <Icon className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.location)} />
                     <span className="truncate">{loc.name}</span>
                     <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                   </>
@@ -358,7 +359,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               const Icon = iconEntry?.icon ?? MapPin;
               return (
                 <DropdownMenuItem key={loc.id} onClick={() => setFilters({ locationId: loc.id })}>
-                  <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                  <Icon className={cn('h-4 w-4 mr-2 shrink-0', SEMANTIC_ICON.location)} />
                   <span className={cn('flex-1 truncate', filters.locationId === loc.id && 'font-medium')}>{loc.name}</span>
                 </DropdownMenuItem>
               );
@@ -372,13 +373,13 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
             <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background">
               {filters.priority ? (
                 <>
-                  <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <Flag className={cn('h-3.5 w-3.5 shrink-0', priorityIconClass(filters.priority))} />
                   <span className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.dot)} />
                   <span>{PRIORITY_OPTIONS.find((p) => p.value === filters.priority)?.label}</span>
                 </>
               ) : (
                 <>
-                  <Flag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <Flag className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.priorityDefault)} />
                   <span>Todas las prioridades</span>
                 </>
               )}
@@ -402,7 +403,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="inline-flex items-center gap-2 h-9 px-3 text-sm border border-input rounded-md hover:bg-accent bg-background max-w-[180px]">
-              <Target className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <Target className={cn('h-3.5 w-3.5 shrink-0', SEMANTIC_ICON.objective)} />
               {filters.objectiveId ? (
                 <span className="truncate">{objectives.find((o) => o.id === filters.objectiveId)?.name ?? 'Objetivo'}</span>
               ) : (
@@ -501,7 +502,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                             className="inline-flex items-center gap-1 h-7 px-2 text-sm rounded hover:bg-muted transition-colors text-foreground disabled:opacity-50"
                             disabled={bulkAssignLocation.isPending}
                           >
-                            <MapPin className="h-3.5 w-3.5" />
+                            <MapPin className={cn('h-3.5 w-3.5', SEMANTIC_ICON.location)} />
                             Sector…
                             <svg className="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
                           </button>
@@ -526,7 +527,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                                   { onSuccess: () => clearSelection() }
                                 )}
                               >
-                                <Icon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                                <Icon className={cn('h-4 w-4 mr-2 shrink-0', SEMANTIC_ICON.location)} />
                                 {loc.name}
                               </DropdownMenuItem>
                             );
