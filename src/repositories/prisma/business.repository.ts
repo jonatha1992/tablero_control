@@ -2,8 +2,9 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import type { Business, BusinessStatus } from '@/types/domain/business';
 import type { PlanId } from '@/types/domain/subscription';
+import type { IBusinessRepository } from '../interfaces/IBusinessRepository';
 
-export class PrismaBusinessRepository {
+export class PrismaBusinessRepository implements IBusinessRepository {
   async findById(id: string): Promise<Business | null> {
     const row = await prisma.business.findUnique({
       where: { id },
