@@ -149,11 +149,6 @@ export default function ConfigPage() {
               <Building2 className={cn('h-4 w-4 mr-2', SEMANTIC_ICON.location)} /> Espacio
             </TabsTrigger>
           )}
-          {canManageSpace && (
-            <TabsTrigger value="espacio" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
-              <Building2 className="h-4 w-4 mr-2" /> Espacio
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">
