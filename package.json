@@ -3,6 +3,7 @@
   "version": "0.1.15",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "dev:all": "concurrently \"npm run emulators:auth\" \"npm run dev\" --names \"firebase,next\" --prefix-colors \"yellow,cyan\"",
     "emulators": "firebase emulators:start --only auth",
