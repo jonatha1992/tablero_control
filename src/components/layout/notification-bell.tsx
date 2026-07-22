@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
+import { SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 
 function NotificationItem({
   notification,
@@ -88,7 +89,7 @@ export function NotificationBell() {
         className="relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         aria-label="Notificaciones"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={cn('h-5 w-5', unreadCount > 0 && SEMANTIC_ICON.notification)} />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
             {unreadCount > 9 ? '9+' : unreadCount}

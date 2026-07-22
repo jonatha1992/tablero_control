@@ -11,6 +11,7 @@ import { can } from '@/lib/permissions';
 import { useTheme } from 'next-themes';
 import { User, Bell, Palette, Globe, Shield, Camera, CheckCircle2, AlertCircle, Sun, Moon, Monitor, CreditCard, Building2 } from 'lucide-react';
 import Image from 'next/image';
+import { NAV_ICON_COLORS, SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 import { auth } from '@/lib/firebase/client';
 import { resetPassword } from '@/lib/firebase/auth';
 import { InstallPwaCard } from './install-pwa-card';
@@ -130,17 +131,22 @@ export default function ConfigPage() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col min-h-0">
         <TabsList className="shrink-0 justify-start w-full bg-transparent border-b rounded-none px-0 gap-4 mb-4">
           <TabsTrigger value="perfil" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
-            <User className="h-4 w-4 mr-2" /> Mi Perfil
+            <User className={cn('h-4 w-4 mr-2', NAV_ICON_COLORS.equipo)} /> Mi Perfil
           </TabsTrigger>
           <TabsTrigger value="preferencias" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
-            <Palette className="h-4 w-4 mr-2" /> Preferencias
+            <Palette className={cn('h-4 w-4 mr-2', NAV_ICON_COLORS.config)} /> Preferencias
           </TabsTrigger>
           <TabsTrigger value="notificaciones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
-            <Bell className="h-4 w-4 mr-2" /> Notificaciones
+            <Bell className={cn('h-4 w-4 mr-2', SEMANTIC_ICON.notification)} /> Notificaciones
           </TabsTrigger>
           {canManageBilling && (
             <TabsTrigger value="facturacion" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
-              <CreditCard className="h-4 w-4 mr-2" /> Facturación
+              <CreditCard className={cn('h-4 w-4 mr-2', NAV_ICON_COLORS.billing)} /> Facturación
+            </TabsTrigger>
+          )}
+          {canManageSpace && (
+            <TabsTrigger value="espacio" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2 pb-2">
+              <Building2 className={cn('h-4 w-4 mr-2', SEMANTIC_ICON.location)} /> Espacio
             </TabsTrigger>
           )}
           {canManageSpace && (

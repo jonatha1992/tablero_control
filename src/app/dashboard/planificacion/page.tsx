@@ -11,6 +11,8 @@ import { Plus, Play, CheckCircle, X, Calendar, Trash2, Lock, ArrowRight, Info, E
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Cycle, CycleStatus } from '@/types/domain/cycle';
+import { NAV_ICON_COLORS } from '@/lib/constants/ui-icon-colors';
+import { cn } from '@/lib/utils';
 
 const STATUS_LABELS: Record<CycleStatus, string> = {
   planning: 'En planificación',
@@ -240,7 +242,7 @@ export default function PeriodosPage() {
 
       {cycles.length === 0 && !isLoading && (
         <div className="text-center py-16 border-2 border-dashed rounded-xl">
-          <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+          <Calendar className={cn('h-10 w-10 mx-auto mb-4', NAV_ICON_COLORS.planificacion)} />
           <p className="font-medium text-muted-foreground">Sin períodos aún</p>
           <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
             Creá un período para planificar qué tareas vas a hacer esta semana o quincena.

@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Objective, ObjectiveStatus } from '@/types/domain/objective';
 import { ObjectiveDetailModal } from '@/components/tareas/objective-detail-modal';
+import { SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 
 type FilterTab = 'active' | 'completed' | 'archived' | 'all';
 
@@ -207,7 +208,7 @@ export default function ObjetivosPage() {
 
       {filtered.length === 0 && !isLoading && (
         <div className="text-center py-12 border rounded-lg">
-          <Target className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <Target className={cn('h-8 w-8 mx-auto mb-3', SEMANTIC_ICON.objective)} />
           <p className="text-sm text-muted-foreground">
             {filterTab === 'all'
               ? 'Sin objetivos aún.'

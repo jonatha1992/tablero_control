@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Info } from 'lucide-react';
+import { SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
 
 type Variant = 'destructive' | 'warning' | 'default';
 
@@ -31,17 +32,17 @@ interface ConfirmDialogProps {
 const variantConfig: Record<Variant, { icon: React.ElementType; iconColor: string; confirmClass: string }> = {
   destructive: {
     icon: AlertTriangle,
-    iconColor: 'text-destructive',
+    iconColor: SEMANTIC_ICON.danger,
     confirmClass: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: 'text-amber-500',
+    iconColor: SEMANTIC_ICON.warning,
     confirmClass: 'bg-amber-500 text-white hover:bg-amber-600',
   },
   default: {
     icon: Info,
-    iconColor: 'text-primary',
+    iconColor: SEMANTIC_ICON.info,
     confirmClass: 'bg-primary text-primary-foreground hover:bg-primary/90',
   },
 };

@@ -38,11 +38,35 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 
 Layout principal `'use client'`. Contiene:
 
-- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Archivadas); **Planificación** (Calendario, Eventos, Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario viven en Planificación (tiempo + metas), no bajo Tareas.
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Archivadas); **Planificación** (Calendario, Eventos, Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario viven en Planificación (tiempo + metas), no bajo Tareas. Iconos de nav usan tints por área (`NAV_ICON_COLORS`); ver sección **Icon colors** abajo.
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para instalar PWA (visible si no está en modo standalone; si hay `beforeinstallprompt` dispara el prompt, si no navega a `/dashboard/config` con instrucciones), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar. Manifest: `public/manifest.json` con íconos `icon-192.png` y `icon-512.png` (requeridos para que Chrome dispare `beforeinstallprompt`).
 - **Home landing** (`src/app/page.tsx`) — botón **Instalar** en el header público (`HomeInstallButton`); mismo hook PWA; sin prompt muestra tip iOS/Chrome.
 - **FAB IA** (`id="tour-fab"`) — botón flotante bottom-right → abre `AiAssistantPanel`. Punto de entrada al asistente IA y al dictado de tareas.
 - **OnboardingTour** — componente invisible que gestiona el tour con driver.js.
+
+## Icon colors
+
+Mapa central: [`src/lib/constants/ui-icon-colors.ts`](../src/lib/constants/ui-icon-colors.ts) (`NAV_ICON_COLORS`, `SEMANTIC_ICON`, `priorityIconClass`).
+
+| Área | Tint |
+|------|------|
+| Dashboard | blue |
+| Tareas | sky |
+| Planificación | violet |
+| Equipo | emerald |
+| Reportes | orange |
+| Facturación | amber |
+| Config | slate |
+| Ayuda | cyan |
+| Superadmin | fuchsia |
+
+**Reglas:**
+- Color solo en el **icono**; labels siguen `text-muted-foreground` / `text-foreground`.
+- Item activo del sidebar (`bg-primary`): icono `text-primary-foreground` (sin tint de área).
+- Hijos del nav: misma familia del padre + `opacity-80` si no tienen `iconClass` propio.
+- Prioridad / status / tipo: reusar [`task-colors.ts`](../src/lib/constants/task-colors.ts); filtros usan `SEMANTIC_ICON` / `priorityIconClass` (Flag, MapPin, Target, Users).
+- Chevron, close (X), search genérico: muted. Logout: muted + `hover:text-destructive`. Notificaciones unread / PWA install: `SEMANTIC_ICON.notification` / `.install`.
+- El color refuerza forma/label; nunca es el único cue de significado.
 
 ## Onboarding Tour (`src/components/layout/onboarding-tour.tsx`)
 
