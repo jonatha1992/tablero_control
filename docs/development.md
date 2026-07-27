@@ -23,7 +23,7 @@ npx prisma generate
 | `npm run seed:demo-user` | Usuario demo completo (Firebase + negocio + tareas) para QA manual |
 | `npm run seed:invite-demo` | Link de invitación + colaborador demo (nombre + contraseña, flujo `/i/{token}`) |
 | `npm run cleanup:invite-phantom-businesses` | Lista/elimina negocios `Empresa de …` creados por error en usuarios de invitación (dry-run; agregar `--execute` al script para borrar) |
-| `npx tsx scripts/ensure-default-boards.ts` | Crea tablero "Principal" en espacios (`Business`) sin ningún `Project` |
+| `npx tsx scripts/ensure-default-boards.ts` | Crea tablero "Principal" en espacios (`Business`) sin ningún `Project`. Script de ops (no eliminar): los espacios nuevos ya lo hacen vía `ensureDefaultBoard()` en register/businesses |
 | `npm run test:run` | Tests sin watch |
 | `npm run test:ui` | Tests con UI visual |
 | `npm run test:coverage` | Tests con cobertura |
@@ -154,6 +154,8 @@ Eliminados: 2/2
 El script reasigna `user.businessId` al negocio invitador si apuntaba al fantasma. Usuarios afectados pueden necesitar cerrar sesión y volver a entrar para refrescar el perfil.
 
 ## Backfill de businessId en tareas
+
+Script de ops requerido para datos legacy (`scripts/backfill-task-business-id.ts`); no tratarlo como dead code aunque el runtime nuevo siempre persista `businessId`.
 
 Para aislar correctamente espacios en usuarios multi-espacio, las tareas nuevas guardan `Task.businessId`. Si existen tareas legacy sin ese campo, ejecutar primero dry-run:
 
