@@ -1,4 +1,4 @@
-import type { Business, BusinessStatus } from '@/types/domain/business';
+import type { Business } from '@/types/domain/business';
 
 export interface IBusinessRepository {
   findById(id: string): Promise<Business | null>;
