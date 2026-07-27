@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { assistantApi } from '@/lib/api/assistant';
+import type { PlannerImagePayload } from '@/lib/ai/planner-image-contract';
 import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
 import type { ExtractedEvent } from '@/lib/groq/extract-events';
 import type { ExtractedTask } from '@/lib/groq/extract-tasks';
@@ -13,6 +14,17 @@ import type { PlannerResponse } from '@/lib/groq/planner-types';
 export interface ActionMessage {
   role: 'action';
   action: GeneratePlanResponse & { link: string };
+}
+
+export interface UserDisplayMessage {
+  role: 'user';
+  content: string;
+  imagePreviewUrl?: string;
+}
+
+export interface AssistantDisplayMessage {
+  role: 'assistant';
+  content: string;
 }
 
 export interface TasksMessage {
@@ -45,7 +57,8 @@ export interface ClarifyMessage {
 }
 
 export type DisplayMessage =
-  | AssistantMessage
+  | UserDisplayMessage
+  | AssistantDisplayMessage
   | ActionMessage
   | TasksMessage
   | EventsMessage
@@ -54,7 +67,9 @@ export type DisplayMessage =
 
 function toTextMessages(messages: DisplayMessage[]): AssistantMessage[] {
   return messages
-    .filter((m): m is AssistantMessage => m.role === 'user' || m.role === 'assistant')
+    .filter((m): m is UserDisplayMessage | AssistantDisplayMessage => (
+      (m.role === 'user' || m.role === 'assistant') && m.content.trim().length > 0
+    ))
     .map((m) => ({ role: m.role, content: m.content }));
 }
 
@@ -63,8 +78,15 @@ export function useAssistantChat(_mode: AssistantMode = 'assistant') {
   const [pendingSlots, setPendingSlots] = useState<Record<string, string>>({});
 
   const plannerMutation = useMutation({
-    mutationFn: ({ message, history }: { message: string; history: AssistantMessage[] }) =>
-      assistantApi.planner(message, history),
+    mutationFn: ({
+      message,
+      history,
+      image,
+    }: {
+      message: string;
+      history: AssistantMessage[];
+      image?: PlannerImagePayload;
+    }) => assistantApi.planner(message, history, image),
   });
 
   const applyPlannerResponse = (response: PlannerResponse) => {
@@ -120,15 +142,23 @@ export function useAssistantChat(_mode: AssistantMode = 'assistant') {
     }
   };
 
-  const send = async (userText: string) => {
-    const userMsg: AssistantMessage = { role: 'user', content: userText };
+  const send = async (
+    userText: string,
+    image?: PlannerImagePayload & { previewUrl?: string },
+  ) => {
+    const userMsg: UserDisplayMessage = {
+      role: 'user',
+      content: userText,
+      imagePreviewUrl: image?.previewUrl,
+    };
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
 
     const history = toTextMessages(nextMessages.slice(0, -1));
+    const apiImage = image ? { mimeType: image.mimeType, base64: image.base64 } : undefined;
 
     try {
-      const result = await plannerMutation.mutateAsync({ message: userText, history });
+      const result = await plannerMutation.mutateAsync({ message: userText, history, image: apiImage });
       applyPlannerResponse(result);
     } catch {
       setMessages((prev) => [

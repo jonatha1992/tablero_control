@@ -1,4 +1,5 @@
 ﻿import { getToken } from '@/lib/firebase/auth';
+import type { PlannerImagePayload } from '@/lib/ai/planner-image-contract';
 import type { AssistantMessage, AssistantMode } from '@/lib/groq/assistant';
 import type { PlannerResponse } from '@/lib/groq/planner-types';
 import { ApiError } from './errors';
@@ -57,9 +58,9 @@ export const assistantApi = {
       method: 'POST',
       body: JSON.stringify({ type, description }),
     }),
-  planner: (message: string, messages: AssistantMessage[] = []) =>
+  planner: (message: string, messages: AssistantMessage[] = [], image?: PlannerImagePayload) =>
     fetchJsonAuth<PlannerResponse>('/api/assistant/planner', {
       method: 'POST',
-      body: JSON.stringify({ message, messages }),
+      body: JSON.stringify({ message, messages, image }),
     }),
 };
