@@ -1,16 +1,24 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import type { ChangeEvent, ClipboardEvent } from 'react';
+import NextImage from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Bot, Calendar, Check, ExternalLink, Loader2, Mic,
-  Send, Sparkles, Target, Volume2, VolumeX, Pencil,
+  Send, Sparkles, Target, Pencil,
+  Image as ImageIcon, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAssistantChat } from '@/hooks/mutations/use-assistant-chat';
 import type { DisplayMessage } from '@/hooks/mutations/use-assistant-chat';
 import { assistantApi } from '@/lib/api/assistant';
+import {
+  isPlannerImageMimeType,
+  PLANNER_IMAGE_MAX_BYTES,
+  type PlannerImagePayload,
+} from '@/lib/ai/planner-image-contract';
 import {
   useDictateTasksUpload,
   useConfirmDictatedTasks,
@@ -46,6 +54,23 @@ const DEFAULT_EVENT_REMINDERS = [
   { type: 'notification', minutesBefore: 0 },
   { type: 'email', minutesBefore: 0 },
 ] as const;
+
+interface PendingPlannerImage extends PlannerImagePayload {
+  previewUrl: string;
+  fileName: string;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('invalid_file_reader_result'));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('file_read_failed'));
+    reader.readAsDataURL(file);
+  });
+}
 
 function buildLocalDate(date: string, time?: string): Date {
   return new Date(`${date}T${time ?? '00:00'}`);
@@ -85,20 +110,18 @@ interface AiAssistantPanelProps {
 
 export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) {
   const [input, setInput] = useState('');
+  const [pendingImage, setPendingImage] = useState<PendingPlannerImage | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [micState, setMicState] = useState<'idle' | 'recording' | 'processing'>('idle');
   const [recSeconds, setRecSeconds] = useState(0);
   const [confirmingIdx, setConfirmingIdx] = useState<number | null>(null);
   const [confirmingEventIdx, setConfirmingEventIdx] = useState<number | null>(null);
-  const [isMuted, setIsMuted] = useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('ai_panel_muted') === 'true' : false
-  );
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const prevMsgLenRef = useRef<number>(0);
 
   const chat = useAssistantChat('planner');
 
@@ -128,6 +151,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   } = useTaskPreviewContext();
 
   const isLoading = isPending || isGenerating || micState === 'processing';
+  const canSend = (input.trim().length > 0 || pendingImage !== null) && !isLoading && micState === 'idle';
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading, micState]);
 
@@ -142,38 +166,64 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [micState]);
 
-  useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    const prevLen = prevMsgLenRef.current;
-    if (messages.length > prevLen && lastMsg?.role === 'assistant' && !isMuted) {
-      const utt = new SpeechSynthesisUtterance(lastMsg.content);
-      utt.lang = 'es-AR'; utt.rate = 1.1;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utt);
+  const attachImageFile = useCallback(async (file: File) => {
+    const mimeType = file.type.trim().toLowerCase();
+    if (!isPlannerImageMimeType(mimeType)) {
+      toast.error('Solo se aceptan imagenes jpeg, png, webp o gif');
+      return;
     }
-    prevMsgLenRef.current = messages.length;
-  }, [messages, isMuted]);
 
-  const toggleMute = () => {
-    const next = !isMuted;
-    setIsMuted(next);
-    localStorage.setItem('ai_panel_muted', String(next));
-    if (next) window.speechSynthesis.cancel();
+    if (file.size > PLANNER_IMAGE_MAX_BYTES) {
+      toast.error('La imagen no puede superar 4 MB');
+      return;
+    }
+
+    try {
+      const previewUrl = await readFileAsDataUrl(file);
+      const base64 = previewUrl.split(',')[1];
+      if (!base64) throw new Error('missing_base64_payload');
+      setPendingImage({
+        mimeType,
+        base64,
+        previewUrl,
+        fileName: file.name || 'Imagen adjunta',
+      });
+    } catch {
+      toast.error('No pude leer la imagen adjunta');
+    }
+  }, []);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) void attachImageFile(file);
+  };
+
+  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const imageItem = Array.from(event.clipboardData.items).find((item) =>
+      item.type.startsWith('image/'),
+    );
+    const file = imageItem?.getAsFile();
+    if (!file) return;
+    event.preventDefault();
+    void attachImageFile(file);
   };
 
   const handleClose = () => {
     if (isLoading || micState === 'recording' || confirmingEventIdx !== null) return;
-    window.speechSynthesis.cancel();
     chat.clear();
     setInput('');
+    setPendingImage(null);
     onOpenChange(false);
   };
 
   const handleSend = async (text?: string) => {
     const msg = text ?? input.trim();
-    if (!msg || isLoading || micState !== 'idle') return;
+    const image = text === undefined ? pendingImage ?? undefined : undefined;
+    if ((!msg && !image) || isLoading || micState !== 'idle') return;
     setInput('');
-    await send(msg);
+    setPendingImage(null);
+    await send(msg, image);
   };
 
   const handleConfirmPreview = async (msgIdx: number, type: 'cycle' | 'objective', description: string) => {
@@ -552,9 +602,20 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
             }
 
             /* ── Text message (user / assistant) ── */
+            const imagePreviewUrl = msg.role === 'user' ? msg.imagePreviewUrl : undefined;
             return (
               <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 <div className={cn('max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap', msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm')}>
+                  {imagePreviewUrl && (
+                    <NextImage
+                      src={imagePreviewUrl}
+                      alt=""
+                      width={320}
+                      height={176}
+                      unoptimized
+                      className={cn('max-h-44 w-full rounded-lg object-cover', msg.content ? 'mb-2' : '')}
+                    />
+                  )}
                   {msg.content}
                 </div>
               </div>
@@ -574,13 +635,52 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
         </div>
 
         {/* Input bar */}
-        <div className="border-t px-3 py-2.5 flex items-center gap-2 shrink-0">
-          <button onClick={toggleMute} title={isMuted ? 'Activar voz' : 'Silenciar voz'} className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+        <div className="border-t px-3 py-2.5 shrink-0">
+          {pendingImage && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/50 p-1.5">
+              <NextImage
+                src={pendingImage.previewUrl}
+                alt=""
+                width={56}
+                height={40}
+                unoptimized
+                className="h-10 w-14 rounded-md object-cover"
+              />
+              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                {pendingImage.fileName}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPendingImage(null)}
+                title="Quitar imagen"
+                className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={isLoading || micState !== 'idle'}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || micState !== 'idle'}
+            title="Adjuntar imagen"
+            className="h-9 w-9 rounded-full flex items-center justify-center bg-muted hover:bg-muted-foreground/20 text-muted-foreground transition-colors disabled:opacity-40 shrink-0"
+          >
+            <ImageIcon className="h-4 w-4" />
           </button>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onPaste={handlePaste}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             placeholder={micState === 'recording' ? '🔴 Grabando… pulsá 🎤 para detener' : PLACEHOLDER}
             disabled={isLoading || micState !== 'idle'}
@@ -596,11 +696,12 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
           </button>
           <button
             onClick={() => handleSend()}
-            disabled={!input.trim() || isLoading || micState !== 'idle'}
+            disabled={!canSend}
             className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-40 shrink-0"
           >
             <Send className="h-4 w-4" />
           </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

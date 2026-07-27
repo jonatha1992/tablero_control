@@ -48,6 +48,7 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 GROQ_API_KEY=                    # Transcripción de audio + extracción de tareas con LLM
+GOOGLE_AI_API_KEY=               # Gemini vision para imagenes en el chat IA del Planificador
 
 # Firebase cliente (NEXT_PUBLIC_*)
 NEXT_PUBLIC_FIREBASE_API_KEY=

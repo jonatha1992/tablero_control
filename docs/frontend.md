@@ -42,6 +42,7 @@ Layout principal `'use client'`. Contiene:
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para instalar PWA (visible si no está en modo standalone; si hay `beforeinstallprompt` dispara el prompt, si no navega a `/dashboard/config` con instrucciones), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar. Manifest: `public/manifest.json` con íconos `icon-192.png` y `icon-512.png` (requeridos para que Chrome dispare `beforeinstallprompt`).
 - **Home landing** (`src/app/page.tsx`) — botón **Instalar** en el header público (`HomeInstallButton`); mismo hook PWA; sin prompt muestra tip iOS/Chrome.
 - **FAB IA** (`id="tour-fab"`) — botón flotante bottom-right → abre `AiAssistantPanel`. Punto de entrada al asistente IA y al dictado de tareas.
+- **AiAssistantPanel** (`src/components/layout/ai-assistant-panel.tsx`) — composer con texto, voz y una imagen pendiente. El botón de imagen abre un file input `accept="image/*"`; pegar una captura en el input deja thumbnail pendiente sin auto-enviar. Enviar se habilita con texto o imagen, muestra la miniatura en la burbuja local del usuario y manda `{ mimeType, base64 }` solo en el turno actual.
 - **OnboardingTour** — componente invisible que gestiona el tour con driver.js.
 
 ## Icon colors
