@@ -202,7 +202,7 @@ Modal legacy de dictado: `dictate-tasks-modal.tsx` (misma preview compartida).
 
 ### Flujo Planificador (lenguaje natural)
 
-Imagen en chat: el panel permite adjuntar una sola imagen (upload o paste) para que Gemini `gemini-2.5-flash` la normalice antes de ejecutar el planner. La imagen no se persiste; viaja inline en `POST /api/assistant/planner` solo para el turno actual y se mergea como `[Contenido de la imagen]` antes de `runPlannerAgent`.
+Imagen en chat: el panel permite adjuntar una sola imagen (upload o paste). Si se envía **solo la imagen**, el asistente pregunta Eventos o Tareas (`clarify`); al elegir, reenvía la imagen con intención clara y Gemini `gemini-2.5-flash` la normaliza antes del planner. Si el mensaje ya pide eventos/tareas, no pregunta. La imagen no se persiste; viaja inline en `POST /api/assistant/planner` y se mergea como `[Contenido de la imagen]` antes de `runPlannerAgent`.
 
 1. Usuario describe tareas en español (texto o 🎤).
 2. `POST /api/assistant/planner` → `runPlannerAgent` (intent + pipeline).

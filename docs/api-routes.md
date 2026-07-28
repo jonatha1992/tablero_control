@@ -39,7 +39,7 @@ POST   /api/tasks/from-text     ← extracción LLM desde texto + contexto tenan
 ## Assistant (IA)
 ```
 POST   /api/assistant/chat           ← chat informativo; body: { messages, mode?: 'assistant'|'planner' }
-POST   /api/assistant/planner        ← Planificador: intent → clarify | preview_tasks | preview_events | preview_plan; body `{ message?, messages?, image?: { mimeType, base64 } }`, imagen opcional jpeg/png/webp/gif <= 4 MB via Gemini
+POST   /api/assistant/planner        ← Planificador: intent → clarify | preview_tasks | preview_events | preview_plan; body `{ message?, messages?, image?: { mimeType, base64 } }`; imagen sola → clarify kind Eventos/Tareas; con texto + imagen → Gemini + agent; jpeg/png/webp/gif <= 4 MB
 POST   /api/assistant/generate-plan  ← genera planificación sprint/objetivo
 ```
 
