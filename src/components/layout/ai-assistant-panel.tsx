@@ -120,6 +120,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const retainedImageForKindRef = useRef<PendingPlannerImage | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -214,6 +215,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     chat.clear();
     setInput('');
     setPendingImage(null);
+    retainedImageForKindRef.current = null;
     onOpenChange(false);
   };
 
@@ -222,8 +224,24 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
     const image = text === undefined ? pendingImage ?? undefined : undefined;
     if ((!msg && !image) || isLoading || micState !== 'idle') return;
     setInput('');
+    // Keep image for Eventos/Tareas clarify after image-only send.
+    retainedImageForKindRef.current = image && !msg ? image : null;
     setPendingImage(null);
     await send(msg, image);
+  };
+
+  const handleAnswerClarify = (field: string, answer: string) => {
+    if (field === 'kind' && retainedImageForKindRef.current) {
+      const image = retainedImageForKindRef.current;
+      retainedImageForKindRef.current = null;
+      const wantsTasks = answer.toLowerCase().includes('tarea');
+      const prompt = wantsTasks
+        ? 'Creá tareas a partir de la imagen'
+        : 'Creá eventos de calendario a partir de la imagen';
+      void send(prompt, image);
+      return;
+    }
+    answerClarify(field, answer);
   };
 
   const handleConfirmPreview = async (msgIdx: number, type: 'cycle' | 'objective', description: string) => {
@@ -486,7 +504,7 @@ export function AiAssistantPanel({ open, onOpenChange }: AiAssistantPanelProps) 
                         <button
                           key={opt}
                           type="button"
-                          onClick={() => answerClarify(msg.field, opt)}
+                          onClick={() => handleAnswerClarify(msg.field, opt)}
                           className="rounded-full border border-border bg-background px-3 py-1 text-xs hover:bg-muted transition-colors"
                         >
                           {opt}

@@ -104,23 +104,20 @@ describe('POST /api/assistant/planner image payload', () => {
     expect(readImageForPlanner).not.toHaveBeenCalled();
   });
 
-  it('allows image-only requests and sends vision text to the planner agent', async () => {
+  it('asks Eventos vs Tareas on image-only before calling vision', async () => {
     const res = await POST(makeRequest({
       message: '',
       image: { mimeType: 'image/png', base64: 'aGVsbG8=' },
     }));
 
     expect(res.status).toBe(200);
-    expect(readImageForPlanner).toHaveBeenCalledWith({
-      mimeType: 'image/png',
-      base64: 'aGVsbG8=',
+    await expect(res.json()).resolves.toMatchObject({
+      type: 'clarify',
+      field: 'kind',
+      options: ['Eventos', 'Tareas'],
     });
-    expect(runPlannerAgent).toHaveBeenCalledWith(
-      expect.stringContaining('[Contenido de la imagen]'),
-      expect.anything(),
-      [],
-    );
-    expect(vi.mocked(runPlannerAgent).mock.calls[0][0]).toContain('Final de Base de Datos');
+    expect(readImageForPlanner).not.toHaveBeenCalled();
+    expect(runPlannerAgent).not.toHaveBeenCalled();
   });
 
   it('merges user text with vision text before planner execution', async () => {
@@ -144,7 +141,7 @@ describe('POST /api/assistant/planner image payload', () => {
     );
 
     const res = await POST(makeRequest({
-      message: '',
+      message: 'creá eventos',
       image: { mimeType: 'image/webp', base64: 'aGVsbG8=' },
     }));
 

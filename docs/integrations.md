@@ -151,7 +151,7 @@ Variable: `GROQ_API_KEY` (rotación multi-provider vía `src/lib/ai/providers.ts
 }
 ```
 
-Cuando hay imagen, `src/lib/ai/vision-image.ts` usa Gemini `gemini-2.5-flash` con `GOOGLE_AI_API_KEY` para convertir la captura en texto normalizado. Ese texto se agrega al mensaje efectivo y luego sigue el flujo existente de `runPlannerAgent`; no se persiste en Cloudinary ni en base de datos. Límite: una imagen `jpeg|png|webp|gif` de hasta 4 MB.
+Cuando hay imagen **con texto**, `src/lib/ai/vision-image.ts` usa Gemini `gemini-2.5-flash` con `GOOGLE_AI_API_KEY` para convertir la captura en texto normalizado. Ese texto se agrega al mensaje efectivo y luego sigue el flujo existente de `runPlannerAgent`. Si la imagen va **sola** (sin texto), el planner responde primero con `clarify` (`field: kind`, opciones Eventos/Tareas) y recién después de la elección se lee la imagen. No se persiste en Cloudinary ni en base de datos. Límite: una imagen `jpeg|png|webp|gif` de hasta 4 MB.
 
 Variable:
 

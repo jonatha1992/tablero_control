@@ -116,6 +116,16 @@ export const POST = handle(async (request: NextRequest) => {
   }
 
   try {
+    // Image-only: ask Eventos vs Tareas before spending vision / extraction.
+    if (parsedImage.image && !message) {
+      return NextResponse.json({
+        type: 'clarify',
+        question: '¿Querés crear eventos o tareas a partir de esta imagen?',
+        options: ['Eventos', 'Tareas'],
+        field: 'kind',
+      } satisfies PlannerResponse);
+    }
+
     const ctx = await loadExtractContext(user.businessId);
     let effectiveMessage = message;
 
