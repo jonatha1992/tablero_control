@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -207,6 +208,9 @@ export function CalendarEventSheet({ event, open, onOpenChange }: CalendarEventS
             <CalendarDays className="h-4 w-4 text-primary" />
             <DialogTitle>Editar evento</DialogTitle>
           </div>
+          <DialogDescription className="sr-only">
+            Editá título, horario, participantes y color del evento.
+          </DialogDescription>
         </DialogHeader>
         {/* key remounts the form when switching between events */}
         <EditForm key={event.id} event={event} onClose={() => onOpenChange(false)} />

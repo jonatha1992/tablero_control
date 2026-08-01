@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -33,7 +34,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { can } from '@/lib/permissions';
 import { APP_VERSION, BUILD_DATE } from '@/config/version';
-import { NAV_ICON_COLORS, NAV_ICON_CHILD_SOFTEN } from '@/lib/constants/ui-icon-colors';
+import { prefetchDashboardRoute } from '@/lib/prefetch-dashboard';
 
 interface ChildItem {
   href: string;
@@ -61,7 +62,6 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
     tourId: 'tour-nav-dashboard',
     exact: true,
-    iconClass: NAV_ICON_COLORS.dashboard,
   },
   {
     href: '/dashboard/tareas',
@@ -81,7 +81,6 @@ const navItems: NavItem[] = [
     label: 'Calendario',
     icon: Calendar,
     tourId: 'tour-nav-calendario',
-    iconClass: NAV_ICON_COLORS.planificacion,
   },
   {
     href: '/dashboard/planificacion',
@@ -114,12 +113,12 @@ const navItems: NavItem[] = [
 ];
 
 const superAdminItems = [
-  { href: '/superadmin',               label: 'Plataforma',    icon: ShieldCheck,       exact: true,  iconClass: NAV_ICON_COLORS.superadmin },
-  { href: '/superadmin/businesses',    label: 'Espacios',      icon: Building2,         exact: false, iconClass: NAV_ICON_COLORS.superadmin },
-  { href: '/superadmin/users',         label: 'Usuarios',      icon: Users,             exact: false, iconClass: NAV_ICON_COLORS.superadmin },
-  { href: '/superadmin/subscriptions', label: 'Suscripciones', icon: CreditCard,        exact: false, iconClass: NAV_ICON_COLORS.billing },
-  { href: '/superadmin/planes',        label: 'Planes',        icon: SlidersHorizontal, exact: false, iconClass: NAV_ICON_COLORS.config },
-  { href: '/superadmin/audit',         label: 'Auditoría',     icon: ScrollText,        exact: false, iconClass: NAV_ICON_COLORS.reportes },
+  { href: '/superadmin',               label: 'Plataforma',    icon: ShieldCheck,       exact: true },
+  { href: '/superadmin/businesses',    label: 'Espacios',      icon: Building2,         exact: false },
+  { href: '/superadmin/users',         label: 'Usuarios',      icon: Users,             exact: false },
+  { href: '/superadmin/subscriptions', label: 'Suscripciones', icon: CreditCard,        exact: false },
+  { href: '/superadmin/planes',        label: 'Planes',        icon: SlidersHorizontal, exact: false },
+  { href: '/superadmin/audit',         label: 'Auditoría',     icon: ScrollText,        exact: false },
 ];
 
 interface SidebarProps {
@@ -134,7 +133,15 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   const pathname = usePathname();
   const { isSuperAdmin, user, isAdmin } = useAuth();
   const labels = useSpaceLabels();
+  const queryClient = useQueryClient();
 
+  const warmRoute = (href: string) => {
+    prefetchDashboardRoute(queryClient, href, {
+      businessId: user?.businessId,
+      userId: user?.id,
+      isSuperAdmin,
+    });
+  };
   function isItemVisible(item: NavItem): boolean {
     if (!user) return false;
     switch (item.href) {
@@ -215,6 +222,8 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
               <Link
                 href={item.href}
                 id={item.tourId}
+                onMouseEnter={() => warmRoute(item.href)}
+                onFocus={() => warmRoute(item.href)}
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   parentActive
@@ -243,6 +252,8 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                       <Link
                         key={child.href}
                         href={child.href}
+                        onMouseEnter={() => warmRoute(child.href)}
+                        onFocus={() => warmRoute(child.href)}
                         className={cn(
                           'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                           childActive

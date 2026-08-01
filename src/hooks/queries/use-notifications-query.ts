@@ -33,8 +33,9 @@ export function useNotificationsQuery() {
       fetchAuth<{ notifications: AppNotification[]; unreadCount: number }>(
         '/api/notifications'
       ),
-    refetchInterval: 30_000, // refresca cada 30s
-    staleTime: 15_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    staleTime: 45_000,
   });
 }
 

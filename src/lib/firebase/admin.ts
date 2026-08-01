@@ -62,10 +62,36 @@ export function getAdminAuth() {
   return getAuth(getAdminApp());
 }
 
-// Verify Firebase ID token (for API routes)
+type DecodedIdToken = Awaited<ReturnType<ReturnType<typeof getAdminAuth>['verifyIdToken']>>;
+
+/** Avoid remote/crypto verify on every API hit during module navigation. */
+const TOKEN_CACHE_MAX = 200;
+const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
+const verifiedTokenCache = new Map<string, { decoded: DecodedIdToken; expiresAt: number }>();
+
+function pruneVerifiedTokenCache(now: number) {
+  for (const [key, entry] of verifiedTokenCache) {
+    if (entry.expiresAt <= now) verifiedTokenCache.delete(key);
+  }
+  while (verifiedTokenCache.size > TOKEN_CACHE_MAX) {
+    const oldest = verifiedTokenCache.keys().next().value;
+    if (oldest === undefined) break;
+    verifiedTokenCache.delete(oldest);
+  }
+}
+
+// Verify Firebase ID token (for API routes) — short in-memory cache
 export async function verifyToken(token: string) {
-  const auth = getAdminAuth();
-  return auth.verifyIdToken(token);
+  const now = Date.now();
+  const cached = verifiedTokenCache.get(token);
+  if (cached && cached.expiresAt > now) return cached.decoded;
+
+  const decoded = await getAdminAuth().verifyIdToken(token);
+  const expMs = typeof decoded.exp === 'number' ? decoded.exp * 1000 - 60_000 : now + TOKEN_CACHE_TTL_MS;
+  const expiresAt = Math.min(now + TOKEN_CACHE_TTL_MS, Math.max(now + 5_000, expMs));
+  verifiedTokenCache.set(token, { decoded, expiresAt });
+  pruneVerifiedTokenCache(now);
+  return decoded;
 }
 
 let fcmAvailable: boolean | null = null;

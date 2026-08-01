@@ -36,6 +36,7 @@ export function useTasksQuery(filters?: TaskFilters) {
         : tasksApi.getByCreator(user.id, signal);
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

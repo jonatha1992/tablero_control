@@ -30,6 +30,8 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 
 ## React Query (`src/hooks/`)
 
+Provider en `src/components/providers.tsx`: `staleTime` default 5 min, `refetchOnWindowFocus: false` (evita ráfagas al volver al tab). Prefetch de navegación: ver Sidebar abajo.
+
 - Queries: `src/hooks/queries/` — query keys co-localizados en el archivo
 - Mutations: `src/hooks/mutations/`
 - Funciones HTTP: `src/lib/api/` (e.g. `tasksApi`, `membersApi`, `billingApi`)
@@ -38,7 +40,8 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 
 Layout principal `'use client'`. Contiene:
 
-- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Archivadas); **Calendario** (ítem top-level, acceso directo a `/dashboard/tareas/calendario`); **Planificación** (Eventos, Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Calendario quedó fuera del grupo Planificación para acceso rápido; Eventos sigue en Planificación. Iconos de nav usan tints por área (`NAV_ICON_COLORS`); ver sección **Icon colors** abajo.
+- **Home `/dashboard`** (`src/app/dashboard/page.tsx`) — fila de KPIs (activas, completadas, bloqueadas, urgentes, **eventos pendientes**). La card de eventos es KPI: solo conteo + hint del próximo; click → `/dashboard/eventos`. Luego burndown/`DashboardMetrics` y resumen por sector.
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Archivadas); **Calendario** (ítem top-level, acceso directo a `/dashboard/tareas/calendario`); **Planificación** (Eventos, Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Calendario quedó fuera del grupo Planificación para acceso rápido; Eventos sigue en Planificación. Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para instalar PWA (visible si no está en modo standalone; si hay `beforeinstallprompt` dispara el prompt, si no navega a `/dashboard/config` con instrucciones), campana de notificaciones, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar. Manifest: `public/manifest.json` con íconos `icon-192.png` y `icon-512.png` (requeridos para que Chrome dispare `beforeinstallprompt`).
 - **Home landing** (`src/app/page.tsx`) — botón **Instalar** en el header público (`HomeInstallButton`); mismo hook PWA; sin prompt muestra tip iOS/Chrome.
 - **FAB IA** (`id="tour-fab"`) — botón flotante bottom-right → abre `AiAssistantPanel`. Punto de entrada al asistente IA y al dictado de tareas.
@@ -48,6 +51,10 @@ Layout principal `'use client'`. Contiene:
 ## Icon colors
 
 Mapa central: [`src/lib/constants/ui-icon-colors.ts`](../src/lib/constants/ui-icon-colors.ts) (`NAV_ICON_COLORS`, `SEMANTIC_ICON`, `priorityIconClass`).
+
+**Sidebar:** iconos neutros (heredan color del link). El acento visual es el estado activo (`bg-primary`), no un arcoíris por ítem.
+
+`NAV_ICON_COLORS` se usa en **contenido de página** (empty states, headers de sección, Ayuda), no en la nav lateral:
 
 | Área | Tint |
 |------|------|
@@ -62,9 +69,7 @@ Mapa central: [`src/lib/constants/ui-icon-colors.ts`](../src/lib/constants/ui-ic
 | Superadmin | fuchsia |
 
 **Reglas:**
-- Color solo en el **icono**; labels siguen `text-muted-foreground` / `text-foreground`.
-- Item activo del sidebar (`bg-primary`): icono `text-primary-foreground` (sin tint de área).
-- Hijos del nav: misma familia del padre + `opacity-80` si no tienen `iconClass` propio.
+- Color solo en el **icono** de contenido; labels siguen `text-muted-foreground` / `text-foreground`.
 - Prioridad / status / tipo: reusar [`task-colors.ts`](../src/lib/constants/task-colors.ts); filtros usan `SEMANTIC_ICON` / `priorityIconClass` (Flag, MapPin, Target, Users).
 - Chevron, close (X), search genérico: muted. Logout: muted + `hover:text-destructive`. Notificaciones unread / PWA install: `SEMANTIC_ICON.notification` / `.install`.
 - El color refuerza forma/label; nunca es el único cue de significado.

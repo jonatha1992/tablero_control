@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
-import { isPending } from '@/lib/tasks/task-status';
+import { DashboardUpcomingEvents } from '@/components/dashboard/dashboard-upcoming-events';
 import { AlertCircle, CheckCircle2, Clock, Zap, TrendingUp } from 'lucide-react';
 import { isActionableUpToToday } from '@/lib/tasks/task-status';
 
@@ -39,7 +39,7 @@ export default function DashboardPage() {
     <div className="flex flex-col h-full overflow-y-auto space-y-6 pb-8">
 
       {/* KPI Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card className="relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
           <div className="absolute top-0 right-0 p-4 opacity-30 dark:opacity-10">
             <Clock className="h-12 w-12 text-blue-600" />
@@ -93,6 +93,8 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground mt-1">Prioridad inmediata</p>
           </CardContent>
         </Card>
+
+        <DashboardUpcomingEvents />
       </div>
 
       <div className="grid gap-6 grid-cols-1 xl:grid-cols-3">

@@ -34,7 +34,7 @@ function groupByDate(events: CalendarEvent[]) {
 export default function EventosPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const { data: events = [], isLoading } = useCalendarEventsQuery();
+  const { data: events = [], isPending } = useCalendarEventsQuery();
   const deleteMutation = useDeleteCalendarEvent();
 
   const groups = groupByDate(
@@ -53,15 +53,15 @@ export default function EventosPage() {
         </Button>
       </div>
 
-      {/* Loading */}
-      {isLoading && (
+      {/* Loading — only when no cached data */}
+      {isPending && events.length === 0 && (
         <div className="flex justify-center py-12">
           <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
         </div>
       )}
 
       {/* Empty state */}
-      {!isLoading && events.length === 0 && (
+      {!isPending && events.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-muted-foreground">
           <div className="rounded-full bg-muted p-6">
             <CalendarDays className={cn('h-10 w-10', NAV_ICON_COLORS.planificacion)} />

@@ -9,15 +9,16 @@ export const GET = handle(async (req: NextRequest) => {
   if (userOrResponse instanceof NextResponse) return userOrResponse;
   const user = userOrResponse;
 
-  const notifications = await prisma.notification.findMany({
-    where: { userId: user.uid },
-    orderBy: { createdAt: 'desc' },
-    take: 30,
-  });
-
-  const unreadCount = await prisma.notification.count({
-    where: { userId: user.uid, read: false },
-  });
+  const [notifications, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId: user.uid },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    }),
+    prisma.notification.count({
+      where: { userId: user.uid, read: false },
+    }),
+  ]);
 
   return NextResponse.json({ notifications, unreadCount });
 });
