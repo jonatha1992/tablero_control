@@ -3,12 +3,10 @@
 import { useState } from 'react';
 import { useCalendarEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import { CreateEventModal } from '@/components/tareas/create-event-modal';
+import { CalendarEventSheet } from '@/components/calendario/calendar-event-sheet';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, Plus, Clock, Trash2 } from 'lucide-react';
-import { calendarEventsApi } from '@/lib/api/calendar-events';
-import { useQueryClient } from '@tanstack/react-query';
-import { calendarEventKeys } from '@/hooks/queries/use-calendar-events-query';
-import { toast } from 'sonner';
+import { useDeleteCalendarEvent } from '@/hooks/mutations/use-delete-calendar-event';
 import type { CalendarEvent } from '@/types/domain/calendar';
 import { NAV_ICON_COLORS } from '@/lib/constants/ui-icon-colors';
 import { cn } from '@/lib/utils';
@@ -35,18 +33,9 @@ function groupByDate(events: CalendarEvent[]) {
 
 export default function EventosPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const { data: events = [], isLoading } = useCalendarEventsQuery();
-  const queryClient = useQueryClient();
-
-  const handleDelete = async (id: string) => {
-    try {
-      await calendarEventsApi.delete(id);
-      queryClient.invalidateQueries({ queryKey: calendarEventKeys.all });
-      toast.success('Evento eliminado');
-    } catch {
-      toast.error('Error al eliminar evento');
-    }
-  };
+  const deleteMutation = useDeleteCalendarEvent();
 
   const groups = groupByDate(
     [...events].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
@@ -98,7 +87,16 @@ export default function EventosPage() {
             {group.events.map((event) => (
               <div
                 key={event.id}
-                className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 group hover:bg-muted/30 transition-colors"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedEvent(event)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedEvent(event);
+                  }
+                }}
+                className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 group hover:bg-muted/30 transition-colors cursor-pointer"
               >
                 <div
                   className="h-10 w-1.5 rounded-full shrink-0"
@@ -119,7 +117,10 @@ export default function EventosPage() {
                   style={{ backgroundColor: event.color ?? '#3b82f6' }}
                 />
                 <button
-                  onClick={() => handleDelete(event.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteMutation.mutate(event.id);
+                  }}
                   className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1 rounded"
                   title="Eliminar"
                 >
@@ -132,6 +133,11 @@ export default function EventosPage() {
       ))}
 
       <CreateEventModal open={modalOpen} onOpenChange={setModalOpen} />
+      <CalendarEventSheet
+        event={selectedEvent}
+        open={!!selectedEvent}
+        onOpenChange={(open) => { if (!open) setSelectedEvent(null); }}
+      />
     </div>
   );
 }

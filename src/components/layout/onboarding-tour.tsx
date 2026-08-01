@@ -20,7 +20,7 @@ const STEPS = [
     element: '#tour-nav-tareas',
     popover: {
       title: '✅ Tablero Kanban',
-      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye vistas de Agenda, Calendario y Cronograma.',
+      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye vistas de Agenda y Cronograma.',
       side: 'right' as const,
     },
   },
@@ -33,10 +33,18 @@ const STEPS = [
     },
   },
   {
+    element: '#tour-nav-calendario',
+    popover: {
+      title: '📅 Calendario',
+      description: 'Vista mensual/semanal de tareas con fecha y eventos del espacio. Arrastrá tareas para cambiar la fecha.',
+      side: 'right' as const,
+    },
+  },
+  {
     element: '#tour-nav-planificacion',
     popover: {
-      title: '📅 Planificación',
-      description: 'Organizá el trabajo en ciclos (sprints) con fechas de inicio y fin, y definí objetivos de negocio vinculados a tareas.',
+      title: '🎯 Planificación',
+      description: 'Eventos, períodos (sprints) y objetivos de negocio vinculados a tareas.',
       side: 'right' as const,
     },
   },

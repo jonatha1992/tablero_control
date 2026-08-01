@@ -77,13 +77,19 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    href: '/dashboard/tareas/calendario',
+    label: 'Calendario',
+    icon: Calendar,
+    tourId: 'tour-nav-calendario',
+    iconClass: NAV_ICON_COLORS.planificacion,
+  },
+  {
     href: '/dashboard/planificacion',
     label: 'Planificación',
     icon: Layers,
     tourId: 'tour-nav-planificacion',
     iconClass: NAV_ICON_COLORS.planificacion,
     children: [
-      { href: '/dashboard/tareas/calendario',       label: 'Calendario', icon: Calendar },
       { href: '/dashboard/eventos',                 label: 'Eventos',    icon: CalendarDays },
       { href: '/dashboard/planificacion',           label: 'Períodos',   icon: Timer, exact: true },
       { href: '/dashboard/planificacion/objetivos', label: 'Objetivos',  icon: Target },
@@ -134,6 +140,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     switch (item.href) {
       case '/dashboard': return true;
       case '/dashboard/tareas': return can(user, 'task.read');
+      case '/dashboard/tareas/calendario': return can(user, 'task.read');
       case '/dashboard/planificacion': return can(user, 'task.create');
       case '/dashboard/equipo': return user.role === 'admin' || user.role === 'superadmin' || user.role === 'responsable';
       case '/dashboard/reportes': return can(user, 'business.reports.read');

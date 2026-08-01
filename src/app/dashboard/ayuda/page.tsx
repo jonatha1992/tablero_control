@@ -93,7 +93,7 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Calendario',
-        description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Está en Planificación (no en Tareas) porque combina trabajo y eventos en una línea temporal.',
+        description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Acceso directo desde el ítem Calendario del sidebar (entre Tareas y Planificación).',
       },
       {
         title: 'Eventos',
