@@ -122,6 +122,7 @@ export const POST = handle(async (req: NextRequest) => {
   const sub = await prisma.subscription.findUnique({ where: { businessId } });
   if (!sub) return NextResponse.json({ error: 'no_subscription' }, { status: 404 });
 
+  // If subscription is pending and no payment ID provided, search for approved payments
   let payments: MpPayment[] = [];
 
   if (body.paymentId) {

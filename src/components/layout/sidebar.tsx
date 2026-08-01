@@ -42,7 +42,6 @@ interface ChildItem {
   icon: React.ElementType;
   exact?: boolean;
   adminOnly?: boolean;
-  iconClass?: string;
 }
 
 interface NavItem {
@@ -51,7 +50,6 @@ interface NavItem {
   icon: React.ElementType;
   tourId?: string;
   exact?: boolean;
-  iconClass: string;
   children?: ChildItem[];
 }
 
@@ -68,7 +66,6 @@ const navItems: NavItem[] = [
     label: 'Tareas',
     icon: CheckSquare,
     tourId: 'tour-nav-tareas',
-    iconClass: NAV_ICON_COLORS.tareas,
     children: [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
       { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
@@ -87,7 +84,6 @@ const navItems: NavItem[] = [
     label: 'Planificación',
     icon: Layers,
     tourId: 'tour-nav-planificacion',
-    iconClass: NAV_ICON_COLORS.planificacion,
     children: [
       { href: '/dashboard/eventos',                 label: 'Eventos',    icon: CalendarDays },
       { href: '/dashboard/planificacion',           label: 'Períodos',   icon: Timer, exact: true },
@@ -99,17 +95,16 @@ const navItems: NavItem[] = [
     label: 'Equipo',
     icon: Users,
     tourId: 'tour-nav-equipo',
-    iconClass: NAV_ICON_COLORS.equipo,
     children: [
       { href: '/dashboard/equipo',          label: 'Miembros', icon: Users,       exact: true },
       { href: '/dashboard/equipo/sectores', label: '__SITES__', icon: Building2, adminOnly: true },
       { href: '/dashboard/equipo/roles',    label: 'Roles',    icon: ShieldCheck, adminOnly: true },
     ],
   },
-  { href: '/dashboard/reportes',  label: 'Reportes',      icon: BarChart2,  tourId: 'tour-nav-reportes', iconClass: NAV_ICON_COLORS.reportes },
-  { href: '/dashboard/billing',   label: 'Facturación',   icon: CreditCard, tourId: 'tour-nav-billing',  iconClass: NAV_ICON_COLORS.billing },
-  { href: '/dashboard/config',    label: 'Configuración', icon: Settings,   tourId: 'tour-nav-config',   iconClass: NAV_ICON_COLORS.config },
-  { href: '/dashboard/ayuda',     label: 'Ayuda',         icon: HelpCircle, tourId: 'tour-nav-ayuda',    iconClass: NAV_ICON_COLORS.ayuda },
+  { href: '/dashboard/reportes',  label: 'Reportes',      icon: BarChart2,  tourId: 'tour-nav-reportes' },
+  { href: '/dashboard/billing',   label: 'Facturación',   icon: CreditCard, tourId: 'tour-nav-billing' },
+  { href: '/dashboard/config',    label: 'Configuración', icon: Settings,   tourId: 'tour-nav-config' },
+  { href: '/dashboard/ayuda',     label: 'Ayuda',         icon: HelpCircle, tourId: 'tour-nav-ayuda' },
 ];
 
 const superAdminItems = [
@@ -233,12 +228,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                 )}
                 title={collapsed ? item.label : undefined}
               >
-                <item.icon
-                  className={cn(
-                    'h-5 w-5 shrink-0',
-                    !parentActive && item.iconClass,
-                  )}
-                />
+                <item.icon className="h-5 w-5 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
 
@@ -247,7 +237,6 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                 <div className="mt-0.5 ml-3 pl-3 border-l border-border space-y-0.5">
                   {visibleChildren.map((child) => {
                     const childActive = isChildActive(child);
-                    const childTint = child.iconClass ?? item.iconClass;
                     return (
                       <Link
                         key={child.href}
@@ -261,13 +250,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                         )}
                       >
-                        <child.icon
-                          className={cn(
-                            'h-3.5 w-3.5 shrink-0',
-                            !childActive && childTint,
-                            !childActive && !child.iconClass && NAV_ICON_CHILD_SOFTEN,
-                          )}
-                        />
+                        <child.icon className="h-3.5 w-3.5 shrink-0" />
                         {child.label}
                       </Link>
                     );
@@ -299,12 +282,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                     )}
                     title={collapsed ? item.label : undefined}
                   >
-                    <item.icon
-                      className={cn(
-                        'h-5 w-5 shrink-0',
-                        !isActive && item.iconClass,
-                      )}
-                    />
+                    <item.icon className="h-5 w-5 shrink-0" />
                     {!collapsed && <span>{item.label}</span>}
                   </Link>
                 );

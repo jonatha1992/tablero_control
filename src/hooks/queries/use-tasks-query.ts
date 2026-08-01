@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { tasksApi } from '@/lib/api/tasks';
-import { isAbortError } from '@/lib/is-abort-error';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskFilters } from '@/types/domain/task';
 
