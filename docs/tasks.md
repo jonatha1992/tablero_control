@@ -160,6 +160,15 @@ La página fetcha eventos con ventana de 1 mes atrás → 2 meses adelante (`use
 - `src/hooks/mutations/use-update-calendar-event.ts`
 - `src/hooks/mutations/use-delete-calendar-event.ts`
 
+### Lista Eventos (`/dashboard/eventos`)
+
+Página dedicada: lista agrupada en **Próximos** / **Pasados**. Fetch sin ventana de fechas (`useCalendarEventsQuery()`).
+
+**Interacción:**
+- Click en fila → abre `CalendarEventSheet` (mismo modal de edición que Calendario)
+- Botón trash en hover → `useDeleteCalendarEvent` (sin confirmación extra)
+- "Nuevo evento" → `CreateEventModal`
+
 ### Vista Agenda (`/dashboard/tareas/agenda`)
 
 La agenda muestra tareas y eventos en secciones separadas. Los eventos del próximo mes se cargan con `useCalendarEventsQuery(eventsFrom, eventsTo)` (ventana: hoy → hoy+30d).
