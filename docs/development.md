@@ -83,7 +83,30 @@ Los emuladores arrancan en:
 
 ## PostgreSQL
 
-**Desarrollo y test comparten la misma base:** `.env.local` apunta a PostgreSQL en **Railway** (`DATABASE_URL`). No hay instancia Postgres local separada en el flujo habitual del equipo.
+**Desarrollo y test comparten la misma base:** `.env.local` apunta a PostgreSQL en **Railway** (`DATABASE_URL` vía proxy público). No hay instancia Postgres local separada en el flujo habitual del equipo.
+
+### Latencia al cambiar de módulo (dev)
+
+Cada página del dashboard es client-side y dispara APIs (`requireUser` + Prisma) contra Railway. Mitigaciones en código:
+
+- Cache in-memory de `verifyIdToken` (~5 min) y de usuario autenticado (60s) → menos round-trips repetidos
+- Prefetch de queries al hover/focus del sidebar (`src/lib/prefetch-dashboard.ts`)
+- FullCalendar lazy (`dynamic`) en `/dashboard/tareas/calendario`
+- React Query: `refetchOnWindowFocus: false`; notificaciones cada 60s
+- Spinners solo cuando no hay data en cache (`isPending`)
+
+Si la latencia sigue alta, la causa residual es el proxy remoto de Postgres — no el render de React.
+
+### Falso positivo en el portal de Next (`params` / `searchParams`)
+
+En `npm run dev`, al **inspeccionar elementos con Cursor** (hover/click del selector DOM), el terminal y `<nextjs-portal>` se llenan de:
+
+```
+params are being enumerated. `params` is a Promise...
+The keys of `searchParams` were accessed directly...
+```
+
+El stack siempre apunta a `getReactComponentInfo` → `mousemoveListener` — código del **inspector de Cursor**, no de la app. Las páginas/API del repo ya usan `await params` / `use(params)` / `useSearchParams()` correctamente. **No hay nada que arreglar en el código** por estos mensajes; se cortan al dejar de inspeccionar.
 
 ```bash
 # Sincronizar schema con la base de datos (usar db push en Railway)

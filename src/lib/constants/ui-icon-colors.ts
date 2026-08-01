@@ -1,6 +1,10 @@
 import type { TaskPriority } from '@/types/domain/task';
 
-/** Nav / domain icon tints — color on icon only; labels stay muted/foreground. */
+/**
+ * Domain icon tints for page content (empty states, section headers, Ayuda).
+ * Not used in the sidebar — nav stays monochrome.
+ * Color on icon only; labels stay muted/foreground.
+ */
 export const NAV_ICON_COLORS = {
   dashboard: 'text-blue-600 dark:text-blue-400',
   tareas: 'text-sky-600 dark:text-sky-400',
@@ -14,9 +18,6 @@ export const NAV_ICON_COLORS = {
 } as const;
 
 export type NavIconKey = keyof typeof NAV_ICON_COLORS;
-
-/** Soften nested nav child icons (apply with parent iconClass). */
-export const NAV_ICON_CHILD_SOFTEN = 'opacity-80';
 
 /** Semantic icons in filters, toolbars, empty states. */
 export const SEMANTIC_ICON = {

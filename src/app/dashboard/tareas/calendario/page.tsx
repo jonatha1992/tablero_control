@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarView } from '@/components/calendario/calendar-view';
+import dynamic from 'next/dynamic';
 import { CalendarEventSheet } from '@/components/calendario/calendar-event-sheet';
 import { TaskFilterBar } from '@/components/tareas/task-filter-bar';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
@@ -18,11 +18,22 @@ import { matchesTaskFilters } from '@/types/ui/task-filters.ui';
 import type { Task } from '@/types';
 import type { CalendarEvent } from '@/types/domain/calendar';
 
+const CalendarView = dynamic(
+  () => import('@/components/calendario/calendar-view').then((m) => m.CalendarView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+        Cargando calendario...
+      </div>
+    ),
+  },
+);
 export default function CalendarioPage() {
   const { user } = useAuth();
-  const { data: tasks = [], isLoading } = useTasksQuery();
-  const { data: locations = [], isLoading: isLoadingLocations } = useLocationsQuery();
-  const { data: projects = [], isLoading: isLoadingProjects } = useProjectsQuery(user?.businessId ?? '');
+  const { data: tasks = [], isPending: isPendingTasks } = useTasksQuery();
+  const { data: locations = [], isPending: isPendingLocations } = useLocationsQuery();
+  const { data: projects = [], isPending: isPendingProjects } = useProjectsQuery(user?.businessId ?? '');
   const updateTask = useUpdateTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
@@ -75,7 +86,7 @@ export default function CalendarioPage() {
         showExcludeDoneToggle
       />
       <div className="flex-1 min-h-[600px] relative">
-        {isLoading || isLoadingProjects || isLoadingLocations ? (
+        {isPendingTasks || isPendingProjects || isPendingLocations ? (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             Cargando calendario...
           </div>

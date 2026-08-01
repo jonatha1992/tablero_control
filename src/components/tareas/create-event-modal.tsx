@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -78,6 +79,9 @@ export function CreateEventModal({ open, onOpenChange, initialDate }: CreateEven
             <CalendarDays className="h-4 w-4 text-primary" />
             <DialogTitle>Nuevo evento</DialogTitle>
           </div>
+          <DialogDescription className="sr-only">
+            Creá un evento de calendario con título, horario y participantes.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

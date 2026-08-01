@@ -40,6 +40,10 @@ const SECTIONS: Section[] = [
         description: 'Resumen de tareas no finalizadas, completadas, bloqueadas y urgentes del equipo. Incluye tareas en Backlog y tareas programadas para fechas futuras. Para ver solo lo accionable hoy, usá la vista Agenda.',
       },
       {
+        title: 'Eventos pendientes',
+        description: 'Card KPI en el dashboard (mismo estilo que Tareas activas). Muestra cuántos eventos aún no terminaron. Click abre Planificación → Eventos.',
+      },
+      {
         title: 'Actividad reciente',
         description: 'Últimas acciones realizadas por los miembros: tareas creadas, movidas o completadas.',
       },

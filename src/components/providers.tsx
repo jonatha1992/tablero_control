@@ -23,6 +23,8 @@ export function Providers({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 1000 * 60 * 5,
+            // Cached modules should paint immediately; refetch in background if stale.
+            refetchOnWindowFocus: false,
             retry: 1,
           },
         },

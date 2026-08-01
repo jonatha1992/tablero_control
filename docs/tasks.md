@@ -169,6 +169,10 @@ Página dedicada: lista agrupada en **Próximos** / **Pasados**. Fetch sin venta
 - Botón trash en hover → `useDeleteCalendarEvent` (sin confirmación extra)
 - "Nuevo evento" → `CreateEventModal`
 
+### Dashboard home (`/dashboard`)
+
+Home: **`DashboardUpcomingEvents`** en la fila de KPIs — solo conteo de pendientes (`end >= now`) + hint del próximo. Click en la card → `/dashboard/eventos`. Sin lista de eventos en el dashboard.
+
 ### Vista Agenda (`/dashboard/tareas/agenda`)
 
 La agenda muestra tareas y eventos en secciones separadas. Los eventos del próximo mes se cargan con `useCalendarEventsQuery(eventsFrom, eventsTo)` (ventana: hoy → hoy+30d).

@@ -17,7 +17,8 @@ export interface AuthedUser {
   data: User;
 }
 
-const AUTHED_USER_CACHE_TTL_MS = 5000;
+/** Longer TTL cuts Railway round-trips when switching modules (many parallel API calls). */
+const AUTHED_USER_CACHE_TTL_MS = 60_000;
 const authedUserCache = new Map<string, { user: AuthedUser; expiresAt: number }>();
 
 export function invalidateAuthedUserCache(uid: string): void {

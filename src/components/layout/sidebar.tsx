@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -33,7 +34,7 @@ import { useAuth } from '@/hooks/auth-context';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { can } from '@/lib/permissions';
 import { APP_VERSION, BUILD_DATE } from '@/config/version';
-import { NAV_ICON_COLORS, NAV_ICON_CHILD_SOFTEN } from '@/lib/constants/ui-icon-colors';
+import { prefetchDashboardRoute } from '@/lib/prefetch-dashboard';
 
 interface ChildItem {
   href: string;
@@ -41,7 +42,6 @@ interface ChildItem {
   icon: React.ElementType;
   exact?: boolean;
   adminOnly?: boolean;
-  iconClass?: string;
 }
 
 interface NavItem {
@@ -50,7 +50,6 @@ interface NavItem {
   icon: React.ElementType;
   tourId?: string;
   exact?: boolean;
-  iconClass: string;
   children?: ChildItem[];
 }
 
@@ -61,14 +60,12 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
     tourId: 'tour-nav-dashboard',
     exact: true,
-    iconClass: NAV_ICON_COLORS.dashboard,
   },
   {
     href: '/dashboard/tareas',
     label: 'Tareas',
     icon: CheckSquare,
     tourId: 'tour-nav-tareas',
-    iconClass: NAV_ICON_COLORS.tareas,
     children: [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
       { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
@@ -81,14 +78,12 @@ const navItems: NavItem[] = [
     label: 'Calendario',
     icon: Calendar,
     tourId: 'tour-nav-calendario',
-    iconClass: NAV_ICON_COLORS.planificacion,
   },
   {
     href: '/dashboard/planificacion',
     label: 'Planificación',
     icon: Layers,
     tourId: 'tour-nav-planificacion',
-    iconClass: NAV_ICON_COLORS.planificacion,
     children: [
       { href: '/dashboard/eventos',                 label: 'Eventos',    icon: CalendarDays },
       { href: '/dashboard/planificacion',           label: 'Períodos',   icon: Timer, exact: true },
@@ -100,26 +95,25 @@ const navItems: NavItem[] = [
     label: 'Equipo',
     icon: Users,
     tourId: 'tour-nav-equipo',
-    iconClass: NAV_ICON_COLORS.equipo,
     children: [
       { href: '/dashboard/equipo',          label: 'Miembros', icon: Users,       exact: true },
       { href: '/dashboard/equipo/sectores', label: '__SITES__', icon: Building2, adminOnly: true },
       { href: '/dashboard/equipo/roles',    label: 'Roles',    icon: ShieldCheck, adminOnly: true },
     ],
   },
-  { href: '/dashboard/reportes',  label: 'Reportes',      icon: BarChart2,  tourId: 'tour-nav-reportes', iconClass: NAV_ICON_COLORS.reportes },
-  { href: '/dashboard/billing',   label: 'Facturación',   icon: CreditCard, tourId: 'tour-nav-billing',  iconClass: NAV_ICON_COLORS.billing },
-  { href: '/dashboard/config',    label: 'Configuración', icon: Settings,   tourId: 'tour-nav-config',   iconClass: NAV_ICON_COLORS.config },
-  { href: '/dashboard/ayuda',     label: 'Ayuda',         icon: HelpCircle, tourId: 'tour-nav-ayuda',    iconClass: NAV_ICON_COLORS.ayuda },
+  { href: '/dashboard/reportes',  label: 'Reportes',      icon: BarChart2,  tourId: 'tour-nav-reportes' },
+  { href: '/dashboard/billing',   label: 'Facturación',   icon: CreditCard, tourId: 'tour-nav-billing' },
+  { href: '/dashboard/config',    label: 'Configuración', icon: Settings,   tourId: 'tour-nav-config' },
+  { href: '/dashboard/ayuda',     label: 'Ayuda',         icon: HelpCircle, tourId: 'tour-nav-ayuda' },
 ];
 
 const superAdminItems = [
-  { href: '/superadmin',               label: 'Plataforma',    icon: ShieldCheck,       exact: true,  iconClass: NAV_ICON_COLORS.superadmin },
-  { href: '/superadmin/businesses',    label: 'Espacios',      icon: Building2,         exact: false, iconClass: NAV_ICON_COLORS.superadmin },
-  { href: '/superadmin/users',         label: 'Usuarios',      icon: Users,             exact: false, iconClass: NAV_ICON_COLORS.superadmin },
-  { href: '/superadmin/subscriptions', label: 'Suscripciones', icon: CreditCard,        exact: false, iconClass: NAV_ICON_COLORS.billing },
-  { href: '/superadmin/planes',        label: 'Planes',        icon: SlidersHorizontal, exact: false, iconClass: NAV_ICON_COLORS.config },
-  { href: '/superadmin/audit',         label: 'Auditoría',     icon: ScrollText,        exact: false, iconClass: NAV_ICON_COLORS.reportes },
+  { href: '/superadmin',               label: 'Plataforma',    icon: ShieldCheck,       exact: true },
+  { href: '/superadmin/businesses',    label: 'Espacios',      icon: Building2,         exact: false },
+  { href: '/superadmin/users',         label: 'Usuarios',      icon: Users,             exact: false },
+  { href: '/superadmin/subscriptions', label: 'Suscripciones', icon: CreditCard,        exact: false },
+  { href: '/superadmin/planes',        label: 'Planes',        icon: SlidersHorizontal, exact: false },
+  { href: '/superadmin/audit',         label: 'Auditoría',     icon: ScrollText,        exact: false },
 ];
 
 interface SidebarProps {
@@ -134,7 +128,15 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   const pathname = usePathname();
   const { isSuperAdmin, user, isAdmin } = useAuth();
   const labels = useSpaceLabels();
+  const queryClient = useQueryClient();
 
+  const warmRoute = (href: string) => {
+    prefetchDashboardRoute(queryClient, href, {
+      businessId: user?.businessId,
+      userId: user?.id,
+      isSuperAdmin,
+    });
+  };
   function isItemVisible(item: NavItem): boolean {
     if (!user) return false;
     switch (item.href) {
@@ -215,6 +217,8 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
               <Link
                 href={item.href}
                 id={item.tourId}
+                onMouseEnter={() => warmRoute(item.href)}
+                onFocus={() => warmRoute(item.href)}
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   parentActive
@@ -224,12 +228,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                 )}
                 title={collapsed ? item.label : undefined}
               >
-                <item.icon
-                  className={cn(
-                    'h-5 w-5 shrink-0',
-                    !parentActive && item.iconClass,
-                  )}
-                />
+                <item.icon className="h-5 w-5 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
 
@@ -238,11 +237,12 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                 <div className="mt-0.5 ml-3 pl-3 border-l border-border space-y-0.5">
                   {visibleChildren.map((child) => {
                     const childActive = isChildActive(child);
-                    const childTint = child.iconClass ?? item.iconClass;
                     return (
                       <Link
                         key={child.href}
                         href={child.href}
+                        onMouseEnter={() => warmRoute(child.href)}
+                        onFocus={() => warmRoute(child.href)}
                         className={cn(
                           'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                           childActive
@@ -250,13 +250,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                         )}
                       >
-                        <child.icon
-                          className={cn(
-                            'h-3.5 w-3.5 shrink-0',
-                            !childActive && childTint,
-                            !childActive && !child.iconClass && NAV_ICON_CHILD_SOFTEN,
-                          )}
-                        />
+                        <child.icon className="h-3.5 w-3.5 shrink-0" />
                         {child.label}
                       </Link>
                     );
@@ -288,12 +282,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
                     )}
                     title={collapsed ? item.label : undefined}
                   >
-                    <item.icon
-                      className={cn(
-                        'h-5 w-5 shrink-0',
-                        !isActive && item.iconClass,
-                      )}
-                    />
+                    <item.icon className="h-5 w-5 shrink-0" />
                     {!collapsed && <span>{item.label}</span>}
                   </Link>
                 );
