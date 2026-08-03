@@ -11,7 +11,7 @@ Antes, usuarios que entraban por link de invitación (`/i/{token}`) podían term
 | Tipo | Cómo entra | ¿Negocio propio al entrar? | Crear negocio después |
 |------|------------|------------------------------|------------------------|
 | **Colaborador** | Link `/i/{token}` + **Unirme al equipo** | No | Config → **Armar tu negocio** o atajo en selector del header |
-| **Dueño SaaS** | `/register` (sin redirect `/i/`) | Sí (`POST /api/auth/register`) | Selector → **Armar otro negocio** |
+| **Dueño SaaS** | `/register` (correo o **Google**, sin redirect `/i/`) | Sí (`POST /api/auth/register`) | Selector → **Armar otro negocio** |
 | **Superadmin** | Email en `SUPERADMIN_EMAILS` | Auto-provision en profile | N/A |
 
 Un mismo usuario puede ser colaborador en el negocio A y dueño del negocio B (`UserBusiness` multi-tenant).
@@ -40,7 +40,7 @@ Invitados sin correo real: `prepare-account` genera `username` + email sintétic
 | Accept invite | `src/app/api/invites/[token]/accept/route.ts` |
 | Crear negocio opt-in | `src/app/api/businesses/route.ts` |
 | Auth client | `src/hooks/auth-context.tsx`, `src/hooks/protected-route.tsx` |
-| Login / invite UI | `src/app/(auth)/login/page.tsx`, `src/app/i/[token]/invite-client.tsx` |
+| Login / invite UI | `src/app/(auth)/login/page.tsx`, `src/app/(auth)/register/page.tsx`, `src/app/i/[token]/invite-client.tsx` |
 | Armar negocio | `src/components/config/create-own-business-card.tsx`, `src/components/business-switcher.tsx` |
 | Limpieza datos | `scripts/cleanup-invite-phantom-businesses.ts` |
 

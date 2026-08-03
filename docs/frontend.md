@@ -135,6 +135,7 @@ Ruta pública: `/i/[token]` (`invite-client.tsx`).
 2. **No** llamar `POST /api/auth/register` en flujos con redirect a `/i/…` — ese endpoint crea un negocio propio. El alta en PostgreSQL ocurre en `POST /api/invites/{token}/accept`.
 3. Tras Firebase Auth sin perfil PG (Google/login), el usuario vuelve al link y pulsa **Unirme al equipo** si aún no aceptó.
 4. `auth-context` no debe cerrar sesión en `/register` ni en `/i/…` durante el alta (rompe `getIdToken`). Ante `profile` 404 fuera de esas rutas, marca `notInvited` (no llama `POST /api/auth/register`).
+5. **Primer ingreso con Google (dueño):** login o register → Google → si `profile` 404 (sin invite), redirige a `/register`. Ahí, con sesión Firebase y sin perfil PG, se muestra **Completá tu registro** (nombre del espacio opcional) → `POST /api/auth/register` con el token actual. `/register` también ofrece botón **Continuar con Google** para el alta directa.
 
 Después de `accept.mutateAsync()` + `refreshProfile()`, **NO redirigir automáticamente**. Dejar que `accept.isSuccess` muestre CheckCircle + botón "Ir al dashboard". El usuario navega manualmente.
 
@@ -158,7 +159,7 @@ Ver también [`docs/invites-and-accounts.md`](invites-and-accounts.md) (resumen 
 | Entrada | Negocio propio |
 |---------|----------------|
 | `/i/{token}` + accept | No (hasta opt-in) |
-| `/register` (sin redirect `/i/`) | Sí (`POST /api/auth/register`, `accountIntent: owner`) |
+| `/register` (correo o Google, sin redirect `/i/`) | Sí (`POST /api/auth/register`, `accountIntent: owner`) |
 | Config → **Armar tu negocio** | **Primer** negocio propio (`POST /api/businesses`, `create-own-business-card.tsx`) |
 | Header → selector → **Armar tu negocio** | Atajo a `/dashboard/config` si `hasOwnedBusiness === false` |
 | Header → selector → **Armar otro negocio** | Negocios **adicionales** si ya es dueño de al menos uno |
@@ -183,7 +184,8 @@ flowchart LR
 | `src/app/api/invites/[token]/accept/route.ts` | Usuario nuevo → `accountIntent: 'collaborator'`, `joinedViaInviteAt` |
 | `src/hooks/auth-context.tsx` | Sin `autoRegister`; `notInvited` ante profile 404 |
 | `src/hooks/protected-route.tsx` | Requiere `user` de PostgreSQL, no solo Firebase |
-| `src/app/(auth)/login/page.tsx` | Sin registro silencioso en Google; mensaje + link a `/register` |
+| `src/app/(auth)/login/page.tsx` | Google 404 → `/register` (primer ingreso dueño); invite → `/i/…` |
+| `src/app/(auth)/register/page.tsx` | Google signup + formulario **Completá tu registro** si hay sesión Firebase sin perfil PG; `businessName` opcional |
 | `src/app/i/[token]/invite-client.tsx` | Copy: no se crea negocio nuevo |
 | `src/components/config/create-own-business-card.tsx` | Card opt-in en Config |
 | `src/components/business-switcher.tsx` | Sin espacio propio → Config; con propio → register |
