@@ -7,7 +7,7 @@ import { handle } from '@/lib/api/route-handler';
 import { DEFAULT_BUSINESS_SETTINGS } from '@/lib/business-defaults';
 import { ensureDefaultBoard } from '@/lib/default-board';
 import { defaultSpaceName } from '@/lib/terminology';
-import type { UserRole } from '@/types/domain/user';
+import type { User, UserRole } from '@/types/domain/user';
 
 const DEFAULT_PREFERENCES = {
   theme: 'system' as const,
@@ -17,6 +17,42 @@ const DEFAULT_PREFERENCES = {
   dashboardLayout: [],
   accountIntent: 'owner' as const,
 };
+
+function hasActiveMembership(user: User, businessId: string): boolean {
+  return (user.memberships ?? []).some((m) => m.businessId === businessId && m.isActive);
+}
+
+/** Completa board + membership + roles si un alta quedó a medias (p. ej. Firestore falló). */
+async function healOwnerProvisioning(user: User): Promise<User> {
+  if (!user.businessId) return user;
+
+  const businessId = user.businessId;
+  const role = (user.role === 'superadmin' ? 'superadmin' : 'admin') as UserRole;
+
+  if (!hasActiveMembership(user, businessId)) {
+    try {
+      await userRepository.addMembership({
+        userId: user.id,
+        businessId,
+        role,
+        isActive: true,
+      });
+    } catch (err) {
+      // Unique constraint: membership already exists (race) — continue
+      console.warn('[register] heal addMembership:', err);
+    }
+  }
+
+  await ensureDefaultBoard(businessId);
+
+  try {
+    await initSystemRoles(businessId);
+  } catch (err) {
+    console.warn('[register] initSystemRoles best-effort failed:', err);
+  }
+
+  return (await userRepository.findById(user.id)) ?? user;
+}
 
 export const POST = handle(async (request: NextRequest) => {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -31,18 +67,23 @@ export const POST = handle(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Idempotent: if user already exists, return them
+  // Idempotent: if user already exists, heal incomplete provisioning then return
   const existing = await userRepository.findById(decoded.uid);
-  if (existing) return NextResponse.json(existing);
+  if (existing) {
+    const healed = await healOwnerProvisioning(existing);
+    return NextResponse.json(healed);
+  }
 
   if (decoded.email) {
     const byEmail = await userRepository.findByEmail(decoded.email);
     if (byEmail) {
       try {
         const linked = await userRepository.updateId(byEmail.id, decoded.uid);
-        return NextResponse.json(linked);
+        const healed = await healOwnerProvisioning(linked);
+        return NextResponse.json(healed);
       } catch {
-        return NextResponse.json(byEmail);
+        const healed = await healOwnerProvisioning(byEmail);
+        return NextResponse.json(healed);
       }
     }
   }
@@ -87,15 +128,22 @@ export const POST = handle(async (request: NextRequest) => {
   });
 
   await userRepository.update(decoded.uid, { businessId: business.id });
-  await ensureDefaultBoard(business.id);
-  await initSystemRoles(business.id);
 
+  // Membership BEFORE Firestore roles — profile needs UserBusiness; roles are best-effort
   await userRepository.addMembership({
     userId: user.id,
     businessId: business.id,
     role: role as UserRole,
     isActive: true,
   });
+
+  await ensureDefaultBoard(business.id);
+
+  try {
+    await initSystemRoles(business.id);
+  } catch (err) {
+    console.warn('[register] initSystemRoles best-effort failed:', err);
+  }
 
   // Recargar user con memberships
   const userWithMemberships = await userRepository.findById(user.id);

@@ -169,7 +169,7 @@ describe('can()', () => {
 | `api-business.test.ts` | GET config, subscription |
 | `api-superadmin.test.ts` | Endpoints superadmin (businesses, users, metrics, audit) |
 | `api-auth-profile.test.ts` | GET /auth/profile — find by UID, link by email, superadmin auto-provisioning |
-| `api-auth-register.test.ts` | POST /auth/register |
+| `api-auth-register.test.ts` | POST /auth/register — alta nueva, idempotente, heal sin membership, Firestore roles best-effort |
 | `api-upload.test.ts` | POST /upload — avatar, attachment, tenant guard |
 
 ### Helpers de dominio

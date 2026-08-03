@@ -4,7 +4,7 @@ Base: `src/app/api/`
 
 ## Auth
 ```
-POST /api/auth/register         ← dueño SaaS: crea User + Business + membership (accountIntent: owner)
+POST /api/auth/register         ← dueño SaaS: crea User + Business + membership (accountIntent: owner). Orden: membership antes de initSystemRoles (Firestore best-effort). Si el user ya existe sin membresía activa, sana el alta incompleta.
 POST /api/auth/forgot-password
 GET  /api/auth/resolve           ← público: username, email o nombre → email Firebase (login pre-auth)
 GET  /api/auth/profile          ← superadmin auto-provision si SUPERADMIN_EMAILS; colaboradores: reasigna businessId desde memberships; sin membresías → 404 not_invited. Respuesta: hasOwnedBusiness, canCreateOwnBusiness, isOwner
