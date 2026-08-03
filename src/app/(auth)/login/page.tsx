@@ -94,6 +94,13 @@ function LoginForm() {
     }
   }, [authLoading, isAuthenticated, user, isInviteRedirect, redirect, router]);
 
+  // Primer ingreso (Google u otra sesión) sin perfil: completar alta en /register
+  useEffect(() => {
+    if (!authLoading && notInvited && !isInviteRedirect) {
+      router.replace('/register');
+    }
+  }, [authLoading, notInvited, isInviteRedirect, router]);
+
   // Handle Google redirect flow (popup blocked → signInWithRedirect)
   useEffect(() => {
     if (IS_EMULATOR) return; // Google sign-in not available in emulator
@@ -111,6 +118,8 @@ function LoginForm() {
           router.push(redirect);
           return;
         }
+        // Primer ingreso Google: completar alta de dueño en /register
+        router.push('/register');
         return;
       }
       await refreshProfile();
@@ -171,7 +180,8 @@ function LoginForm() {
           router.push(redirect);
           return;
         }
-        setError('Tu cuenta no está registrada. Pedí una invitación a tu equipo o creá tu negocio desde Registrate.');
+        // Primer ingreso Google sin perfil PG → /register completa el alta de dueño
+        router.push('/register');
         return;
       }
       if (!profileRes.ok) {
