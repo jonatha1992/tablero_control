@@ -4,6 +4,7 @@ import { POST } from '@/app/api/auth/register/route';
 import { verifyToken } from '@/lib/firebase/admin';
 import { businessRepository, userRepository } from '@/repositories';
 import { ensureDefaultBoard } from '@/lib/default-board';
+import { initSystemRoles } from '@/lib/firebase/init-system-roles';
 
 vi.mock('@/lib/firebase/admin', () => ({
   verifyToken: vi.fn(),
@@ -51,6 +52,8 @@ const mockUpdateId = vi.mocked(userRepository.updateId);
 const mockUserCreate = vi.mocked(userRepository.create);
 const mockBusinessCreate = vi.mocked(businessRepository.create);
 const mockEnsureDefaultBoard = vi.mocked(ensureDefaultBoard);
+const mockAddMembership = vi.mocked(userRepository.addMembership);
+const mockInitSystemRoles = vi.mocked(initSystemRoles);
 
 const decoded = { uid: 'uid-new', email: 'new@test.com', name: 'Nuevo', picture: null };
 const mockBusiness = { id: 'biz-1', name: 'Negocio de Nuevo' };
@@ -89,8 +92,14 @@ describe('POST /api/auth/register — auth', () => {
 
 describe('POST /api/auth/register — idempotente', () => {
   it('retorna 200 con usuario existente si findById lo encuentra', async () => {
+    const existingWithMembership = {
+      ...createdUser,
+      memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }],
+    };
     mockVerifyToken.mockResolvedValueOnce(decoded as never);
-    mockFindById.mockResolvedValueOnce(createdUser as never);
+    mockFindById
+      .mockResolvedValueOnce(existingWithMembership as never)
+      .mockResolvedValueOnce(existingWithMembership as never);
 
     const res = await POST(makeRequest('tok'));
     expect(res.status).toBe(200);
@@ -98,14 +107,56 @@ describe('POST /api/auth/register — idempotente', () => {
     expect(body.id).toBe('uid-new');
     expect(mockBusinessCreate).not.toHaveBeenCalled();
     expect(mockUserCreate).not.toHaveBeenCalled();
+    expect(mockAddMembership).not.toHaveBeenCalled();
+    expect(mockEnsureDefaultBoard).toHaveBeenCalledWith('biz-1');
+  });
+
+  it('sana membership faltante si user existe con businessId pero sin membresía activa', async () => {
+    const orphan = { ...createdUser, memberships: [] };
+    const healed = {
+      ...createdUser,
+      memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }],
+    };
+    mockVerifyToken.mockResolvedValueOnce(decoded as never);
+    mockFindById
+      .mockResolvedValueOnce(orphan as never)
+      .mockResolvedValueOnce(healed as never);
+    mockAddMembership.mockResolvedValueOnce({
+      id: 'ub-1',
+      userId: 'uid-new',
+      businessId: 'biz-1',
+      role: 'admin',
+      isActive: true,
+    } as never);
+
+    const res = await POST(makeRequest('tok'));
+    expect(res.status).toBe(200);
+    expect(mockAddMembership).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'uid-new',
+      businessId: 'biz-1',
+      role: 'admin',
+      isActive: true,
+    }));
+    expect(mockEnsureDefaultBoard).toHaveBeenCalledWith('biz-1');
+    expect(mockBusinessCreate).not.toHaveBeenCalled();
   });
 
   it('vincula UID si email existe con distinto UID y retorna 200', async () => {
-    const existingByEmail = { ...createdUser, id: 'old-uid' };
-    const linked = { ...createdUser, id: 'uid-new' };
+    const existingByEmail = {
+      ...createdUser,
+      id: 'old-uid',
+      memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }],
+    };
+    const linked = {
+      ...createdUser,
+      id: 'uid-new',
+      memberships: [{ businessId: 'biz-1', role: 'admin', isActive: true }],
+    };
 
     mockVerifyToken.mockResolvedValueOnce(decoded as never);
-    mockFindById.mockResolvedValueOnce(null);
+    mockFindById
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(linked as never);
     mockFindByEmail.mockResolvedValueOnce(existingByEmail as never);
     mockUpdateId.mockResolvedValueOnce(linked as never);
 
@@ -143,6 +194,25 @@ describe('POST /api/auth/register — nuevo usuario', () => {
     const res = await POST(makeRequest('tok', { businessName: 'Mi Empresa SA' }));
     expect(res.status).toBe(201);
     expect(mockBusinessCreate).toHaveBeenCalledWith(expect.objectContaining({ name: 'Mi Empresa SA' }));
+  });
+
+  it('crea membership aunque initSystemRoles falle (Firestore best-effort)', async () => {
+    mockInitSystemRoles.mockRejectedValueOnce(new Error('firestore unavailable'));
+    mockAddMembership.mockResolvedValueOnce({
+      id: 'ub-1',
+      userId: 'uid-new',
+      businessId: 'biz-1',
+      role: 'admin',
+      isActive: true,
+    } as never);
+    mockFindById.mockResolvedValueOnce(createdUser as never); // reload after create
+
+    const res = await POST(makeRequest('tok'));
+    expect(res.status).toBe(201);
+    expect(mockAddMembership).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'uid-new',
+      businessId: 'biz-1',
+    }));
   });
 });
 

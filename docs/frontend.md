@@ -180,7 +180,7 @@ flowchart LR
 | Archivo | Cambio |
 |---------|--------|
 | `src/app/api/auth/profile/route.ts` | Sin auto-creación de `Business`; reasigna `businessId` desde memberships; `hasOwnedBusiness`, `canCreateOwnBusiness` |
-| `src/app/api/auth/register/route.ts` | `preferences.accountIntent: 'owner'` |
+| `src/app/api/auth/register/route.ts` | `preferences.accountIntent: 'owner'`; membership antes de Firestore roles (best-effort); sana altas incompletas sin `UserBusiness` |
 | `src/app/api/invites/[token]/accept/route.ts` | Usuario nuevo → `accountIntent: 'collaborator'`, `joinedViaInviteAt` |
 | `src/hooks/auth-context.tsx` | Sin `autoRegister`; `notInvited` ante profile 404 |
 | `src/hooks/protected-route.tsx` | Requiere `user` de PostgreSQL, no solo Firebase |
