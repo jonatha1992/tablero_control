@@ -1,40 +1,63 @@
-# Deploy — Railway
+# Deploy — Vercel
 
 ## Flujo actual
 
 ```
-push a dev → merge a test → Railway rebuilds automáticamente
+push a main/test (según proyecto) → Vercel redeploy automático
 ```
 
-Branch `test` está conectado a Railway (`tablerocontrol-production`). Cada merge a `test` dispara un redeploy.
+Proyecto Vercel: `tablero-control`  
+URL estable: `https://tablero-control-self.vercel.app`  
+Deployments: `https://tablero-control-*.vercel.app`
+
+> **Migración:** el hosting web ya no está en Railway. Railway puede seguir
+> usándose solo como **Postgres** (`DATABASE_URL` / proxy `rlwy.net`).
+> Cualquier URL `*.up.railway.app` para la app está muerta (404).
 
 ## Versionado
 
-Cada `npm run build` (incluido el build de Railway vía Dockerfile) ejecuta `prebuild` → `scripts/bump-version.ts`, que incrementa el patch semver y actualiza la fecha de build en:
+Cada `npm run build` ejecuta `prebuild` → `scripts/bump-version.ts`, que incrementa el patch semver y actualiza la fecha de build en:
 
 - `src/config/version.ts` — fuente de verdad (`APP_VERSION`, `BUILD_DATE`)
 - `package.json` — campo `version` sincronizado
 - `public/version.json` — consulta externa opcional (`version`, `buildDate`)
 
-El footer del sidebar muestra `vX.Y.Z · YYYY-MM-DD` (sin hash de git). Para verificar la versión desplegada en test: abrir la app y mirar el pie del sidebar, o `GET /version.json`.
+El footer del sidebar muestra `vX.Y.Z · YYYY-MM-DD`. Para verificar la versión desplegada: pie del sidebar o `GET /version.json`.
 
-## start.sh
+### PWA cache vs deploys en Vercel
+
+El Service Worker (`public/sw.js`) **no** cachea navegaciones/HTML ni `/version.json` (solo assets estáticos con fallback offline). Cache name actual: `tablero-v2` (al activarse borra caches viejos como `tablero-v1`).
+
+Si un usuario sigue viendo UI vieja tras un deploy:
+
+1. Comparar pie del sidebar vs `GET /version.json` en el host Vercel.
+2. Ir a **Configuración → Instalación de la Aplicación → Actualizar app (limpiar cache)**.
+3. Esa acción (`forceAppUpdate` en `src/lib/pwa/force-app-update.ts`) borra Cache Storage, desregistra SWs y recarga con `?_refresh=…`.
+
+**Instalar** (header / home) ≠ **Actualizar**. Instalar agrega la PWA; Actualizar fuerza shell fresco post-deploy.
+
+## Prisma / schema en producción
+
+En Vercel no corre `start.sh` de Railway. Sincronizar schema aparte cuando haga falta:
 
 ```bash
-npx prisma db push --accept-data-loss
-next start
+npx prisma db push
+# o migrate según el flujo del equipo
 ```
 
-Prisma sincroniza el schema antes de arrancar. `--accept-data-loss` acepta cambios destructivos de schema — tener cuidado con columnas eliminadas en producción.
-
-## Variables de entorno requeridas
+## Variables de entorno requeridas (Vercel → Settings → Environment Variables)
 
 ```env
-DATABASE_URL=                    # Railway lo genera automáticamente al agregar PostgreSQL plugin
+DATABASE_URL=                    # Postgres (puede seguir siendo Railway DB)
 FIREBASE_SERVICE_ACCOUNT=        # JSON completo en una sola línea
-NEXT_PUBLIC_APP_URL=             # URL de producción (https://...)
+NEXT_PUBLIC_APP_URL=             # URL pública Vercel (https://tablero-control-self.vercel.app o dominio custom)
 MP_ACCESS_TOKEN=APP_USR-...      # Credencial MercadoPago
+MP_CALLBACK_URL=                 # Misma base pública Vercel (NO *.up.railway.app)
 ```
+
+**Crítico post-migración:** `NEXT_PUBLIC_APP_URL` y `MP_CALLBACK_URL` deben apuntar a Vercel (o dominio custom). Si quedan en `tablerocontrol-production.up.railway.app`, los links de invitación / webhooks MP van a un host 404.
+
+Tras cambiar `NEXT_PUBLIC_*`, hace falta **redeploy** (las vars públicas se inyectan en build).
 
 ## Variables opcionales
 
@@ -49,6 +72,7 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 GROQ_API_KEY=                    # Transcripción de audio + extracción de tareas con LLM
 GOOGLE_AI_API_KEY=               # Gemini vision para imagenes en el chat IA del Planificador
+MP_WEBHOOK_BASE_URL=             # Opcional; fallback = NEXT_PUBLIC_APP_URL
 
 # Firebase cliente (NEXT_PUBLIC_*)
 NEXT_PUBLIC_FIREBASE_API_KEY=
@@ -60,9 +84,9 @@ NEXT_PUBLIC_FIREBASE_VAPID_KEY=
 NEXT_PUBLIC_USE_EMULATOR=false
 ```
 
-## instrumentation.ts
+## instrumentation.ts / crons
 
-Al iniciar, conecta a DB y programa cron jobs si `CRON_SECRET` está configurado:
+En Vercel, los cron de `instrumentation.ts` pueden no comportarse igual que en un proceso Node 24/7. Preferir [Vercel Cron](https://vercel.com/docs/cron-jobs) o un scheduler externo contra los endpoints:
 
 | Schedule | Endpoint | Qué hace |
 |----------|----------|----------|
@@ -71,26 +95,17 @@ Al iniciar, conecta a DB y programa cron jobs si `CRON_SECRET` está configurado
 | 8:05 | `GET /api/cron/event-reminders` | Avisos de eventos (in-app + FCM + email) |
 | Dom 2:00 | `GET /api/cron/attachment-cleanup` | Limpieza de adjuntos huérfanos |
 
-Todos requieren header `Authorization: Bearer {CRON_SECRET}`. Los mails de eventos además necesitan `RESEND_API_KEY` o Gmail SMTP.
+Todos requieren header `Authorization: Bearer {CRON_SECRET}`.
 
 ## Rollback
 
-Railway → Deployments → click en deploy anterior → "Rollback".
+Vercel → Deployments → deploy anterior → "Promote to Production" / Rollback.
 
 ## Dominio custom
 
-Railway → Settings → Domains → "Add Custom Domain" → CNAME en DNS.
-Después de configurar: actualizar webhook MP a `https://tudominio.com/api/mercadopago/webhook`.
+Vercel → Project → Settings → Domains → agregar dominio → CNAME/A según panel.
+Después: actualizar `NEXT_PUBLIC_APP_URL`, `MP_CALLBACK_URL` y webhook MP a `https://tudominio.com/...`.
 
-## Agregar PostgreSQL en Railway
+## Firebase Auth authorized domains
 
-Railway → proyecto → "+ New" → Database → PostgreSQL.
-Railway agrega `DATABASE_URL` automáticamente al servicio web.
-
-## Prisma en producción
-
-```bash
-# Nunca usar migrate deploy en Railway — usar db push (ya está en start.sh)
-# Para ver estado de la DB:
-npx prisma studio
-```
+Firebase Console → Authentication → Settings → Authorized domains: agregar el host Vercel (`tablero-control-self.vercel.app` y dominio custom si aplica). Sin esto, Google login falla en prod.

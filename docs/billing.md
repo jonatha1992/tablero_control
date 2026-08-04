@@ -176,7 +176,7 @@ Respuesta: `{ ok, markedPastDue, trialExpired, cancelledAtPeriodEnd, emailsSent 
 MP_ACCESS_TOKEN=APP_USR-...    # Credencial del vendedor (real: APP_USR-, sandbox: TEST-)
 MP_PUBLIC_KEY=APP_USR-...      # Clave pública MP
 MP_WEBHOOK_SECRET=...          # Para validar firma HMAC del webhook
-MP_CALLBACK_URL=https://...    # URL pública para webhooks y back_urls (Railway en prod)
+MP_CALLBACK_URL=https://...    # URL pública Vercel (o dominio custom) — NO *.up.railway.app
 MP_ENV=production              # 'production' con credenciales reales / 'test' con TEST- token
 MP_TEST_PAYER_EMAIL=...        # Solo en MP_ENV=test (debe ser test_user_...@testuser.com)
 CRON_SECRET=...                # Bearer token para el cron
