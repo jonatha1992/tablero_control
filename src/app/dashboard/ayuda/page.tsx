@@ -145,11 +145,11 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Miembros',
-        description: 'Lista de todos los usuarios de la empresa. Podés invitar nuevos miembros por email o generar un link de invitación reutilizable con fecha de vencimiento y límite de usos.',
+        description: 'Lista de todos los usuarios del espacio. Desde Equipo hay dos botones: "Invitar usuario" (nombre, correo, rol y sectores; envía correo o genera link de un solo uso) y "Link de invitación" (link compartible con rol, sectores, vencimiento y límite de usos, o correo personal de un solo uso).',
       },
       {
         title: 'Link de invitación — cómo funciona',
-        description: 'El admin genera un link desde Equipo → Invitar. Quien lo abre ve una pantalla para unirse al equipo. Puede crear cuenta con email, iniciar sesión si ya tiene una, o usar "Continuar con Google". Importante: al entrar por link de invitación no se crea un espacio nuevo; el usuario queda en el equipo que lo invitó. Después de autenticarse, debe pulsar "Unirme al equipo" para completar el alta. Verás el mensaje: "No vas a crear un espacio nuevo; te sumás al equipo de …".',
+        description: 'Quien abre el link `/i/…` ve la pantalla para unirse al equipo. Si no tiene cuenta, completa nombre + contraseña (sin correo: el sistema genera un usuario interno) y queda dentro en un solo paso. También puede usar "Continuar con Google" o iniciar sesión y después pulsar "Unirme al equipo". Importante: no se crea un espacio nuevo; el usuario queda en el equipo que lo invitó. Verás el mensaje: "No vas a crear un espacio nuevo; te sumás al equipo de …".',
       },
       {
         title: 'Link de invitación — espacio propio después',
@@ -157,7 +157,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Link de invitación — problemas frecuentes',
-        description: 'Si Google queda cargando: probá cerrar la pestaña y volver a abrir el link, o usá email/contraseña. Si dice que el link expiró o no tiene usos: pedile al admin un link nuevo. Si ya pertenecés a otro equipo, el sistema no permite unirte a uno distinto con el mismo usuario.',
+        description: 'Si Google queda cargando: cerrá la pestaña, volvé a abrir el link, o usá nombre + contraseña. Si el link expiró o se agotaron los usos: pedile al admin uno nuevo. Login futuro de invitados sin correo: nombre + contraseña (no hace falta email). Si ya pertenecés a otro equipo, el sistema no permite unirte a uno distinto con el mismo usuario.',
       },
       {
         title: 'Sedes',
@@ -223,6 +223,14 @@ const SECTIONS: Section[] = [
       {
         title: 'Perfil personal',
         description: 'Avatar, nombre, email y preferencias de idioma y tema (claro/oscuro).',
+      },
+      {
+        title: 'Instalar app (PWA)',
+        description: 'En Configuración hay una tarjeta para instalar Tablero como app. En el header / home también está el botón Instalar. En iPhone usá Safari → Compartir → Agregar a Inicio.',
+      },
+      {
+        title: 'Actualizar app / cache',
+        description: 'Después de un deploy en Vercel, si ves una versión vieja (el pie del sidebar no coincide con /version.json), andá a Configuración → Instalación → "Actualizar app (limpiar cache)". Eso borra el cache del Service Worker y recarga. Instalar ≠ Actualizar: instalar agrega la app; actualizar fuerza la versión nueva.',
       },
       {
         title: 'Armar tu espacio',

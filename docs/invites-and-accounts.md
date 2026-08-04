@@ -16,6 +16,15 @@ Antes, usuarios que entraban por link de invitación (`/i/{token}`) podían term
 
 Un mismo usuario puede ser colaborador en el negocio A y dueño del negocio B (`UserBusiness` multi-tenant).
 
+## Cómo se genera el link (Equipo)
+
+| Botón en Equipo | Modal | Entrega | Usos |
+|-----------------|-------|---------|------|
+| **Invitar usuario** | `create-user-modal.tsx` | Correo (nombre+email) o link | Con correo: 1 uso; link: 1 uso |
+| **Link de invitación** | `create-invite-modal.tsx` | Link compartible o correo | Link: `maxUses` (0 = ilimitado); correo: 1 uso |
+
+Ambos llaman `POST /api/invites` y apuntan a `/i/{id}`.
+
 ## Flujo colaborador (resumen)
 
 ```mermaid
@@ -41,6 +50,7 @@ Invitados sin correo real: `prepare-account` genera `username` + email sintétic
 | Crear negocio opt-in | `src/app/api/businesses/route.ts` |
 | Auth client | `src/hooks/auth-context.tsx`, `src/hooks/protected-route.tsx` |
 | Login / invite UI | `src/app/(auth)/login/page.tsx`, `src/app/(auth)/register/page.tsx`, `src/app/i/[token]/invite-client.tsx` |
+| Modales Equipo | `src/components/equipo/create-user-modal.tsx`, `create-invite-modal.tsx` |
 | Armar negocio | `src/components/config/create-own-business-card.tsx`, `src/components/business-switcher.tsx` |
 | Limpieza datos | `scripts/cleanup-invite-phantom-businesses.ts` |
 

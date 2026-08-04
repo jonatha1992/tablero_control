@@ -62,17 +62,17 @@ API Route (src/app/api/**/route.ts)
 ### Workflow Git
 
 ```
-trabajar en dev → verificar/aprobar → actualizar docs/ → merge a test → Railway redeploy
+trabajar en dev → verificar/aprobar → actualizar docs/ → push → Vercel redeploy
 ```
 
-1. **Todo el desarrollo sucede en `dev`** — nunca commitear directo a `test` o `main`.
-2. **Antes de mergear `dev` → `test`:**
-   - Verificar que el cambio funciona (`npm run check`)
-   - **Actualizar el doc correspondiente en `docs/`** para reflejar el cambio
-   - Si la decisión es importante → crear nuevo ADR en `docs/decisions/`
-   - Commit con docs incluidos en el mismo PR
-3. **Merge a `test`** dispara Railway redeploy automático.
-4. Nunca mergear a `test` sin docs actualizados.
+1. **Todo el desarrollo sucede en `dev`** — nunca commitear directo a `test` o `main` sin flujo acordado.
+2. **Antes de promover a prod/test:**
+ - Verificar que el cambio funciona (`npm run check`)
+ - **Actualizar el doc correspondiente en `docs/`** para reflejar el cambio
+ - Si la decisión es importante → crear nuevo ADR en `docs/decisions/`
+ - Commit con docs incluidos en el mismo PR
+3. **Deploy web:** Vercel (`tablero-control`). Postgres puede seguir en Railway.
+4. Nunca promover sin docs actualizados. Ver `docs/deploy.md`.
 
 ## Docs por dominio
 
@@ -86,7 +86,7 @@ trabajar en dev → verificar/aprobar → actualizar docs/ → merge a test → 
 | Prisma schemas — todos los modelos | `docs/models.md` |
 | Stores Zustand, layout, onboarding | `docs/frontend.md` |
 | Tests — patrones, mocks, archivos | `docs/testing.md` |
-| Deploy Railway, env vars | `docs/deploy.md` |
+| Deploy Vercel, env vars | `docs/deploy.md` |
 | Superadmin panel, planes, suspender negocios | `docs/superadmin.md` |
 | Setup local, Prisma, credenciales seed | `docs/development.md` |
 
