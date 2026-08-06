@@ -138,7 +138,62 @@ API routes — asistente:
 - `POST /api/assistant/planner` — agente Planificador (intent + preview de tareas/eventos + clarify)
 - `POST /api/assistant/generate-plan` — generación de planificación sprint/objetivo
 
-Variable: `GROQ_API_KEY` (rotación multi-provider vía `src/lib/ai/providers.ts` cuando aplica)
+Variables: `GROQ_API_KEY1..N` (ver "Cadena de proveedores de IA" más abajo).
+
+---
+
+## Cadena de proveedores de IA (`src/lib/ai/`)
+
+Tres proveedores, encadenados **por capacidad y no por preferencia**. Verificado
+contra las APIs reales el 2026-08-06:
+
+| Tarea | Gemini | Groq | NVIDIA |
+|---|---|---|---|
+| Texto | sí | sí (`llama-3.3-70b-versatile`) | sí (`nemotron-3-nano-30b-a3b`) |
+| Imagen | sí | **no** — GroqCloud no sirve ningún modelo de visión | sí (`nemotron-nano-12b-v2-vl`) |
+| Audio | sí | sí (`whisper-large-v3-turbo`) | **no** — no procesa audio |
+
+Esa tabla es el diseño: encadenar "todos para todo" suena mejor y es peor. Mandar
+NVIDIA como respaldo de audio no falla cuando se agota la cuota, falla **siempre**,
+y con un error que no dice "modalidad equivocada".
+
+| Archivo | Rol |
+|---|---|
+| `api-keys.ts` | Colector canónico de keys. Limpia BOM y comillas, llega hasta la key 20, acepta lista con comas, descarta placeholders y deduplica. Idéntico en contrato al de los repos Python. |
+| `key-pool.ts` | Pool con rotación. Cooldown **según clase de error**: saturación 5 s, cuota 15 min, auth 1 h. Acepta un `deadline` que corta la rotación entera. |
+| `pools.ts` | Pools compartidos por proceso. `resetAiPools()` para los tests. |
+| `models.ts` | Nombres de modelo en un solo lugar. |
+| `nvidia.ts` | Cliente NVIDIA NIM (OpenAI-compatible): texto y visión. |
+| `providers.ts` | Registry de texto: Groq → Gemini → NVIDIA. |
+
+**Orden de texto medido** (prompt del planner, JSON, mediana de 3 corridas):
+Groq 0.52 s, Gemini `flash-lite-latest` 0.77 s, NVIDIA 2.68 s. Groq primero porque
+el planner es interactivo; NVIDIA último porque su valor es tener cuota aparte, no
+velocidad.
+
+### Por qué `flash-lite` y no `flash`
+
+`gemini-flash-latest` razona antes de responder, y esos tokens
+(`thoughtsTokenCount`, medido entre 383 y 652) se descuentan del **mismo**
+`maxOutputTokens`. Con techo 400 la respuesta vuelve con
+`finishReason: MAX_TOKENS` y 13 tokens de JSON — cortado. No lo arregla pedir
+`responseMimeType: application/json`, porque no es un problema de formato sino de
+presupuesto. Los modelos lite razonan 0 tokens y además son 3x más rápidos.
+
+Regla: para JSON, usar lite; o un modelo que razone con techo ≥ 2048.
+
+### Modelos retirados
+
+`gemini-2.5-flash` y `gemini-2.5-flash-lite` responden `404 "no longer available
+to new users"`, y toda la familia `gemini-2.0-*` responde `429` con cuota 0 en
+free tier. Los alias `-latest` apuntan siempre a un modelo servido, así que no
+caducan solos como una versión fijada.
+
+### Cuotas
+
+Gemini limita **por proyecto** de Google Cloud, Groq **por organización** y NVIDIA
+**por cuenta**. Sumar keys multiplica cuota sólo si vienen de proyectos o cuentas
+distintas.
 
 ### Gemini vision para Planificador
 
@@ -151,13 +206,34 @@ Variable: `GROQ_API_KEY` (rotación multi-provider vía `src/lib/ai/providers.ts
 }
 ```
 
-Cuando hay imagen **con texto**, `src/lib/ai/vision-image.ts` usa Gemini `gemini-2.5-flash` con `GOOGLE_AI_API_KEY` para convertir la captura en texto normalizado. Ese texto se agrega al mensaje efectivo y luego sigue el flujo existente de `runPlannerAgent`. Si la imagen va **sola** (sin texto), el planner responde primero con `clarify` (`field: kind`, opciones Eventos/Tareas) y recién después de la elección se lee la imagen. No se persiste en Cloudinary ni en base de datos. Límite: una imagen `jpeg|png|webp|gif` de hasta 4 MB.
+Cuando hay imagen **con texto**, `src/lib/ai/vision-image.ts` la convierte en texto normalizado. Ese texto se agrega al mensaje efectivo y luego sigue el flujo existente de `runPlannerAgent`. Si la imagen va **sola** (sin texto), el planner responde primero con `clarify` (`field: kind`, opciones Eventos/Tareas) y recién después de la elección se lee la imagen. No se persiste en Cloudinary ni en base de datos. Límite: una imagen `jpeg|png|webp|gif` de hasta 4 MB.
 
-Variable:
+Cadena de lectura: **Gemini → NVIDIA**, acotada por un presupuesto total
+(`AI_VISION_TOTAL_BUDGET_MS`, 60 s por defecto). Groq no participa porque no
+tiene ningún modelo con entrada de imagen, así que NVIDIA es el **único**
+respaldo posible: sin él, agotada la cuota de Gemini la lectura de imágenes no
+degrada, desaparece. Cubierto por `src/test/ai-vision-fallback.test.ts`.
+
+Variables:
 
 ```env
-GOOGLE_AI_API_KEY=
+GEMINI_API_KEY1=
+GEMINI_API_KEY2=
+# ... hasta GEMINI_API_KEY20
+GROQ_API_KEY1=
+GROQ_API_KEY2=
+NVIDIA_API_KEY=
+
+# Opcionales (defaults en src/lib/ai/models.ts)
+GEMINI_TEXT_MODEL=gemini-flash-lite-latest
+GEMINI_VISION_MODEL=gemini-flash-lite-latest
+GROQ_TEXT_MODEL=llama-3.3-70b-versatile
+NVIDIA_TEXT_MODEL=nvidia/nemotron-3-nano-30b-a3b
+NVIDIA_VISION_MODEL=nvidia/nemotron-nano-12b-v2-vl
 ```
+
+`GOOGLE_AI_API_KEY` se sigue leyendo como nombre legacy, pero el esquema vigente
+es el numerado.
 
 ---
 
