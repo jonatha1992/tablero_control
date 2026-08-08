@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(npm run dev:all)"
+      "PowerShell(npm run dev:all)",
+      "Read(//c/Users/jonat/.ai-workflows/scripts/**)",
+      "Read(//c/Users/jonat/.ai-workflows/workflows/promote-to-test/**)"
     ]
   }
 }
