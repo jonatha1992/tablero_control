@@ -61,12 +61,12 @@ startDate?, endDate?
 tasks (Task[]), cycles (Cycle[])
 ```
 
-**Regla:** archivar project = `status: 'archived'`
+**Reglas:** archivar project = `status: 'archived'`; conserva tareas, deja de contar para el límite y se puede restaurar a `active` si hay cupo. Siempre queda al menos un tablero no archivado.
 
 ## User
 
 ```
-id (Firebase UID), email, name
+id (Firebase UID), email, username?, name
 role (Role), businessId?, locationId?, customRoleId?
 avatar?, phone?, isActive (Boolean), lastLogin?
 preferences (JSON): {
@@ -137,8 +137,8 @@ link?, read (Boolean), createdAt
 ## BusinessInvite
 
 ```
-token (único), businessId, locationIds (String[])  ← array, no singular
-role, expiresAt?, usedAt?
+id/token (único), businessId, locationIds (String[])  ← array, no singular
+role, maxUses, usedCount, expiresAt?, isActive
 ```
 
 Ver decisions/004 — `locationIds` es array pero User solo soporta un `locationId`.

@@ -9,7 +9,7 @@ import { loginWithGoogle, register, login } from '@/lib/firebase/auth';
 import { invitesApi } from '@/lib/api/invites';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, ArrowRight, Loader2, CheckCircle, AlertTriangle, LogIn, Eye, EyeOff } from 'lucide-react';
+import { Users, ArrowRight, Loader2, CheckCircle, AlertTriangle, LogIn, Eye, EyeOff, Copy, Check } from 'lucide-react';
 
 const IS_EMULATOR = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
 
@@ -33,6 +33,8 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [createdUsername, setCreatedUsername] = useState<string | null>(null);
+  const [usernameCopied, setUsernameCopied] = useState(false);
 
   async function handleJoin(username?: string) {
     setError('');
@@ -104,6 +106,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
       }
 
       await accept.mutateAsync({ token, username: credentials.username });
+      setCreatedUsername(credentials.username);
       await refreshProfile();
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
@@ -160,6 +163,17 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
     }
   }
 
+  async function handleCopyUsername() {
+    if (!createdUsername) return;
+    await navigator.clipboard.writeText(createdUsername);
+    setUsernameCopied(true);
+    setTimeout(() => setUsernameCopied(false), 2000);
+  }
+
+  const signedInWithGoogle = firebaseUser?.providerData?.some(
+    (provider) => provider.providerId === 'google.com'
+  );
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4 bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg">
@@ -204,10 +218,38 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
             {accept.isSuccess ? (
               <div className="text-center space-y-3">
                 <CheckCircle className="mx-auto h-12 w-12 text-green-600" />
-                <p className="text-green-700 dark:text-green-400 font-medium">¡Te uniste exitosamente!</p>
-                <p className="text-xs text-muted-foreground">
-                  Para volver a entrar usá tu <strong>nombre</strong> y contraseña.
+                <p className="text-green-700 dark:text-green-400 font-medium">
+                  {createdUsername ? 'Cuenta creada correctamente' : '¡Te uniste exitosamente!'}
                 </p>
+                {createdUsername ? (
+                  <div className="space-y-3 rounded-lg border bg-muted/40 p-4 text-left">
+                    <p className="text-xs text-muted-foreground">Tu usuario para ingresar</p>
+                    <div className="flex items-center gap-2">
+                      <code className="min-w-0 flex-1 truncate rounded bg-background px-3 py-2 text-sm font-semibold">
+                        {createdUsername}
+                      </code>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCopyUsername}
+                        aria-label="Copiar usuario"
+                        title="Copiar usuario"
+                      >
+                        {usernameCopied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Guardalo. La próxima vez ingresá con este usuario y tu contraseña.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {signedInWithGoogle
+                      ? 'Para volver a entrar, usá Continuar con Google.'
+                      : 'Para volver a entrar, usá tu usuario o correo y contraseña.'}
+                  </p>
+                )}
                 <Button onClick={() => router.push('/dashboard')} className="w-full">
                   Ir al dashboard <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

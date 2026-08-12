@@ -73,8 +73,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
-    const nameRequired = !useInviteFlow || deliveryMethod === 'email';
-    if (nameRequired && !trimmedName) nextErrors.name = 'El nombre es obligatorio';
+    if (!useInviteFlow && !trimmedName) nextErrors.name = 'El nombre es obligatorio';
     const requireEmail = !useInviteFlow || deliveryMethod === 'email';
     if (requireEmail) {
       if (!trimmedEmail) nextErrors.email = 'El correo electrónico es obligatorio';
@@ -100,9 +99,7 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
           locationIds,
           maxUses: 1,
           expiresInDays: 7,
-          ...(deliveryMethod === 'email' && trimmedEmail
-            ? { email: trimmedEmail, inviteeName: trimmedName || undefined }
-            : {}),
+          ...(deliveryMethod === 'email' && trimmedEmail ? { email: trimmedEmail } : {}),
         },
         {
           onSuccess: (data) => {
@@ -238,19 +235,19 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">
-                  Nombre completo{useInviteFlow && deliveryMethod === 'link' ? ' (opcional)' : ''}
-                </label>
-                <Input
-                  placeholder="Juan García"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={100}
-                  required={!useInviteFlow || deliveryMethod === 'email'}
-                />
-                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-              </div>
+              {!useInviteFlow && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Nombre completo</label>
+                  <Input
+                    placeholder="Juan García"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={100}
+                    required
+                  />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                </div>
+              )}
 
               {(!useInviteFlow || deliveryMethod === 'email') && (
                 <div className="space-y-1.5">
@@ -345,9 +342,9 @@ export function CreateUserModal({ open, onClose, isSuperAdmin = false, businessI
                 {emailSent ? 'Invitación enviada' : 'Link generado'}
               </DialogTitle>
               <DialogDescription>
-                {name.trim()
-                  ? `${name.trim()} puede unirse al equipo con el link de invitación.`
-                  : 'Compartí el link para que la persona se una al equipo.'}
+                {useInviteFlow
+                  ? 'La persona definirá su nombre al crear la cuenta.'
+                  : `${name.trim()} recibirá las instrucciones para activar su acceso.`}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">

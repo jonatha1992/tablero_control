@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
+import { useActiveTasksQuery } from '@/hooks/queries/use-active-tasks-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
 import { DashboardUpcomingEvents } from '@/components/dashboard/dashboard-upcoming-events';
@@ -9,7 +9,7 @@ import { AlertCircle, CheckCircle2, Clock, Zap, TrendingUp } from 'lucide-react'
 import { isActionableUpToToday } from '@/lib/tasks/task-status';
 
 export default function DashboardPage() {
-  const { data: tasks = [], isLoading } = useTasksQuery();
+  const { data: tasks = [], isLoading } = useActiveTasksQuery();
   const { data: locations = [] } = useLocationsQuery();
 
   const now = new Date();

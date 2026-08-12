@@ -16,7 +16,7 @@ GET    /api/invites/[token]           ← metadata del link (público)
 POST   /api/invites/[token]/prepare-account ← username + email @guest.local (público; valida invite)
 POST   /api/invites/[token]/accept    ← membresía al negocio invitador; body opcional `{ username }`; NO crea Business; usuario nuevo → accountIntent: collaborator
 GET    /api/invites                   ← listar links (admin)
-POST   /api/invites                   ← crear link
+POST   /api/invites                   ← crear link; la persona define su nombre al aceptar
 DELETE /api/invites/[token]           ← revocar
 ```
 
@@ -76,7 +76,7 @@ POST   /api/objectives/[id]/tasks  ← { taskIds: string[], action?: 'assign'|'r
 GET    /api/projects
 POST   /api/projects
 GET    /api/projects/[id]
-PATCH  /api/projects/[id]
+PATCH  /api/projects/[id]             ← editar o `{ action: "archive" | "restore" }`
 DELETE /api/projects/[id]
 ```
 

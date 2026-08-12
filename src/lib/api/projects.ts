@@ -13,6 +13,7 @@ export interface Project {
   createdAt: Date;
   updatedAt: Date;
   _count?: { tasks: number };
+  openTaskCount?: number;
 }
 
 export interface CreateProjectBody {
@@ -30,7 +31,7 @@ export interface UpdateProjectBody {
   teamId?: string | null;
   businessId?: string;
   status?: string;
-  action?: 'archive';
+  action?: 'archive' | 'restore';
   startDate?: string | null;
   endDate?: string | null;
 }

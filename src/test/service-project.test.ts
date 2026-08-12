@@ -21,7 +21,10 @@ const mockProject = {
 const planWithLimit = { limits: { projects: 3 } };
 const planUnlimited = { limits: { projects: -1 } };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(prisma));
+});
 
 describe('ProjectService.getByBusiness', () => {
   it('retorna proyectos del negocio', async () => {
@@ -49,6 +52,22 @@ describe('ProjectService.getById', () => {
 });
 
 describe('ProjectService.create — límites de plan', () => {
+  it('excluye proyectos archivados del límite', async () => {
+    mockGetPlanConfig.mockResolvedValueOnce(planWithLimit as never);
+    vi.mocked(prisma.project.count).mockResolvedValueOnce(2 as never);
+    vi.mocked(prisma.project.create).mockResolvedValueOnce(mockProject as never);
+
+    await projectService.create(
+      { name: 'Proyecto nuevo', businessId: 'biz-1' },
+      'admin',
+      'basic'
+    );
+
+    expect(prisma.project.count).toHaveBeenCalledWith({
+      where: { businessId: 'biz-1', status: { not: 'archived' } },
+    });
+  });
+
   it('crea proyecto si no se supera el límite', async () => {
     mockGetPlanConfig.mockResolvedValueOnce(planWithLimit as never);
     vi.mocked(prisma.project.count).mockResolvedValueOnce(2 as never);
@@ -113,8 +132,20 @@ describe('ProjectService.update', () => {
 });
 
 describe('ProjectService.archive', () => {
+  it('bloquea archivar el último proyecto no archivado', async () => {
+    vi.mocked(prisma.project.findUnique).mockResolvedValueOnce(mockProject as never);
+    vi.mocked(prisma.project.count).mockResolvedValueOnce(1 as never);
+
+    const error = await projectService.archive('proj-1').catch((caught) => caught);
+
+    expect(error).toMatchObject({ name: 'LastActiveProjectError' });
+    expect(prisma.project.update).not.toHaveBeenCalled();
+  });
+
   it('marca proyecto como archived', async () => {
     const archived = { ...mockProject, status: 'archived' };
+    vi.mocked(prisma.project.findUnique).mockResolvedValueOnce(mockProject as never);
+    vi.mocked(prisma.project.count).mockResolvedValueOnce(2 as never);
     vi.mocked(prisma.project.update).mockResolvedValueOnce(archived as never);
 
     const result = await projectService.archive('proj-1');
@@ -126,6 +157,35 @@ describe('ProjectService.archive', () => {
         data: expect.objectContaining({ status: 'archived' }),
       })
     );
+  });
+});
+
+describe('ProjectService.restore', () => {
+  it('restaura proyecto archivado como active cuando hay cupo', async () => {
+    const archived = { ...mockProject, status: 'archived' };
+    vi.mocked(prisma.project.findUnique).mockResolvedValueOnce(archived as never);
+    mockGetPlanConfig.mockResolvedValueOnce(planWithLimit as never);
+    vi.mocked(prisma.project.count).mockResolvedValueOnce(2 as never);
+    vi.mocked(prisma.project.update).mockResolvedValueOnce(mockProject as never);
+
+    const result = await projectService.restore('proj-1', 'admin', 'basic');
+
+    expect(result.status).toBe('active');
+    expect(prisma.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: 'active' } })
+    );
+  });
+
+  it('rechaza restaurar cuando el plan no tiene cupo', async () => {
+    const archived = { ...mockProject, status: 'archived' };
+    vi.mocked(prisma.project.findUnique).mockResolvedValueOnce(archived as never);
+    mockGetPlanConfig.mockResolvedValueOnce(planWithLimit as never);
+    vi.mocked(prisma.project.count).mockResolvedValueOnce(3 as never);
+
+    const error = await projectService.restore('proj-1', 'admin', 'basic').catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ProjectLimitError);
+    expect(prisma.project.update).not.toHaveBeenCalled();
   });
 });
 

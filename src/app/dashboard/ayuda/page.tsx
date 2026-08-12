@@ -13,6 +13,7 @@ import {
   CreditCard,
   Settings,
   Bell,
+  Building2,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -138,6 +139,22 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: 'sedes',
+    title: 'Sedes',
+    icon: Building2,
+    iconClass: NAV_ICON_COLORS.equipo,
+    subsections: [
+      {
+        title: 'Organización por lugar de trabajo',
+        description: 'Administrá sucursales, locales o áreas desde el módulo central Sedes. Cada tarea puede pertenecer a una sede y los responsables asignados tienen permisos especiales sobre sus tareas.',
+      },
+      {
+        title: 'Nombre configurable',
+        description: 'Según la configuración del espacio, este módulo puede mostrarse como Sedes, Sucursales, Locales u otra denominación elegida por el administrador.',
+      },
+    ],
+  },
+  {
     id: 'equipo',
     title: 'Equipo',
     icon: Users,
@@ -158,10 +175,6 @@ const SECTIONS: Section[] = [
       {
         title: 'Link de invitación — problemas frecuentes',
         description: 'Si Google queda cargando: cerrá la pestaña, volvé a abrir el link, o usá nombre + contraseña. Si el link expiró o se agotaron los usos: pedile al admin uno nuevo. Login futuro de invitados sin correo: nombre + contraseña (no hace falta email). Si ya pertenecés a otro equipo, el sistema no permite unirte a uno distinto con el mismo usuario.',
-      },
-      {
-        title: 'Sedes',
-        description: 'Sucursales, locales o áreas del espacio. Cada tarea puede pertenecer a una sede. Los responsables de sede tienen permisos especiales en sus tareas.',
       },
       {
         title: 'Roles',

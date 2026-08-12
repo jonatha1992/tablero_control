@@ -97,9 +97,9 @@ Cada paso usa `element: '#tour-nav-xxx'`. Si el elemento no existe en el DOM, el
 
 **Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Planificación, Equipo (flujo de invitación, espacio propio opt-in, troubleshooting), Reportes (incl. exportación Excel), Facturación, Configuración (incl. **Armar tu espacio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
 
-**Invitar usuario** (`src/components/equipo/create-user-modal.tsx`): formulario (nombre, correo, rol base, sectores opcionales) con entrega por **correo** o **link**. En equipo crea un `BusinessInvite` (`POST /api/invites`); con correo fuerza un solo uso y puede enviar el mail. Superadmin sigue usando `POST /api/users/create` en modo correo (sin contraseña en el modal).
+**Invitar usuario** (`src/components/equipo/create-user-modal.tsx`): formulario (correo, rol base, sectores opcionales) con entrega por **correo** o **link**. La persona invitada define su nombre al crear la cuenta. Superadmin mantiene creación directa y sí solicita nombre.
 
-**Link de invitación** (`src/components/equipo/create-invite-modal.tsx`): botón aparte en Equipo. Modo **link compartible** (WhatsApp/copiar; `maxUses` configurable, `0` = ilimitado; vencimiento en días) o **por correo** (un solo uso). Misma API `POST /api/invites`. Quien abre `/i/{id}` usa el flujo de `invite-client.tsx` (nombre + contraseña / Google / login → accept; sin negocio propio).
+**Link de invitación** (`src/components/equipo/create-invite-modal.tsx`): modo link compartible o correo sin pedir nombre. Tras alta local se muestra el `username` único generado con acción para copiarlo; Google y cuentas existentes conservan su método de acceso.
 
 ## Rutas de la app
 
@@ -122,7 +122,7 @@ src/app/
 │   │   └── objetivos/
 │   ├── equipo/
 │   │   └── roles/
-│   ├── sectores/          ← UI de Location (label configurable: Sedes, Sectores, etc.); ruta /equipo/sectores
+│   ├── sectores/          ← ruta canónica de Location; label configurable (Sedes, Sectores, etc.)
 │   ├── reportes/          # métricas + filtros fecha/persona + export Excel .xlsx (ver sección Reportes)
 │   ├── billing/
 │   ├── config/
@@ -212,13 +212,27 @@ El nivel superior siempre es **Espacio** (`Business`). Las unidades internas (`L
 
 Al crear o editar una unidad interna (`SectorModal`), el campo **Tipo** es un selector con los slugs de `business.settings.localeTypes` (o presets por defecto: local, sucursal, departamento, sector, área, negocio, sede) más tipos ya usados en locations existentes. Opción **Agregar otro tipo…** persiste el slug nuevo en `localeTypes` al guardar.
 
-La pantalla `/dashboard/equipo/sectores` usa `SectorList` como **tabla HTML semántica** (no grid de cards). Columnas: nombre, tipo, estado, miembros, tareas, **pendientes**, finalizadas y acciones. Los contadores salen de `useTasksQuery()` agrupando por `locationId`; **pendientes** usa `isPending()` (excluye `backlog`/`done`/`archived`); **finalizadas = `done` + `archived`**. Accesos rápidos: el conteo de miembros, pendientes y finalizadas son links a Equipo / Agenda filtrados (`?locationId=` y opcional `?status=done`). En **Acciones**: íconos visibles Editar / Archivar / Eliminar (diálogos separados; Archivar deshabilitado si ya está `closed`) y menú `⋯` para detalle, miembros y agenda. Al crear un evento, el toast indica aviso por mail+notificación y ofrece “Ver eventos”.
+La pantalla `/dashboard/sectores` usa `SectorList` como **tabla HTML semántica** (no grid de cards). Columnas: nombre, tipo, estado, miembros, tareas, **pendientes**, finalizadas y acciones. Los contadores salen de `useTasksQuery()` agrupando por `locationId`; **pendientes** usa `isPending()` (excluye `backlog`/`done`/`archived`); **finalizadas = `done` + `archived`**. Accesos rápidos: el conteo de miembros, pendientes y finalizadas son links a Equipo / Agenda filtrados (`?locationId=` y opcional `?status=done`). En **Acciones**: íconos visibles Editar / Archivar / Eliminar (diálogos separados; Archivar deshabilitado si ya está `closed`) y menú `⋯` para detalle, miembros y agenda. Al crear un evento, el toast indica aviso por mail+notificación y ofrece “Ver eventos”.
 
-**Código:** `src/lib/terminology.ts` (`resolveSpaceLabels`, presets), hook `useSpaceLabels()` (`src/hooks/use-space-labels.ts`), card `src/components/config/space-terminology-card.tsx`. Consumidores: sidebar Equipo, pantalla `/dashboard/equipo/sectores`, modales de location, campo location en create-task.
+**Código:** `src/lib/terminology.ts` (`resolveSpaceLabels`, presets), hook `useSpaceLabels()` (`src/hooks/use-space-labels.ts`), card `src/components/config/space-terminology-card.tsx`. Consumidores: sidebar principal, pantalla `/dashboard/sectores`, modales de location, campo location en create-task.
+
+## Sedes (`/dashboard/sectores`)
+
+Módulo central con etiqueta configurable, visible en el sidebar solo para admin/superadmin. La ruta legacy `/dashboard/equipo/sectores` redirige por compatibilidad.
+
+## Tableros (`/dashboard/tareas/tableros`)
+
+Lista Activos/Archivados. Admin puede archivar con advertencia de pendientes y restaurar; no se expone eliminación permanente. Archivar conserva tareas, las oculta de vistas activas y libera cupo. Se bloquea el último tablero activo.
+
+## Menú personal del header
+
+Avatar/nombre abre Configuración, Facturación (solo admin/superadmin), Ayuda y Cerrar sesión. Esos accesos ya no ocupan filas del sidebar. En móvil el avatar conserva acceso completo.
+
+**Fechas:** los formularios usan controles nativos `input[type="date"]`. Sin valor previo, el selector abre en el mes actual del dispositivo; con valor, abre en el mes de esa fecha. No completar automáticamente un día solo para posicionar el calendario.
 
 ## Reportes (`/dashboard/reportes`)
 
-Página client (`src/app/dashboard/reportes/page.tsx`). Datos en vivo con `useTasksQuery` y `useMembersQuery`. Gráficos con Recharts.
+Página client (`src/app/dashboard/reportes/page.tsx`). Datos en vivo con `useActiveTasksQuery` y `useMembersQuery`; las tareas de tableros archivados no aparecen. Gráficos con Recharts.
 
 **Vistas (tabs):**
 - **Actividad** — barras de tareas creadas, completadas y bloqueadas (últimas 6 semanas).

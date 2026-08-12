@@ -34,7 +34,6 @@ export interface CreateInviteInput {
   expiresInDays?: number;
   /** Si se indica, se envía el link `/i/{id}` a este correo (invitación personal). */
   email?: string;
-  inviteeName?: string;
 }
 
 export interface InviteWithLink extends BusinessInvite {

@@ -98,7 +98,7 @@ const dbUser = {
 };
 ```
 
-Tests relacionados: `src/test/api-auth-profile.test.ts` (reasignación sin `businessCreate`), `src/test/api-invites.test.ts` (`accountIntent: collaborator`, `prepare-account`, username en accept), `src/test/api-auth-resolve.test.ts` (login por nombre, público), `src/test/invite-username.test.ts`.
+Tests relacionados: `api-auth-profile`, `api-invites`, `api-auth-resolve`, `invite-username`, `invite-client`, `create-user-modal` y `create-invite-modal`. Cubren username generado visible/copiante y ausencia de nombre administrativo en ambos modales.
 
 ### Componentes
 
@@ -164,6 +164,8 @@ describe('can()', () => {
 | `api-members.test.ts` | CRUD de miembros, límite por plan (429) |
 | `api-locations.test.ts` | CRUD de locales |
 | `api-projects.test.ts` | CRUD de tableros, tenant guard |
+| `api-projects-id.test.ts`, `service-project.test.ts`, `project-management-page.test.tsx` | archivar/restaurar, último activo, cupo y UI |
+| `sidebar-sites-navigation.test.tsx`, `header-user-menu.test.tsx` | navegación Sedes y menú personal del header |
 | `api-cycles.test.ts` | CRUD de ciclos, cross-tenant task injection guard |
 | `api-objectives.test.ts` | CRUD de objetivos, cross-tenant task injection guard |
 | `api-business.test.ts` | GET config, subscription |

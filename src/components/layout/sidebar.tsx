@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   CheckSquare,
   Users,
-  Settings,
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -26,7 +25,6 @@ import {
   GanttChart,
   Timer,
   Target,
-  HelpCircle,
   Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +49,8 @@ interface NavItem {
   tourId?: string;
   exact?: boolean;
   children?: ChildItem[];
+  adminOnly?: boolean;
+  configurableSitesLabel?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -70,6 +70,7 @@ const navItems: NavItem[] = [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
       { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
       { href: '/dashboard/tareas/cronograma', label: 'Cronograma',  icon: GanttChart },
+      { href: '/dashboard/tareas/tableros',   label: 'Tableros',    icon: Layers },
       { href: '/dashboard/tareas/archivadas', label: 'Archivadas',  icon: Archive },
     ],
   },
@@ -91,20 +92,24 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    href: '/dashboard/sectores',
+    label: '__SITES__',
+    icon: Building2,
+    tourId: 'tour-nav-sedes',
+    adminOnly: true,
+    configurableSitesLabel: true,
+  },
+  {
     href: '/dashboard/equipo',
     label: 'Equipo',
     icon: Users,
     tourId: 'tour-nav-equipo',
     children: [
       { href: '/dashboard/equipo',          label: 'Miembros', icon: Users,       exact: true },
-      { href: '/dashboard/equipo/sectores', label: '__SITES__', icon: Building2, adminOnly: true },
       { href: '/dashboard/equipo/roles',    label: 'Roles',    icon: ShieldCheck, adminOnly: true },
     ],
   },
   { href: '/dashboard/reportes',  label: 'Reportes',      icon: BarChart2,  tourId: 'tour-nav-reportes' },
-  { href: '/dashboard/billing',   label: 'Facturación',   icon: CreditCard, tourId: 'tour-nav-billing' },
-  { href: '/dashboard/config',    label: 'Configuración', icon: Settings,   tourId: 'tour-nav-config' },
-  { href: '/dashboard/ayuda',     label: 'Ayuda',         icon: HelpCircle, tourId: 'tour-nav-ayuda' },
 ];
 
 const superAdminItems = [
@@ -139,6 +144,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   };
   function isItemVisible(item: NavItem): boolean {
     if (!user) return false;
+    if (item.adminOnly) return isAdmin;
     switch (item.href) {
       case '/dashboard': return true;
       case '/dashboard/tareas': return can(user, 'task.read');
@@ -146,7 +152,6 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
       case '/dashboard/planificacion': return can(user, 'task.create');
       case '/dashboard/equipo': return user.role === 'admin' || user.role === 'superadmin' || user.role === 'responsable';
       case '/dashboard/reportes': return can(user, 'business.reports.read');
-      case '/dashboard/billing': return user.role === 'admin' || user.role === 'superadmin';
       case '/dashboard/config': return true;
       default: return true;
     }
@@ -175,6 +180,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     .filter(isItemVisible)
     .map((item) => ({
       ...item,
+      label: item.configurableSitesLabel ? labels.sites : item.label,
       children: item.children?.map((child) =>
         child.label === '__SITES__' ? { ...child, label: labels.sites } : child
       ),

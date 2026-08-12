@@ -10,6 +10,20 @@ export class ProjectLimitError extends Error {
   }
 }
 
+export class LastActiveProjectError extends Error {
+  constructor() {
+    super('last_active_project');
+    this.name = 'LastActiveProjectError';
+  }
+}
+
+export class ProjectNotFoundError extends Error {
+  constructor() {
+    super('project_not_found');
+    this.name = 'ProjectNotFoundError';
+  }
+}
+
 export interface CreateProjectInput {
   name: string;
   description?: string;
@@ -30,11 +44,29 @@ export interface UpdateProjectInput {
 
 class ProjectService {
   async getByBusiness(businessId: string) {
-    return prisma.project.findMany({
+    const projects = await prisma.project.findMany({
       where: { businessId },
       orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { tasks: true } } },
+      include: {
+        _count: {
+          select: {
+            tasks: true,
+            cycles: true,
+          },
+        },
+        tasks: {
+          where: {
+            deletedAt: null,
+            status: { notIn: ['done', 'archived'] },
+          },
+          select: { id: true },
+        },
+      },
     });
+    return projects.map(({ tasks, ...project }) => ({
+      ...project,
+      openTaskCount: tasks?.length ?? 0,
+    }));
   }
 
   async getById(id: string) {
@@ -51,7 +83,7 @@ class ProjectService {
       const limit = planConfig.limits.projects;
       if (limit !== -1) {
         const current = await prisma.project.count({
-          where: { businessId: data.businessId },
+          where: { businessId: data.businessId, status: { not: 'archived' } },
         });
         if (current >= limit) {
           throw new ProjectLimitError(limit, current);
@@ -88,11 +120,37 @@ class ProjectService {
   }
 
   async archive(id: string) {
-    return prisma.project.update({
-      where: { id },
-      data: { status: 'archived' },
-      include: { _count: { select: { tasks: true } } },
-    });
+    return prisma.$transaction(async (tx) => {
+      const project = await tx.project.findUnique({ where: { id }, select: { businessId: true, status: true } });
+      if (!project) throw new ProjectNotFoundError();
+      if (project.status === 'archived') {
+        const existing = await tx.project.findUnique({ where: { id }, include: { _count: { select: { tasks: true } } } });
+        if (!existing) throw new ProjectNotFoundError();
+        return existing;
+      }
+      const activeCount = await tx.project.count({ where: { businessId: project.businessId, status: { not: 'archived' } } });
+      if (activeCount <= 1) throw new LastActiveProjectError();
+      return tx.project.update({ where: { id }, data: { status: 'archived' }, include: { _count: { select: { tasks: true } } } });
+    }, { isolationLevel: 'Serializable' });
+  }
+
+  async restore(id: string, actorRole: string, businessPlan: PlanId) {
+    const planConfig = actorRole === 'superadmin' ? null : await getEffectivePlanConfig(businessPlan);
+    return prisma.$transaction(async (tx) => {
+      const project = await tx.project.findUnique({ where: { id }, select: { businessId: true, status: true } });
+      if (!project) throw new ProjectNotFoundError();
+      if (project.status !== 'archived') {
+        const existing = await tx.project.findUnique({ where: { id }, include: { _count: { select: { tasks: true } } } });
+        if (!existing) throw new ProjectNotFoundError();
+        return existing;
+      }
+      const limit = planConfig?.limits.projects ?? -1;
+      if (limit !== -1) {
+        const current = await tx.project.count({ where: { businessId: project.businessId, status: { not: 'archived' } } });
+        if (current >= limit) throw new ProjectLimitError(limit, current);
+      }
+      return tx.project.update({ where: { id }, data: { status: 'active' }, include: { _count: { select: { tasks: true } } } });
+    }, { isolationLevel: 'Serializable' });
   }
 
   async delete(id: string) {

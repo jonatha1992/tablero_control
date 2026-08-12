@@ -12,7 +12,7 @@ import { TrendingUp, AlertTriangle, CheckCircle, Clock, Download, Loader2 } from
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SEMANTIC_ICON, NAV_ICON_COLORS } from '@/lib/constants/ui-icon-colors';
-import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
+import { useActiveTasksQuery } from '@/hooks/queries/use-active-tasks-query';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { format, subWeeks, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -111,7 +111,7 @@ export default function ReportesPage() {
     return Object.keys(filters).length ? filters : undefined;
   }, [dateFrom, dateTo, memberId]);
 
-  const { data: tasks = [], isLoading: loadingTasks } = useTasksQuery(taskFilters);
+  const { data: tasks = [], isLoading: loadingTasks } = useActiveTasksQuery(taskFilters);
   const { data: members = [], isLoading: loadingMembers } = useMembersQuery();
   const isLoading = loadingTasks || loadingMembers;
   const hasFilters = Boolean(dateFrom || dateTo || memberId);

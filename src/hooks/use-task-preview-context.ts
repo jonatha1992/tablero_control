@@ -33,7 +33,9 @@ export function useTaskPreviewContext() {
     [locationsData],
   );
   const projects = useMemo(
-    () => projectsData.map((p) => ({ id: p.id, name: p.name, status: p.status })),
+    () => projectsData
+      .filter((project) => !isArchivedProjectStatus(project.status))
+      .map((p) => ({ id: p.id, name: p.name, status: p.status })),
     [projectsData],
   );
   const cycles = useMemo(

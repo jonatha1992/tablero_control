@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { projectService } from '@/services/project.service';
+import {
+  LastActiveProjectError,
+  ProjectLimitError,
+  projectService,
+} from '@/services/project.service';
 import { requireUser, requireRole, requireActiveSubscription } from '@/lib/api/auth-helpers';
 import { writeAuditLog } from '@/lib/api/audit';
 import { assertResourceBelongsToBusiness } from '@/lib/permissions/tenant-guard';
 import { handle } from '@/lib/api/route-handler';
+import { prisma } from '@/lib/prisma';
+
+const VALID_STATUSES = new Set(['planning', 'active', 'paused', 'completed', 'archived']);
 
 export const GET = handle(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(request);
@@ -38,11 +45,35 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
   assertResourceBelongsToBusiness(user.data, project.businessId);
 
   const body = await request.json();
-  const isArchiveAction = body?.action === 'archive';
+  const action = body?.action;
+  if (action !== undefined && action !== 'archive' && action !== 'restore') {
+    return NextResponse.json({ error: 'invalid_action' }, { status: 400 });
+  }
+  if (body?.status !== undefined && !VALID_STATUSES.has(body.status)) {
+    return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+  }
+  if (action === undefined && (body?.status === 'archived' || (project.status === 'archived' && body?.status))) {
+    return NextResponse.json({ error: 'project_state_action_required' }, { status: 400 });
+  }
+  if (body?.teamId) {
+    const team = await prisma.team.findUnique({ where: { id: body.teamId }, select: { businessId: true } });
+    if (!team || team.businessId !== project.businessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
 
-  const updated = isArchiveAction
-    ? await projectService.archive(id)
-    : await projectService.update(id, {
+  let updated;
+  try {
+    if (action === 'archive') {
+      updated = await projectService.archive(id);
+    } else if (action === 'restore') {
+      const business = await prisma.business.findUnique({
+        where: { id: project.businessId ?? undefined },
+        select: { plan: true },
+      });
+      updated = await projectService.restore(id, user.role, business?.plan ?? 'free');
+    } else {
+      updated = await projectService.update(id, {
         name: body.name,
         description: body.description,
         teamId: body.teamId,
@@ -50,6 +81,19 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
         startDate: body.startDate ? new Date(body.startDate) : body.startDate === null ? null : undefined,
         endDate: body.endDate ? new Date(body.endDate) : body.endDate === null ? null : undefined,
       });
+    }
+  } catch (error) {
+    if (error instanceof LastActiveProjectError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof ProjectLimitError) {
+      return NextResponse.json(
+        { error: error.message, limit: error.limit, current: error.current },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
 
   await writeAuditLog({
     actorId: user.uid,
@@ -58,8 +102,8 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     action: 'project.update',
     targetType: 'PROJECT',
     targetId: id,
-    metadata: isArchiveAction
-      ? { action: 'archive', status: 'archived', name: updated.name }
+    metadata: action
+      ? { action, status: updated.status, name: updated.name }
       : { name: updated.name },
   });
 
@@ -83,23 +127,6 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
   }
 
   assertResourceBelongsToBusiness(user.data, project.businessId);
-
-  const body = await request.json().catch(() => null);
-  if (body?.action === 'archive') {
-    const archived = await projectService.archive(id);
-
-    await writeAuditLog({
-      actorId: user.uid,
-      actorRole: user.role,
-      businessId: user.businessId,
-      action: 'project.update',
-      targetType: 'PROJECT',
-      targetId: id,
-      metadata: { action: 'archive', status: 'archived', name: archived.name },
-    });
-
-    return NextResponse.json(archived);
-  }
 
   await projectService.delete(id);
 

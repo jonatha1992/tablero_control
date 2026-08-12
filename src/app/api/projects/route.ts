@@ -42,6 +42,13 @@ export const POST = handle(async (request: NextRequest) => {
 
   const targetBusinessId = user.role === 'superadmin' ? businessId ?? user.businessId : user.businessId;
 
+  if (teamId) {
+    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { businessId: true } });
+    if (!team || team.businessId !== targetBusinessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
   // Get business plan for limit check
   const business = await prisma.business.findUnique({
     where: { id: targetBusinessId },

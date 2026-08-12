@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { redirect } from 'next/navigation';
 import { Archive, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/auth-context';
@@ -20,7 +21,7 @@ import {
 import type { Location } from '@/types/domain/location';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 
-export default function SectoresPage() {
+export function SectoresPageContent() {
   const { user, loading: authLoading } = useAuth();
   const businessId = user?.businessId || '';
 
@@ -196,4 +197,8 @@ export default function SectoresPage() {
       </Dialog>
     </div>
   );
+}
+
+export default function LegacySectoresPage() {
+  redirect('/dashboard/sectores');
 }
