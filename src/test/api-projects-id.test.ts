@@ -19,6 +19,7 @@ vi.mock('@/services/project.service', async (importOriginal) => {
       getById: vi.fn(),
       update: vi.fn(),
       archive: vi.fn(),
+      restore: vi.fn(),
     },
   };
 });
@@ -40,6 +41,7 @@ const mockRequireRole = vi.mocked(requireRole);
 const mockRequireActiveSubscription = vi.mocked(requireActiveSubscription);
 const mockGetById = vi.mocked(projectService.getById);
 const mockArchive = vi.mocked(projectService.archive);
+const mockRestore = vi.mocked(projectService.restore);
 const mockWriteAuditLog = vi.mocked(writeAuditLog);
 
 beforeEach(() => {
@@ -87,5 +89,40 @@ describe('PATCH /api/projects/[id]', () => {
         metadata: expect.objectContaining({ action: 'archive' }),
       })
     );
+  });
+
+  it('restaura proyecto cuando body.action = restore', async () => {
+    mockGetById.mockResolvedValueOnce({
+      id: 'proj-1', name: 'Tablero A', businessId: 'biz-1', status: 'archived',
+    } as never);
+    mockRestore.mockResolvedValueOnce({
+      id: 'proj-1', name: 'Tablero A', businessId: 'biz-1', status: 'active',
+    } as never);
+
+    const req = new NextRequest('http://localhost/api/projects/proj-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'restore' }),
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: 'proj-1' }) });
+
+    expect(res.status).toBe(200);
+    expect(mockRestore).toHaveBeenCalledWith('proj-1', 'admin', expect.any(String));
+    expect(mockWriteAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: expect.objectContaining({ action: 'restore' }) })
+    );
+  });
+
+  it('rechaza una acción desconocida', async () => {
+    const req = new NextRequest('http://localhost/api/projects/proj-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'destroy' }),
+    });
+
+    const res = await PATCH(req, { params: Promise.resolve({ id: 'proj-1' }) });
+
+    expect(res.status).toBe(400);
+    expect(mockArchive).not.toHaveBeenCalled();
+    expect(mockRestore).not.toHaveBeenCalled();
   });
 });

@@ -7,7 +7,7 @@ import {
   AreaChart, Area
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
+import { useActiveTasksQuery } from '@/hooks/queries/use-active-tasks-query';
 import { 
   format, subDays, endOfDay, isAfter, 
   eachDayOfInterval, subWeeks, startOfWeek, endOfWeek, isWithinInterval 
@@ -62,7 +62,7 @@ export function DashboardMetrics() {
     return () => cancelAnimationFrame(r);
   }, []);
 
-  const { data: tasks = [] } = useTasksQuery();
+  const { data: tasks = [] } = useActiveTasksQuery();
 
   // 1. Distribución por Estado (Pie)
   const statusDist = useMemo(() => {

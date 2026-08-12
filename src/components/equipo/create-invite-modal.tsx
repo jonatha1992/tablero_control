@@ -27,7 +27,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function CreateInviteModal({ open, onClose, businessId }: Props) {
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('link');
   const [inviteeEmail, setInviteeEmail] = useState('');
-  const [inviteeName, setInviteeName] = useState('');
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [role, setRole] = useState<string>('miembro');
   const [maxUses, setMaxUses] = useState('0');
@@ -68,9 +67,7 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
         locationIds: selectedLocationIds.length > 0 ? selectedLocationIds : undefined,
         maxUses: deliveryMethod === 'email' ? 1 : parsedMaxUses,
         expiresInDays: parseInt(expiresInDays, 10) || 0,
-        ...(deliveryMethod === 'email'
-          ? { email: trimmedEmail, inviteeName: inviteeName.trim() || undefined }
-          : {}),
+        ...(deliveryMethod === 'email' ? { email: trimmedEmail } : {}),
       },
       {
         onError: (err) => setError((err as Error).message || 'No se pudo generar el link'),
@@ -92,7 +89,6 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
     if (isPending) return;
     setDeliveryMethod('link');
     setInviteeEmail('');
-    setInviteeName('');
     setSelectedLocationIds([]);
     setRole('miembro');
     setMaxUses('0');
@@ -224,28 +220,17 @@ export function CreateInviteModal({ open, onClose, businessId }: Props) {
               </div>
 
               {deliveryMethod === 'email' && (
-                <>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Correo del invitado</label>
-                    <Input
-                      type="email"
-                      placeholder="juan@empresa.com"
-                      value={inviteeEmail}
-                      onChange={(e) => setInviteeEmail(e.target.value)}
-                      maxLength={150}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Nombre (opcional)</label>
-                    <Input
-                      placeholder="Juan García"
-                      value={inviteeName}
-                      onChange={(e) => setInviteeName(e.target.value)}
-                      maxLength={100}
-                    />
-                  </div>
-                </>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Correo del invitado</label>
+                  <Input
+                    type="email"
+                    placeholder="juan@empresa.com"
+                    value={inviteeEmail}
+                    onChange={(e) => setInviteeEmail(e.target.value)}
+                    maxLength={150}
+                    required
+                  />
+                </div>
               )}
 
               <p className="text-sm text-muted-foreground">

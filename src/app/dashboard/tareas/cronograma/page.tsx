@@ -1,10 +1,10 @@
 'use client';
 
 import { GanttView } from '@/components/tareas/gantt-view';
-import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
+import { useActiveTasksQuery } from '@/hooks/queries/use-active-tasks-query';
 
 export default function CronogramaPage() {
-  const { data: tasks = [], isLoading, isError, error } = useTasksQuery();
+  const { data: tasks = [], isLoading, isError, error } = useActiveTasksQuery();
 
   if (isLoading) {
     return (

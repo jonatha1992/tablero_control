@@ -49,10 +49,18 @@ const STEPS = [
     },
   },
   {
+    element: '#tour-nav-sedes',
+    popover: {
+      title: '🏢 Sedes',
+      description: 'Organizá sucursales, locales o áreas y vinculá cada tarea con su lugar de trabajo.',
+      side: 'right' as const,
+    },
+  },
+  {
     element: '#tour-nav-equipo',
     popover: {
       title: '👥 Equipo',
-      description: 'Invitá miembros por email o link. Asigná roles (admin, responsable, miembro, viewer) con permisos granulares. Gestioná sectores y roles personalizados.',
+      description: 'Invitá miembros por email o link y asigná roles con permisos granulares.',
       side: 'right' as const,
     },
   },
@@ -103,7 +111,7 @@ export function OnboardingTour() {
     if (!user) return;
     let driverObj: ReturnType<typeof import('driver.js')['driver']> | null = null;
     const key = TOUR_KEY(user.id);
-    const skipForCollaborator = new Set(['#tour-nav-billing', '#tour-nav-equipo']);
+    const skipForCollaborator = new Set(['#tour-nav-billing', '#tour-nav-equipo', '#tour-nav-sedes']);
 
     import('driver.js').then(({ driver }) => {
       const availableSteps = STEPS.filter((s) => {

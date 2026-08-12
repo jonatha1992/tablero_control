@@ -316,7 +316,7 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                 >
                   <option value="">Sin tablero</option>
-                  {projects.map((proj) => (
+                  {activeProjects.map((proj) => (
                     <option key={proj.id} value={proj.id}>{proj.name}</option>
                   ))}
                 </select>

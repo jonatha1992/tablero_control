@@ -43,6 +43,7 @@ describe('CreateUserModal — invitación por link', () => {
     expect(screen.getByRole('button', { name: /Solo link/i })).toBeInTheDocument();
     expect(screen.queryByText('Contraseña inicial')).not.toBeInTheDocument();
     expect(screen.getByText('Correo electrónico')).toBeInTheDocument();
+    expect(screen.queryByText(/Nombre completo/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Enviar invitación/i })).toBeInTheDocument();
   });
 
@@ -65,11 +66,10 @@ describe('CreateUserModal — invitación por link', () => {
     expect(mockInviteMutate.mock.calls[0][0]).not.toHaveProperty('email');
   });
 
-  it('envía invitación personalizada con email y sectores', async () => {
+  it('envía invitación con email y sectores sin pedir ni enviar nombre', async () => {
     const user = userEvent.setup();
     render(<CreateUserModal {...defaultProps} />);
 
-    await user.type(screen.getByPlaceholderText('Juan García'), 'Ana Multi');
     await user.type(screen.getByPlaceholderText('juan@empresa.com'), 'ana@test.com');
 
     // Seleccionar alcance "Sectores específicos" para mostrar el picker
@@ -89,7 +89,6 @@ describe('CreateUserModal — invitación por link', () => {
       expect.objectContaining({
         businessId: 'biz-1',
         email: 'ana@test.com',
-        inviteeName: 'Ana Multi',
         role: 'miembro',
         maxUses: 1,
         expiresInDays: 7,
@@ -97,6 +96,7 @@ describe('CreateUserModal — invitación por link', () => {
       }),
       expect.any(Object)
     );
+    expect(mockInviteMutate.mock.calls[0][0]).not.toHaveProperty('inviteeName');
     expect(mockCreateMutate).not.toHaveBeenCalled();
   });
 

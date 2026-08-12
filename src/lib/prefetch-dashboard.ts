@@ -84,14 +84,18 @@ export function prefetchDashboardRoute(
   }
 
   if (
-    (href.startsWith('/dashboard/tareas') || href.startsWith('/dashboard/eventos')) &&
+    (href.startsWith('/dashboard/tareas') ||
+      href.startsWith('/dashboard/eventos') ||
+      href === '/dashboard/sectores') &&
     ctx.businessId
   ) {
-    void queryClient.prefetchQuery({
-      queryKey: projectKeys.byBusiness(ctx.businessId),
-      queryFn: () => projectsApi.getByBusiness(ctx.businessId!),
-      staleTime: 1000 * 60 * 5,
-    });
+    if (href !== '/dashboard/sectores') {
+      void queryClient.prefetchQuery({
+        queryKey: projectKeys.byBusiness(ctx.businessId),
+        queryFn: () => projectsApi.getByBusiness(ctx.businessId!),
+        staleTime: 1000 * 60 * 5,
+      });
+    }
     void queryClient.prefetchQuery({
       queryKey: locationKeys.byBusiness(ctx.businessId),
       queryFn: () => locationsApi.getByBusiness(ctx.businessId!),

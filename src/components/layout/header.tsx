@@ -1,11 +1,9 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, LogOut, Menu, Download } from 'lucide-react';
+import { Search, Menu, Download } from 'lucide-react';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { getInitials, stringToColor, ROLE_LABELS, ROLE_COLORS, cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/auth-context';
 import { NotificationBell } from '@/components/layout/notification-bell';
@@ -13,6 +11,7 @@ import { BusinessSwitcher } from '@/components/business-switcher';
 import { usePwaInstall } from '@/hooks/use-pwa-install';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { SEMANTIC_ICON } from '@/lib/constants/ui-icon-colors';
+import { HeaderUserMenu } from '@/components/layout/header-user-menu';
 
 interface HeaderProps {
   userName?: string;
@@ -52,6 +51,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
     if (pathname === '/dashboard') return { title: 'Dashboard' };
     if (pathname === '/dashboard/tareas/calendario') return { title: 'Calendario' };
     if (pathname === '/dashboard/eventos') return { title: 'Eventos' };
+    if (pathname === '/dashboard/tareas/tableros') return { title: 'Tableros' };
     if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
     if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
     if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };
@@ -138,32 +138,17 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
         <NotificationBell />
         <BusinessSwitcher />
 
-        <div className="flex items-center gap-2">
-          <Avatar className="h-7 w-7 shrink-0">
-            {user?.avatar && <AvatarImage src={user.avatar} alt={displayName} />}
-            <AvatarFallback style={{ backgroundColor: avatarColor, color: 'white' }}>
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="hidden items-center gap-1.5 md:flex">
-            <span className="text-sm font-medium">{displayName}</span>
-            {role && (
-              <Badge className={`${roleColors[role]} h-5 px-1.5 text-[10px]`}>
-                {roleLabels[role]}
-              </Badge>
-            )}
-          </div>
-        </div>
+        <HeaderUserMenu
+          displayName={displayName}
+          initials={initials}
+          avatarColor={avatarColor}
+          avatar={user?.avatar}
+          roleLabel={role ? roleLabels[role] : undefined}
+          roleClassName={role ? roleColors[role] : undefined}
+          canManageBilling={role === 'admin' || role === 'superadmin'}
+          onSignOut={signOut}
+        />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={signOut}
-          title="Cerrar sesión"
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
       </div>
     </header>
   );
