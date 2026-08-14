@@ -66,11 +66,11 @@ export const invitesApi = {
         usesLeft?: number | null;
       }>),
 
-  prepareAccount: (token: string, name: string) =>
+  prepareAccount: (token: string, name: string, email: string) =>
     fetch(`/api/invites/${token}/prepare-account`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, email }),
     }).then(async (r) => {
       if (!r.ok) throw new ApiError(await r.text(), r.status);
       return r.json() as Promise<{ username: string; email: string }>;

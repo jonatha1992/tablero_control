@@ -62,3 +62,6 @@ kimi-export-*.md
 
 # MCP local config (contains DB credentials - never commit)
 .mcp.json
+
+# Backups de scripts de mantenimiento (datos productivos - never commit)
+/backups/

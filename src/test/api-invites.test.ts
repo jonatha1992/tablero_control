@@ -890,6 +890,30 @@ describe('POST /api/invites/[token]/prepare-account', () => {
     expect(body.error).toBe('invalid_name');
   });
 
+  it('retorna 400 si falta el correo', async () => {
+    const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Juan García' }),
+    });
+    const res = await prepareAccountPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('invalid_email');
+  });
+
+  it('retorna 400 si el correo tiene formato inválido', async () => {
+    const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Juan García', email: 'juan(arroba)empresa' }),
+    });
+    const res = await prepareAccountPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('invalid_email');
+  });
+
   it('retorna 410 si la invitación expiró', async () => {
     vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce({
       ...mockInvite,
@@ -899,7 +923,7 @@ describe('POST /api/invites/[token]/prepare-account', () => {
     const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Juan García' }),
+      body: JSON.stringify({ name: 'Juan García', email: 'juan@empresa.com' }),
     });
     const res = await prepareAccountPOST(req, makeParams('inv-1'));
     expect(res.status).toBe(410);
@@ -907,19 +931,36 @@ describe('POST /api/invites/[token]/prepare-account', () => {
     expect(body.error).toBe('invite_expired');
   });
 
-  it('devuelve username y email sintético para invite válido', async () => {
+  it('retorna 409 si el correo ya pertenece a otra cuenta', async () => {
     vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce(mockInvite as never);
-    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(null as never);
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce({ id: 'other-user' } as never);
 
     const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Juan García' }),
+      body: JSON.stringify({ name: 'Juan García', email: 'juan@empresa.com' }),
+    });
+    const res = await prepareAccountPOST(req, makeParams('inv-1'));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe('email_already_exists');
+  });
+
+  it('devuelve username y el correo real normalizado para invite válido', async () => {
+    vi.mocked(prisma.businessInvite.findUnique).mockResolvedValueOnce(mockInvite as never);
+    vi.mocked(prisma.user.findFirst)
+      .mockResolvedValueOnce(null as never)
+      .mockResolvedValueOnce(null as never);
+
+    const req = new NextRequest('http://localhost/api/invites/inv-1/prepare-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Juan García', email: '  Juan@Empresa.com  ' }),
     });
     const res = await prepareAccountPOST(req, makeParams('inv-1'));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.username).toBe('juan.garcia');
-    expect(body.email).toBe('juan.garcia@guest.local');
+    expect(body.email).toBe('juan@empresa.com');
   });
 });

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Users, ArrowRight, Loader2, CheckCircle, AlertTriangle, LogIn, Eye, EyeOff, Copy, Check } from 'lucide-react';
 
 const IS_EMULATOR = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface Props {
   token: string;
@@ -29,6 +30,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signupLoading, setSignupLoading] = useState(false);
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -65,9 +67,12 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
     setFieldErrors({});
 
     const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     const errors: Record<string, string> = {};
 
     if (!trimmedName) errors.name = 'El nombre es obligatorio';
+    if (!trimmedEmail) errors.email = 'El correo es obligatorio';
+    else if (!EMAIL_REGEX.test(trimmedEmail)) errors.email = 'El correo no es válido';
     if (password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres';
     if (password !== confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
 
@@ -78,7 +83,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
 
     setSignupLoading(true);
     try {
-      let credentials = await invitesApi.prepareAccount(token, trimmedName);
+      let credentials = await invitesApi.prepareAccount(token, trimmedName, trimmedEmail);
 
       const attemptRegister = async () => {
         try {
@@ -98,7 +103,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
       } catch (err: unknown) {
         const message = (err as Error).message || '';
         if (message.includes('username_already_exists') || message.includes('email-already-in-use')) {
-          credentials = await invitesApi.prepareAccount(token, trimmedName);
+          credentials = await invitesApi.prepareAccount(token, trimmedName, trimmedEmail);
           await attemptRegister();
         } else {
           throw err;
@@ -118,6 +123,10 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
         const message = (err as Error).message || '';
         if (message.includes('invite_expired') || message.includes('invite_revoked') || message.includes('invite_max_uses')) {
           setError('Este link ya no es válido. Pedile a tu administrador que genere uno nuevo.');
+        } else if (message.includes('email_already_exists')) {
+          setError('Ya existe una cuenta con ese correo. Iniciá sesión para unirte al equipo.');
+        } else if (message.includes('invalid_email')) {
+          setError('El correo no es válido. Revisalo e intentá de nuevo.');
         } else if (message.includes('username_already_exists')) {
           setError('Ese nombre ya está en uso. Probá con una variante de tu nombre.');
         } else {
@@ -240,7 +249,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Guardalo. La próxima vez ingresá con este usuario y tu contraseña.
+                      La próxima vez ingresá con este usuario o tu correo, y tu contraseña.
                     </p>
                   </div>
                 ) : (
@@ -299,6 +308,29 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
                   autoComplete="name"
                 />
                 {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="invite-email" className="text-sm font-medium">
+                  Tu correo
+                </label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="juan@empresa.com"
+                  required
+                  maxLength={150}
+                  autoComplete="email"
+                />
+                {fieldErrors.email ? (
+                  <p className="text-xs text-destructive">{fieldErrors.email}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Lo usamos para que puedas recuperar tu cuenta.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -374,7 +406,7 @@ export function InviteClient({ token, businessName, expiresAt, usesLeft }: Props
 
               <p className="text-xs text-center text-muted-foreground">
                 No vas a crear un negocio nuevo; te sumás al equipo de <strong>{businessName}</strong>.
-                Para volver a entrar usá tu nombre y contraseña.
+                Para volver a entrar usá tu correo y contraseña.
               </p>
             </form>
 

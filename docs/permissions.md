@@ -146,9 +146,9 @@ Resumen ampliado: [`docs/invites-and-accounts.md`](invites-and-accounts.md).
 
 ### Reglas de alta
 
-- Alta inline en `/i/{token}`: **nombre + contraseña** (email sintético `@guest.local` vía `prepare-account`); alternativa Google/login con redirect.
+- Alta inline en `/i/{token}`: **nombre + correo + contraseña**. El correo es obligatorio y `prepare-account` lo valida (formato + no duplicado); alternativa Google/login con redirect.
 - Alta en Firebase (email, Google o registro) **sin** `POST /api/auth/register` cuando el redirect apunta a `/i/…`.
-- `POST /api/invites/{token}/accept` (`src/app/api/invites/[token]/accept/route.ts`) crea o vincula el usuario en PostgreSQL y asigna `businessId` + rol del invite. Body opcional `{ username }` para invitados sin correo. **No** crea un `Business` propio; usuarios nuevos reciben `preferences.accountIntent: 'collaborator'` y `joinedViaInviteAt`.
+- `POST /api/invites/{token}/accept` (`src/app/api/invites/[token]/accept/route.ts`) crea o vincula el usuario en PostgreSQL y asigna `businessId` + rol del invite. Body opcional `{ username }` generado por `prepare-account`. **No** crea un `Business` propio; usuarios nuevos reciben `preferences.accountIntent: 'collaborator'` y `joinedViaInviteAt`.
 - `GET /api/auth/resolve` (público): resuelve username, email o **nombre** (único) → email Firebase para login.
 - `GET /api/auth/profile` (`src/app/api/auth/profile/route.ts`) **no** auto-crea negocios para colaboradores: si hay membresías activas, solo reasigna `businessId` desde la primera; sin membresías → `404 not_invited`.
 - Dueño de negocio propio: registro en `/register`, `POST /api/auth/register` (`accountIntent: 'owner'`), o opt-in en Config → **Armar tu negocio** (`POST /api/businesses`).

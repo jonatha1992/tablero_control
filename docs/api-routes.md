@@ -13,7 +13,7 @@ GET  /api/auth/profile          ← superadmin auto-provision si SUPERADMIN_EMAI
 ## Invites (público con token Firebase)
 ```
 GET    /api/invites/[token]           ← metadata del link (público)
-POST   /api/invites/[token]/prepare-account ← username + email @guest.local (público; valida invite)
+POST   /api/invites/[token]/prepare-account ← body `{ name, email }` (correo obligatorio); devuelve `{ username, email }` con el correo real (público; valida invite). 400 invalid_email · 409 email_already_exists
 POST   /api/invites/[token]/accept    ← membresía al negocio invitador; body opcional `{ username }`; NO crea Business; usuario nuevo → accountIntent: collaborator
 GET    /api/invites                   ← listar links (admin)
 POST   /api/invites                   ← crear link; la persona define su nombre al aceptar
