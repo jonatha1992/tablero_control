@@ -37,7 +37,7 @@ beforeEach(() => {
     refreshProfile: mockRefreshProfile,
   };
   acceptState = { mutateAsync: mockAccept, isPending: false, isSuccess: false };
-  mockPrepareAccount.mockResolvedValue({ username: 'ana.multi-2', email: 'ana.multi-2@invite.local' });
+  mockPrepareAccount.mockResolvedValue({ username: 'ana.multi-2', email: 'ana@empresa.com' });
   mockRegister.mockResolvedValue(undefined);
   mockAccept.mockImplementation(async () => {
     acceptState.isSuccess = true;
@@ -52,20 +52,40 @@ describe('InviteClient', () => {
 
     expect(screen.queryByText('ana.multi-2')).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Tu nombre'), 'Ana Multi');
+    await user.type(screen.getByLabelText('Tu correo'), 'ana@empresa.com');
     await user.type(screen.getByLabelText('Contraseña'), 'secret1');
     await user.type(screen.getByLabelText('Confirmar contraseña'), 'secret1');
     await user.click(screen.getByRole('button', { name: /Unirme al equipo/i }));
 
     await waitFor(() => expect(mockAccept).toHaveBeenCalledWith({ token: 'invite-1', username: 'ana.multi-2' }));
+    expect(mockPrepareAccount).toHaveBeenCalledWith('invite-1', 'Ana Multi', 'ana@empresa.com');
+    expect(mockRegister).toHaveBeenCalledWith('ana@empresa.com', 'secret1', 'Ana Multi');
     view.rerender(<InviteClient token="invite-1" businessName="Acme" />);
 
     expect(screen.getByText('Cuenta creada correctamente')).toBeInTheDocument();
     expect(screen.getByText('ana.multi-2')).toBeInTheDocument();
-    expect(screen.getByText(/próxima vez ingresá con este usuario y tu contraseña/i)).toBeInTheDocument();
+    expect(screen.getByText(/próxima vez ingresá con este usuario o tu correo/i)).toBeInTheDocument();
 
     const copySpy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
     await user.click(screen.getByRole('button', { name: /Copiar usuario/i }));
     expect(copySpy).toHaveBeenCalledWith('ana.multi-2');
+  });
+
+  it('exige correo en el alta inline y no llama a prepareAccount sin el', async () => {
+    const user = userEvent.setup();
+    render(<InviteClient token="invite-1" businessName="Acme" />);
+
+    const emailInput = screen.getByLabelText('Tu correo');
+    expect(emailInput).toBeRequired();
+    expect(emailInput).toHaveAttribute('type', 'email');
+
+    await user.type(screen.getByLabelText('Tu nombre'), 'Ana Multi');
+    await user.type(screen.getByLabelText('Contraseña'), 'secret1');
+    await user.type(screen.getByLabelText('Confirmar contraseña'), 'secret1');
+    await user.click(screen.getByRole('button', { name: /Unirme al equipo/i }));
+
+    expect(mockPrepareAccount).not.toHaveBeenCalled();
+    expect(mockRegister).not.toHaveBeenCalled();
   });
 
   it('indica a una cuenta Google aceptada cómo volver a entrar', async () => {

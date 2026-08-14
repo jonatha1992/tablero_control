@@ -29,7 +29,7 @@ Ambos llaman `POST /api/invites` y apuntan a `/i/{id}`.
 
 ```mermaid
 flowchart LR
-  invite["/i/token"] --> signup["Nombre + contraseña inline"]
+  invite["/i/token"] --> signup["Nombre + correo + contraseña inline"]
   signup --> accept["POST accept invite"]
   invite --> authAlt[Google o login]
   authAlt --> accept
@@ -39,7 +39,9 @@ flowchart LR
   create --> switch[Cambiar negocio en header]
 ```
 
-Invitados sin correo real: `prepare-account` genera `username` + email sintético `{username}@guest.local`. Login posterior con **nombre + contraseña** vía `GET /api/auth/resolve?login=…`.
+El alta inline pide **nombre + correo + contraseña**. El correo es obligatorio: `prepare-account` valida formato, rechaza duplicados (`409 email_already_exists`) y devuelve `{ username, email }` con el correo real. El `username` se sigue generando para permitir login por nombre vía `GET /api/auth/resolve?login=…`.
+
+El email sintético `{username}@guest.local` (`syntheticEmail()`) quedó **solo** para el alta manual por admin en `POST /api/users/create`, donde el admin puede dar de alta a alguien sin correo.
 
 ## Archivos clave
 

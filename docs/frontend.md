@@ -134,7 +134,7 @@ src/app/
 
 Ruta pública: `/i/[token]` (`invite-client.tsx`).
 
-1. Usuario no autenticado: formulario inline **nombre + contraseña** (sin correo) → `POST /api/invites/{token}/prepare-account` genera username/email `@guest.local` → Firebase `register` → `POST /accept` con `{ username }` en un solo paso. Alternativas: **Google** (prod) o **login** con `?redirect=/i/{token}`.
+1. Usuario no autenticado: formulario inline **nombre + correo + contraseña** (el correo es **obligatorio**) → `POST /api/invites/{token}/prepare-account` valida el correo y devuelve `{ username, email }` con el correo real → Firebase `register` → `POST /accept` con `{ username }` en un solo paso. Alternativas: **Google** (prod) o **login** con `?redirect=/i/{token}`.
 2. **No** llamar `POST /api/auth/register` en flujos con redirect a `/i/…` — ese endpoint crea un negocio propio. El alta en PostgreSQL ocurre en `POST /api/invites/{token}/accept`.
 3. Tras Firebase Auth sin perfil PG (Google/login), el usuario vuelve al link y pulsa **Unirme al equipo** si aún no aceptó.
 4. `auth-context` no debe cerrar sesión en `/register` ni en `/i/…` durante el alta (rompe `getIdToken`). Ante `profile` 404 fuera de esas rutas, marca `notInvited` (no llama `POST /api/auth/register`).

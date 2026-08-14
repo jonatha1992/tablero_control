@@ -3,7 +3,9 @@
     "allow": [
       "PowerShell(npm run dev:all)",
       "Read(//c/Users/jonat/.ai-workflows/scripts/**)",
-      "Read(//c/Users/jonat/.ai-workflows/workflows/promote-to-test/**)"
+      "Read(//c/Users/jonat/.ai-workflows/workflows/promote-to-test/**)",
+      "Bash(./node_modules/.bin/vitest run *)",
+      "mcp__postgres__pg_query"
     ]
   }
 }
