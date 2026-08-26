@@ -119,6 +119,14 @@ loadExtractContext(businessId): Promise<ExtractContext>
 extractTasksFromTranscription(text, ctx: ExtractContext): Promise<ExtractedTask[]>
 // Extrae: título, descripción, prioridad, status, assignees, tags, dueDate, dueTime,
 // location, project, cycle, objective, checklist, recurrencia, estimatedHours
+// Fallback: si el LLM devuelve [] pero el texto expresa intención
+// (ver `intent-heuristics.ts`), se crea una tarea mínima con el texto como
+// título. Solo texto conversacional puro (saludos, preguntas) devuelve [].
+
+// intent-heuristics.ts — reglas deterministas compartidas
+hasActionIntent(text): boolean        // "necesito", "hay que", "alguien tiene que"...
+classifyActionKind(text): 'event' | 'task'
+buildActionTitle(text): string        // recorta el prefijo de intención
 
 // extract-events.ts
 extractEventsFromText(text, ctx: ExtractContext): Promise<ExtractedEvent[]>
@@ -139,6 +147,35 @@ API routes — asistente:
 - `POST /api/assistant/generate-plan` — generación de planificación sprint/objetivo
 
 Variables: `GROQ_API_KEY1..N` (ver "Cadena de proveedores de IA" más abajo).
+Modelo de texto: `GROQ_TEXT_MODEL` (default `openai/gpt-oss-20b`, definido en
+`src/lib/ai/models.ts`). **Nunca hardcodear el modelo en los archivos de `src/lib/groq/`.**
+
+### Regla: tarea, evento o consulta
+
+Todo mensaje del usuario es una de tres cosas. El sistema decide solo; **nunca
+pregunta "¿es una tarea o un evento?"**.
+
+| Señal | Resultado |
+|-------|-----------|
+| Estar en un lugar/momento — "ir a", "pasar por", "reunión", "parcial", "turno" | **evento** |
+| Producir o resolver — "hacer", "armar", "mandar", "el tema de X" | **tarea** |
+| Pregunta sobre datos existentes o sobre el sistema | **consulta** |
+| Duda genuina entre tarea y evento | **tarea** (el preview es reversible) |
+
+Falta de fecha, responsable o tablero **no** frena el flujo: se completa en el
+preview. `NON_BLOCKING_SLOTS` en `planner-intent.ts` filtra esos slots antes de
+que puedan generar un `clarify`. Solo un mensaje sin ninguna acción
+("organizame", "hacé algo") llega a preguntar.
+
+Capas, de arriba hacia abajo:
+1. Prompt del LLM con las reglas y ejemplos.
+2. `resolveIntent()` — corrige `unknown`/`query` a tarea o evento si hay acción.
+3. Fallback en `extract-tasks.ts` / `extract-events.ts` — si el modelo devuelve
+   vacío igual se arma el ítem. Un evento sin fecha cae a hoy en vez de descartarse.
+
+Un fallo del proveedor **no** se muestra como "no detecté tareas":
+`/api/tasks/from-text` responde 502 `extraction_failed`, y `/api/tasks/from-audio`
+conserva la transcripción con `extractionFailed: true`.
 
 ---
 

@@ -1,4 +1,5 @@
 import { groq } from './client';
+import { GROQ_TEXT_MODEL } from '@/lib/ai/models';
 import type { TaskPriority } from '@/types/domain/task';
 
 export interface GeneratedTask {
@@ -59,7 +60,7 @@ export async function generatePlanFromDescription(
   const today = new Date().toISOString().split('T')[0];
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: GROQ_TEXT_MODEL,
     messages: [
       { role: 'system', content: buildSystemPrompt(type, today) },
       { role: 'user', content: description },

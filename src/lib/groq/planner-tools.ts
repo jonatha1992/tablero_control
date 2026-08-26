@@ -140,6 +140,16 @@ export async function runIntentPipeline(
       );
       const events = (result.data as { events: ExtractedEvent[] }).events;
       if (events.length === 0) {
+        // Se leyó como evento pero no hay fecha/lugar utilizable: cae a tarea
+        // en vez de preguntar. El usuario ya dijo que hay algo por hacer.
+        const asTasks = await executePlannerTool(
+          { tool: 'extract_tasks', args: { text: intent.extractionText ?? '' } },
+          ctx,
+        );
+        const tasks = (asTasks.data as { tasks: ExtractedTask[] }).tasks;
+        if (tasks.length > 0) {
+          return { type: 'preview_tasks', tasks, parseError: false };
+        }
         return {
           type: 'clarify',
           question: 'No pude detectar un evento concreto. ¿Podés decirme qué evento es y cuándo sería?',

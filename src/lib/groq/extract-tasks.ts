@@ -1,6 +1,8 @@
 import { groq } from './client';
+import { GROQ_TEXT_MODEL } from '@/lib/ai/models';
 import type { ChecklistItem, RecurrenceConfig, TaskPriority, TaskStatus, TaskType } from '@/types/domain/task';
 import type { ExtractContext } from './extract-context';
+import { buildActionTitle, hasActionIntent } from './intent-heuristics';
 
 export interface ExtractedTask {
   title: string;
@@ -94,6 +96,19 @@ Devuelve ÚNICAMENTE JSON válido:
   ]
 }
 
+Qué cuenta como tarea (MUY IMPORTANTE):
+- Cualquier intención, necesidad, obligación o pendiente es una tarea. Ejemplos de disparadores:
+  "necesito...", "tengo que...", "hay que...", "quiero...", "me falta...", "acordate de...",
+  "pendiente:", "falta...", "debería...", "voy a...", "sería bueno...", "hacer...".
+- No importa si es vago, corto o sin detalle. "necesito hacer el tema de X" ES una tarea:
+  title "Hacer el tema de X" (o la acción normalizada en infinitivo).
+- No pidas más contexto ni descartes por falta de detalle. Extraé la tarea con lo que haya
+  y dejá en null todo lo que no se mencione.
+- Un texto sin verbo explícito pero que nombra un entregable o tema pendiente
+  ("mapa del delito", "informe mensual") también es tarea.
+- Devolvé { "tasks": [] } SOLO si el texto es puramente conversacional: saludos, preguntas
+  sin acción, agradecimientos, comentarios sin nada por hacer.
+
 Reglas:
 - Cada acción/tarea mencionada = ítem separado. order desde 1.
 - assigneeIds, locationId, projectId, projectIds, cycleId, objectiveId: solo ids de las listas. Sin match → null/[].
@@ -103,8 +118,17 @@ Reglas:
 - status backlog si es idea futura; todo por defecto; in_progress si ya en curso.
 - recurrence: rutinas ("todos los viernes", "quincenal", "cada mes"). Sin repetición → null.
 - checklist: pasos o desgloses mencionados dentro de una tarea. No crear subtareas; usá checklist.
-- Sin tareas reconocibles → { "tasks": [] }.
 - Solo JSON raw, sin markdown.
+
+Ejemplos:
+Entrada: "necesito hacer el tema de mapa del delito"
+Salida: {"tasks":[{"title":"Hacer el tema de mapa del delito","description":null,"priority":"medium","status":"todo","type":"task","assigneeIds":[],"tags":[],"order":1}]}
+
+Entrada: "hay que llamar al proveedor y mandar la factura el viernes"
+Salida: {"tasks":[{"title":"Llamar al proveedor","priority":"medium","status":"todo","type":"task","assigneeIds":[],"tags":[],"order":1},{"title":"Mandar la factura","priority":"medium","status":"todo","type":"task","assigneeIds":[],"tags":[],"order":2,"dueDate":null}]}
+
+Entrada: "hola, cómo va todo?"
+Salida: {"tasks":[]}
 `.trim();
 }
 
@@ -178,12 +202,38 @@ function sanitizeTask(raw: ExtractedTask, ctx: ExtractContext): ExtractedTask {
   };
 }
 
+/**
+ * Crea una tarea minima cuando el texto expresa una intencion clara pero el modelo
+ * no devolvio nada. Evita el "No detecte tareas" en pedidos vagos pero validos.
+ */
+function fallbackTaskFromText(text: string, ctx: ExtractContext): ExtractedTask[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (!hasActionIntent(trimmed)) return [];
+
+  return [
+    sanitizeTask(
+      {
+        title: buildActionTitle(trimmed),
+        description: trimmed.length > 120 ? trimmed : undefined,
+        priority: 'medium',
+        status: 'todo',
+        type: 'task',
+        assigneeIds: [],
+        tags: [],
+        order: 1,
+      },
+      ctx,
+    ),
+  ];
+}
+
 export async function extractTasksFromTranscription(
   transcription: string,
   ctx: ExtractContext,
 ): Promise<ExtractedTask[]> {
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: GROQ_TEXT_MODEL,
     messages: [
       { role: 'system', content: buildSystemPrompt(ctx) },
       { role: 'user', content: transcription },
@@ -196,5 +246,10 @@ export async function extractTasksFromTranscription(
   const raw = completion.choices[0]?.message?.content ?? '{"tasks":[]}';
   const parsed = JSON.parse(raw) as { tasks?: ExtractedTask[] };
   const tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
-  return tasks.map((t) => sanitizeTask(t, ctx));
+  const sanitized = tasks
+    .map((t) => sanitizeTask(t, ctx))
+    .filter((t) => t.title.trim().length > 0);
+
+  if (sanitized.length === 0) return fallbackTaskFromText(transcription, ctx);
+  return sanitized;
 }

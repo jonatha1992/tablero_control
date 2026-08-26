@@ -43,14 +43,14 @@ export const POST = handle(async (request: NextRequest) => {
   }
 
   let tasks: Awaited<ReturnType<typeof extractTasksFromTranscription>>;
-  let parseError = false;
   try {
     tasks = await extractTasksFromTranscription(text, extractCtx);
   } catch (err) {
+    // Un fallo del proveedor no es "no te entendi": se responde como error real
+    // para que la UI no culpe al usuario por un problema de infraestructura.
     console.error('[from-text] Task extraction failed', err);
-    tasks = [];
-    parseError = true;
+    return NextResponse.json({ error: 'extraction_failed' }, { status: 502 });
   }
 
-  return NextResponse.json({ tasks, parseError });
+  return NextResponse.json({ tasks, parseError: false });
 });

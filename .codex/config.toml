@@ -1,0 +1,59 @@
+[mcp_servers.context7]
+command = "npx.cmd"
+args = [
+    "-y",
+    "@upstash/context7-mcp@latest",
+]
+
+[mcp_servers.drawio]
+command = "drawio-mcp.cmd"
+
+[mcp_servers.excel]
+command = "uvx"
+args = [
+    "excel-mcp-server",
+    "stdio",
+]
+
+[mcp_servers.filesystem]
+command = "npx.cmd"
+args = [
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+]
+
+[mcp_servers.markitdown]
+command = "uvx"
+args = ["markitdown-mcp"]
+
+[mcp_servers.memorix]
+command = "memorix"
+args = ["serve"]
+
+[mcp_servers.memory]
+command = "npx.cmd"
+args = [
+    "-y",
+    "@modelcontextprotocol/server-memory",
+]
+
+[mcp_servers.postgres]
+command = "npx.cmd"
+args = [
+    "-y",
+    "@yawlabs/postgres-mcp",
+]
+
+[mcp_servers.postgres.env]
+DATABASE_URL = "postgresql://postgres:XCghGyCkBLVnahuATCoaNvnZMvsvxHzL@roundhouse.proxy.rlwy.net:40500/railway"
+
+[mcp_servers.railway]
+command = "railway"
+args = ["mcp"]
+
+[mcp_servers.sequential-thinking]
+command = "npx.cmd"
+args = [
+    "-y",
+    "@modelcontextprotocol/server-sequential-thinking",
+]
