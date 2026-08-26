@@ -20,6 +20,7 @@ vi.mock('@/lib/groq/client', () => ({
 
 import { groq } from '@/lib/groq/client';
 import { extractTasksFromTranscription } from '@/lib/groq/extract-tasks';
+import { GROQ_TEXT_MODEL } from '@/lib/ai/models';
 
 const mockCreate = groq.chat.completions.create as ReturnType<typeof vi.fn>;
 
@@ -238,6 +239,66 @@ describe('ExtractContext shape', () => {
       today: '2026-05-30',
     };
     expect(ctx.defaultProjectId).toBe('p1');
+  });
+});
+
+describe('fallback cuando el modelo no devuelve tareas', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('crea una tarea desde una intencion vaga', async () => {
+    mockGroqResponse([]);
+    const tasks = await extractTasksFromTranscription(
+      'necesito hacer el tema de mapa del delito',
+      baseCtx,
+    );
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].title).toBe('Hacer el tema de mapa del delito');
+    expect(tasks[0].status).toBe('todo');
+    expect(tasks[0].projectId).toBe('p1');
+  });
+
+  it('reconoce "hay que" y recorta el prefijo', async () => {
+    mockGroqResponse([]);
+    const tasks = await extractTasksFromTranscription('hay que pintar el deposito', baseCtx);
+    expect(tasks[0].title).toBe('Pintar el deposito');
+  });
+
+  it('no crea tareas en texto conversacional', async () => {
+    mockGroqResponse([]);
+    const tasks = await extractTasksFromTranscription('hola, como va todo?', baseCtx);
+    expect(tasks).toEqual([]);
+  });
+
+  it('descarta tareas del modelo con title vacio y cae al fallback', async () => {
+    mockGroqResponse([{ title: '  ', priority: 'medium', status: 'todo', type: 'task', assigneeIds: [], tags: [], order: 1 }]);
+    const tasks = await extractTasksFromTranscription('tengo que cerrar la caja', baseCtx);
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].title).toBe('Cerrar la caja');
+  });
+});
+
+describe('modelo de Groq', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // GroqCloud dio de baja llama-3.3-70b-versatile y la API empezo a devolver 404.
+  // El catch de la route lo mostraba como "No detecte tareas en el texto", asi que
+  // el corte de servicio parecia un problema de comprension. El modelo va por una
+  // sola constante para que no vuelva a quedar hardcodeado en cada archivo.
+  it('usa la constante compartida y no un modelo hardcodeado', async () => {
+    mockGroqResponse([]);
+    await extractTasksFromTranscription('hola', baseCtx);
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: GROQ_TEXT_MODEL }),
+    );
+  });
+
+  it('el modelo por defecto no es uno dado de baja', () => {
+    expect(GROQ_TEXT_MODEL).not.toMatch(/llama-3\.[123]/);
+    expect(GROQ_TEXT_MODEL.length).toBeGreaterThan(0);
   });
 });
 

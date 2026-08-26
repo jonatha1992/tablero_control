@@ -1,4 +1,5 @@
 import { groq } from './client';
+import { GROQ_TEXT_MODEL } from '@/lib/ai/models';
 import type { ExtractContext } from './extract-context';
 import type { AssistantMessage } from './assistant';
 import { classifyPlannerIntent } from './planner-intent';
@@ -69,7 +70,7 @@ export async function plannerToolLoop(
   userMessage: string,
 ): Promise<string> {
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: GROQ_TEXT_MODEL,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },

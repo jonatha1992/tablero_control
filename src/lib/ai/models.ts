@@ -34,7 +34,13 @@ export const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL ?? 'gemini-flash-
 // 4.2 s contra 6.0 s del flash completo, con el mismo resultado.
 export const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL ?? 'gemini-flash-lite-latest';
 
-export const GROQ_TEXT_MODEL = process.env.GROQ_TEXT_MODEL ?? 'llama-3.3-70b-versatile';
+// GroqCloud dio de baja `llama-3.3-70b-versatile`: la API devuelve 404 model_not_found.
+// Verificados vivos y medidos el 2026-08-25 sobre 10 casos de clasificacion
+// tarea/evento/consulta: gpt-oss-20b 10/10 en 750ms, gpt-oss-120b 10/10 en 782ms.
+// Gana el 20b: misma precision y ~456 tokens por request contra ~1290 del 120b,
+// lo que triplica el margen contra el limite de 8000 TPM de la cuenta.
+// qwen3.6-27b descartado: falla `Failed to validate JSON` con response_format.
+export const GROQ_TEXT_MODEL = process.env.GROQ_TEXT_MODEL ?? 'openai/gpt-oss-20b';
 
 // NVIDIA NIM. Verificados vivos el 2026-08-06.
 //

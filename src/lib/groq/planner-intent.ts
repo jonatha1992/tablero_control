@@ -1,6 +1,8 @@
 import { groq } from './client';
+import { GROQ_TEXT_MODEL } from '@/lib/ai/models';
 import type { ExtractContext } from './extract-context';
 import type { AssistantMessage } from './assistant';
+import { classifyActionKind, hasActionIntent } from './intent-heuristics';
 
 export type PlannerIntentType =
   | 'create_task'
@@ -59,37 +61,142 @@ Respondé SOLO JSON:
   "suggestedOptions": ["opción 1", "opción 2"]
 }
 
+Principio base (NO NEGOCIABLE):
+Todo mensaje del usuario es una de tres cosas: una TAREA, un EVENTO o una CONSULTA.
+Si expresa que algo debe hacerse ("necesito...", "tengo que...", "hay que...", "me falta...",
+"alguien tiene que...", "quiero...", "falta...", "pendiente..."), es trabajo por hacer:
+NUNCA preguntes si es tarea o evento, decidilo vos con las reglas de abajo.
+
+Cómo decidir entre EVENTO y TAREA:
+- create_event si el núcleo es ESTAR en un lugar o momento con otros: verbos de
+  desplazamiento o presencia ("ir a", "hay que ir a", "asistir", "pasar por", "acercarse a",
+  "visitar", "viajar a", "juntarse", "reunirse con", "presentarse en"), o sustantivos de
+  agenda ("reunión", "cita", "turno", "examen", "parcial", "entrevista", "llamado a las X",
+  "capacitación", "audiencia"), o cuando hay fecha/hora fija + lugar o personas.
+  "hay que ir a la sede centro" → create_event.
+- create_task si el núcleo es PRODUCIR o resolver algo: "hacer", "armar", "escribir",
+  "mandar", "revisar", "corregir", "comprar", "cargar", "actualizar", "llamar a" (gestión),
+  "el tema de X", "el informe de X".
+  "necesito hacer el tema de mapa del delito" → create_task.
+- Duda genuina entre los dos → create_task. Es reversible desde el preview; preguntar no.
+
 Reglas:
 - create_task/create_tasks_batch: quiere crear trabajo (aunque no diga "crear tarea").
-- create_event: quiere agendar un evento, examen, reunión, cita o recordatorio tipo "avisame del ...".
+  Varias acciones en un mensaje → create_tasks_batch.
 - create_plan: sprint/ciclo/planificación. create_objective: objetivo/épica/meta/OKR.
-- query: pregunta sobre tareas existentes o cómo usar el sistema.
-- Si no queda claro si quiere tarea o evento, devolver intent "unknown", missingSlots ["kind"], clarificationQuestion preguntando si es Evento o Tarea y suggestedOptions ["Evento", "Tarea"].
-- Si el mensaje es muy vago ("hacé algo", "organizame") → missingSlots + clarificationQuestion.
+- query: SOLO preguntas sobre datos existentes o cómo usar el sistema
+  ("¿cuántas tareas tengo?", "¿cómo creo un sprint?"). Un pedido no es una consulta.
+- unknown + clarificationQuestion: reservado para mensajes sin ninguna acción
+  ("hacé algo", "organizame", "dale"). Nunca por falta de fecha, responsable o tablero:
+  eso se completa después en el preview.
+- Nunca uses missingSlots ["kind"] ni preguntes "¿Evento o Tarea?".
 - extractionText: reescribí claro lo que hay que crear; no inventes assignees.
 `.trim();
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: GROQ_TEXT_MODEL,
     messages: [
       { role: 'system', content: prompt },
       { role: 'user', content: userMessage },
     ],
     response_format: { type: 'json_object' },
     temperature: 0.1,
-    max_tokens: 1024,
+    max_tokens: 2048,
+    // Clasificar no necesita razonamiento largo: medido baja de ~250 a ~67 tokens
+    // de salida sin perder aciertos, y deja margen contra el limite de TPM.
+    reasoning_effort: 'low',
   });
 
   const raw = completion.choices[0]?.message?.content ?? '{}';
   const parsed = JSON.parse(raw) as PlannerIntentResult;
-  return {
-    intent: parsed.intent ?? 'unknown',
-    confidence: parsed.confidence ?? 0.5,
-    extractionText: parsed.extractionText ?? userMessage,
-    planType: parsed.planType,
-    planDescription: parsed.planDescription,
-    missingSlots: parsed.missingSlots ?? [],
-    clarificationQuestion: parsed.clarificationQuestion,
-    suggestedOptions: parsed.suggestedOptions,
-  };
+
+  return resolveIntent(
+    {
+      intent: parsed.intent ?? 'unknown',
+      confidence: parsed.confidence ?? 0.5,
+      extractionText: parsed.extractionText ?? userMessage,
+      planType: parsed.planType,
+      planDescription: parsed.planDescription,
+      missingSlots: parsed.missingSlots ?? [],
+      clarificationQuestion: parsed.clarificationQuestion,
+      suggestedOptions: parsed.suggestedOptions,
+    },
+    userMessage,
+  );
+}
+
+/** Slots que nunca justifican frenar al usuario: se completan en el preview. */
+const NON_BLOCKING_SLOTS = new Set([
+  'kind',
+  'type',
+  'duedate',
+  'due_date',
+  'startdate',
+  'start_date',
+  'starttime',
+  'start_time',
+  'enddate',
+  'end_date',
+  'fecha',
+  'fechas',
+  'hora',
+  'horario',
+  'time',
+  'when',
+  'cuando',
+  'lugar',
+  'place',
+  'assignee',
+  'assignees',
+  'responsable',
+  'project',
+  'projectid',
+  'tablero',
+  'priority',
+  'prioridad',
+  'location',
+  'sede',
+]);
+
+/**
+ * Red de seguridad determinista sobre la salida del LLM.
+ *
+ * Si el mensaje expresa algo por hacer, el sistema resuelve solo si es tarea o evento
+ * en vez de devolver "unknown" y preguntar. Solo sobrevive el clarify cuando el texto
+ * no tiene ninguna accion reconocible.
+ */
+export function resolveIntent(
+  result: PlannerIntentResult,
+  userMessage: string,
+): PlannerIntentResult {
+  const actionable = hasActionIntent(userMessage);
+
+  const missingSlots = result.missingSlots.filter(
+    (slot) => !NON_BLOCKING_SLOTS.has(slot.trim().toLowerCase()),
+  );
+
+  // El LLM se quedo sin decidir, pero el usuario si pidio algo: decidimos nosotros.
+  if (actionable && (result.intent === 'unknown' || result.intent === 'query')) {
+    const kind = classifyActionKind(userMessage);
+    return {
+      ...result,
+      intent: kind === 'event' ? 'create_event' : 'create_task',
+      confidence: Math.max(result.confidence, 0.6),
+      missingSlots: [],
+      clarificationQuestion: undefined,
+      suggestedOptions: undefined,
+    };
+  }
+
+  // Pidio algo y el LLM acerto el intent: nunca frenar por un campo opcional.
+  if (actionable && missingSlots.length === 0) {
+    return {
+      ...result,
+      missingSlots: [],
+      clarificationQuestion: undefined,
+      suggestedOptions: undefined,
+    };
+  }
+
+  return { ...result, missingSlots };
 }

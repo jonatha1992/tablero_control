@@ -104,4 +104,60 @@ describe('extractEventsFromText', () => {
     expect(events[0].startTime).toBe('09:30');
     expect(events[0].endTime).toBe('10:30');
   });
+
+  const ctx = {
+    members: [],
+    locations: [],
+    projects: [],
+    cycles: [],
+    objectives: [],
+    today: '2026-07-19',
+    siteLabel: 'Sede',
+  };
+
+  it('no descarta el evento cuando el modelo no devuelve fecha: cae a hoy', async () => {
+    createCompletion.mockResolvedValueOnce({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            events: [{ title: 'Ir a la sede centro', startDate: null, allDay: true, assigneeIds: [], order: 1 }],
+          }),
+        },
+      }],
+    });
+
+    const events = await extractEventsFromText('hay que ir a la sede centro', ctx);
+    expect(events).toHaveLength(1);
+    expect(events[0].startDate).toBe('2026-07-19');
+    expect(events[0].allDay).toBe(true);
+  });
+
+  it('fallback: crea evento cuando el modelo devuelve vacio y el texto pide ir a un lugar', async () => {
+    createCompletion.mockResolvedValueOnce({
+      choices: [{ message: { content: JSON.stringify({ events: [] }) } }],
+    });
+
+    const events = await extractEventsFromText('hay que ir a la sede centro', ctx);
+    expect(events).toHaveLength(1);
+    expect(events[0].title).toBe('Ir a la sede centro');
+    expect(events[0].startDate).toBe('2026-07-19');
+  });
+
+  it('fallback: no inventa evento si el texto es una tarea', async () => {
+    createCompletion.mockResolvedValueOnce({
+      choices: [{ message: { content: JSON.stringify({ events: [] }) } }],
+    });
+
+    const events = await extractEventsFromText('necesito hacer el tema de mapa del delito', ctx);
+    expect(events).toEqual([]);
+  });
+
+  it('fallback: no inventa evento en texto conversacional', async () => {
+    createCompletion.mockResolvedValueOnce({
+      choices: [{ message: { content: JSON.stringify({ events: [] }) } }],
+    });
+
+    const events = await extractEventsFromText('hola, como va?', ctx);
+    expect(events).toEqual([]);
+  });
 });

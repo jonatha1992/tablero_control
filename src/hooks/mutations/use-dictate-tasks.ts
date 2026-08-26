@@ -15,6 +15,8 @@ export interface FromAudioResult {
   transcription: string;
   tasks: ExtractedTask[];
   parseError: boolean;
+  /** El proveedor de IA fallo: no es que no haya tareas en el texto. */
+  extractionFailed?: boolean;
 }
 
 export interface FromTextResult {

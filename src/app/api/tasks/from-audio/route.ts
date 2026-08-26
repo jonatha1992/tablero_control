@@ -59,14 +59,16 @@ export const POST = handle(async (request: NextRequest) => {
   }
 
   let tasks: Awaited<ReturnType<typeof extractTasksFromTranscription>>;
-  let parseError = false;
+  // Si falla la extraccion se devuelve igual la transcripcion para no perder
+  // el dictado, pero marcada como error real y no como "no detecte tareas".
+  let extractionFailed = false;
   try {
     tasks = await extractTasksFromTranscription(transcription, extractCtx);
   } catch (err) {
     console.error('[from-audio] Task extraction failed', err);
     tasks = [];
-    parseError = true;
+    extractionFailed = true;
   }
 
-  return NextResponse.json({ transcription, tasks, parseError });
+  return NextResponse.json({ transcription, tasks, parseError: false, extractionFailed });
 });

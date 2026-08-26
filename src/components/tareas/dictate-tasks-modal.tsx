@@ -29,6 +29,8 @@ type AssistantMessage = {
   role: 'assistant';
   tasks: ExtractedTask[];
   parseError: boolean;
+  /** El proveedor de IA fallo: se distingue de "no hay tareas en el texto". */
+  extractionFailed?: boolean;
   confirmed: boolean;
 };
 type ChatMessage = UserMessage | AssistantMessage;
@@ -58,10 +60,14 @@ function DictateTasksInner({ onTasksConfirmed }: DictateTasksInnerProps) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isProcessing]);
 
-  const pushAssistant = (tasks: ExtractedTask[], parseError: boolean) => {
+  const pushAssistant = (
+    tasks: ExtractedTask[],
+    parseError: boolean,
+    extractionFailed = false,
+  ) => {
     setMessages((prev) => [
       ...prev,
-      { role: 'assistant', tasks, parseError, confirmed: false },
+      { role: 'assistant', tasks, parseError, extractionFailed, confirmed: false },
     ]);
   };
 
@@ -106,7 +112,7 @@ function DictateTasksInner({ onTasksConfirmed }: DictateTasksInnerProps) {
               setMicState('idle');
               if (data.transcription) {
                 setMessages((prev) => [...prev, { role: 'user', text: data.transcription }]);
-                pushAssistant(data.tasks, data.parseError);
+                pushAssistant(data.tasks, data.parseError, data.extractionFailed);
               }
             },
             onError: () => setMicState('idle'),
@@ -188,9 +194,11 @@ function DictateTasksInner({ onTasksConfirmed }: DictateTasksInnerProps) {
           return (
             <div key={msgIdx} className="flex flex-col gap-2">
               <div className="bg-muted rounded-2xl rounded-tl-sm px-3 py-2 text-sm self-start max-w-[85%]">
-                {msg.parseError || msg.tasks.length === 0
-                  ? 'No detecté tareas en el texto. ¿Podés ser más específico?'
-                  : `Encontré ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
+                {msg.extractionFailed
+                  ? 'No pude procesar el texto ahora mismo. Probá de nuevo en unos segundos.'
+                  : msg.parseError || msg.tasks.length === 0
+                    ? 'No detecté tareas en el texto. ¿Podés ser más específico?'
+                    : `Encontré ${msg.tasks.length} tarea${msg.tasks.length !== 1 ? 's' : ''}:`}
               </div>
 
               {msg.tasks.length > 0 && (
