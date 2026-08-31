@@ -27,6 +27,9 @@ vi.mock('@/hooks/use-space-labels', () => ({
   useSpaceLabels: () => ({ site: 'Sucursal', sites: 'Sucursales' }),
 }));
 vi.mock('@/lib/permissions', () => ({ can: () => true }));
+vi.mock('@/hooks/queries/use-projects-query', () => ({
+  useProjectsQuery: () => ({ data: [], isLoading: false, isError: false }),
+}));
 
 function renderSidebar() {
   return render(

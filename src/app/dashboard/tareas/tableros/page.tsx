@@ -1,10 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Archive, RotateCcw, LayoutGrid, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/auth-context';
 import { useProjectsQuery, useUpdateProject } from '@/hooks/queries/use-projects-query';
+import { shouldShowBoardsManager } from '@/lib/business-defaults';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,6 +22,7 @@ import type { Project } from '@/lib/api/projects';
 type ProjectTab = 'active' | 'archived';
 
 export default function ProjectManagementPage() {
+  const router = useRouter();
   const { user, isAdmin } = useAuth();
   const businessId = user?.businessId ?? '';
   const { data: projects = [], isLoading, isError } = useProjectsQuery(businessId);
@@ -35,6 +38,13 @@ export default function ProjectManagementPage() {
   );
   const activeCount = projects.filter((project) => project.status !== 'archived').length;
   const archivedCount = projects.length - activeCount;
+  const showManager = shouldShowBoardsManager(activeCount, archivedCount);
+
+  useEffect(() => {
+    if (!isLoading && !isError && !showManager) {
+      router.replace('/dashboard/tareas');
+    }
+  }, [isLoading, isError, showManager, router]);
 
   function archiveProject() {
     if (!projectToArchive) return;
@@ -82,6 +92,14 @@ export default function ProjectManagementPage() {
 
   if (isError) {
     return <p className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">No se pudieron cargar los tableros.</p>;
+  }
+
+  if (!showManager) {
+    return (
+      <div className="flex h-full items-center justify-center" aria-label="Cargando tableros">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (

@@ -25,6 +25,14 @@ const STEPS = [
     },
   },
   {
+    element: '#tour-nav-eventos',
+    popover: {
+      title: '📅 Eventos',
+      description: 'Lista de reuniones, exámenes e hitos del espacio. No son tareas: reciben aviso por notificación y email.',
+      side: 'right' as const,
+    },
+  },
+  {
     element: '#tour-fab',
     popover: {
       title: '✨ Asistente IA',
@@ -44,7 +52,7 @@ const STEPS = [
     element: '#tour-nav-planificacion',
     popover: {
       title: '🎯 Planificación',
-      description: 'Eventos, períodos (sprints) y objetivos de negocio vinculados a tareas.',
+      description: 'Períodos (sprints) y objetivos de negocio vinculados a tareas.',
       side: 'right' as const,
     },
   },

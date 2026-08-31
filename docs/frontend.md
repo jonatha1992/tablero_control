@@ -41,7 +41,7 @@ Provider en `src/components/providers.tsx`: `staleTime` default 5 min, `refetchO
 Layout principal `'use client'`. Contiene:
 
 - **Home `/dashboard`** (`src/app/dashboard/page.tsx`) — fila de KPIs (activas, completadas, bloqueadas, urgentes, **eventos pendientes**). La card de eventos es KPI: solo conteo + hint del próximo; click → `/dashboard/eventos`. Luego burndown/`DashboardMetrics` y resumen por sector.
-- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Archivadas); **Calendario** (ítem top-level, acceso directo a `/dashboard/tareas/calendario`); **Planificación** (Eventos, Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Calendario quedó fuera del grupo Planificación para acceso rápido; Eventos sigue en Planificación. Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Tableros si hay más de un tablero o alguno archivado, Archivadas); **Eventos** (ítem top-level, `/dashboard/eventos`); **Calendario** (ítem top-level, `/dashboard/tareas/calendario`); **Planificación** (Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario quedaron fuera del grupo Planificación, al mismo nivel que Tareas. Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para **Instalar** PWA (visible si no está en modo standalone; si hay `beforeinstallprompt` dispara el prompt, si no navega a `/dashboard/config` con instrucciones). **No limpia cache** — eso es el botón **Actualizar app** en Configuración. Campana, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar. Manifest: `public/manifest.json` con íconos `icon-192.png` y `icon-512.png`.
 - **Home landing** (`src/app/page.tsx`) — botón **Instalar** en el header público (`HomeInstallButton`); mismo hook PWA; sin prompt muestra tip iOS/Chrome.
 - **Actualizar app / cache PWA** — `InstallPwaCard` en Configuración llama `forceAppUpdate()` (`src/lib/pwa/force-app-update.ts`): borra caches del SW, desregistra service workers y recarga. El SW (`public/sw.js`, cache `tablero-v2`) no cachea HTML/navegaciones ni `/version.json` para evitar shells viejos en Vercel. Ver `docs/deploy.md` → “PWA cache vs deploys”.
@@ -89,13 +89,13 @@ startOnboardingTour();
 // ignora el estado de localStorage
 ```
 
-**Pasos (por orden):** Dashboard → Tareas (Kanban) → FAB IA → Calendario → Planificación → Equipo → Reportes → Facturación → Configuración → Ayuda.
+**Pasos (por orden):** Dashboard → Tareas (Kanban) → Eventos → FAB IA → Calendario → Planificación → Equipo → Reportes → Facturación → Configuración → Ayuda.
 
 Para usuarios que **no son dueños** del negocio activo (`isOwner === false`), se omiten los pasos **Equipo** y **Facturación** del tour.
 
 Cada paso usa `element: '#tour-nav-xxx'`. Si el elemento no existe en el DOM, el paso se omite automáticamente.
 
-**Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Planificación, Equipo (flujo de invitación, espacio propio opt-in, troubleshooting), Reportes (incl. exportación Excel), Facturación, Configuración (incl. **Armar tu espacio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
+**Página de ayuda** (`src/app/dashboard/ayuda/page.tsx`): acordeón estático (no usa `@radix-ui/react-accordion` — no está instalado). El botón "Ver tour" llama a `startOnboardingTour()`. Secciones cubiertas: Dashboard, Tareas (kanban, agenda, recurrencia, checklist, sprint tabs), Eventos, Planificación, Equipo (flujo de invitación, espacio propio opt-in, troubleshooting), Reportes (incl. exportación Excel), Facturación, Configuración (incl. **Armar tu espacio** y selector del header), Notificaciones push. Mantener sincronizado con [`docs/invites-and-accounts.md`](invites-and-accounts.md), `docs/tasks.md` y `docs/permissions.md`.
 
 **Invitar usuario** (`src/components/equipo/create-user-modal.tsx`): formulario (correo, rol base, sectores opcionales) con entrega por **correo** o **link**. La persona invitada define su nombre al crear la cuenta. Superadmin mantiene creación directa y sí solicita nombre.
 
@@ -118,6 +118,7 @@ src/app/
 │   │   ├── agenda/
 │   │   ├── calendario/  # FullCalendar
 │   │   └── cronograma/  # Gantt
+│   ├── eventos/       # lista de CalendarEvent (ítem top-level del sidebar)
 │   ├── planificacion/
 │   │   └── objetivos/
 │   ├── equipo/
@@ -221,6 +222,8 @@ La pantalla `/dashboard/sectores` usa `SectorList` como **tabla HTML semántica*
 Módulo central con etiqueta configurable, visible en el sidebar solo para admin/superadmin. La ruta legacy `/dashboard/equipo/sectores` redirige por compatibilidad.
 
 ## Tableros (`/dashboard/tareas/tableros`)
+
+No es el Kanban diario: es gestión de carpetas `Project` (archivar/restaurar). El trabajo diario vive en **Tareas**. El ítem del sidebar y la página se ocultan si hay un solo tablero activo y ninguno archivado (`shouldShowBoardsManager`); esa ruta redirige a `/dashboard/tareas`.
 
 Lista Activos/Archivados. Admin puede archivar con advertencia de pendientes y restaurar; no se expone eliminación permanente. Archivar conserva tareas, las oculta de vistas activas y libera cupo. Se bloquea el último tablero activo.
 

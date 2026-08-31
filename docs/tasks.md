@@ -132,7 +132,7 @@ Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterB
 - Archivar **Tablero/Project** = `status: 'archived'`.
 - Eliminar **Sector/Location** hace hard delete del sector **y primero borra en transacción** todas las tareas con ese `locationId` para evitar huérfanas.
 - Mutaciones cliente de sectores/tableros invalidan cache de la entidad y `taskKeys.all` para refrescar agenda, calendario y tablero principal.
-- Gestión de tableros: `/dashboard/tareas/tableros`, con pestañas Activos/Archivados. Archivar advierte pendientes pero permite continuar; no puede archivarse el último activo. Restaurar vuelve a `active` si el plan tiene cupo. Archivados no consumen límite.
+- Gestión de tableros: `/dashboard/tareas/tableros`, con pestañas Activos/Archivados. Visible en el menú solo si hay más de un tablero activo o alguno archivado; si no, la ruta redirige al Kanban. Archivar advierte pendientes pero permite continuar; no puede archivarse el último activo. Restaurar vuelve a `active` si el plan tiene cupo. Archivados no consumen límite.
 - `useActiveTasksQuery()` aplica la regla de entidades activas también en Cronograma, Dashboard, métricas y Reportes.
 
 ## CalendarEvents en Vistas de Calendario y Agenda
@@ -164,7 +164,7 @@ La página fetcha eventos con ventana de 1 mes atrás → 2 meses adelante (`use
 
 ### Lista Eventos (`/dashboard/eventos`)
 
-Página dedicada: lista agrupada en **Próximos** / **Pasados**. Fetch sin ventana de fechas (`useCalendarEventsQuery()`).
+Ítem **top-level** del sidebar (mismo nivel que Tareas), no vive bajo Planificación. Página dedicada: lista agrupada en **Próximos** / **Pasados**. Fetch sin ventana de fechas (`useCalendarEventsQuery()`).
 
 **Interacción:**
 - Click en fila → abre `CalendarEventSheet` (mismo modal de edición que Calendario)
