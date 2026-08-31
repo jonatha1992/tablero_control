@@ -33,6 +33,9 @@ import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { can } from '@/lib/permissions';
 import { APP_VERSION, BUILD_DATE } from '@/config/version';
 import { prefetchDashboardRoute } from '@/lib/prefetch-dashboard';
+import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { shouldShowBoardsManager } from '@/lib/business-defaults';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 
 interface ChildItem {
   href: string;
@@ -40,6 +43,7 @@ interface ChildItem {
   icon: React.ElementType;
   exact?: boolean;
   adminOnly?: boolean;
+  boardsManagerOnly?: boolean;
 }
 
 interface NavItem {
@@ -70,9 +74,15 @@ const navItems: NavItem[] = [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
       { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
       { href: '/dashboard/tareas/cronograma', label: 'Cronograma',  icon: GanttChart },
-      { href: '/dashboard/tareas/tableros',   label: 'Tableros',    icon: Layers },
+      { href: '/dashboard/tareas/tableros',   label: 'Tableros',    icon: Layers, boardsManagerOnly: true },
       { href: '/dashboard/tareas/archivadas', label: 'Archivadas',  icon: Archive },
     ],
+  },
+  {
+    href: '/dashboard/eventos',
+    label: 'Eventos',
+    icon: CalendarDays,
+    tourId: 'tour-nav-eventos',
   },
   {
     href: '/dashboard/tareas/calendario',
@@ -86,7 +96,6 @@ const navItems: NavItem[] = [
     icon: Layers,
     tourId: 'tour-nav-planificacion',
     children: [
-      { href: '/dashboard/eventos',                 label: 'Eventos',    icon: CalendarDays },
       { href: '/dashboard/planificacion',           label: 'Períodos',   icon: Timer, exact: true },
       { href: '/dashboard/planificacion/objetivos', label: 'Objetivos',  icon: Target },
     ],
@@ -134,6 +143,12 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   const { isSuperAdmin, user, isAdmin } = useAuth();
   const labels = useSpaceLabels();
   const queryClient = useQueryClient();
+  const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const activeBoardCount = projects.filter((project) => !isArchivedProjectStatus(project.status)).length;
+  const showBoardsManager = shouldShowBoardsManager(
+    activeBoardCount,
+    projects.length - activeBoardCount,
+  );
 
   const warmRoute = (href: string) => {
     prefetchDashboardRoute(queryClient, href, {
@@ -148,6 +163,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     switch (item.href) {
       case '/dashboard': return true;
       case '/dashboard/tareas': return can(user, 'task.read');
+      case '/dashboard/eventos': return can(user, 'task.read');
       case '/dashboard/tareas/calendario': return can(user, 'task.read');
       case '/dashboard/planificacion': return can(user, 'task.create');
       case '/dashboard/equipo': return user.role === 'admin' || user.role === 'superadmin' || user.role === 'responsable';
@@ -159,12 +175,13 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
 
   function isChildVisible(child: ChildItem): boolean {
     if (child.adminOnly) return isAdmin;
+    if (child.boardsManagerOnly) return showBoardsManager;
     return true;
   }
 
   function isParentActive(item: NavItem): boolean {
     // Parents with children activate only via an active child — children may live
-    // under different URL prefixes (e.g. Eventos under Planificación).
+    // under a different URL prefix than the parent.
     if (item.children && item.children.length > 0) {
       return item.children.some((c) => isChildActive(c));
     }

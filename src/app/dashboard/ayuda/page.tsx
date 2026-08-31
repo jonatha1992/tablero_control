@@ -14,6 +14,7 @@ import {
   Settings,
   Bell,
   Building2,
+  CalendarDays,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Eventos pendientes',
-        description: 'Card KPI en el dashboard (mismo estilo que Tareas activas). Muestra cuántos eventos aún no terminaron. Click abre Planificación → Eventos.',
+        description: 'Card KPI en el dashboard (mismo estilo que Tareas activas). Muestra cuántos eventos aún no terminaron. Click abre el ítem Eventos del sidebar.',
       },
       {
         title: 'Actividad reciente',
@@ -91,6 +92,18 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: 'eventos',
+    title: 'Eventos',
+    icon: CalendarDays,
+    iconClass: NAV_ICON_COLORS.planificacion,
+    subsections: [
+      {
+        title: 'Lista de eventos',
+        description: 'Ítem top-level del sidebar, al mismo nivel que Tareas. Reuniones, exámenes e hitos del espacio que no son tareas de trabajo. Se crean desde Eventos o desde el Planificador IA. Reciben aviso por notificación y email.',
+      },
+    ],
+  },
+  {
     id: 'planificacion',
     title: 'Planificación',
     icon: Layers,
@@ -98,11 +111,7 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Calendario',
-        description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Acceso directo desde el ítem Calendario del sidebar (entre Tareas y Planificación).',
-      },
-      {
-        title: 'Eventos',
-        description: 'Eventos del espacio (reuniones, exámenes, hitos) que no son tareas de trabajo. Se crean desde Planificación → Eventos o desde el Planificador IA. Reciben aviso por notificación y email.',
+        description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Acceso directo desde el ítem Calendario del sidebar (entre Eventos y Planificación).',
       },
       {
         title: '¿Qué es un Período?',

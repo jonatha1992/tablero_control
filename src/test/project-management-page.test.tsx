@@ -4,6 +4,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectManagementPage from '@/app/dashboard/tareas/tableros/page';
 
 const mutate = vi.fn();
+const replace = vi.fn();
+const projectQuery = vi.hoisted(() => ({
+  data: [
+    {
+      id: 'active-1', name: 'Operaciones', description: 'Trabajo diario',
+      businessId: 'biz-1', status: 'active', _count: { tasks: 5 }, openTaskCount: 2,
+    },
+    {
+      id: 'archived-1', name: 'Campaña 2025', description: null,
+      businessId: 'biz-1', status: 'archived', _count: { tasks: 8 }, openTaskCount: 0,
+    },
+  ],
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace }),
+}));
 
 vi.mock('@/hooks/auth-context', () => ({
   useAuth: () => ({
@@ -15,7 +32,17 @@ vi.mock('@/hooks/auth-context', () => ({
 vi.mock('@/hooks/queries/use-projects-query', () => ({
   useProjectsQuery: () => ({
     isLoading: false,
-    data: [
+    isError: false,
+    data: projectQuery.data,
+  }),
+  useUpdateProject: () => ({ mutate, isPending: false }),
+}));
+
+describe('ProjectManagementPage', () => {
+  beforeEach(() => {
+    mutate.mockClear();
+    replace.mockClear();
+    projectQuery.data = [
       {
         id: 'active-1', name: 'Operaciones', description: 'Trabajo diario',
         businessId: 'biz-1', status: 'active', _count: { tasks: 5 }, openTaskCount: 2,
@@ -24,13 +51,21 @@ vi.mock('@/hooks/queries/use-projects-query', () => ({
         id: 'archived-1', name: 'Campaña 2025', description: null,
         businessId: 'biz-1', status: 'archived', _count: { tasks: 8 }, openTaskCount: 0,
       },
-    ],
-  }),
-  useUpdateProject: () => ({ mutate, isPending: false }),
-}));
+    ];
+  });
 
-describe('ProjectManagementPage', () => {
-  beforeEach(() => mutate.mockClear());
+  it('redirige al Kanban si hay un solo tablero activo', () => {
+    projectQuery.data = [
+      {
+        id: 'active-1', name: 'Principal', description: null,
+        businessId: 'biz-1', status: 'active', _count: { tasks: 3 }, openTaskCount: 1,
+      },
+    ];
+    render(<ProjectManagementPage />);
+
+    expect(replace).toHaveBeenCalledWith('/dashboard/tareas');
+    expect(screen.queryByText('Principal')).not.toBeInTheDocument();
+  });
 
   it('separa tableros activos y archivados', async () => {
     const user = userEvent.setup();
