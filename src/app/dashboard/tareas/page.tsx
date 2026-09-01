@@ -1,18 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { KanbanBoard } from '@/components/tareas/kanban-board';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
 import { useAuth } from '@/hooks/auth-context';
-import { useBusinessQuery } from '@/hooks/queries/use-business-query';
-import { hasMultipleBoards } from '@/lib/business-defaults';
 import { isArchivedProjectStatus, isTaskFromActiveEntities } from '@/lib/tasks/active-entity';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
 import type { TaskFilters } from '@/types';
-import { ChevronDown, Timer, X } from 'lucide-react';
+import { ChevronDown, FolderKanban, Timer, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,12 +23,20 @@ import { cn } from '@/lib/utils';
 import { ProjectMultiPicker } from '@/components/tareas/project-multi-picker';
 
 export default function TareasPage() {
-  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const projectIdFromUrl = searchParams.get('projectId');
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>(
+    () => (projectIdFromUrl ? [projectIdFromUrl] : []),
+  );
+
+  useEffect(() => {
+    setSelectedProjectIds(projectIdFromUrl ? [projectIdFromUrl] : []);
+  }, [projectIdFromUrl]);
 
   const { user } = useAuth();
   const businessId = user?.businessId ?? '';
-  const { data: business } = useBusinessQuery(businessId);
-  const showBoardPicker = hasMultipleBoards(business?.settings);
   const { data: projects = [], isLoading: isLoadingProjects } = useProjectsQuery(businessId);
   const { data: locations = [], isLoading: isLoadingLocations } = useLocationsQuery();
   const { data: cycles = [] } = useCyclesQuery(businessId);
@@ -37,6 +45,14 @@ export default function TareasPage() {
     () => projects.filter((project) => !isArchivedProjectStatus(project.status)),
     [projects],
   );
+  const scopedProjectId = selectedProjectIds.length === 1 ? selectedProjectIds[0] : undefined;
+  const scopedProject = scopedProjectId
+    ? activeProjects.find((project) => project.id === scopedProjectId)
+    : undefined;
+  const visibleCycles = useMemo(() => {
+    if (!scopedProjectId) return cycles;
+    return cycles.filter((cycle) => !cycle.projectId || cycle.projectId === scopedProjectId);
+  }, [cycles, scopedProjectId]);
   const projectsById = useMemo(
     () => new Map(projects.map((project) => [project.id, { status: project.status }])),
     [projects],
@@ -46,8 +62,17 @@ export default function TareasPage() {
     [locations],
   );
 
-  const activeCycle = cycles.find((c) => c.status === 'active');
-  const otherCycles = cycles.filter((c) => c.status !== 'active');
+  const activeCycle = visibleCycles.find((c) => c.status === 'active');
+  const otherCycles = visibleCycles.filter((c) => c.status !== 'active');
+
+  function applyProjectFilter(ids: string[]) {
+    setSelectedProjectIds(ids);
+    if (ids.length === 1) {
+      router.replace(`${pathname}?projectId=${encodeURIComponent(ids[0])}`);
+      return;
+    }
+    router.replace(pathname);
+  }
 
   const taskFilters = useMemo((): TaskFilters | undefined => {
     const f: TaskFilters = {};
@@ -85,30 +110,41 @@ export default function TareasPage() {
   return (
     <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
 
-      {/* Selector de tablero — solo con múltiples tableros habilitados */}
-      {showBoardPicker && activeProjects.length > 0 && (
-        <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b">
+      <div className="shrink-0 flex flex-wrap items-center gap-3 px-4 py-2 border-b">
+        <FolderKanban className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <Link
+          href="/dashboard/tareas/tableros"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          Proyectos
+        </Link>
+        <span className="text-muted-foreground/50" aria-hidden>
+          /
+        </span>
+        <span className="text-xs font-medium">
+          {scopedProject ? scopedProject.name : 'Todos los proyectos'}
+        </span>
+        {activeProjects.length > 1 && (
           <ProjectMultiPicker
             projects={activeProjects.map((p) => ({ id: p.id, name: p.name, status: p.status }))}
             value={selectedProjectIds}
-            onChange={setSelectedProjectIds}
+            onChange={applyProjectFilter}
             size="md"
-            placeholder="Todos los tableros"
+            placeholder="Todos los proyectos"
           />
-
-          {selectedProjectIds.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setSelectedProjectIds([])}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-              title="Limpiar filtro de tableros"
-            >
-              <X className="h-3.5 w-3.5" />
-              Limpiar
-            </button>
-          )}
-        </div>
-      )}
+        )}
+        {selectedProjectIds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => applyProjectFilter([])}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            title="Ver todas las tareas"
+          >
+            <X className="h-3.5 w-3.5" />
+            Ver todo
+          </button>
+        )}
+      </div>
 
       {/* Sprint tabs */}
       <div className="shrink-0 flex items-center gap-1 px-4 py-1.5 border-b bg-muted/20">
@@ -189,7 +225,7 @@ export default function TareasPage() {
 
       {/* Kanban board — handles its own modals internally */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        <KanbanBoard tasks={visibleTasks} />
+        <KanbanBoard tasks={visibleTasks} projectId={scopedProjectId} />
       </div>
     </div>
   );

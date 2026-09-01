@@ -46,8 +46,18 @@ describe('terminology', () => {
     expect(labels.sites).toBe('Casas matriz');
   });
 
-  it('LOCATION_LABEL_PRESETS incluye sede y sector', () => {
+  it('LOCATION_LABEL_PRESETS incluye sede, sector y página', () => {
     expect(LOCATION_LABEL_PRESETS.sede.plural).toBe('Sedes');
     expect(LOCATION_LABEL_PRESETS.sector.plural).toBe('Sectores');
+    expect(LOCATION_LABEL_PRESETS.pagina.plural).toBe('Páginas');
+  });
+
+  it('resolveSpaceLabels respeta preset causa para objetivos', () => {
+    const settings: BusinessSettings = {
+      terminology: { objectivePreset: 'causa' },
+    };
+    const labels = resolveSpaceLabels(settings);
+    expect(labels.objective).toBe('Causa');
+    expect(labels.objectives).toBe('Causas');
   });
 });

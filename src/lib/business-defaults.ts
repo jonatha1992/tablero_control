@@ -16,7 +16,7 @@ export function hasMultipleBoards(settings?: BusinessSettings | null): boolean {
   return settings?.multipleBoards === true;
 }
 
-/** Nav/página Tableros: extra si solo existe el tablero por defecto. */
+/** Extra de gestión cuando hay más de un proyecto o alguno archivado. La lista Proyectos siempre se muestra. */
 export function shouldShowBoardsManager(activeCount: number, archivedCount: number): boolean {
   return activeCount > 1 || archivedCount > 0;
 }

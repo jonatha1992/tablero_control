@@ -26,7 +26,7 @@ export const objectivesApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: Partial<{ name: string; description?: string; color?: string; projectId?: string; targetDate?: string; status: ObjectiveStatus }>) =>
+  update: (id: string, data: Partial<{ name: string; description?: string; color?: string; projectId?: string | null; targetDate?: string; status: ObjectiveStatus }>) =>
     fetchJsonAuth<Objective>(`/api/objectives/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

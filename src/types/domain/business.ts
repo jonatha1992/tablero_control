@@ -9,6 +9,14 @@ export type LocationLabelPreset =
   | 'sector'
   | 'area'
   | 'negocio'
+  | 'pagina'
+  | 'custom';
+
+export type ObjectiveLabelPreset =
+  | 'objetivo'
+  | 'iniciativa'
+  | 'causa'
+  | 'campana'
   | 'custom';
 
 export interface SpaceTerminology {
@@ -17,6 +25,10 @@ export interface SpaceTerminology {
   /** When locationPreset is `custom` */
   locationSingular?: string;
   locationPlural?: string;
+  /** How completable goals (Objective) are named. Default: objetivo */
+  objectivePreset?: ObjectiveLabelPreset;
+  objectiveSingular?: string;
+  objectivePlural?: string;
 }
 
 export type BusinessStatus = 'active' | 'suspended' | 'trial' | 'cancelled';

@@ -51,7 +51,7 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
     if (pathname === '/dashboard') return { title: 'Dashboard' };
     if (pathname === '/dashboard/tareas/calendario') return { title: 'Calendario' };
     if (pathname === '/dashboard/eventos') return { title: 'Eventos' };
-    if (pathname === '/dashboard/tareas/tableros') return { title: 'Tableros' };
+    if (pathname === '/dashboard/tareas/tableros') return { title: 'Proyectos' };
     if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
     if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
     if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };

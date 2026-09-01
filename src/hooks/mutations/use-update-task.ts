@@ -30,6 +30,8 @@ export function useUpdateTask() {
             const updated = { ...task, ...data } as Task;
             if (updated.locationId === null) updated.locationId = undefined;
             if (updated.projectId === null) updated.projectId = undefined;
+            if (updated.cycleId === null) updated.cycleId = undefined;
+            if (updated.objectiveId === null) updated.objectiveId = undefined;
             return updated;
           }
           return task;
@@ -42,6 +44,8 @@ export function useUpdateTask() {
         const updatedDetail = { ...old, ...data } as Task;
         if (updatedDetail.locationId === null) updatedDetail.locationId = undefined;
         if (updatedDetail.projectId === null) updatedDetail.projectId = undefined;
+        if (updatedDetail.cycleId === null) updatedDetail.cycleId = undefined;
+        if (updatedDetail.objectiveId === null) updatedDetail.objectiveId = undefined;
         return updatedDetail;
       });
 

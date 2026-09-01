@@ -65,6 +65,9 @@ import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
+import { useScrumUIStore } from '@/stores/scrum-ui.store';
+import { buildSmartCreateDraft, visibleKanbanColumns } from '@/lib/tasks/kanban-intelligence';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { useAuth } from '@/hooks/auth-context';
 import { useCanDeleteTask } from '@/hooks/use-can-delete-task';
 import { toast } from 'sonner';
@@ -73,9 +76,10 @@ const BOARD_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'in_revie
 
 interface KanbanBoardProps {
   tasks: Task[];
+  projectId?: string;
 }
 
-export function KanbanBoard({ tasks }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
   const {
     dragState,
     filters,
@@ -86,7 +90,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     setDraggedTask,
     clearDrag,
     setFilters,
-    openCreateModal,
+    openCreateModalWithDraft,
     closeCreateModal,
     openDictateModal,
     closeDictateModal,
@@ -143,6 +147,23 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   const { data: locations = [] } = useLocationsQuery();
   const { data: business } = useBusinessQuery(user?.businessId);
   const { data: objectives = [] } = useObjectivesQuery(user?.businessId ?? '');
+  const labels = useSpaceLabels();
+  const { viewMode: sprintMode, selectedSprintId } = useScrumUIStore();
+  const displayColumns = useMemo(
+    () => visibleKanbanColumns(activeColumns, sprintMode),
+    [activeColumns, sprintMode],
+  );
+
+  const openSmartCreate = (columnStatus?: TaskStatus) => {
+    openCreateModalWithDraft(buildSmartCreateDraft({
+      columnStatus,
+      viewMode: sprintMode,
+      selectedSprintId,
+      objectiveId: filters.objectiveId || undefined,
+      locationId: filters.locationId || undefined,
+      projectId,
+    }));
+  };
 
   const selectedTask = selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null;
 
@@ -407,14 +428,14 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               {filters.objectiveId ? (
                 <span className="truncate">{objectives.find((o) => o.id === filters.objectiveId)?.name ?? 'Objetivo'}</span>
               ) : (
-                <span>Todos los objetivos</span>
+                <span>Todos los {labels.objectives.toLowerCase()}</span>
               )}
               <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-w-[240px]">
             <DropdownMenuItem onClick={() => setFilters({ objectiveId: '' })}>
-              <span className={cn('flex-1', !filters.objectiveId && 'font-medium')}>Todos los objetivos</span>
+              <span className={cn('flex-1', !filters.objectiveId && 'font-medium')}>Todos los {labels.objectives.toLowerCase()}</span>
             </DropdownMenuItem>
             {objectives.map((obj) => (
               <DropdownMenuItem key={obj.id} onClick={() => setFilters({ objectiveId: obj.id })}>
@@ -576,7 +597,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={openCreateModal} className="gap-3 cursor-pointer py-2.5">
+                  <DropdownMenuItem onClick={() => openSmartCreate()} className="gap-3 cursor-pointer py-2.5">
                     <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted shrink-0">
                       <Plus className="h-4 w-4" />
                     </div>
@@ -610,7 +631,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
       >
         <div className="flex-1 min-h-0 w-full overflow-hidden">
           <div className="flex gap-4 h-full overflow-x-auto pb-2 pt-1">
-            {BOARD_COLUMNS.filter((c) => activeColumns.includes(c)).map((column) => (
+            {displayColumns.map((column) => (
               <KanbanColumn
                 key={column}
                 status={column}
@@ -621,7 +642,8 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
                 }}
                 onPriorityChange={handlePriorityChange}
                 onLocationChange={handleLocationChange}
-                onAddClick={openCreateModal}
+                onAddClick={() => openSmartCreate(column)}
+                objectives={objectives.map((o) => ({ id: o.id, name: o.name, color: o.color }))}
                 selectedTaskIds={selectedTaskIds}
                 isSelectMode={isSelectMode}
                 onSelectAll={selectAllInColumn}

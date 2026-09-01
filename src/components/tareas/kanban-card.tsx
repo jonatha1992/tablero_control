@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Check,
   MapPin,
+  Target,
   Trash2,
   Archive,
   ListChecks,
@@ -81,10 +82,12 @@ interface KanbanCardProps {
   isSelectMode: boolean;
   isOverlay?: boolean;
   locationName?: string;
+  objectiveName?: string;
+  objectiveColor?: string;
   locations?: { id: string; name: string }[];
 }
 
-export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationChange, onDelete, onToggleSelect, onClick, isSelected, isSelectMode, isOverlay, locationName, locations }: KanbanCardProps) {
+export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationChange, onDelete, onToggleSelect, onClick, isSelected, isSelectMode, isOverlay, locationName, objectiveName, objectiveColor, locations }: KanbanCardProps) {
   const priorityConfig = PRIORITY_CONFIG[task.priority];
   const PriorityIcon = priorityConfig.icon;
   const shortId = task.id.slice(0, 6).toUpperCase();
@@ -267,11 +270,24 @@ export function KanbanCard({ task, column, onMove, onPriorityChange, onLocationC
         </DropdownMenu>
       </div>
 
-      {/* Location — debajo del título si existe */}
-      {locationName && (
-        <div className="flex items-center gap-1 mb-1.5">
-          <MapPin className="h-2.5 w-2.5 text-muted-foreground/60 shrink-0" />
-          <span className="text-[9px] text-muted-foreground/80 truncate">{locationName}</span>
+      {(objectiveName || locationName) && (
+        <div className="flex flex-col gap-0.5 mb-1.5">
+          {objectiveName && (
+            <div className="flex items-center gap-1 min-w-0">
+              <span
+                className="h-1.5 w-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: objectiveColor || '#3b82f6' }}
+              />
+              <Target className="h-2.5 w-2.5 text-muted-foreground/60 shrink-0" />
+              <span className="text-[9px] text-muted-foreground/80 truncate">{objectiveName}</span>
+            </div>
+          )}
+          {locationName && (
+            <div className="flex items-center gap-1 min-w-0">
+              <MapPin className="h-2.5 w-2.5 text-muted-foreground/60 shrink-0" />
+              <span className="text-[9px] text-muted-foreground/80 truncate">{locationName}</span>
+            </div>
+          )}
         </div>
       )}
 

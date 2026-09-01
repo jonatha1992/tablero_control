@@ -125,6 +125,19 @@ vi.mock('@/stores/kanban-ui.store', () => ({
   useKanbanUIStore: () => storeState,
 }));
 
+vi.mock('@/stores/scrum-ui.store', () => ({
+  useScrumUIStore: () => ({ viewMode: 'board', selectedSprintId: null }),
+}));
+
+vi.mock('@/hooks/use-space-labels', () => ({
+  useSpaceLabels: () => ({
+    site: 'Sede',
+    sites: 'Sedes',
+    objective: 'Objetivo',
+    objectives: 'Objetivos',
+  }),
+}));
+
 vi.mock('@/hooks/auth-context', () => ({
   useAuth: () => ({ user: { businessId: 'business-1', role: 'admin' } }),
 }));
@@ -149,6 +162,7 @@ function createStoreState(selectedTaskIds: string[] = ['task-1', 'task-2']) {
     clearDrag,
     setFilters: vi.fn(),
     openCreateModal: vi.fn(),
+    openCreateModalWithDraft: vi.fn(),
     closeCreateModal: vi.fn(),
     openDictateModal: vi.fn(),
     closeDictateModal: vi.fn(),

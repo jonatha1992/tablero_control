@@ -9,9 +9,10 @@ Este documento centraliza las definiciones de negocio y los modelos visuales que
 - **Sede (Location)**: Unidad física o lógica del espacio: sucursal, depósito u oficina. En UI reemplaza el término ambiguo "sector" para locations.
 - **Equipo (Team)**: Grupo de usuarios que comparten tareas y tableros.
 - **Tarea (Task)**: La unidad mínima de trabajo. Posee estado, prioridad, tipo y responsables.
-- **Tablero (Project)**: Contenedor visual Kanban que agrupa tareas. Por defecto cada espacio tiene un tablero "Principal" (`settings.multipleBoards = false` oculta el selector). Modelo Prisma: `Project`.
+- **Proyecto (Project)**: Contenedor de trabajo. Entrá y usás el mismo Kanban (backlog + sprint). Local, causa, campaña o producto: mismo funcionamiento. Se puede archivar. Completar/fecha límite es opcional si “se cierra”. Modelo Prisma: `Project`. En UI se dice **proyecto**, no “tablero”.
 - **Ciclo / Período (Cycle)**: Período de tiempo definido (ej. semana, quincena, mes, temporada) donde un equipo planifica y ejecuta un set de tareas. Reemplaza el concepto de "Sprint" con terminología genérica.
-- **Objetivo / Iniciativa (Objective)**: Agrupador de tareas con meta común. Ejemplos: "Apertura Sucursal Palermo", "Campaña Black Friday", "Renovación Local Centro".
+- **Objetivo / Iniciativa (Objective)**: Agrupador de tareas con meta común que **se completa**. Fecha opcional. El espacio puede renombrarlo (Causa, Campaña, Iniciativa). Ejemplos: "Apertura Sucursal Palermo", "Causa Pérez", "SEO cliente X".
+- **Backlog**: No es una entidad. Es el estado `backlog` de una **tarea** (cola de ideas). No cuenta como trabajo pendiente en Agenda/KPIs. Distinto de Objetivo.
 - **Responsable**: Usuario con autoridad sobre un Local o Equipo.
 - **Registro de tiempo (Time Entry)**: Log de horas trabajadas sobre una tarea por un usuario específico.
 

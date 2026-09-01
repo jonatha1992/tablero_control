@@ -19,7 +19,7 @@ export interface CreateTaskDTO {
   checklist?: ChecklistItem[];
 }
 
-export type UpdateTaskDTO = Partial<Omit<CreateTaskDTO, 'locationId' | 'projectId'>> & {
+export type UpdateTaskDTO = Partial<Omit<CreateTaskDTO, 'locationId' | 'projectId' | 'cycleId' | 'objectiveId'>> & {
   completedDate?: Date;
   actualHours?: number;
   position?: number;

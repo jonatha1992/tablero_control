@@ -1,10 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Sidebar } from '@/components/layout/sidebar';
-import type { Project } from '@/lib/api/projects';
-
-const projects = vi.hoisted(() => ({ list: [] as Project[] }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/dashboard/tareas',
@@ -18,12 +15,9 @@ vi.mock('@/hooks/auth-context', () => ({
   }),
 }));
 vi.mock('@/hooks/use-space-labels', () => ({
-  useSpaceLabels: () => ({ site: 'Sede', sites: 'Sedes' }),
+  useSpaceLabels: () => ({ site: 'Sede', sites: 'Sedes', objective: 'Objetivo', objectives: 'Objetivos' }),
 }));
 vi.mock('@/lib/permissions', () => ({ can: () => true }));
-vi.mock('@/hooks/queries/use-projects-query', () => ({
-  useProjectsQuery: () => ({ data: projects.list, isLoading: false, isError: false }),
-}));
 
 function renderSidebar() {
   return render(
@@ -33,48 +27,14 @@ function renderSidebar() {
   );
 }
 
-function board(id: string, status: string): Project {
-  return {
-    id,
-    name: id,
-    description: null,
-    teamId: null,
-    businessId: 'business-1',
-    status,
-    startDate: null,
-    endDate: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-}
-
-describe('Sidebar — Tableros', () => {
-  beforeEach(() => {
-    projects.list = [];
-  });
-
-  it('oculta Tableros si hay un solo tablero activo', () => {
-    projects.list = [board('principal', 'active')];
+describe('Sidebar — Proyectos', () => {
+  it('siempre muestra Proyectos junto al Kanban', () => {
     renderSidebar();
 
     expect(screen.getByRole('link', { name: 'Kanban' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Tableros' })).not.toBeInTheDocument();
-  });
-
-  it('muestra Tableros si hay más de un tablero activo', () => {
-    projects.list = [board('principal', 'active'), board('ventas', 'active')];
-    renderSidebar();
-
-    expect(screen.getByRole('link', { name: 'Tableros' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Proyectos' })).toHaveAttribute(
       'href',
       '/dashboard/tareas/tableros',
     );
-  });
-
-  it('muestra Tableros si hay alguno archivado', () => {
-    projects.list = [board('principal', 'active'), board('viejo', 'archived')];
-    renderSidebar();
-
-    expect(screen.getByRole('link', { name: 'Tableros' })).toBeInTheDocument();
   });
 });
