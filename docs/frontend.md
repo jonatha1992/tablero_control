@@ -8,8 +8,9 @@ Solo estado UI efímero — no persistir datos de servidor acá.
 - drag state
 - modales: `create`, `detail`, `dictate`
 - `selectMode` — selección múltiple de cards
-- filtros: `searchQuery`, `priority`, `locationId`
-- columnas activas
+- filtros: `searchQuery`, `priority`, `locationId`, `objectiveId`, `cycleId`
+- columnas activas — default `backlog`, `todo`, `in_progress`, `done`
+- `openCreateModalWithDraft` — el Kanban abre con draft inteligente (`src/lib/tasks/kanban-intelligence.ts`): `+` de columna = ese estado; tab Backlog = `backlog` sin fecha; período activo se hereda si no es backlog
 
 ### `scrum-ui.store.ts`
 - `selectedSprintId: string | null`
@@ -41,7 +42,7 @@ Provider en `src/components/providers.tsx`: `staleTime` default 5 min, `refetchO
 Layout principal `'use client'`. Contiene:
 
 - **Home `/dashboard`** (`src/app/dashboard/page.tsx`) — fila de KPIs (activas, completadas, bloqueadas, urgentes, **eventos pendientes**). La card de eventos es KPI: solo conteo + hint del próximo; click → `/dashboard/eventos`. Luego burndown/`DashboardMetrics` y resumen por sector.
-- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, Tableros si hay más de un tablero o alguno archivado, Archivadas); **Eventos** (ítem top-level, `/dashboard/eventos`); **Calendario** (ítem top-level, `/dashboard/tareas/calendario`); **Planificación** (Períodos, Objetivos); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario quedaron fuera del grupo Planificación, al mismo nivel que Tareas. Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, **Proyectos** siempre visible, Archivadas); **Eventos** (ítem top-level, `/dashboard/eventos`); **Calendario** (ítem top-level, `/dashboard/tareas/calendario`); **Planificación** (Períodos, Objetivos — el label de Objetivos sigue `terminology.objectivePreset`); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario quedaron fuera del grupo Planificación, al mismo nivel que Tareas. Nomenclatura: `SpaceTerminologyCard` permite renombrar sedes (incluye preset Página) y objetivos (objetivo / iniciativa / causa / campaña / custom). Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para **Instalar** PWA (visible si no está en modo standalone; si hay `beforeinstallprompt` dispara el prompt, si no navega a `/dashboard/config` con instrucciones). **No limpia cache** — eso es el botón **Actualizar app** en Configuración. Campana, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar. Manifest: `public/manifest.json` con íconos `icon-192.png` y `icon-512.png`.
 - **Home landing** (`src/app/page.tsx`) — botón **Instalar** en el header público (`HomeInstallButton`); mismo hook PWA; sin prompt muestra tip iOS/Chrome.
 - **Actualizar app / cache PWA** — `InstallPwaCard` en Configuración llama `forceAppUpdate()` (`src/lib/pwa/force-app-update.ts`): borra caches del SW, desregistra service workers y recarga. El SW (`public/sw.js`, cache `tablero-v2`) no cachea HTML/navegaciones ni `/version.json` para evitar shells viejos en Vercel. Ver `docs/deploy.md` → “PWA cache vs deploys”.
@@ -206,7 +207,7 @@ El nivel superior siempre es **Espacio** (`Business`). Las unidades internas (`L
 | Capa | Prisma | Label UI default |
 |------|--------|------------------|
 | Espacio | `Business` | Espacio / Espacios |
-| Tablero | `Project` | Tablero / Tableros |
+| Proyecto | `Project` | Proyecto / Proyectos (UI; internamente a veces “tablero”) |
 | Unidad interna | `Location` | Sede / Sedes (configurable) |
 
 **Configuración → pestaña Espacio** (solo admin/superadmin): preset (Sede, Sucursal, Departamento, Sector, Área, Negocio, Local) o personalizado. Se guarda en `business.settings.terminology` vía `PATCH /api/business/config` (merge profundo de `settings`).
@@ -221,11 +222,9 @@ La pantalla `/dashboard/sectores` usa `SectorList` como **tabla HTML semántica*
 
 Módulo central con etiqueta configurable, visible en el sidebar solo para admin/superadmin. La ruta legacy `/dashboard/equipo/sectores` redirige por compatibilidad.
 
-## Tableros (`/dashboard/tareas/tableros`)
+## Proyectos (`/dashboard/tareas/tableros`)
 
-No es el Kanban diario: es gestión de carpetas `Project` (archivar/restaurar). El trabajo diario vive en **Tareas**. El ítem del sidebar y la página se ocultan si hay un solo tablero activo y ninguno archivado (`shouldShowBoardsManager`); esa ruta redirige a `/dashboard/tareas`.
-
-Lista Activos/Archivados. Admin puede archivar con advertencia de pendientes y restaurar; no se expone eliminación permanente. Archivar conserva tareas, las oculta de vistas activas y libera cupo. Se bloquea el último tablero activo.
+Lista de contenedores `Project`. Siempre visible (un solo “Principal” también). Click en un activo → Kanban `/dashboard/tareas?projectId=`. **Ver todo** → el mismo Kanban sin filtro. Admin: **Nuevo proyecto** (nombre, descripción, fecha límite opcional si se cierra) y archivar/restaurar. La tarea nueva en un proyecto nace con ese `projectId`. Kanban + backlog + sprint son el mismo tablero. Se bloquea archivar el último proyecto activo.
 
 ## Menú personal del header
 

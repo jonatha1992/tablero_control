@@ -35,12 +35,39 @@ vi.mock('@/hooks/auth-context', () => ({
 
 vi.mock('@/stores/kanban-ui.store', () => ({
   useKanbanUIStore: vi.fn(() => ({
-    activeColumns: ['todo', 'in_progress', 'done'],
+    activeColumns: ['backlog', 'todo', 'in_progress', 'done'],
+    createTaskDraft: null,
+    clearCreateTaskDraft: vi.fn(),
   })),
 }));
 
 vi.mock('@/hooks/queries/use-locations-query', () => ({
   useLocationsQuery: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@/hooks/queries/use-objectives-query', () => ({
+  useObjectivesQuery: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@/hooks/queries/use-cycles-query', () => ({
+  useCyclesQuery: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@/hooks/queries/use-projects-query', () => ({
+  useProjectsQuery: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@/hooks/queries/use-business-query', () => ({
+  useBusinessQuery: vi.fn(() => ({ data: { settings: {} } })),
+}));
+
+vi.mock('@/hooks/use-space-labels', () => ({
+  useSpaceLabels: () => ({
+    site: 'Sede',
+    sites: 'Sedes',
+    objective: 'Objetivo',
+    objectives: 'Objetivos',
+  }),
 }));
 
 const defaultProps = {

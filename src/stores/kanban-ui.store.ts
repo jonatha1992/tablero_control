@@ -131,7 +131,7 @@ export const useKanbanUIStore = create<KanbanUIStore>()(persist((set) => ({
   setFilters: (filters) => set((s) => ({ filters: { ...s.filters, ...filters } })),
   clearFilters: () => set({ filters: defaultFilters }),
 
-  activeColumns: ['todo', 'in_progress', 'done'],
+  activeColumns: ['backlog', 'todo', 'in_progress', 'done'],
   toggleColumn: (column) => set((s) => ({
     activeColumns: s.activeColumns.includes(column)
       ? s.activeColumns.filter((c) => c !== column)

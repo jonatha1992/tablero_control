@@ -66,16 +66,28 @@ Cada columna tiene su propio botón **Ordenar** en el encabezado y recuerda inde
 En prioridad, `createdAt` ascendente desempata tareas con la misma prioridad.
 
 **Tabs:**
-- **Todas** — `viewMode: 'board'`, `selectedSprintId: null`
-- **Backlog** — `viewMode: 'backlog'` → filter `status: ['backlog']`
+- **Todas** — `viewMode: 'board'`, `selectedSprintId: null`. Columnas default: Backlog, Por hacer, En progreso, Hecho.
+- **Backlog** — `viewMode: 'backlog'` → filter `status: ['backlog']` y **solo** la columna Backlog (aunque esté oculta en Configurar Tablero). No es “tareas sin período”.
 - **[Nombre ciclo activo]** — tab dinámico, punto verde, solo si `status: 'active'`
 - **Otros ▾** — dropdown con planning/completed/closed
+
+**Kanban inteligente** (`src/lib/tasks/kanban-intelligence.ts`):
+- `+` de una columna abre el modal con ese `status`.
+- Tab Backlog o columna Backlog → `status: backlog` y **sin** `dueDate`.
+- Período activo + columna que no es backlog → prellena `cycleId`.
+- Filtros de objetivo/sede del kanban se copian al draft.
+- Si el Kanban está en un proyecto (`?projectId=`), el draft lleva ese `projectId`.
+- Cards muestran nombre del objetivo (y sede) si están vinculados.
+
+**Proyectos:** Tareas → Proyectos lista todos los `Project`. Entrar filtra el Kanban y las solapas de período de ese proyecto. “Ver todo” quita el filtro.
 
 **Filtros server-side:** `TaskFilters` acepta `status?: TaskStatus[]`, `cycleId?: string[]`, `noCycle?: boolean`, `assigneeId?: string[]`, `dueDateFrom?: Date` y `dueDateTo?: Date`. Fluyen: `tasksApi` → `GET /api/tasks` → `taskRepository.buildWhere()`.
 
 **Regla:** NO crear estado local para filtro de sprint — `useScrumUIStore` es la fuente de verdad compartida entre `page.tsx` y `CreateTaskModal`.
 
-**CreateTaskModal:** si tab activo es sprint (`viewMode: 'board'` + `selectedSprintId`), "Período/Sprint" se pre-selecciona automáticamente. Field aparece solo si el negocio tiene ≥ 1 ciclo.
+**CreateTaskModal:** draft del store + contexto scrum. Campo **Objetivo** (si hay activos) y **Período** (si hay ciclos). El detalle de tarea (`TaskDetailModal`) también edita Objetivo y Período.
+
+**Backlog ≠ Objetivo:** backlog es un *estado* de tarea (cola). Objetivo es una *entidad* que agrupa tareas y se completa. Una tarea puede estar en backlog *y* ligada a un objetivo.
 
 `CreateTaskDTO` incluye `cycleId?: string` — el repositorio lo pasa a Prisma por spread (`...rest`).
 

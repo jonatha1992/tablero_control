@@ -16,6 +16,7 @@ import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
 import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
+import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
 import { useAuth } from '@/hooks/auth-context';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { useSpaceLabels } from '@/hooks/use-space-labels';
@@ -30,7 +31,7 @@ import { hoursToParts, partsToHours } from '@/lib/tasks/estimated-hours';
 import { useKanbanUIStore } from '@/stores/kanban-ui.store';
 import { getActiveMembershipLocationId } from '@/lib/task-delete-access';
 import { useScrumUIStore } from '@/stores/scrum-ui.store';
-import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer, CheckSquare, Plus } from 'lucide-react';
+import { X, MapPin, Repeat, Mic, MicOff, Loader2, ChevronDown, Check, FolderKanban, Timer, CheckSquare, Plus, Target } from 'lucide-react';
 import { tasksApi } from '@/lib/api/tasks';
 import { getToken } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
@@ -103,11 +104,7 @@ interface CreateTaskModalProps {
 export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueDate, initialDate }: CreateTaskModalProps) {
   const today = initialDate?.toISOString().split('T')[0] ?? new Date().toISOString().split('T')[0];
   const { activeColumns, createTaskDraft, clearCreateTaskDraft } = useKanbanUIStore();
-  const visibleStatusOptions = STATUS_OPTIONS.filter((o) => activeColumns.includes(o.value));
-  const resolvedDefault: TaskStatus =
-    defaultStatus && activeColumns.includes(defaultStatus)
-      ? defaultStatus
-      : (activeColumns[0] ?? 'todo');
+  const resolvedDefault: TaskStatus = defaultStatus ?? 'todo';
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -146,6 +143,8 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     hasMultipleBoards(business?.settings),
   );
   const { data: cycles = [] } = useCyclesQuery(user?.businessId ?? '');
+  const { data: objectives = [] } = useObjectivesQuery(user?.businessId ?? '');
+  const activeObjectives = objectives.filter((o) => o.status === 'active');
   const { selectedSprintId, viewMode: sprintMode } = useScrumUIStore();
 
   const defaultBoardId =
@@ -158,12 +157,17 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
   }, [open, showBoardPicker, defaultBoardId]);
 
   useEffect(() => {
-    if (open && sprintMode === 'board' && selectedSprintId) {
+    if (!open || createTaskDraft) return;
+    if (sprintMode === 'board' && selectedSprintId) {
       setCycleId(selectedSprintId);
-    } else if (open) {
+      return;
+    }
+    if (sprintMode === 'backlog') {
+      setStatus('backlog');
+      setDueDate('');
       setCycleId('');
     }
-  }, [open, sprintMode, selectedSprintId]);
+  }, [open, sprintMode, selectedSprintId, createTaskDraft]);
 
   useEffect(() => {
     if (!open || createTaskDraft) return;
@@ -177,17 +181,17 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     const d = createTaskDraft;
     if (d.title) setTitle(d.title);
     if (d.description) setDescription(d.description);
-    if (d.status && activeColumns.includes(d.status)) setStatus(d.status);
+    if (d.status) setStatus(d.status);
+    if ('dueDate' in d) setDueDate(d.dueDate ?? '');
+    if ('cycleId' in d) setCycleId(d.cycleId ?? '');
     if (d.priority) setPriority(d.priority);
     if (d.type) setType(d.type);
     if (d.tags?.length) setTags(d.tags.join(', '));
-    if (d.dueDate) setDueDate(d.dueDate);
     if (d.dueTime) setDueTime(d.dueTime);
     if (d.assigneeIds?.length) setAssigneeIds(d.assigneeIds);
     if (d.locationId) setLocationId(d.locationId);
     if (d.projectIds?.length) setSelectedProjectIds(d.projectIds);
     else if (d.projectId) setSelectedProjectIds([d.projectId]);
-    if (d.cycleId) setCycleId(d.cycleId);
     if (d.objectiveId) setObjectiveIdDraft(d.objectiveId); // A5: precargar objetivo desde draft
     if (d.estimatedHours != null) setEstimatedHours(d.estimatedHours);
     if (d.checklist?.length || d.subtasks?.length) {
@@ -395,8 +399,13 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
             <ColoredSelect
               label="Estado"
               value={status}
-              options={visibleStatusOptions.length > 0 ? visibleStatusOptions : STATUS_OPTIONS}
-              onChange={setStatus}
+              options={
+                STATUS_OPTIONS.filter((o) => activeColumns.includes(o.value) || o.value === status)
+              }
+              onChange={(next) => {
+                setStatus(next);
+                if (next === 'backlog') setDueDate('');
+              }}
             />
             <ColoredSelect
               label="Prioridad"
@@ -445,10 +454,30 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
           </div>
           )}
 
+          {activeObjectives.length > 0 && (
+            <div>
+              <label className="text-sm font-medium mb-1 block flex items-center gap-1">
+                <Target className="h-3.5 w-3.5" /> {labels.objective} (Opcional)
+              </label>
+              <select
+                value={objectiveIdDraft ?? ''}
+                onChange={(e) => setObjectiveIdDraft(e.target.value || undefined)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Sin {labels.objective.toLowerCase()}</option>
+                {activeObjectives.map((obj) => (
+                  <option key={obj.id} value={obj.id}>
+                    {obj.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {cycles.length > 0 && (
             <div>
               <label className="text-sm font-medium mb-1 block flex items-center gap-1">
-                <Timer className="h-3.5 w-3.5" /> Período/Sprint (Opcional)
+                <Timer className="h-3.5 w-3.5" /> Período (Opcional)
               </label>
               <select
                 value={cycleId}

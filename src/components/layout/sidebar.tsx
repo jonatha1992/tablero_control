@@ -33,9 +33,6 @@ import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { can } from '@/lib/permissions';
 import { APP_VERSION, BUILD_DATE } from '@/config/version';
 import { prefetchDashboardRoute } from '@/lib/prefetch-dashboard';
-import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
-import { shouldShowBoardsManager } from '@/lib/business-defaults';
-import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 
 interface ChildItem {
   href: string;
@@ -43,7 +40,6 @@ interface ChildItem {
   icon: React.ElementType;
   exact?: boolean;
   adminOnly?: boolean;
-  boardsManagerOnly?: boolean;
 }
 
 interface NavItem {
@@ -74,7 +70,7 @@ const navItems: NavItem[] = [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
       { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
       { href: '/dashboard/tareas/cronograma', label: 'Cronograma',  icon: GanttChart },
-      { href: '/dashboard/tareas/tableros',   label: 'Tableros',    icon: Layers, boardsManagerOnly: true },
+      { href: '/dashboard/tareas/tableros',   label: 'Proyectos',   icon: Layers },
       { href: '/dashboard/tareas/archivadas', label: 'Archivadas',  icon: Archive },
     ],
   },
@@ -143,13 +139,6 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
   const { isSuperAdmin, user, isAdmin } = useAuth();
   const labels = useSpaceLabels();
   const queryClient = useQueryClient();
-  const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
-  const activeBoardCount = projects.filter((project) => !isArchivedProjectStatus(project.status)).length;
-  const showBoardsManager = shouldShowBoardsManager(
-    activeBoardCount,
-    projects.length - activeBoardCount,
-  );
-
   const warmRoute = (href: string) => {
     prefetchDashboardRoute(queryClient, href, {
       businessId: user?.businessId,
@@ -175,7 +164,6 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
 
   function isChildVisible(child: ChildItem): boolean {
     if (child.adminOnly) return isAdmin;
-    if (child.boardsManagerOnly) return showBoardsManager;
     return true;
   }
 
@@ -198,9 +186,15 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     .map((item) => ({
       ...item,
       label: item.configurableSitesLabel ? labels.sites : item.label,
-      children: item.children?.map((child) =>
-        child.label === '__SITES__' ? { ...child, label: labels.sites } : child
-      ),
+      children: item.children?.map((child) => ({
+        ...child,
+        label:
+          child.href === '/dashboard/planificacion/objetivos'
+            ? labels.objectives
+            : child.label === '__SITES__'
+              ? labels.sites
+              : child.label,
+      })),
     }));
 
   const sidebarContent = (

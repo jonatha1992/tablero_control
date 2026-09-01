@@ -11,6 +11,11 @@ import {
   useArchiveObjective,
 } from '@/hooks/mutations/use-update-objective';
 import { useAuth } from '@/hooks/auth-context';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
+import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useBusinessQuery } from '@/hooks/queries/use-business-query';
+import { hasMultipleBoards } from '@/lib/business-defaults';
+import { isArchivedProjectStatus } from '@/lib/tasks/active-entity';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
@@ -43,6 +48,11 @@ interface ObjectiveWithProgress extends Objective {
 
 export default function ObjetivosPage() {
   const { user } = useAuth();
+  const labels = useSpaceLabels();
+  const { data: business } = useBusinessQuery(user?.businessId ?? '');
+  const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const activeProjects = projects.filter((p) => !isArchivedProjectStatus(p.status));
+  const showBoardPicker = hasMultipleBoards(business?.settings) && activeProjects.length > 1;
   const { data: objectives = [], isLoading } = useObjectivesQuery(user?.businessId ?? '');
   const { data: tasks = [] } = useTasksQuery();
   const createObjective = useCreateObjective();
@@ -50,8 +60,6 @@ export default function ObjetivosPage() {
   const completeObjective = useCompleteObjective();
   const deleteObjective = useDeleteObjective();
   const archiveObjective = useArchiveObjective();
-
-  const todayStr = () => new Date().toISOString().split('T')[0];
 
   const [filterTab, setFilterTab] = useState<FilterTab>('active');
 
@@ -63,7 +71,8 @@ export default function ObjetivosPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#3b82f6');
-  const [targetDate, setTargetDate] = useState(todayStr);
+  const [targetDate, setTargetDate] = useState('');
+  const [projectId, setProjectId] = useState('');
   const [dateError, setDateError] = useState('');
   const [serverError, setServerError] = useState('');
 
@@ -73,6 +82,7 @@ export default function ObjetivosPage() {
   const [editDescription, setEditDescription] = useState('');
   const [editColor, setEditColor] = useState('#3b82f6');
   const [editTargetDate, setEditTargetDate] = useState('');
+  const [editProjectId, setEditProjectId] = useState('');
   const [editError, setEditError] = useState('');
 
   const objectivesWithProgress = useMemo(() => {
@@ -111,14 +121,21 @@ export default function ObjetivosPage() {
       }
     }
     createObjective.mutate(
-      { name: trimmed, description: description.trim() || undefined, color, targetDate: targetDate || undefined },
+      {
+        name: trimmed,
+        description: description.trim() || undefined,
+        color,
+        targetDate: targetDate || undefined,
+        projectId: projectId || undefined,
+      },
       {
         onSuccess: () => {
           setShowCreate(false);
           setName('');
           setDescription('');
           setColor('#3b82f6');
-          setTargetDate(todayStr());
+          setTargetDate('');
+          setProjectId('');
           setFilterTab('active');
         },
         onError: (err: Error) => setServerError(err.message || 'Error al crear el objetivo'),
@@ -132,6 +149,7 @@ export default function ObjetivosPage() {
     setEditDescription(obj.description ?? '');
     setEditColor(obj.color);
     setEditTargetDate(obj.targetDate ? new Date(obj.targetDate).toISOString().split('T')[0] : '');
+    setEditProjectId(obj.projectId ?? '');
     setEditError('');
   };
 
@@ -142,7 +160,7 @@ export default function ObjetivosPage() {
     const trimmed = editName.trim();
     if (!trimmed) { setEditError('El nombre es requerido'); return; }
     updateObjective.mutate(
-      { id: editTarget.id, data: { name: trimmed, description: editDescription.trim() || undefined, color: editColor, targetDate: editTargetDate || undefined } },
+      { id: editTarget.id, data: { name: trimmed, description: editDescription.trim() || undefined, color: editColor, targetDate: editTargetDate || undefined, projectId: editProjectId || null } },
       {
         onSuccess: () => setEditTarget(null),
         onError: (err: Error) => setEditError(err.message || 'Error al actualizar'),
@@ -160,10 +178,10 @@ export default function ObjetivosPage() {
   return (
     <div className="space-y-6 h-full overflow-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Objetivos</h1>
+        <h1 className="text-2xl font-bold">{labels.objectives}</h1>
         <Button size="sm" onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-1.5" />
-          Nuevo objetivo
+          Nuevo {labels.objective.toLowerCase()}
         </Button>
       </div>
 
@@ -211,11 +229,11 @@ export default function ObjetivosPage() {
           <Target className={cn('h-8 w-8 mx-auto mb-3', SEMANTIC_ICON.objective)} />
           <p className="text-sm text-muted-foreground">
             {filterTab === 'all'
-              ? 'Sin objetivos aún.'
-              : `Sin objetivos ${STATUS_LABELS[filterTab as ObjectiveStatus]?.toLowerCase()}.`}
+              ? `Sin ${labels.objectives.toLowerCase()} aún.`
+              : `Sin ${labels.objectives.toLowerCase()} ${STATUS_LABELS[filterTab as ObjectiveStatus]?.toLowerCase()}.`}
           </p>
           {filterTab === 'all' && (
-            <p className="text-xs text-muted-foreground mt-1">Creá uno para agrupar tareas en iniciativas grandes.</p>
+            <p className="text-xs text-muted-foreground mt-1">Creá uno para agrupar tareas. La fecha es opcional.</p>
           )}
         </div>
       )}
@@ -225,7 +243,7 @@ export default function ObjetivosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-background rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Nuevo objetivo</h2>
+              <h2 className="text-lg font-semibold">Nuevo {labels.objective.toLowerCase()}</h2>
               <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-muted rounded">
                 <X className="h-4 w-4" />
               </button>
@@ -265,7 +283,7 @@ export default function ObjetivosPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Fecha objetivo</label>
+                  <label className="text-sm font-medium mb-1 block">Fecha límite (opcional)</label>
                   <input
                     type="date"
                     value={targetDate}
@@ -274,6 +292,21 @@ export default function ObjetivosPage() {
                   />
                 </div>
               </div>
+              {showBoardPicker && (
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Tablero (opcional)</label>
+                  <select
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Todo el espacio</option>
+                    {activeProjects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {(dateError || serverError) && (
                 <p className="text-sm text-destructive">{dateError || serverError}</p>
               )}
@@ -282,7 +315,7 @@ export default function ObjetivosPage() {
                   Cancelar
                 </Button>
                 <Button type="submit" size="sm" disabled={createObjective.isPending}>
-                  {createObjective.isPending ? 'Creando...' : 'Crear objetivo'}
+                  {createObjective.isPending ? 'Creando...' : `Crear ${labels.objective.toLowerCase()}`}
                 </Button>
               </div>
             </form>
@@ -295,7 +328,7 @@ export default function ObjetivosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-background rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Editar objetivo</h2>
+              <h2 className="text-lg font-semibold">Editar {labels.objective.toLowerCase()}</h2>
               <button onClick={() => setEditTarget(null)} className="p-1 hover:bg-muted rounded">
                 <X className="h-4 w-4" />
               </button>
@@ -333,7 +366,7 @@ export default function ObjetivosPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Fecha objetivo</label>
+                  <label className="text-sm font-medium mb-1 block">Fecha límite (opcional)</label>
                   <input
                     type="date"
                     value={editTargetDate}
@@ -342,6 +375,21 @@ export default function ObjetivosPage() {
                   />
                 </div>
               </div>
+              {showBoardPicker && (
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Tablero (opcional)</label>
+                  <select
+                    value={editProjectId}
+                    onChange={(e) => setEditProjectId(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Todo el espacio</option>
+                    {activeProjects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {editError && <p className="text-sm text-destructive">{editError}</p>}
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setEditTarget(null)}>

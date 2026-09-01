@@ -21,6 +21,7 @@ interface KanbanColumnProps {
   onPriorityChange: (taskId: string, priority: TaskPriority) => void;
   onLocationChange?: (taskId: string, locationId: string | null) => void;
   onAddClick: () => void;
+  objectives?: { id: string; name: string; color?: string }[];
   selectedTaskIds: string[];
   isSelectMode: boolean;
   onSelectAll: (taskIds: string[]) => void;
@@ -32,7 +33,7 @@ interface KanbanColumnProps {
   onSortModeChange: (mode: KanbanSortMode) => void;
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete: _onBulkDelete, onDelete, onToggleSelect, locations, sortMode, onSortModeChange }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete: _onBulkDelete, onDelete, onToggleSelect, locations, objectives = [], sortMode, onSortModeChange }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const priorityOrder: Record<TaskPriority, number> = {
@@ -51,6 +52,8 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
 
   const getLocationName = (locationId: string | null | undefined) =>
     locationId ? (locations.find((l) => l.id === locationId)?.name ?? '') : '';
+  const getObjective = (objectiveId: string | null | undefined) =>
+    objectiveId ? objectives.find((o) => o.id === objectiveId) : undefined;
 
   return (
     <div
@@ -156,6 +159,8 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
               isSelected={selectedTaskIds.includes(task.id)}
               isSelectMode={isSelectMode}
               locationName={getLocationName(task.locationId)}
+              objectiveName={getObjective(task.objectiveId)?.name}
+              objectiveColor={getObjective(task.objectiveId)?.color}
               locations={locations}
             />
           ))

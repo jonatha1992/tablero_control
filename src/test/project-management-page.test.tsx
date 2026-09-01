@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectManagementPage from '@/app/dashboard/tareas/tableros/page';
 
 const mutate = vi.fn();
+const createMutate = vi.fn();
 const replace = vi.fn();
+const push = vi.fn();
 const projectQuery = vi.hoisted(() => ({
   data: [
     {
@@ -19,7 +21,13 @@ const projectQuery = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace }),
+  useRouter: () => ({ replace, push }),
+}));
+
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
 }));
 
 vi.mock('@/hooks/auth-context', () => ({
@@ -36,12 +44,15 @@ vi.mock('@/hooks/queries/use-projects-query', () => ({
     data: projectQuery.data,
   }),
   useUpdateProject: () => ({ mutate, isPending: false }),
+  useCreateProject: () => ({ mutate: createMutate, isPending: false }),
 }));
 
 describe('ProjectManagementPage', () => {
   beforeEach(() => {
     mutate.mockClear();
+    createMutate.mockClear();
     replace.mockClear();
+    push.mockClear();
     projectQuery.data = [
       {
         id: 'active-1', name: 'Operaciones', description: 'Trabajo diario',
@@ -54,7 +65,7 @@ describe('ProjectManagementPage', () => {
     ];
   });
 
-  it('redirige al Kanban si hay un solo tablero activo', () => {
+  it('muestra el único proyecto activo (no redirige)', () => {
     projectQuery.data = [
       {
         id: 'active-1', name: 'Principal', description: null,
@@ -63,11 +74,20 @@ describe('ProjectManagementPage', () => {
     ];
     render(<ProjectManagementPage />);
 
-    expect(replace).toHaveBeenCalledWith('/dashboard/tareas');
-    expect(screen.queryByText('Principal')).not.toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByText('Principal')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver todo' })).toHaveAttribute('href', '/dashboard/tareas');
   });
 
-  it('separa tableros activos y archivados', async () => {
+  it('entra al Kanban del proyecto al hacer click en la fila', async () => {
+    const user = userEvent.setup();
+    render(<ProjectManagementPage />);
+
+    await user.click(screen.getByText('Operaciones'));
+    expect(push).toHaveBeenCalledWith('/dashboard/tareas?projectId=active-1');
+  });
+
+  it('separa proyectos activos y archivados', async () => {
     const user = userEvent.setup();
     render(<ProjectManagementPage />);
 
@@ -93,7 +113,7 @@ describe('ProjectManagementPage', () => {
     );
   });
 
-  it('restaura un tablero archivado', async () => {
+  it('restaura un proyecto archivado', async () => {
     const user = userEvent.setup();
     render(<ProjectManagementPage />);
 
@@ -104,5 +124,23 @@ describe('ProjectManagementPage', () => {
       { id: 'archived-1', data: { action: 'restore' } },
       expect.any(Object),
     );
+  });
+
+  it('crea un proyecto y entra al Kanban', async () => {
+    const user = userEvent.setup();
+    createMutate.mockImplementation((_data, opts?: { onSuccess?: (project: { id: string }) => void }) => {
+      opts?.onSuccess?.({ id: 'new-1' });
+    });
+    render(<ProjectManagementPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Nuevo proyecto' }));
+    await user.type(screen.getByLabelText('Nombre'), 'Causa Pérez');
+    await user.click(screen.getByRole('button', { name: 'Crear y entrar' }));
+
+    expect(createMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Causa Pérez', businessId: 'biz-1' }),
+      expect.any(Object),
+    );
+    expect(push).toHaveBeenCalledWith('/dashboard/tareas?projectId=new-1');
   });
 });

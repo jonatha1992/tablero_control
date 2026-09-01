@@ -59,7 +59,11 @@ const SECTIONS: Section[] = [
     subsections: [
       {
         title: 'Kanban',
-        description: 'Tablero con columnas por estado: Backlog, Pendiente, En progreso, En revisión, Hecho y Bloqueado. Arrastrá y soltá para cambiar el estado. Podés filtrar por tablero (si tenés varios), prioridad o miembro.',
+        description: 'Tablero con columnas por estado: Backlog, Pendiente, En progreso, En revisión, Hecho y Bloqueado. Arrastrá y soltá para cambiar el estado. Si entraste desde un proyecto, las tareas nuevas nacen ahí. Backlog y sprint son el mismo tablero (Scrumban).',
+      },
+      {
+        title: 'Proyectos',
+        description: 'Lista bajo Tareas. Entrá a un proyecto (local, causa, campaña, producto): mismo Kanban. Ver todo muestra las tareas de todos. Podés archivar y restaurar. Fecha límite solo si ese proyecto se cierra.',
       },
       {
         title: 'Agenda',
@@ -74,8 +78,8 @@ const SECTIONS: Section[] = [
         description: 'Hacé clic en el botón ✨ (abajo a la derecha) y dictá una tarea por voz o escribila en texto libre. La IA extrae título, prioridad, fecha, asignados y etiquetas automáticamente. También puede crear eventos (examen, reunión) cuando lo pedís o cuando detecta que no es una tarea.',
       },
       {
-        title: 'Sprint tabs',
-        description: 'Barra secundaria sobre el kanban: Todas | Backlog | [Ciclo activo] | Otros. El tab "Backlog" muestra tareas sin período/sprint asignado (de cualquier estado), no solo las de la columna Backlog. Para filtrar por estado, usá las columnas del tablero o los filtros del kanban.',
+        title: 'Sprint tabs y Kanban inteligente',
+        description: 'Barra sobre el kanban: Todas | Backlog | [Período activo] | Otros. El tab Backlog muestra solo tareas con estado Backlog (cola de ideas, no cuentan en Agenda/KPIs). El + de cada columna crea la tarea en ese estado. En Backlog no pone fecha. Si hay un período activo, "Por hacer" y el resto heredan ese período. Las cards muestran el objetivo y la sede si están vinculados.',
       },
       {
         title: 'Checklist',
@@ -114,16 +118,20 @@ const SECTIONS: Section[] = [
         description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Acceso directo desde el ítem Calendario del sidebar (entre Eventos y Planificación).',
       },
       {
+        title: 'Cómo se organiza el trabajo',
+        description: 'Proyecto = el contenedor (entrás y trabajás). Tarea = el paso (requerimiento, rutina, escrito). Período/sprint = ventana de tiempo de ese proyecto. Sede = dónde trabaja la gente (Equipo), no es otro Kanban. Backlog = columna, no otro módulo. Kanban y Scrum se usan juntos en el mismo proyecto.',
+      },
+      {
         title: '¿Qué es un Período?',
         description: 'Un período es un bloque de tiempo con nombre, fecha de inicio y fecha de fin. Sirve para agrupar qué tareas vas a trabajar en esa franja (una semana, una quincena, un mes). Es equivalente a un "sprint" en metodologías ágiles.',
       },
       {
         title: 'Flujo de un Período paso a paso',
-        description: '1. Creás el período (queda en "Planificación"). 2. Asignás tareas al período desde el Kanban o desde el detalle de cada tarea. 3. Cuando empieza el trabajo, hacés clic en "Iniciar" → pasa a "Activo". El período activo aparece como tab verde en el Kanban. 4. Al terminar, hacés clic en "Completar". Solo puede haber UN período activo a la vez — si intentás iniciar otro, el sistema te avisa.',
+        description: '1. Creás el período (queda en "Planificación"). 2. Asignás tareas al período al crearlas (tab del período o campo Período) o desde el detalle de la tarea. 3. Cuando empieza el trabajo, hacés clic en "Iniciar" → pasa a "Activo". El período activo aparece como tab verde en el Kanban. 4. Al terminar, hacés clic en "Completar". Solo puede haber UN período activo a la vez — si intentás iniciar otro, el sistema te avisa.',
       },
       {
         title: 'Cómo asignar tareas a un período',
-        description: 'Opción A: en el Kanban, hacé clic en el tab del período activo y creá una nueva tarea — queda asignada automáticamente. Opción B: abrí una tarea existente y elegí el período en el campo "Período/Sprint". Opción C: en el tab "Backlog" del Kanban aparecen todas las tareas sin período asignado.',
+        description: 'Opción A: en el Kanban, abrí el tab del período activo y creá una tarea — queda asignada a ese período. Opción B: en el detalle de la tarea, campo Período. El tab Backlog no es “sin período”: son tareas en estado Backlog.',
       },
       {
         title: '¿Qué es un Objetivo?',
@@ -135,7 +143,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Cómo vincular tareas a un Objetivo',
-        description: 'Abrí el detalle de cualquier tarea y buscá el campo "Objetivo". Seleccioná el objetivo correspondiente. La tarea pasa a contar para el progreso del objetivo automáticamente.',
+        description: 'Al crear la tarea elegí el objetivo, o abrí el detalle → Editar → campo Objetivo. También podés asignar tareas existentes desde el detalle del objetivo. El progreso se actualiza solo.',
       },
       {
         title: 'Estados de un Objetivo',

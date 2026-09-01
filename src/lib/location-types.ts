@@ -19,6 +19,7 @@ export const DEFAULT_LOCALE_TYPES = [
   'area',
   'negocio',
   'sede',
+  'pagina',
 ] as const;
 
 export function normalizeLocationTypeSlug(raw: string): string {

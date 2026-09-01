@@ -21,10 +21,13 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMembersQuery } from '@/hooks/queries/use-members-query';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
 import { useProjectsQuery } from '@/hooks/queries/use-projects-query';
+import { useCyclesQuery } from '@/hooks/queries/use-cycles-query';
+import { useObjectivesQuery } from '@/hooks/queries/use-objectives-query';
+import { useSpaceLabels } from '@/hooks/use-space-labels';
 import { useTasksQuery } from '@/hooks/queries/use-tasks-query';
 import { useAuth } from '@/hooks/auth-context';
 import type { Task, TaskStatus, TaskPriority, TaskType } from '@/types';
-import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive, Copy, Pencil, Check } from 'lucide-react';
+import { Trash, Paperclip, Users, X, Repeat, MapPin, Save, ChevronDown, FolderKanban, Archive, Copy, Pencil, Check, Target, Timer } from 'lucide-react';
 import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import { hasMultipleBoards } from '@/lib/business-defaults';
 import {
@@ -80,6 +83,8 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
   } | null>(null);
   const [editLocationId, setEditLocationId] = useState('');
   const [editProjectId, setEditProjectId] = useState('');
+  const [editCycleId, setEditCycleId] = useState('');
+  const [editObjectiveId, setEditObjectiveId] = useState('');
   const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
@@ -103,6 +108,10 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
   const { user } = useAuth();
   const { data: business } = useBusinessQuery(user?.businessId);
   const { data: projects = [] } = useProjectsQuery(user?.businessId ?? '');
+  const { data: cycles = [] } = useCyclesQuery(user?.businessId ?? '');
+  const { data: objectives = [] } = useObjectivesQuery(user?.businessId ?? '');
+  const labels = useSpaceLabels();
+  const activeObjectives = objectives.filter((o) => o.status === 'active' || o.id === taskProp?.objectiveId);
   const activeProjects = projects.filter((project) => !isArchivedProjectStatus(project.status));
   const showMultiBoardPicker = shouldShowProjectMultiPicker(
     activeProjects.length,
@@ -132,6 +141,8 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
           description,
           locationId: editLocationId || undefined,
           projectId: editProjectId || undefined,
+          cycleId: editCycleId || null,
+          objectiveId: editObjectiveId || null,
           assigneeIds: editAssigneeIds,
           dueDate: editDueDate ? new Date(`${editDueDate}T${editDueTime || '00:00'}`) : undefined,
           recurrence: isRecurring ? {
@@ -305,6 +316,42 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
                   ))}
                 </select>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Target className="h-3.5 w-3.5" /> {labels.objective}
+                </label>
+                <select
+                  value={editObjectiveId}
+                  onChange={(e) => setEditObjectiveId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
+                  <option value="">Sin {labels.objective.toLowerCase()}</option>
+                  {activeObjectives.map((obj) => (
+                    <option key={obj.id} value={obj.id}>{obj.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {cycles.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Timer className="h-3.5 w-3.5" /> Período
+                  </label>
+                  <select
+                    value={editCycleId}
+                    onChange={(e) => setEditCycleId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  >
+                    <option value="">Sin período</option>
+                    {cycles.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}{c.status === 'active' ? ' ●' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
@@ -575,6 +622,28 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
             </div>
           )}
 
+          {task.objectiveId && objectives.find((o) => o.id === task.objectiveId) && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <Target className="h-3.5 w-3.5" /> {labels.objective}
+              </p>
+              <p className="text-sm">
+                {objectives.find((o) => o.id === task.objectiveId)!.name}
+              </p>
+            </div>
+          )}
+
+          {task.cycleId && cycles.find((c) => c.id === task.cycleId) && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <Timer className="h-3.5 w-3.5" /> Período
+              </p>
+              <p className="text-sm">
+                {cycles.find((c) => c.id === task.cycleId)!.name}
+              </p>
+            </div>
+          )}
+
           {task.projectId && projects.find((p) => p.id === task.projectId) && (
             <div>
               <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
@@ -705,6 +774,8 @@ export function TaskDetailModal({ task: taskProp, open, onOpenChange }: TaskDeta
                   setEditDueTime(d && (h !== 0 || m !== 0) ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` : '');
                   setEditLocationId(task.locationId ?? '');
                   setEditProjectId(task.projectId ?? '');
+                  setEditCycleId(task.cycleId ?? '');
+                  setEditObjectiveId(task.objectiveId ?? '');
                   setEditAssigneeIds(task.assigneeIds ?? []);
                   setIsRecurring(!!task.recurrence);
                   setFrequency(task.recurrence?.frequency ?? 'weekly');

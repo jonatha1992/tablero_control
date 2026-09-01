@@ -46,6 +46,16 @@ export const PATCH = handle(async (request: NextRequest, { params }: { params: P
     return NextResponse.json({ error: 'forbidden', reason: 'missing_permission' }, { status: 403 });
   }
 
+  if (typeof data.projectId === 'string' && data.projectId.trim()) {
+    const proj = await prisma.project.findUnique({
+      where: { id: data.projectId },
+      select: { businessId: true },
+    });
+    if (!proj || proj.businessId !== objective.businessId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
   const validActions = ['complete', 'archive', undefined];
   if (_action !== undefined && !validActions.includes(_action)) {
     return NextResponse.json({ error: 'Acción inválida' }, { status: 400 });

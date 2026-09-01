@@ -13,9 +13,10 @@ import { useBusinessQuery } from '@/hooks/queries/use-business-query';
 import {
   DEFAULT_LABELS,
   LOCATION_PRESET_OPTIONS,
+  OBJECTIVE_PRESET_OPTIONS,
   resolveSpaceLabels,
 } from '@/lib/terminology';
-import type { LocationLabelPreset, SpaceTerminology } from '@/types/domain/business';
+import type { LocationLabelPreset, ObjectiveLabelPreset, SpaceTerminology } from '@/types/domain/business';
 
 type SaveState = 'idle' | 'loading' | 'saved' | 'error';
 
@@ -27,6 +28,9 @@ export function SpaceTerminologyCard() {
   const [preset, setPreset] = useState<LocationLabelPreset>('sede');
   const [customSingular, setCustomSingular] = useState('');
   const [customPlural, setCustomPlural] = useState('');
+  const [objectivePreset, setObjectivePreset] = useState<ObjectiveLabelPreset>('objetivo');
+  const [objectiveSingular, setObjectiveSingular] = useState('');
+  const [objectivePlural, setObjectivePlural] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('idle');
 
   useEffect(() => {
@@ -34,6 +38,9 @@ export function SpaceTerminologyCard() {
     setPreset(t?.locationPreset ?? 'sede');
     setCustomSingular(t?.locationSingular ?? '');
     setCustomPlural(t?.locationPlural ?? '');
+    setObjectivePreset(t?.objectivePreset ?? 'objetivo');
+    setObjectiveSingular(t?.objectiveSingular ?? '');
+    setObjectivePlural(t?.objectivePlural ?? '');
   }, [business?.settings?.terminology]);
 
   const preview = resolveSpaceLabels({
@@ -41,6 +48,9 @@ export function SpaceTerminologyCard() {
       locationPreset: preset,
       locationSingular: customSingular,
       locationPlural: customPlural,
+      objectivePreset,
+      objectiveSingular,
+      objectivePlural,
     },
   });
 
@@ -52,6 +62,11 @@ export function SpaceTerminologyCard() {
       ...(preset === 'custom' && {
         locationSingular: customSingular.trim() || DEFAULT_LABELS.site,
         locationPlural: customPlural.trim() || `${customSingular.trim() || DEFAULT_LABELS.site}s`,
+      }),
+      objectivePreset,
+      ...(objectivePreset === 'custom' && {
+        objectiveSingular: objectiveSingular.trim() || DEFAULT_LABELS.objective,
+        objectivePlural: objectivePlural.trim() || `${objectiveSingular.trim() || DEFAULT_LABELS.objective}s`,
       }),
     };
 
@@ -102,7 +117,7 @@ export function SpaceTerminologyCard() {
         </div>
         <CardDescription className="text-xs">
           El nivel superior siempre se llama <strong>Espacio</strong>. Acá elegís cómo nombrar las unidades
-          internas (sucursales, departamentos, sectores, etc.) en menús, formularios y mensajes.
+          que operás y las metas que cerrás. El modelo no cambia: solo las palabras.
         </CardDescription>
       </CardHeader>
 
@@ -110,9 +125,9 @@ export function SpaceTerminologyCard() {
         <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Vista previa</p>
           <ul className="text-sm space-y-1 text-foreground/90">
-            <li>Menú Equipo → <strong>{preview.sites}</strong></li>
-            <li>Botón: Agregar {preview.site.toLowerCase()}</li>
-            <li>Formulario de tarea: {preview.site} (opcional)</li>
+            <li>Menú → <strong>{preview.sites}</strong> (unidades a controlar)</li>
+            <li>Planificación → <strong>{preview.objectives}</strong> (se completan)</li>
+            <li>Tarea: {preview.site} + {preview.objective} (opcional)</li>
           </ul>
         </div>
 
@@ -170,6 +185,66 @@ export function SpaceTerminologyCard() {
                 value={customPlural}
                 onChange={(e) => setCustomPlural(e.target.value)}
                 placeholder="Ej: Casas matriz"
+                maxLength={40}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-3 pt-2 border-t">
+          <label className="text-sm font-medium">¿Cómo llamás a lo que se completa?</label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {OBJECTIVE_PRESET_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setObjectivePreset(opt.id)}
+                className={cn(
+                  'rounded-lg border p-3 text-left transition-colors',
+                  objectivePreset === opt.id
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'hover:bg-accent/50'
+                )}
+              >
+                <p className="text-sm font-medium">{opt.plural}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setObjectivePreset('custom')}
+              className={cn(
+                'rounded-lg border p-3 text-left transition-colors sm:col-span-2',
+                objectivePreset === 'custom'
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'hover:bg-accent/50'
+              )}
+            >
+              <p className="text-sm font-medium">Personalizado</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Definí singular y plural (ej. Expediente / Expedientes).
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {objectivePreset === 'custom' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Singular</label>
+              <Input
+                value={objectiveSingular}
+                onChange={(e) => setObjectiveSingular(e.target.value)}
+                placeholder="Ej: Expediente"
+                maxLength={40}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Plural</label>
+              <Input
+                value={objectivePlural}
+                onChange={(e) => setObjectivePlural(e.target.value)}
+                placeholder="Ej: Expedientes"
                 maxLength={40}
               />
             </div>

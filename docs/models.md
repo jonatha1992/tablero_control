@@ -52,7 +52,7 @@ teams (Team[]), tasks (Task[])
 - Archivar location = `status: 'closed'`
 - Hard delete de location borra primero las `Task` con ese `locationId` en una transacción antes de eliminar la fila `Location`
 
-## Project (Tableros)
+## Project (Proyectos / tableros internos)
 
 ```
 id, name, description?, teamId?, businessId?
@@ -61,7 +61,7 @@ startDate?, endDate?
 tasks (Task[]), cycles (Cycle[])
 ```
 
-**Reglas:** archivar project = `status: 'archived'`; conserva tareas, deja de contar para el límite y se puede restaurar a `active` si hay cupo. Siempre queda al menos un tablero no archivado.
+**Reglas:** archivar project = `status: 'archived'`; conserva tareas, deja de contar para el límite y se puede restaurar a `active` si hay cupo. Siempre queda al menos un proyecto no archivado. En UI: Tareas → Proyectos.
 
 ## User
 

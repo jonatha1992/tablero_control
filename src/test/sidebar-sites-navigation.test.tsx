@@ -24,7 +24,7 @@ vi.mock('@/hooks/auth-context', () => ({
   }),
 }));
 vi.mock('@/hooks/use-space-labels', () => ({
-  useSpaceLabels: () => ({ site: 'Sucursal', sites: 'Sucursales' }),
+  useSpaceLabels: () => ({ site: 'Sucursal', sites: 'Sucursales', objective: 'Objetivo', objectives: 'Objetivos' }),
 }));
 vi.mock('@/lib/permissions', () => ({ can: () => true }));
 vi.mock('@/hooks/queries/use-projects-query', () => ({

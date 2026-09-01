@@ -5,14 +5,14 @@ import type { TaskStatus } from '@/types/domain/task';
 // Resetear el store antes de cada test
 beforeEach(() => {
   useKanbanUIStore.setState({
-    activeColumns: ['todo', 'in_progress', 'done'],
+    activeColumns: ['backlog', 'todo', 'in_progress', 'done'],
   });
 });
 
 describe('useKanbanUIStore — activeColumns', () => {
-  it('columnas por defecto: ["todo", "in_progress", "done"]', () => {
+  it('columnas por defecto incluyen backlog', () => {
     const { activeColumns } = useKanbanUIStore.getState();
-    expect(activeColumns).toEqual(['todo', 'in_progress', 'done']);
+    expect(activeColumns).toEqual(['backlog', 'todo', 'in_progress', 'done']);
   });
 
   it('toggleColumn quita una columna activa', () => {
@@ -42,7 +42,7 @@ describe('useKanbanUIStore — activeColumns', () => {
   });
 
   it('puede quitar todas las columnas', () => {
-    const columns: TaskStatus[] = ['todo', 'in_progress', 'done'];
+    const columns: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'done'];
     columns.forEach((c) => useKanbanUIStore.getState().toggleColumn(c));
     expect(useKanbanUIStore.getState().activeColumns).toHaveLength(0);
   });
