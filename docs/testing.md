@@ -162,6 +162,8 @@ describe('can()', () => {
 | `api-comments.test.ts` | GET/POST /tasks/[id]/comments, 404 si tarea no existe |
 | `api-time-entries.test.ts` | GET/POST /tasks/[id]/time-entries, validación hours > 0 |
 | `api-members.test.ts` | CRUD de miembros, límite por plan (429) |
+| `api-members-id.test.ts` | DELETE/PATCH /members/[id] — self-removal bloqueado, owner protegido, reactivación |
+| `api-members-leave.test.ts` | POST /members/leave — self-service, último-admin 409, owner 403, reasignación de sectores scoped por businessId vía `teamService.leaveBusiness` (atómico), target null cuando no hay admin ni owner, audit log, claims no-fatal |
 | `api-locations.test.ts` | CRUD de locales |
 | `api-projects.test.ts` | CRUD de tableros, tenant guard |
 | `api-projects-id.test.ts`, `service-project.test.ts`, `project-management-page.test.tsx` | archivar/restaurar, último activo, cupo y UI |
@@ -220,3 +222,4 @@ describe('can()', () => {
 | `task-service.test.ts` | TaskService.createTask, moveTask (recurrencia) |
 | `comment-service.test.ts` | CommentService.addComment |
 | `time-entry-service.test.ts` | TimeEntryService.create, validación |
+| `team.service.test.ts` | TeamService.inviteMember (assignments/locationId), leaveBusiness (reasignación scoped por businessId + desactivación + limpieza de negocio activo, todo en una transacción) |

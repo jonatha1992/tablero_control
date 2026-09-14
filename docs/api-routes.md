@@ -93,7 +93,8 @@ DELETE /api/locations/[id]      ← requiere business.locations.crud
 GET    /api/members
 POST   /api/members
 PATCH  /api/members/[id]
-DELETE /api/members/[id]
+DELETE /api/members/[id]        ← admin-driven removal, self-removal blocked (cannot_remove_self)
+POST   /api/members/leave       ← self-service "salir del espacio", ver docs/permissions.md
 
 POST   /api/users/create        ← enforcement límite por plan → 429 si excede
 POST   /api/users/fcm-token     ← registra token FCM

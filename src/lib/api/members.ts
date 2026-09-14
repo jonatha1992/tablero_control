@@ -39,6 +39,11 @@ export const membersApi = {
       method: 'DELETE',
     }),
 
+  leave: () =>
+    fetchJsonAuth<{ ok: true; remainingBusinesses: number }>('/api/members/leave', {
+      method: 'POST',
+    }),
+
   bulkAssignLocation: (ids: string[], locationId: string | null) =>
     fetchJsonAuth<{ updated: number }>('/api/members/bulk', {
       method: 'POST',

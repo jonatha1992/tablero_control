@@ -35,6 +35,7 @@ const defaultProps = {
   status: 'todo' as TaskStatus,
   tasks: [],
   onCardClick: vi.fn(),
+  onMove: vi.fn(),
   onPriorityChange: vi.fn(),
   onAddClick: vi.fn(),
   selectedTaskIds: [],

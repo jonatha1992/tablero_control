@@ -6,6 +6,8 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>;
   findByBusiness(businessId: string): Promise<User[]>;
   findActiveAdminsByBusiness(businessId: string, excludeId: string): Promise<User[]>;
+  /** Active admins OR platform-superadmin memberships in a business, excluding one user. Used by leave-business to find a successor. */
+  findActiveAdminOrSuperadminsByBusiness(businessId: string, excludeId: string): Promise<User[]>;
   findMemberships(userId: string): Promise<UserBusiness[]>;
   addMembership(data: Omit<UserBusiness, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserBusiness>;
   updateMembership(userId: string, businessId: string, data: Partial<Pick<UserBusiness, 'role' | 'locationId' | 'isActive'>>): Promise<UserBusiness>;
