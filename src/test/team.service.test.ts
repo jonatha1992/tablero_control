@@ -20,6 +20,11 @@ vi.mock('@/repositories', () => ({
   },
 }));
 
+const mockTxLocationUpdateMany = vi.fn();
+const mockTxUserBusinessUpdate = vi.fn();
+const mockTxUserFindUnique = vi.fn();
+const mockTxUserUpdate = vi.fn();
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     userBusiness: {
@@ -28,6 +33,13 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: { update: vi.fn() },
     task: { deleteMany: vi.fn() },
+    $transaction: vi.fn(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        location: { updateMany: mockTxLocationUpdateMany },
+        userBusiness: { update: mockTxUserBusinessUpdate },
+        user: { findUnique: mockTxUserFindUnique, update: mockTxUserUpdate },
+      })
+    ),
   },
 }));
 
@@ -116,5 +128,46 @@ describe('teamService.inviteMember', () => {
     expect(mockSetLocationAssignments).toHaveBeenCalledWith('u1', [
       { locationId: 'loc-only', role: 'viewer' },
     ]);
+  });
+});
+
+describe('teamService.leaveBusiness', () => {
+  it('reasigna sectores scoped por businessId, desactiva membresía y limpia negocio activo', async () => {
+    mockTxUserFindUnique.mockResolvedValueOnce({ businessId: 'biz-1' });
+
+    await teamService.leaveBusiness('leaving-user', 'biz-1', 'new-manager');
+
+    expect(mockTxLocationUpdateMany).toHaveBeenCalledWith({
+      where: { managerId: 'leaving-user', businessId: 'biz-1' },
+      data: { managerId: 'new-manager' },
+    });
+    expect(mockTxUserBusinessUpdate).toHaveBeenCalledWith({
+      where: { userId_businessId: { userId: 'leaving-user', businessId: 'biz-1' } },
+      data: { isActive: false },
+    });
+    expect(mockTxUserUpdate).toHaveBeenCalledWith({
+      where: { id: 'leaving-user' },
+      data: { businessId: null },
+    });
+  });
+
+  it('sin target de reasignación: no toca locations', async () => {
+    mockTxUserFindUnique.mockResolvedValueOnce({ businessId: 'biz-1' });
+
+    await teamService.leaveBusiness('leaving-user', 'biz-1', null);
+
+    expect(mockTxLocationUpdateMany).not.toHaveBeenCalled();
+    expect(mockTxUserBusinessUpdate).toHaveBeenCalledWith({
+      where: { userId_businessId: { userId: 'leaving-user', businessId: 'biz-1' } },
+      data: { isActive: false },
+    });
+  });
+
+  it('businessId activo distinto: no limpia el negocio activo del usuario', async () => {
+    mockTxUserFindUnique.mockResolvedValueOnce({ businessId: 'biz-2' });
+
+    await teamService.leaveBusiness('leaving-user', 'biz-1', 'new-manager');
+
+    expect(mockTxUserUpdate).not.toHaveBeenCalled();
   });
 });

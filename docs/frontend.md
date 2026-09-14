@@ -102,6 +102,8 @@ Cada paso usa `element: '#tour-nav-xxx'`. Si el elemento no existe en el DOM, el
 
 **Link de invitación** (`src/components/equipo/create-invite-modal.tsx`): modo link compartible o correo sin pedir nombre. Tras alta local se muestra el `username` único generado con acción para copiarlo; Google y cuentas existentes conservan su método de acceso.
 
+**Salir del espacio** (`src/components/equipo/leave-business-button.tsx`, hook `src/hooks/mutations/use-leave-business.ts`): self-service, oculto para el dueño del negocio, deshabilitado con tooltip cuando el caller es admin y no hay otro admin/superadmin activo en la lista de miembros ya cargada (`useMembersQuery`). Ubicado en el header de Equipo (junto a "Invitar usuario") y también en Config → Mi Perfil, porque `miembro`/`viewer` no ven "Equipo" en el sidebar (ver `sidebar.tsx` `isItemVisible('/dashboard/equipo')`). Al confirmar: `POST /api/members/leave`, luego `queryClient.clear()` + hard-navigate (`window.location.href`) — sin pantalla de "elegir negocio" en la app, así que se apoya en el auto-fallback de `GET /api/auth/profile` (si quedan otras membresías, va a `/dashboard`) o en el flujo existente de "autenticado sin perfil PG" (`/register`, mismo camino que usa el alta de Google nuevo). Ver docs/permissions.md sección "Salir del espacio".
+
 ## Rutas de la app
 
 ```

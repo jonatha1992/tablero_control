@@ -640,6 +640,9 @@ export function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
                   if (isSelectMode) toggleTaskSelection(task.id);
                   else openTaskDetail(task.id);
                 }}
+                onMove={(taskId, from, to) => {
+                  if (from !== to) moveTaskIdsToColumn([taskId], to);
+                }}
                 onPriorityChange={handlePriorityChange}
                 onLocationChange={handleLocationChange}
                 onAddClick={() => openSmartCreate(column)}

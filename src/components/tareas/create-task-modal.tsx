@@ -214,51 +214,6 @@ export function CreateTaskModal({ open, onOpenChange, defaultStatus, defaultDueD
     clearCreateTaskDraft();
   }, [open, createTaskDraft, clearCreateTaskDraft, activeColumns]);
 
-  useEffect(() => {
-    if (!open || createTaskDraft) return;
-    const defaultLocationId = getActiveMembershipLocationId(user ?? undefined);
-    if (defaultLocationId) setLocationId(defaultLocationId);
-  }, [open, createTaskDraft, user]);
-
-  useEffect(() => {
-    if (!open || !createTaskDraft) return;
-
-    const d = createTaskDraft;
-    if (d.title) setTitle(d.title);
-    if (d.description) setDescription(d.description);
-    if (d.status && activeColumns.includes(d.status)) setStatus(d.status);
-    if (d.priority) setPriority(d.priority);
-    if (d.type) setType(d.type);
-    if (d.tags?.length) setTags(d.tags.join(', '));
-    if (d.dueDate) setDueDate(d.dueDate);
-    if (d.dueTime) setDueTime(d.dueTime);
-    if (d.assigneeIds?.length) setAssigneeIds(d.assigneeIds);
-    if (d.locationId) setLocationId(d.locationId);
-    if (d.projectIds?.length) setSelectedProjectIds(d.projectIds);
-    else if (d.projectId) setSelectedProjectIds([d.projectId]);
-    if (d.cycleId) setCycleId(d.cycleId);
-    if (d.objectiveId) setObjectiveIdDraft(d.objectiveId); // A5: precargar objetivo desde draft
-    if (d.estimatedHours != null) setEstimatedHours(d.estimatedHours);
-    if (d.checklist?.length || d.subtasks?.length) {
-      setChecklist([
-        ...(d.checklist ?? []),
-        ...(d.subtasks ?? []).map((text, index) => ({
-          id: `draft-st-${index + 1}`,
-          text,
-          done: false,
-        })),
-      ]);
-    }
-    if (d.recurrence) {
-      setIsRecurring(true);
-      setFrequency(d.recurrence.frequency);
-      setIntervalValue(d.recurrence.interval ?? 1);
-      setDayOfWeek(d.recurrence.dayOfWeek);
-      setDayOfMonth(d.recurrence.dayOfMonth);
-    }
-    clearCreateTaskDraft();
-  }, [open, createTaskDraft, clearCreateTaskDraft, activeColumns]);
-
   const toggleAssignee = (id: string) => {
     setAssigneeIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]

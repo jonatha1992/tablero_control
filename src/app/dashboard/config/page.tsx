@@ -21,6 +21,7 @@ import { BillingCurrentPlan } from '@/components/billing/billing-current-plan';
 import { BillingInvoices } from '@/components/billing/billing-invoices';
 import { useSubscriptionQuery } from '@/hooks/queries/use-subscription-query';
 import { CreateOwnBusinessCard } from '@/components/config/create-own-business-card';
+import { LeaveBusinessButton } from '@/components/equipo/leave-business-button';
 import { SpaceTerminologyCard } from '@/components/config/space-terminology-card';
 
 export default function ConfigPage() {
@@ -266,6 +267,10 @@ export default function ConfigPage() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <div className="flex justify-end">
+              <LeaveBusinessButton />
+            </div>
           </TabsContent>
 
           {/* PREFERENCIAS */}

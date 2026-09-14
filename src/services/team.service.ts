@@ -163,6 +163,34 @@ class TeamService {
     });
   }
 
+  /**
+   * Self-service "leave business": reassigns managed locations (scoped to this
+   * business only — unlike handleManagerDeletion, never deletes locations/tasks)
+   * and deactivates the membership atomically, so a crash mid-flow can never
+   * leave locations pointing at a manager who is already deactivated.
+   */
+  async leaveBusiness(userId: string, businessId: string, reassignToUserId: string | null): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      if (reassignToUserId) {
+        await tx.location.updateMany({
+          where: { managerId: userId, businessId },
+          data: { managerId: reassignToUserId },
+        });
+      }
+
+      await tx.userBusiness.update({
+        where: { userId_businessId: { userId, businessId } },
+        data: { isActive: false },
+      });
+
+      // Clear cache if this was the active business (mirrors removeMember).
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { businessId: true } });
+      if (user?.businessId === businessId) {
+        await tx.user.update({ where: { id: userId }, data: { businessId: null } });
+      }
+    });
+  }
+
   async handleManagerDeletion(userId: string, businessId: string): Promise<void> {
     const otherAdmins = await userRepository.findActiveAdminsByBusiness(businessId, userId);
     if (otherAdmins.length > 0) {

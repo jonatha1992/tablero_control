@@ -18,6 +18,7 @@ interface KanbanColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onCardClick: (task: Task) => void;
+  onMove: (taskId: string, from: TaskStatus, to: TaskStatus) => void;
   onPriorityChange: (taskId: string, priority: TaskPriority) => void;
   onLocationChange?: (taskId: string, locationId: string | null) => void;
   onAddClick: () => void;
@@ -33,7 +34,7 @@ interface KanbanColumnProps {
   onSortModeChange: (mode: KanbanSortMode) => void;
 }
 
-export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete: _onBulkDelete, onDelete, onToggleSelect, locations, objectives = [], sortMode, onSortModeChange }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, onCardClick, onMove, onPriorityChange, onLocationChange, onAddClick, selectedTaskIds, isSelectMode, onSelectAll, onBulkDelete: _onBulkDelete, onDelete, onToggleSelect, locations, objectives = [], sortMode, onSortModeChange }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const priorityOrder: Record<TaskPriority, number> = {
@@ -150,7 +151,7 @@ export function KanbanColumn({ status, tasks, onCardClick, onPriorityChange, onL
               key={task.id}
               task={task}
               column={status}
-              onMove={() => { }}
+              onMove={onMove}
               onPriorityChange={onPriorityChange}
               onLocationChange={onLocationChange}
               onDelete={onDelete}

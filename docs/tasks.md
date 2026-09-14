@@ -147,6 +147,8 @@ Componente compartido: `src/components/tareas/task-filter-bar.tsx` (`TaskFilterB
 - Gestión de tableros: `/dashboard/tareas/tableros`, con pestañas Activos/Archivados. Visible en el menú solo si hay más de un tablero activo o alguno archivado; si no, la ruta redirige al Kanban. Archivar advierte pendientes pero permite continuar; no puede archivarse el último activo. Restaurar vuelve a `active` si el plan tiene cupo. Archivados no consumen límite.
 - `useActiveTasksQuery()` aplica la regla de entidades activas también en Cronograma, Dashboard, métricas y Reportes.
 
+**Archivar tarea desde Kanban:** el menú ⋮ de `KanbanCard` muestra "Archivar" solo en tareas `done`. El callback `onMove` baja `KanbanBoard → KanbanColumn → KanbanCard` y usa `moveTaskIdsToColumn` (mismo camino que drag & drop → `useMoveTask`). Antes `KanbanColumn` pasaba un no-op y el botón no hacía nada.
+
 ## CalendarEvents en Vistas de Calendario y Agenda
 
 `CalendarEvent` es una entidad separada de `Task` — representa eventos de calendario (reuniones, bloqueos de tiempo) sin lógica de tareas ni recurrencia automática.

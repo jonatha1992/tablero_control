@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MemberTable } from '@/components/equipo/member-table';
+import { LeaveBusinessButton } from '@/components/equipo/leave-business-button';
 import { CreateUserModal } from '@/components/equipo/create-user-modal';
 import { CreateInviteModal } from '@/components/equipo/create-invite-modal';
 import { InviteLinksSection } from '@/components/equipo/invite-links-section';
@@ -108,6 +109,7 @@ export default function EquipoPage() {
               </Button>
             </>
           )}
+          {!isSelectMode && <LeaveBusinessButton />}
         </div>
 
         {isSelectMode && (
