@@ -16,20 +16,21 @@ import { useLeaveBusiness } from '@/hooks/mutations/use-leave-business';
  */
 export function LeaveBusinessButton() {
   const [open, setOpen] = useState(false);
+  const [newOwnerId, setNewOwnerId] = useState('');
   const { user, isOwner, isAdmin } = useAuth();
   const { data: members = [] } = useMembersQuery();
   const leaveBusiness = useLeaveBusiness();
 
-  if (!user || isOwner) return null;
+  if (!user) return null;
 
   // Only checks 'admin' because useMembersQuery goes through findByBusiness
   // (src/repositories/prisma/user.repository.ts ~113-121), which normalizes
   // membership role 'superadmin' to 'admin' for the client. The server route
   // counts admin|superadmin via findActiveAdminOrSuperadminsByBusiness.
-  const hasOtherAdmin = members.some(
+  const eligibleAdmins = members.filter(
     (m) => m.id !== user.id && m.role === 'admin' && m.isActive !== false
   );
-  const blockedAsLastAdmin = isAdmin && !hasOtherAdmin;
+  const blockedAsLastAdmin = isAdmin && eligibleAdmins.length === 0;
 
   return (
     <>
@@ -41,7 +42,7 @@ export function LeaveBusinessButton() {
         disabled={blockedAsLastAdmin}
         title={
           blockedAsLastAdmin
-            ? 'Sos el único administrador. Asigná otro admin antes de salir.'
+            ? isOwner ? 'Asigná otro administrador antes de transferir la propiedad y salir.' : 'Sos el único administrador. Asigná otro admin antes de salir.'
             : undefined
         }
       >
@@ -53,12 +54,30 @@ export function LeaveBusinessButton() {
         open={open}
         onOpenChange={setOpen}
         title="Salir del espacio"
-        description="¿Querés salir de este espacio? Vas a perder acceso a sus tareas y proyectos."
+        description={isOwner
+          ? 'Elegí un administrador para transferirle la propiedad del espacio. Después vas a perder acceso a sus tareas y proyectos.'
+          : '¿Querés salir de este espacio? Vas a perder acceso a sus tareas y proyectos.'}
         confirmLabel="Salir"
         variant="destructive"
         loading={leaveBusiness.isPending}
-        onConfirm={() => leaveBusiness.mutate()}
-      />
+        confirmDisabled={isOwner && !newOwnerId}
+        onConfirm={() => { if (!isOwner || newOwnerId) leaveBusiness.mutate(isOwner ? newOwnerId : undefined); }}
+      >
+        {isOwner && (
+          <div className="space-y-2">
+            <label htmlFor="new-owner" className="text-sm font-medium">Nuevo propietario</label>
+            <select
+              id="new-owner"
+              value={newOwnerId}
+              onChange={(event) => setNewOwnerId(event.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Elegí un administrador</option>
+              {eligibleAdmins.map((admin) => <option key={admin.id} value={admin.id}>{admin.name}</option>)}
+            </select>
+          </div>
+        )}
+      </ConfirmDialog>
     </>
   );
 }

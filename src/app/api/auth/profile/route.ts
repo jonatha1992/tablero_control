@@ -102,6 +102,19 @@ export const GET = handle(async (request: NextRequest) => {
     const activeMemberships = memberships.filter((m) => m.isActive);
 
     if (activeMemberships.length === 0) {
+      if (isPlatformSuperAdmin(user)) {
+        const ownedCount = await prisma.business.count({ where: { ownerId: user.id } });
+        return NextResponse.json({
+          ...user,
+          businessId: null,
+          role: 'superadmin',
+          businessRole: undefined,
+          isPlatformSuperAdmin: true,
+          isOwner: false,
+          hasOwnedBusiness: ownedCount > 0,
+          canCreateOwnBusiness: true,
+        });
+      }
       return NextResponse.json({ error: 'not_invited' }, { status: 404 });
     }
 

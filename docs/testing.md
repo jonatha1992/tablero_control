@@ -41,6 +41,8 @@ No deben versionarse; si se necesitan para depurar, compartirlos fuera del commi
 
 ## Patrones de test
 
+El traspaso de propiedad al salir del espacio se cubre en `api-members-leave.test.ts` (contrato y auditoría), `team.service.test.ts` (validaciones dentro de transacción y reintentos `P2034`), `leave-business-button.test.tsx` (selección explícita), `api-auth-profile.test.ts` (superadmin sin memberships), `business-admin-recipient.test.ts` y `cron-subscription-expiry-recipient.test.ts` (correo al admin por membresía).
+
 ### API routes
 
 ```typescript

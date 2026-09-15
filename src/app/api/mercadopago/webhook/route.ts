@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { findBusinessAdminEmail } from '@/lib/business-admin-recipient';
 import { getPreapproval, parseExternalReference } from '@/lib/mercadopago/preapproval';
 import { mpFetch } from '@/lib/mercadopago/client';
 import { writeAuditLog } from '@/lib/api/audit';
@@ -191,13 +192,13 @@ export const POST = handle(async (req: NextRequest) => {
 
         prisma.business.findUnique({
           where: { id: ref.businessId },
-          select: { name: true, adminId: true, users: { where: { isActive: true }, select: { id: true, email: true } } },
-        }).then((biz) => {
+          select: { name: true, adminId: true },
+        }).then(async (biz) => {
           if (!biz) return;
-          const admin = biz.users.find((u) => u.id === biz.adminId);
-          if (!admin) return;
+          const adminEmail = await findBusinessAdminEmail(ref.businessId, biz.adminId);
+          if (!adminEmail) return;
           const planName = PLANS[ref.plan as keyof typeof PLANS]?.name ?? ref.plan;
-          MailService.sendSubscriptionActivatedEmail(admin.email, biz.name, planName)
+          MailService.sendSubscriptionActivatedEmail(adminEmail, biz.name, planName)
             .catch((err) => console.error('[webhook] sendSubscriptionActivatedEmail failed:', err));
         }).catch((err) => console.error('[webhook] admin lookup failed:', err));
       }
@@ -301,16 +302,16 @@ export const POST = handle(async (req: NextRequest) => {
         if (invoiceStatus === 'paid' || invoiceStatus === 'failed') {
           prisma.business.findUnique({
             where: { id: ref.businessId },
-            select: { name: true, adminId: true, users: { where: { isActive: true }, select: { id: true, email: true } } },
-          }).then((biz) => {
+            select: { name: true, adminId: true },
+          }).then(async (biz) => {
             if (!biz) return;
-            const admin = biz.users.find((u) => u.id === biz.adminId);
-            if (!admin) return;
+            const adminEmail = await findBusinessAdminEmail(ref.businessId, biz.adminId);
+            if (!adminEmail) return;
             if (invoiceStatus === 'paid') {
-              MailService.sendPaymentSuccessEmail(admin.email, biz.name, payment.transaction_amount)
+              MailService.sendPaymentSuccessEmail(adminEmail, biz.name, payment.transaction_amount)
                 .catch((err) => console.error('[webhook] sendPaymentSuccessEmail failed:', err));
             } else {
-              MailService.sendPaymentFailedEmail(admin.email, biz.name)
+              MailService.sendPaymentFailedEmail(adminEmail, biz.name)
                 .catch((err) => console.error('[webhook] sendPaymentFailedEmail failed:', err));
             }
           }).catch((err) => console.error('[webhook] admin lookup failed:', err));

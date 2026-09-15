@@ -1,5 +1,6 @@
 ﻿import { userRepository, locationRepository } from '@/repositories';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getAdminAuth } from '@/lib/firebase/admin';
 import type { User, UserRole } from '@/types/domain/user';
 import type { InviteMemberDTO, UpdateMemberDTO } from '@/types/dto/team.dto';
@@ -169,26 +170,64 @@ class TeamService {
    * and deactivates the membership atomically, so a crash mid-flow can never
    * leave locations pointing at a manager who is already deactivated.
    */
-  async leaveBusiness(userId: string, businessId: string, reassignToUserId: string | null): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      if (reassignToUserId) {
-        await tx.location.updateMany({
-          where: { managerId: userId, businessId },
-          data: { managerId: reassignToUserId },
-        });
-      }
+  async leaveBusiness(userId: string, businessId: string, reassignToUserId: string | null, newOwnerId?: string): Promise<void> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          const leavingMembership = await tx.userBusiness.findFirst({
+            where: { userId, businessId, isActive: true, user: { isActive: true } },
+            select: { id: true, role: true },
+          });
+          if (!leavingMembership) throw new Error('not_member');
+          if (leavingMembership.role === 'admin' || leavingMembership.role === 'superadmin') {
+            const otherAdminCount = await tx.userBusiness.count({
+              where: {
+                businessId, isActive: true, role: { in: ['admin', 'superadmin'] },
+                userId: { not: userId }, user: { isActive: true },
+              },
+            });
+            if (otherAdminCount === 0) throw new Error('last_admin_cannot_leave');
+          }
 
-      await tx.userBusiness.update({
-        where: { userId_businessId: { userId, businessId } },
-        data: { isActive: false },
-      });
+          const business = await tx.business.findUnique({ where: { id: businessId }, select: { ownerId: true } });
+          if (business?.ownerId === userId && !newOwnerId) throw new Error('cannot_leave_owner');
+          if (newOwnerId) {
+            if (business?.ownerId !== userId) throw new Error('not_business_owner');
+            const successor = await tx.userBusiness.findUnique({
+              where: { userId_businessId: { userId: newOwnerId, businessId } },
+              select: { role: true, isActive: true, user: { select: { isActive: true } } },
+            });
+            if (newOwnerId === userId || !successor?.isActive || !successor.user.isActive ||
+              !['admin', 'superadmin'].includes(successor.role)) throw new Error('invalid_new_owner');
+            await tx.business.update({
+              where: { id: businessId },
+              data: { ownerId: newOwnerId, adminId: newOwnerId },
+            });
+          }
 
-      // Clear cache if this was the active business (mirrors removeMember).
-      const user = await tx.user.findUnique({ where: { id: userId }, select: { businessId: true } });
-      if (user?.businessId === businessId) {
-        await tx.user.update({ where: { id: userId }, data: { businessId: null } });
+          if (reassignToUserId) {
+            await tx.location.updateMany({
+              where: { managerId: userId, businessId },
+              data: { managerId: reassignToUserId },
+            });
+          }
+
+          await tx.userBusiness.update({
+            where: { userId_businessId: { userId, businessId } },
+            data: { isActive: false },
+          });
+
+          // Clear cache if this was the active business (mirrors removeMember).
+          const user = await tx.user.findUnique({ where: { id: userId }, select: { businessId: true } });
+          if (user?.businessId === businessId) {
+            await tx.user.update({ where: { id: userId }, data: { businessId: null } });
+          }
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        return;
+      } catch (err) {
+        if (!(err && typeof err === 'object' && 'code' in err && err.code === 'P2034') || attempt === 2) throw err;
       }
-    });
+    }
   }
 
   async handleManagerDeletion(userId: string, businessId: string): Promise<void> {

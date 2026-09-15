@@ -24,6 +24,11 @@ const mockTxLocationUpdateMany = vi.fn();
 const mockTxUserBusinessUpdate = vi.fn();
 const mockTxUserFindUnique = vi.fn();
 const mockTxUserUpdate = vi.fn();
+const mockTxBusinessFindUnique = vi.fn();
+const mockTxBusinessUpdate = vi.fn();
+const mockTxMembershipFindUnique = vi.fn();
+const mockTxLeavingMembershipFindFirst = vi.fn();
+const mockTxAdminCount = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -36,7 +41,8 @@ vi.mock('@/lib/prisma', () => ({
     $transaction: vi.fn(async (callback: (tx: unknown) => unknown) =>
       callback({
         location: { updateMany: mockTxLocationUpdateMany },
-        userBusiness: { update: mockTxUserBusinessUpdate },
+        userBusiness: { update: mockTxUserBusinessUpdate, findUnique: mockTxMembershipFindUnique, findFirst: mockTxLeavingMembershipFindFirst, count: mockTxAdminCount },
+        business: { findUnique: mockTxBusinessFindUnique, update: mockTxBusinessUpdate },
         user: { findUnique: mockTxUserFindUnique, update: mockTxUserUpdate },
       })
     ),
@@ -51,6 +57,13 @@ const mockFindById = vi.mocked(userRepository.findById);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockTxBusinessFindUnique.mockReset();
+  mockTxBusinessUpdate.mockReset();
+  mockTxMembershipFindUnique.mockReset();
+  mockTxLeavingMembershipFindFirst.mockReset().mockResolvedValue({ isActive: true });
+  mockTxAdminCount.mockReset().mockResolvedValue(1);
+  mockTxUserFindUnique.mockReset();
+  mockTxBusinessFindUnique.mockResolvedValue({ ownerId: 'other-owner' });
 });
 
 describe('teamService.inviteMember', () => {
@@ -132,6 +145,74 @@ describe('teamService.inviteMember', () => {
 });
 
 describe('teamService.leaveBusiness', () => {
+  it('reintenta una colisión serializable sin dejar el espacio a medio transferir', async () => {
+    vi.mocked(prisma.$transaction).mockRejectedValueOnce({ code: 'P2034' });
+    mockTxBusinessFindUnique.mockResolvedValueOnce({ ownerId: 'leaving-user' });
+    mockTxMembershipFindUnique.mockResolvedValueOnce({ role: 'admin', isActive: true, user: { isActive: true } });
+
+    await teamService.leaveBusiness('leaving-user', 'biz-1', 'new-owner', 'new-owner');
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    expect(mockTxBusinessUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('no deja salir al último admin aunque el chequeo previo de la ruta haya pasado', async () => {
+    mockTxLeavingMembershipFindFirst.mockResolvedValueOnce({ isActive: true, role: 'admin' });
+    mockTxAdminCount.mockResolvedValueOnce(0);
+
+    await expect(teamService.leaveBusiness('leaving-user', 'biz-1', 'other-admin')).rejects.toThrow('last_admin_cannot_leave');
+    expect(mockTxUserBusinessUpdate).not.toHaveBeenCalled();
+  });
+
+  it('no transfiere propiedad si la membresía del dueño fue desactivada antes de la transacción', async () => {
+    mockTxBusinessFindUnique.mockResolvedValueOnce({ ownerId: 'leaving-user' });
+    mockTxLeavingMembershipFindFirst.mockResolvedValueOnce(null);
+    mockTxMembershipFindUnique.mockResolvedValueOnce({ role: 'admin', isActive: true, user: { isActive: true } });
+
+    await expect(teamService.leaveBusiness('leaving-user', 'biz-1', 'new-owner', 'new-owner')).rejects.toThrow('not_member');
+    expect(mockTxBusinessUpdate).not.toHaveBeenCalled();
+  });
+
+  it('no desactiva al propietario vigente si llega una salida sin sucesor', async () => {
+    mockTxBusinessFindUnique.mockResolvedValueOnce({ ownerId: 'leaving-user' });
+
+    await expect(teamService.leaveBusiness('leaving-user', 'biz-1', 'other-admin')).rejects.toThrow('cannot_leave_owner');
+    expect(mockTxUserBusinessUpdate).not.toHaveBeenCalled();
+  });
+
+  it('actualiza propietario y adminId en la misma transacción antes de desactivar al dueño', async () => {
+    mockTxBusinessFindUnique.mockResolvedValueOnce({ ownerId: 'leaving-user' });
+    mockTxMembershipFindUnique.mockResolvedValueOnce({ userId: 'new-owner', businessId: 'biz-1', role: 'admin', isActive: true, user: { isActive: true } });
+    mockTxUserFindUnique.mockResolvedValueOnce({ businessId: 'biz-1' });
+
+    await teamService.leaveBusiness('leaving-user', 'biz-1', 'new-owner', 'new-owner');
+
+    expect(mockTxBusinessUpdate).toHaveBeenCalledWith({
+      where: { id: 'biz-1' },
+      data: { ownerId: 'new-owner', adminId: 'new-owner' },
+    });
+    expect(mockTxUserBusinessUpdate).toHaveBeenCalledWith({
+      where: { userId_businessId: { userId: 'leaving-user', businessId: 'biz-1' } },
+      data: { isActive: false },
+    });
+  });
+
+  it('impide transferir a una membresía inactiva sin modificar el negocio', async () => {
+    mockTxBusinessFindUnique.mockResolvedValueOnce({ ownerId: 'leaving-user' });
+    mockTxMembershipFindUnique.mockResolvedValueOnce({ userId: 'new-owner', businessId: 'biz-1', role: 'admin', isActive: false, user: { isActive: true } });
+
+    await expect(teamService.leaveBusiness('leaving-user', 'biz-1', 'new-owner', 'new-owner')).rejects.toThrow('invalid_new_owner');
+    expect(mockTxBusinessUpdate).not.toHaveBeenCalled();
+    expect(mockTxUserBusinessUpdate).not.toHaveBeenCalled();
+  });
+
+  it('impide transferir a una cuenta desactivada aunque su membresía siga activa', async () => {
+    mockTxBusinessFindUnique.mockResolvedValueOnce({ ownerId: 'leaving-user' });
+    mockTxMembershipFindUnique.mockResolvedValueOnce({ role: 'admin', isActive: true, user: { isActive: false } });
+
+    await expect(teamService.leaveBusiness('leaving-user', 'biz-1', 'new-owner', 'new-owner')).rejects.toThrow('invalid_new_owner');
+    expect(mockTxBusinessUpdate).not.toHaveBeenCalled();
+  });
   it('reasigna sectores scoped por businessId, desactiva membresía y limpia negocio activo', async () => {
     mockTxUserFindUnique.mockResolvedValueOnce({ businessId: 'biz-1' });
 

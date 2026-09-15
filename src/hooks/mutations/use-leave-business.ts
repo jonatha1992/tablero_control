@@ -21,10 +21,10 @@ export function useLeaveBusiness() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => membersApi.leave(),
+    mutationFn: (newOwnerId?: string) => membersApi.leave(newOwnerId),
     onSuccess: (data) => {
       queryClient.clear();
-      window.location.href = data.remainingBusinesses > 0 ? '/dashboard' : '/register';
+      window.location.href = data.isPlatformSuperAdmin ? '/superadmin' : data.remainingBusinesses > 0 ? '/dashboard' : '/register';
     },
     onError: (err: Error) => {
       showLeaveBusinessError(err);

@@ -78,13 +78,23 @@ function authedUser(overrides: Partial<{ uid: string; role: string; businessId: 
   } as never;
 }
 
-function req() {
-  return new NextRequest('http://localhost/api/members/leave', { method: 'POST' });
+function req(body?: Record<string, string>) {
+  return new NextRequest('http://localhost/api/members/leave', {
+    method: 'POST',
+    ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+  });
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  mockSetCustomUserClaims.mockClear().mockResolvedValue(undefined);
+  mockRequireUser.mockReset();
+  mockFindUser.mockReset();
+  mockFindBusiness.mockReset();
+  mockFindOtherAdmins.mockReset();
+  mockLeaveBusiness.mockReset();
+  mockHandleManagerDeletion.mockReset();
+  mockInvalidateCache.mockReset();
+  mockWriteAuditLog.mockReset();
+  mockSetCustomUserClaims.mockReset().mockResolvedValue(undefined);
   mockFindBusiness.mockResolvedValue({ id: 'biz-1', ownerId: 'owner-1' } as never);
 });
 
@@ -124,6 +134,62 @@ describe('POST /api/members/leave', () => {
     const res = await POST(req());
     expect(res.status).toBe(403);
     expect((await res.json()).error).toBe('cannot_leave_owner');
+    expect(mockLeaveBusiness).not.toHaveBeenCalled();
+  });
+
+  it('transfiere la propiedad al admin elegido y luego deja salir al propietario', async () => {
+    mockRequireUser.mockResolvedValueOnce(authedUser({ uid: 'owner-1', role: 'superadmin' }));
+    mockFindUser.mockResolvedValueOnce(member({ memberships: [
+      { id: 'mb', userId: 'owner-1', businessId: 'biz-1', role: 'admin', isActive: true },
+    ] }) as never);
+    mockFindBusiness.mockResolvedValueOnce({ id: 'biz-1', ownerId: 'owner-1', adminId: 'owner-1' } as never);
+    mockFindOtherAdmins.mockResolvedValueOnce([{ id: 'admin-2' } as never]);
+    mockLeaveBusiness.mockResolvedValueOnce(undefined);
+    mockFindUser.mockResolvedValueOnce({ ...member(), role: 'superadmin', memberships: [] } as never);
+
+    const res = await POST(req({ newOwnerId: 'admin-2' }));
+
+    expect(res.status).toBe(200);
+    expect(mockLeaveBusiness).toHaveBeenCalledWith('owner-1', 'biz-1', 'admin-2', 'admin-2');
+    expect(mockWriteAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'business.update', businessId: 'biz-1', targetId: 'biz-1',
+      metadata: { previousOwnerId: 'owner-1', newOwnerId: 'admin-2' },
+    }));
+  });
+
+  it('espera el registro de auditoría del traspaso antes de responder', async () => {
+    mockRequireUser.mockResolvedValueOnce(authedUser({ uid: 'owner-1' }));
+    mockFindUser.mockResolvedValueOnce(member({ memberships: [
+      { id: 'mb', userId: 'owner-1', businessId: 'biz-1', role: 'admin', isActive: true },
+    ] }) as never);
+    mockFindBusiness.mockResolvedValueOnce({ id: 'biz-1', ownerId: 'owner-1' } as never);
+    mockFindOtherAdmins.mockResolvedValueOnce([{ id: 'admin-2' } as never]);
+    mockLeaveBusiness.mockResolvedValueOnce(undefined);
+    mockFindUser.mockResolvedValueOnce({ ...member(), memberships: [] } as never);
+    let releaseAudit: (() => void) | undefined;
+    mockWriteAuditLog.mockImplementationOnce(() => new Promise<void>((resolve) => { releaseAudit = resolve; }));
+
+    let settled = false;
+    const responsePromise = POST(req({ newOwnerId: 'admin-2' })).then((response) => { settled = true; return response; });
+    await vi.waitFor(() => expect(releaseAudit).toBeDefined());
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    releaseAudit!();
+    expect((await responsePromise).status).toBe(200);
+  });
+
+  it('rechaza un sucesor que no sea otro admin activo del espacio', async () => {
+    mockRequireUser.mockResolvedValueOnce(authedUser({ uid: 'owner-1' }));
+    mockFindUser.mockResolvedValueOnce(member({ memberships: [
+      { id: 'mb', userId: 'owner-1', businessId: 'biz-1', role: 'admin', isActive: true },
+    ] }) as never);
+    mockFindBusiness.mockResolvedValueOnce({ id: 'biz-1', ownerId: 'owner-1' } as never);
+    mockFindOtherAdmins.mockResolvedValueOnce([{ id: 'admin-2' } as never]);
+
+    const res = await POST(req({ newOwnerId: 'other-business-user' }));
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('invalid_new_owner');
     expect(mockLeaveBusiness).not.toHaveBeenCalled();
   });
 

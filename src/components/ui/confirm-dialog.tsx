@@ -25,6 +25,7 @@ interface ConfirmDialogProps {
   variant?: Variant;
   onConfirm: () => void;
   loading?: boolean;
+  confirmDisabled?: boolean;
   hideCancel?: boolean;
   children?: React.ReactNode;
 }
@@ -57,6 +58,7 @@ export function ConfirmDialog({
   variant = 'default',
   onConfirm,
   loading = false,
+  confirmDisabled = false,
   hideCancel = false,
   children,
 }: ConfirmDialogProps) {
@@ -88,7 +90,7 @@ export function ConfirmDialog({
           )}
           <Button
             onClick={onConfirm}
-            disabled={loading}
+            disabled={loading || confirmDisabled}
             className={cn(confirmClass)}
           >
             {loading ? 'Procesando...' : confirmLabel}
