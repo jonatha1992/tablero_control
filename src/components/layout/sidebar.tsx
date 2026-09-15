@@ -165,7 +165,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
 
   function isChildVisible(child: ChildItem): boolean {
     if (child.adminOnly) return isAdmin;
-    if (child.boardsManagerOnly) return showBoardsManager;
+    if (child.boardsManagerOnly) return isAdmin;
     return true;
   }
 

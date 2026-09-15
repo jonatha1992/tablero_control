@@ -6,6 +6,8 @@
 push a main/test (según proyecto) → Vercel redeploy automático
 ```
 
+La promoción `dev` → `test` ejecuta tests, lint y build también **después** del merge squash (`.promote-test.json: retest_after_merge`). Así detecta código que solo existe en `test` antes del push a la rama de producción.
+
 Proyecto Vercel: `tablero-control`  
 URL estable: `https://tablero-control-self.vercel.app`  
 Deployments: `https://tablero-control-*.vercel.app`

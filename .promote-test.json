@@ -2,6 +2,7 @@
   "source_branch": "dev",
   "target_branch": "test",
   "auto_commit_dev_changes": true,
+  "retest_after_merge": true,
   "test_commands": [
     "npm run test:run",
     "npm run lint",
