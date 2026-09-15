@@ -40,6 +40,7 @@ interface ChildItem {
   icon: React.ElementType;
   exact?: boolean;
   adminOnly?: boolean;
+  boardsManagerOnly?: boolean;
 }
 
 interface NavItem {
@@ -164,6 +165,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
 
   function isChildVisible(child: ChildItem): boolean {
     if (child.adminOnly) return isAdmin;
+    if (child.boardsManagerOnly) return isAdmin;
     return true;
   }
 
