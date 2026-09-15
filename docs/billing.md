@@ -2,6 +2,8 @@
 
 ## Modelos Prisma
 
+Los avisos por webhook y por cron usan `Business.adminId` y resuelven el correo desde una membresía admin/superadmin activa de ese negocio (`findBusinessAdminEmail`). Esto permite que el nuevo propietario elegido en un traspaso reciba los avisos aunque tenga otro espacio abierto. Una membresía o cuenta desactivada no recibe correo.
+
 ### Subscription
 ```
 plan, status (SubscriptionStatus), mpPreferenceId?, mpPayerId?

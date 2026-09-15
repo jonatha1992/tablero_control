@@ -311,6 +311,7 @@ PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail, EventReminderEmail
 - **Resend** (`src/lib/resend.ts`) — solo si `RESEND_API_KEY` está seteada **y** hay dominio verificado (`RESEND_FROM_EMAIL=noreply@tudominio.com`). Sin dominio, Resend con `onboarding@resend.dev` solo entrega al dueño de la cuenta Resend.
 - `MailService` elige Resend si hay key; si no, Gmail.
 - `MailService.sendEventReminderEmail()` envía recordatorios de eventos para el cron `GET /api/cron/event-reminders`
+- Los avisos de suscripción y pagos resuelven `Business.adminId` mediante la membresía activa del negocio (`src/lib/business-admin-recipient.ts`), no desde el espacio abierto actualmente por el usuario. Esto conserva la entrega después de transferir propiedad.
 
 Variables:
 ```env

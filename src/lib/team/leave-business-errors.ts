@@ -13,6 +13,12 @@ export function showLeaveBusinessError(err: Error): void {
       case 'cannot_leave_owner':
         toast.error('No podés salir del espacio siendo su propietario');
         return;
+      case 'invalid_new_owner':
+        toast.error('Elegí otro administrador activo del espacio como nuevo propietario');
+        return;
+      case 'not_business_owner':
+        toast.error('La propiedad del espacio cambió. Actualizá la página e intentá de nuevo');
+        return;
       case 'last_admin_cannot_leave':
         toast.error('Sos el único administrador', {
           description: 'Asigná otro admin antes de salir del espacio.',

@@ -128,16 +128,20 @@ Códigos de error:
 |---|---|---|
 | `no_business` | 400 | Caller sin `businessId` activo |
 | `not_member` | 404 | Sin membresía activa en ese negocio |
-| `cannot_leave_owner` | 403 | Caller es `business.ownerId` |
+| `cannot_leave_owner` | 403 | Caller es `business.ownerId` y no seleccionó sucesor |
+| `invalid_new_owner` | 400 | Sucesor no es otro admin/superadmin activo de este negocio |
+| `not_business_owner` | 403/409 | Caller sin propiedad intenta transferir, o la propiedad cambió durante la operación |
 | `last_admin_cannot_leave` | 409 | Caller es admin (rol de membership `admin` o `superadmin`) y no hay otro admin activo |
 
 No hay gate de `requireActiveSubscription` — se puede salir de un negocio con suscripción vencida.
 
 Reglas:
 - No-admins (miembro/responsable/viewer) pueden salir sin el chequeo de "último admin".
+- Si el caller es `Business.ownerId`, debe enviar `{ newOwnerId }` con el ID de otro admin/superadmin activo del negocio. La ruta valida la lista de admins; el servicio vuelve a validar la membresía activa del saliente, que queda otro admin, la propiedad y la membresía/cuenta del sucesor en una transacción serializable. En esa transacción cambia `Business.ownerId` y `Business.adminId` al sucesor, reasigna los sectores gestionados por el saliente dentro del negocio y desactiva su membresía. Si hay colisión serializable, se reintenta hasta tres veces con nuevas validaciones. Si algo falla, ningún cambio se confirma. Su rol global de superadmin no cambia.
 - `teamService.leaveBusiness(userId, businessId, reassignToUserId)` corre en **una sola transacción** (`prisma.$transaction`): reasigna sectores que el usuario gestiona en ese negocio (`Location.managerId`, scoped por `businessId`) a otro admin activo o al dueño del negocio (o no reasigna si no hay ninguno — `reassignToUserId` puede ser `null`), y recién ahí desactiva la membresía (`UserBusiness.isActive = false`) y limpia `user.businessId` si era el negocio activo. Reasignación + desactivación son atómicas: no puede quedar un sector apuntando a un manager ya desactivado si el proceso se corta a mitad de camino. Nunca borra locations ni tasks (a diferencia de `handleManagerDeletion`, que sí borra cuando no hay otro admin — ver más abajo).
 - Tras `leaveBusiness`: `setCustomUserClaims(uid, { role, businessId: null })` no-fatal (try/catch) + `invalidateAuthedUserCache(uid)`.
-- Respuesta `{ ok: true, remainingBusinesses }`. Sin auto-switch server-side — el cliente hace hard-navigate: `remainingBusinesses > 0` → `/dashboard` (el fallback de `GET /api/auth/profile` auto-selecciona otra membership activa); `0` → `/register` (mismo flujo "autenticado sin perfil PG activo" que usan Google sign-in nuevo / `notInvited`).
+- Respuesta `{ ok: true, remainingBusinesses, isPlatformSuperAdmin }`. Sin auto-switch server-side; el cliente hace hard-navigate. Para usuarios no-superadmin: `remainingBusinesses > 0` → `/dashboard` (el perfil auto-selecciona otra membership activa), `0` → `/register`.
+- La respuesta también indica `isPlatformSuperAdmin`. Si es `true`, el cliente navega a `/superadmin`, incluso si no quedan memberships. `GET /api/auth/profile` conserva perfil y rol global `superadmin` sin un negocio activo; otros roles sin memberships siguen recibiendo `404 not_invited`.
 
 **Riesgo pre-existente conocido:** `teamService.handleManagerDeletion` (usado por `DELETE /api/members/[id]` cuando se borra un admin) usa `locationRepository.bulkUpdateManagerId` / `findByManagerId` / `deleteByManagerId`, filtrados **solo por `managerId`**, sin `businessId` — un `managerId` de otro tenant podría verse afectado. `leaveBusiness` (leave-business) no tiene este problema porque siempre filtra por `businessId`. No corregido en este cambio (fuera de scope; DELETE /api/members/[id] es zona prohibida).
 

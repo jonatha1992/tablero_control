@@ -39,9 +39,10 @@ export const membersApi = {
       method: 'DELETE',
     }),
 
-  leave: () =>
-    fetchJsonAuth<{ ok: true; remainingBusinesses: number }>('/api/members/leave', {
+  leave: (newOwnerId?: string) =>
+    fetchJsonAuth<{ ok: true; remainingBusinesses: number; isPlatformSuperAdmin: boolean }>('/api/members/leave', {
       method: 'POST',
+      ...(newOwnerId ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newOwnerId }) } : {}),
     }),
 
   bulkAssignLocation: (ids: string[], locationId: string | null) =>

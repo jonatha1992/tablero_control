@@ -193,6 +193,24 @@ describe('GET /api/auth/profile — auto-provisioning superadmin', () => {
   });
 });
 
+describe('GET /api/auth/profile — superadmin sin espacios activos', () => {
+  it('conserva acceso global después de salir de su último espacio', async () => {
+    mockVerifyToken.mockResolvedValueOnce({ uid: 'super-uid', email: 'superadmin@test.com' } as never);
+    mockFindById.mockResolvedValue({
+      id: 'super-uid', email: 'superadmin@test.com', name: 'TecnoFusión', role: 'superadmin',
+      businessId: null, memberships: [], isActive: true,
+    } as never);
+
+    const res = await GET(makeRequest('valid-token'));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.role).toBe('superadmin');
+    expect(body.businessId).toBeNull();
+    expect(body.isPlatformSuperAdmin).toBe(true);
+  });
+});
+
 // ─── not_invited ──────────────────────────────────────────────────────────────
 
 describe('GET /api/auth/profile — not_invited', () => {

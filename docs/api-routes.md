@@ -94,7 +94,7 @@ GET    /api/members
 POST   /api/members
 PATCH  /api/members/[id]
 DELETE /api/members/[id]        ← admin-driven removal, self-removal blocked (cannot_remove_self)
-POST   /api/members/leave       ← self-service "salir del espacio", ver docs/permissions.md
+POST   /api/members/leave       ← self-service "salir del espacio"; owner envía { newOwnerId } para traspaso atómico de ownerId/adminId antes de salir. Ver docs/permissions.md
 
 POST   /api/users/create        ← enforcement límite por plan → 429 si excede
 POST   /api/users/fcm-token     ← registra token FCM

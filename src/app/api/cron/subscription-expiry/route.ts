@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { findBusinessAdminEmail } from '@/lib/business-admin-recipient';
 import { PLANS } from '@/lib/mercadopago/plans';
 import { MailService } from '@/services/mail.service';
 import { handle } from '@/lib/api/route-handler';
@@ -91,22 +92,15 @@ export const GET = handle(async (req: NextRequest) => {
         currentPeriodEnd: { gte: now, lte: warnThreshold },
       },
       include: {
-        business: {
-          include: {
-            users: {
-              where: { isActive: true },
-              select: { id: true, email: true, name: true },
-            },
-          },
-        },
+        business: { select: { name: true, adminId: true } },
       },
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://tablerocontrol.com';
 
     for (const sub of expiring) {
-      const admin = sub.business.users.find((u) => u.id === sub.business.adminId);
-      if (!admin) continue;
+      const adminEmail = await findBusinessAdminEmail(sub.businessId, sub.business.adminId);
+      if (!adminEmail) continue;
 
       const daysLeft = Math.ceil(
         (sub.currentPeriodEnd!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
@@ -119,7 +113,7 @@ export const GET = handle(async (req: NextRequest) => {
 
       // FIX #12: Log email failures instead of silently swallowing them
       try {
-        await MailService.sendSubscriptionExpiryEmail(admin.email, {
+        await MailService.sendSubscriptionExpiryEmail(adminEmail, {
           businessName: sub.business.name,
           planName: PLANS[sub.plan].name,
           expiryDate,
@@ -129,7 +123,7 @@ export const GET = handle(async (req: NextRequest) => {
         emailsSent++;
       } catch (err) {
         console.error('[cron/subscription-expiry] email failed:', err);
-        emailErrors.push(admin.id);
+        emailErrors.push(sub.business.adminId);
       }
     }
   } catch (err) {
