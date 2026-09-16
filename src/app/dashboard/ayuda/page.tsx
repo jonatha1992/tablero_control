@@ -13,7 +13,6 @@ import {
   CreditCard,
   Settings,
   Bell,
-  Building2,
   CalendarDays,
   type LucideIcon,
 } from 'lucide-react';
@@ -33,7 +32,7 @@ interface Section {
 const SECTIONS: Section[] = [
   {
     id: 'dashboard',
-    title: 'Dashboard',
+    title: 'Inicio',
     icon: LayoutDashboard,
     iconClass: NAV_ICON_COLORS.dashboard,
     subsections: [
@@ -43,11 +42,19 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Eventos pendientes',
-        description: 'Card KPI en el dashboard (mismo estilo que Tareas activas). Muestra cuántos eventos aún no terminaron. Click abre el ítem Eventos del sidebar.',
+        description: 'Card KPI en el dashboard (mismo estilo que Tareas activas). Muestra cuántos eventos aún no terminaron. Click abre la pestaña Eventos del Calendario.',
       },
       {
-        title: 'Actividad reciente',
-        description: 'Últimas acciones realizadas por los miembros: tareas creadas, movidas o completadas.',
+        title: 'Mis tareas',
+        description: 'Tus tareas asignadas que hay que atender hoy (vencidas, para hoy o sin fecha), ordenadas por prioridad. "Ver agenda" abre la vista completa.',
+      },
+      {
+        title: 'Sprints activos',
+        description: 'Un bloque por cada sprint en curso (puede haber uno por proyecto) con el porcentaje de tareas finalizadas y los días que quedan.',
+      },
+      {
+        title: 'Progreso del equipo',
+        description: 'Gráficos de burndown de los últimos 7 días, tendencia semanal y distribución de tareas por estado.',
       },
     ],
   },
@@ -63,15 +70,11 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Proyectos',
-        description: 'Lista bajo Tareas. Entrá a un proyecto (local, causa, campaña, producto): mismo Kanban. Ver todo muestra las tareas de todos. Podés archivar y restaurar. Fecha límite solo si ese proyecto se cierra.',
+        description: 'Ítem principal del menú. Cada proyecto es un sistema o producto que desarrolla el equipo: entrás y trabajás con el mismo Kanban. Ver todo muestra las tareas de todos. Podés archivar y restaurar. Fecha límite solo si ese proyecto se cierra.',
       },
       {
-        title: 'Agenda',
-        description: 'Vista diaria inteligente que agrupa tus tareas en secciones: Foco del día (top 3), Vencidas, Hoy con hora, Para hoy, Esta semana, Próximamente y Sin fecha. Se actualiza automáticamente cada minuto.',
-      },
-      {
-        title: 'Cronograma',
-        description: 'Vista Gantt que muestra la duración y dependencias de las tareas en el tiempo. Útil para planificar proyectos largos.',
+        title: 'Roadmap',
+        description: 'Vista Gantt que muestra la duración y dependencias de las tareas en el tiempo. Útil para planificar releases y proyectos largos.',
       },
       {
         title: 'Crear tarea con IA',
@@ -96,14 +99,26 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    id: 'eventos',
-    title: 'Eventos',
+    id: 'calendario',
+    title: 'Calendario',
     icon: CalendarDays,
     iconClass: NAV_ICON_COLORS.planificacion,
     subsections: [
       {
-        title: 'Lista de eventos',
-        description: 'Ítem top-level del sidebar, al mismo nivel que Tareas. Reuniones, exámenes e hitos del espacio que no son tareas de trabajo. Se crean desde Eventos o desde el Planificador IA. Reciben aviso por notificación y email.',
+        title: 'Una sección, tres pestañas',
+        description: 'Todo lo que tiene fecha está en Calendario. Arriba elegís la vista: Mes, Agenda o Eventos. El botón "Nuevo evento" está disponible en las tres.',
+      },
+      {
+        title: 'Mes',
+        description: 'Vista mensual/semanal/lista con tareas con fecha y eventos del equipo. Podés arrastrar tareas para cambiar su fecha o hacer clic en un día para crear una tarea.',
+      },
+      {
+        title: 'Agenda',
+        description: 'Vista diaria inteligente que agrupa tus tareas en secciones: Foco del día (top 3), Vencidas, Hoy con hora, Para hoy, Esta semana, Próximamente y Sin fecha. Se actualiza automáticamente cada minuto.',
+      },
+      {
+        title: 'Eventos',
+        description: 'Reuniones, demos, releases e hitos que no son tareas de trabajo. Se crean desde el botón "Nuevo evento" o desde el asistente IA. Reciben aviso por notificación y email.',
       },
     ],
   },
@@ -114,12 +129,8 @@ const SECTIONS: Section[] = [
     iconClass: NAV_ICON_COLORS.planificacion,
     subsections: [
       {
-        title: 'Calendario',
-        description: 'Vista mensual/semanal/lista del tiempo: tareas con fecha y eventos del espacio. Podés arrastrar tareas para cambiar su fecha. Acceso directo desde el ítem Calendario del sidebar (entre Eventos y Planificación).',
-      },
-      {
         title: 'Cómo se organiza el trabajo',
-        description: 'Proyecto = el contenedor (entrás y trabajás). Tarea = el paso (requerimiento, rutina, escrito). Período/sprint = ventana de tiempo de ese proyecto. Sede = dónde trabaja la gente (Equipo), no es otro Kanban. Backlog = columna, no otro módulo. Kanban y Scrum se usan juntos en el mismo proyecto.',
+        description: 'Proyecto = el contenedor (entrás y trabajás). Tarea = el paso (requerimiento, rutina, escrito). Sprint = ventana de tiempo de ese proyecto. Épica = funcionalidad grande que agrupa tareas. Backlog = columna, no otro módulo. Kanban y Scrum se usan juntos en el mismo proyecto.',
       },
       {
         title: '¿Qué es un Período?',
@@ -152,22 +163,6 @@ const SECTIONS: Section[] = [
       {
         title: 'Diferencia entre Período y Objetivo',
         description: 'Período = cuándo. Objetivo = qué meta perseguís. Una tarea puede pertenecer a un período Y a un objetivo al mismo tiempo. Ejemplo: la tarea "Diseñar logo" puede estar en el período "Semana del 9 al 16" y también vincular al objetivo "Branding 2026".',
-      },
-    ],
-  },
-  {
-    id: 'sedes',
-    title: 'Sedes',
-    icon: Building2,
-    iconClass: NAV_ICON_COLORS.equipo,
-    subsections: [
-      {
-        title: 'Organización por lugar de trabajo',
-        description: 'Administrá sucursales, locales o áreas desde el módulo central Sedes. Cada tarea puede pertenecer a una sede y los responsables asignados tienen permisos especiales sobre sus tareas.',
-      },
-      {
-        title: 'Nombre configurable',
-        description: 'Según la configuración del espacio, este módulo puede mostrarse como Sedes, Sucursales, Locales u otra denominación elegida por el administrador.',
       },
     ],
   },

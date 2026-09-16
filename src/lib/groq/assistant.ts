@@ -116,13 +116,17 @@ ${formatTaskList(pending)}
 ---
 
 FUNCIONALIDADES DEL SISTEMA:
+- INICIO (/dashboard): Mis tareas pendientes, sprint activo, próximos eventos y progreso del equipo.
+- PROYECTOS (/dashboard/tareas/tableros): Sistemas o productos de software que desarrolla el equipo. Agrupan tareas, sprints y épicas.
 - KANBAN (/dashboard/tareas): Tablero con columnas Backlog → Por hacer → En progreso → En revisión → Finalizado → Bloqueada. Drag & drop entre columnas. Selección múltiple. Filtros por prioridad, sector y búsqueda. Tabs: Todas | Backlog | [Sprint activo] | Otros sprints ▾.
-- AGENDA (/dashboard/tareas/agenda): Vista diaria inteligente estilo Toki. Secciones por urgencia: Foco del día (top 3 por score automático), Vencidas, Hoy con hora, Para hoy, Esta semana, Próximamente, Sin fecha, Completadas. Click en el círculo de una tarea abre menú de cambio de estado.
-- CALENDARIO (/dashboard/tareas/calendario): Vista mensual/semanal/lista con FullCalendar. Drag & drop para cambiar fechas. Las tareas recurrentes muestran fechas futuras como "fantasmas".
-- CICLOS / PLANIFICACIÓN (/dashboard/planificacion): Sprints o períodos de trabajo. Estados: planificación → activo → completado → cerrado. Solo puede haber 1 ciclo activo a la vez. Las tareas se asocian a un ciclo. Para crear desde el chat: "Crear planificación: [descripción]".
-- OBJETIVOS (/dashboard/planificacion/objetivos): Metas estratégicas de alto nivel (OKRs o épicas). Muestran progreso 0–100% según tareas completadas. Las tareas se asocian a un objetivo. Para crear desde el chat: "Crear objetivo: [descripción]".
+- ROADMAP (/dashboard/tareas/cronograma): Diagrama de Gantt con las fechas de las tareas.
+- CALENDARIO: una sección con tres pestañas: Mes, Agenda y Eventos.
+- AGENDA (/dashboard/tareas/agenda, pestaña del Calendario): Vista diaria inteligente estilo Toki. Secciones por urgencia: Foco del día (top 3 por score automático), Vencidas, Hoy con hora, Para hoy, Esta semana, Próximamente, Sin fecha, Completadas. Click en el círculo de una tarea abre menú de cambio de estado.
+- MES (/dashboard/tareas/calendario, pestaña del Calendario): Vista mensual/semanal/lista con FullCalendar. Drag & drop para cambiar fechas. Las tareas recurrentes muestran fechas futuras como "fantasmas".
+- EVENTOS (/dashboard/eventos, pestaña del Calendario): Reuniones, demos, releases e hitos. No son tareas; envían recordatorios.
+- SPRINTS (/dashboard/planificacion): Sprints del proyecto. Estados: planificación → activo → completado → cerrado. Solo puede haber 1 ciclo activo a la vez. Las tareas se asocian a un ciclo. Para crear desde el chat: "Crear planificación: [descripción]".
+- ÉPICAS (/dashboard/planificacion/objetivos): Funcionalidades grandes que agrupan tareas (el nombre es configurable por espacio). Muestran progreso 0–100% según tareas completadas. Las tareas se asocian a un objetivo. Para crear desde el chat: "Crear objetivo: [descripción]".
 - EQUIPO (/dashboard/equipo): Gestión de miembros del negocio. Roles jerárquicos: superadmin > admin > responsable > miembro > viewer. También permite crear roles personalizados con permisos granulares.
-- SECTORES (/dashboard/sectores): Locales, departamentos o ubicaciones del negocio. Las tareas pueden pertenecer a un sector.
 - REPORTES (/dashboard/reportes): Sección en desarrollo.
 - FACTURACIÓN (/dashboard/billing): Planes disponibles (free/basic/pro/enterprise), estado de suscripción activa, historial de facturas y pagos vía MercadoPago.
 - CONFIGURACIÓN (/dashboard/config): Datos del negocio, perfil de usuario, notificaciones push y email.

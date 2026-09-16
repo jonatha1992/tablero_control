@@ -18,9 +18,8 @@ import {
   SlidersHorizontal,
   Layers,
   BarChart2,
-  CalendarDays,
+  FolderKanban,
   LayoutGrid,
-  Zap,
   Calendar,
   GanttChart,
   Timer,
@@ -51,16 +50,23 @@ interface NavItem {
   exact?: boolean;
   children?: ChildItem[];
   adminOnly?: boolean;
-  configurableSitesLabel?: boolean;
+  /** Rutas extra que marcan el ítem como activo (pestañas dentro de la sección). */
+  activePaths?: string[];
 }
 
 const navItems: NavItem[] = [
   {
     href: '/dashboard',
-    label: 'Dashboard',
+    label: 'Inicio',
     icon: LayoutDashboard,
     tourId: 'tour-nav-dashboard',
     exact: true,
+  },
+  {
+    href: '/dashboard/tareas/tableros',
+    label: 'Proyectos',
+    icon: FolderKanban,
+    tourId: 'tour-nav-proyectos',
   },
   {
     href: '/dashboard/tareas',
@@ -69,23 +75,17 @@ const navItems: NavItem[] = [
     tourId: 'tour-nav-tareas',
     children: [
       { href: '/dashboard/tareas',            label: 'Kanban',      icon: LayoutGrid,  exact: true },
-      { href: '/dashboard/tareas/agenda',     label: 'Agenda',      icon: Zap },
-      { href: '/dashboard/tareas/cronograma', label: 'Cronograma',  icon: GanttChart },
-      { href: '/dashboard/tareas/tableros',   label: 'Proyectos',   icon: Layers },
+      { href: '/dashboard/tareas/cronograma', label: 'Roadmap',     icon: GanttChart },
       { href: '/dashboard/tareas/archivadas', label: 'Archivadas',  icon: Archive },
     ],
-  },
-  {
-    href: '/dashboard/eventos',
-    label: 'Eventos',
-    icon: CalendarDays,
-    tourId: 'tour-nav-eventos',
   },
   {
     href: '/dashboard/tareas/calendario',
     label: 'Calendario',
     icon: Calendar,
     tourId: 'tour-nav-calendario',
+    // Agenda y Eventos son pestañas del Calendario (CalendarSectionTabs)
+    activePaths: ['/dashboard/tareas/calendario', '/dashboard/tareas/agenda', '/dashboard/eventos'],
   },
   {
     href: '/dashboard/planificacion',
@@ -93,17 +93,9 @@ const navItems: NavItem[] = [
     icon: Layers,
     tourId: 'tour-nav-planificacion',
     children: [
-      { href: '/dashboard/planificacion',           label: 'Períodos',   icon: Timer, exact: true },
-      { href: '/dashboard/planificacion/objetivos', label: 'Objetivos',  icon: Target },
+      { href: '/dashboard/planificacion',           label: 'Sprints',    icon: Timer, exact: true },
+      { href: '/dashboard/planificacion/objetivos', label: 'Épicas',     icon: Target },
     ],
-  },
-  {
-    href: '/dashboard/sectores',
-    label: '__SITES__',
-    icon: Building2,
-    tourId: 'tour-nav-sedes',
-    adminOnly: true,
-    configurableSitesLabel: true,
   },
   {
     href: '/dashboard/equipo',
@@ -153,7 +145,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     switch (item.href) {
       case '/dashboard': return true;
       case '/dashboard/tareas': return can(user, 'task.read');
-      case '/dashboard/eventos': return can(user, 'task.read');
+      case '/dashboard/tareas/tableros': return can(user, 'task.read');
       case '/dashboard/tareas/calendario': return can(user, 'task.read');
       case '/dashboard/planificacion': return can(user, 'task.create');
       case '/dashboard/equipo': return user.role === 'admin' || user.role === 'superadmin' || user.role === 'responsable';
@@ -175,6 +167,7 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     if (item.children && item.children.length > 0) {
       return item.children.some((c) => isChildActive(c));
     }
+    if (item.activePaths) return item.activePaths.some((path) => pathname.startsWith(path));
     if (item.exact) return pathname === item.href;
     return pathname.startsWith(item.href);
   }
@@ -187,15 +180,9 @@ export function Sidebar({ collapsed, onCollapse, mobileOpen = false, onMobileOpe
     .filter(isItemVisible)
     .map((item) => ({
       ...item,
-      label: item.configurableSitesLabel ? labels.sites : item.label,
       children: item.children?.map((child) => ({
         ...child,
-        label:
-          child.href === '/dashboard/planificacion/objetivos'
-            ? labels.objectives
-            : child.label === '__SITES__'
-              ? labels.sites
-              : child.label,
+        label: child.href === '/dashboard/planificacion/objetivos' ? labels.objectives : child.label,
       })),
     }));
 

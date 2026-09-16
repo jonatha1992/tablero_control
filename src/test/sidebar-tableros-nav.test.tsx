@@ -28,13 +28,15 @@ function renderSidebar() {
 }
 
 describe('Sidebar — Proyectos', () => {
-  it('siempre muestra Proyectos junto al Kanban', () => {
+  it('muestra Proyectos como ítem principal, antes de Tareas', () => {
     renderSidebar();
 
+    const projects = screen.getByRole('link', { name: 'Proyectos' });
+    const tasks = screen.getByRole('link', { name: 'Tareas' });
+
+    expect(projects).toHaveAttribute('href', '/dashboard/tareas/tableros');
+    expect(projects.compareDocumentPosition(tasks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Kanban' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Proyectos' })).toHaveAttribute(
-      'href',
-      '/dashboard/tareas/tableros',
-    );
+    expect(screen.getByRole('link', { name: 'Roadmap' })).toBeInTheDocument();
   });
 });

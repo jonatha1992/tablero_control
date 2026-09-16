@@ -169,7 +169,7 @@ describe('can()', () => {
 | `api-locations.test.ts` | CRUD de locales |
 | `api-projects.test.ts` | CRUD de tableros, tenant guard |
 | `api-projects-id.test.ts`, `service-project.test.ts`, `project-management-page.test.tsx` | archivar/restaurar, último activo, cupo y UI |
-| `sidebar-sites-navigation.test.tsx`, `sidebar-tableros-nav.test.tsx`, `sidebar-eventos-nav.test.tsx`, `header-user-menu.test.tsx` | navegación Sedes, Proyectos siempre visible, Eventos top-level y menú personal del header |
+| `sidebar-sites-navigation.test.tsx`, `sidebar-tableros-nav.test.tsx`, `sidebar-calendar-nav.test.tsx`, `header-user-menu.test.tsx` | Sedes fuera del menú, Proyectos top-level, Calendario unificado (Agenda/Eventos como pestañas), Sprints/Épicas y menú personal del header |
 | `api-cycles.test.ts` | CRUD de ciclos, cross-tenant task injection guard |
 | `api-objectives.test.ts` | CRUD de objetivos, cross-tenant task injection guard |
 | `api-business.test.ts` | GET config, subscription |

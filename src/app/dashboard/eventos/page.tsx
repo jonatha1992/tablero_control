@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCalendarEventsQuery } from '@/hooks/queries/use-calendar-events-query';
 import { CreateEventModal } from '@/components/tareas/create-event-modal';
 import { CalendarEventSheet } from '@/components/calendario/calendar-event-sheet';
+import { CalendarSectionTabs } from '@/components/calendario/calendar-section-tabs';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, Plus, Clock, Trash2 } from 'lucide-react';
 import { useDeleteCalendarEvent } from '@/hooks/mutations/use-delete-calendar-event';
@@ -44,14 +45,7 @@ export default function EventosPage() {
   return (
     <div className="space-y-6 h-full overflow-auto">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Eventos</h1>
-        <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          Nuevo evento
-        </Button>
-      </div>
+      <CalendarSectionTabs />
 
       {/* Loading — only when no cached data */}
       {isPending && events.length === 0 && (

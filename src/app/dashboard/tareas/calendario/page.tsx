@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { CalendarEventSheet } from '@/components/calendario/calendar-event-sheet';
+import { CalendarSectionTabs } from '@/components/calendario/calendar-section-tabs';
 import { TaskFilterBar } from '@/components/tareas/task-filter-bar';
 import { CreateTaskModal } from '@/components/tareas/create-task-modal';
 import { useAuth } from '@/hooks/auth-context';
@@ -79,6 +80,7 @@ export default function CalendarioPage() {
 
   return (
     <div className="flex flex-col h-full w-full gap-4">
+      <CalendarSectionTabs />
       <TaskFilterBar
         filters={filters}
         onChange={(patch) => setFilter('calendar', patch)}

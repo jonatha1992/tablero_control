@@ -28,8 +28,8 @@ export const DEFAULT_LABELS: SpaceLabels = {
   boards: 'Tableros',
   site: 'Sede',
   sites: 'Sedes',
-  objective: 'Objetivo',
-  objectives: 'Objetivos',
+  objective: 'Épica',
+  objectives: 'Épicas',
   createSpace: 'Crear espacio',
   anotherSpace: 'Crear otro espacio',
   mySpace: 'Mi espacio',
@@ -57,6 +57,7 @@ export const OBJECTIVE_LABEL_PRESETS: Record<
   Exclude<ObjectiveLabelPreset, 'custom'>,
   { singular: string; plural: string; description: string }
 > = {
+  epica: { singular: 'Épica', plural: 'Épicas', description: 'Funcionalidad grande que agrupa tareas (software)' },
   objetivo: { singular: 'Objetivo', plural: 'Objetivos', description: 'Meta que se completa (genérico)' },
   iniciativa: { singular: 'Iniciativa', plural: 'Iniciativas', description: 'Programa o iniciativa de mediano plazo' },
   causa: { singular: 'Causa', plural: 'Causas', description: 'Expediente o caso que se cierra' },
@@ -100,7 +101,7 @@ function resolveLocationLabels(terminology?: SpaceTerminology): Pick<SpaceLabels
 }
 
 function resolveObjectiveLabels(terminology?: SpaceTerminology): Pick<SpaceLabels, 'objective' | 'objectives'> {
-  const preset = terminology?.objectivePreset ?? 'objetivo';
+  const preset = terminology?.objectivePreset ?? 'epica';
 
   if (preset === 'custom') {
     const singular = terminology?.objectiveSingular?.trim() || DEFAULT_LABELS.objective;

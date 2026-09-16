@@ -28,7 +28,7 @@ export function SpaceTerminologyCard() {
   const [preset, setPreset] = useState<LocationLabelPreset>('sede');
   const [customSingular, setCustomSingular] = useState('');
   const [customPlural, setCustomPlural] = useState('');
-  const [objectivePreset, setObjectivePreset] = useState<ObjectiveLabelPreset>('objetivo');
+  const [objectivePreset, setObjectivePreset] = useState<ObjectiveLabelPreset>('epica');
   const [objectiveSingular, setObjectiveSingular] = useState('');
   const [objectivePlural, setObjectivePlural] = useState('');
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -38,7 +38,7 @@ export function SpaceTerminologyCard() {
     setPreset(t?.locationPreset ?? 'sede');
     setCustomSingular(t?.locationSingular ?? '');
     setCustomPlural(t?.locationPlural ?? '');
-    setObjectivePreset(t?.objectivePreset ?? 'objetivo');
+    setObjectivePreset(t?.objectivePreset ?? 'epica');
     setObjectiveSingular(t?.objectiveSingular ?? '');
     setObjectivePlural(t?.objectivePlural ?? '');
   }, [business?.settings?.terminology]);

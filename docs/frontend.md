@@ -41,8 +41,8 @@ Provider en `src/components/providers.tsx`: `staleTime` default 5 min, `refetchO
 
 Layout principal `'use client'`. Contiene:
 
-- **Home `/dashboard`** (`src/app/dashboard/page.tsx`) — fila de KPIs (activas, completadas, bloqueadas, urgentes, **eventos pendientes**). La card de eventos es KPI: solo conteo + hint del próximo; click → `/dashboard/eventos`. Luego burndown/`DashboardMetrics` y resumen por sector.
-- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Grupos: Dashboard; **Tareas** (Kanban, Agenda, Cronograma, **Proyectos** siempre visible, Archivadas); **Eventos** (ítem top-level, `/dashboard/eventos`); **Calendario** (ítem top-level, `/dashboard/tareas/calendario`); **Planificación** (Períodos, Objetivos — el label de Objetivos sigue `terminology.objectivePreset`); Equipo; Reportes; Facturación; Configuración; Ayuda. Eventos y Calendario quedaron fuera del grupo Planificación, al mismo nivel que Tareas. Nomenclatura: `SpaceTerminologyCard` permite renombrar sedes (incluye preset Página) y objetivos (objetivo / iniciativa / causa / campaña / custom). Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
+- **Inicio `/dashboard`** (`src/app/dashboard/page.tsx`) — fila de KPIs (activas, completadas, bloqueadas, urgentes, **eventos pendientes**). La card de eventos es KPI: solo conteo + hint del próximo; click → `/dashboard/eventos`. Debajo: **Mis tareas** (`DashboardMyTasks`, tareas accionables hoy asignadas al usuario, orden prioridad → vencimiento, máx. 6) y **Sprints activos** (`DashboardActiveSprints`, un bloque por `Cycle` activo con % de tareas `done` y días restantes). Al final "Progreso del equipo" (`DashboardMetrics`: burndown, tendencia, distribución). El resumen por local/sector se quitó (enfoque software).
+- **Sidebar** (`src/components/layout/sidebar.tsx`) — navegación colapsable. Cada item tiene `tourId` para el onboarding. Orden (enfoque proyectos de software): **Inicio**; **Proyectos** (top-level, `/dashboard/tareas/tableros`); **Tareas** (Kanban, Roadmap = `/dashboard/tareas/cronograma`, Archivadas); **Calendario** (top-level, `/dashboard/tareas/calendario`); **Planificación** (Sprints, Épicas — el label de Épicas sigue `terminology.objectivePreset`, default `epica`); Equipo; Reportes. Facturación, Configuración y Ayuda viven en el menú del avatar. **Calendario unificado:** Agenda (`/dashboard/tareas/agenda`) y Eventos (`/dashboard/eventos`) ya no son ítems del menú; son pestañas de `CalendarSectionTabs` (`src/components/calendario/calendar-section-tabs.tsx`: Mes / Agenda / Eventos + botón "Nuevo evento"). `NavItem.activePaths` marca Calendario activo en las tres rutas. **Sedes** (`/dashboard/sectores`) salió del menú: la ruta sigue funcionando por URL, pero no se promociona. Nomenclatura: `SpaceTerminologyCard` permite renombrar sedes (incluye preset Página) y objetivos (**épica** (default) / objetivo / iniciativa / causa / campaña / custom). Iconos del sidebar son monocromáticos (`text-muted-foreground` / `text-primary-foreground` en activo) — sin tints por área. Hover/focus en links llama `prefetchDashboardRoute` (`src/lib/prefetch-dashboard.ts`) para calentar cache de tasks/events/projects/locations antes del click.
 - Los hijos del sidebar marcados `boardsManagerOnly` usan `isAdmin` para su visibilidad. Esta condición corrige la referencia no declarada a `showBoardsManager` que bloqueaba el build de `test`.
 - **Header** (`src/components/layout/header.tsx`) — título dinámico por ruta, buscador en `/dashboard/tareas`, botón ghost con icono Download para **Instalar** PWA (visible si no está en modo standalone; si hay `beforeinstallprompt` dispara el prompt, si no navega a `/dashboard/config` con instrucciones). **No limpia cache** — eso es el botón **Actualizar app** en Configuración. Campana, `BusinessSwitcher`, avatar + rol, logout. Ayuda solo en sidebar. Manifest: `public/manifest.json` con íconos `icon-192.png` y `icon-512.png`.
 - **Home landing** (`src/app/page.tsx`) — botón **Instalar** en el header público (`HomeInstallButton`); mismo hook PWA; sin prompt muestra tip iOS/Chrome.
@@ -91,7 +91,7 @@ startOnboardingTour();
 // ignora el estado de localStorage
 ```
 
-**Pasos (por orden):** Dashboard → Tareas (Kanban) → Eventos → FAB IA → Calendario → Planificación → Equipo → Reportes → Facturación → Configuración → Ayuda.
+**Pasos (por orden):** Inicio → Proyectos → Tareas (Kanban) → FAB IA → Calendario (Mes/Agenda/Eventos) → Planificación (Sprints/Épicas) → Equipo → Reportes → Facturación → Configuración → Ayuda. El paso de Sedes se quitó.
 
 Para usuarios que **no son dueños** del negocio activo (`isOwner === false`), se omiten los pasos **Equipo** y **Facturación** del tour.
 
@@ -122,12 +122,12 @@ src/app/
 │   │   ├── agenda/
 │   │   ├── calendario/  # FullCalendar
 │   │   └── cronograma/  # Gantt
-│   ├── eventos/       # lista de CalendarEvent (ítem top-level del sidebar)
+│   ├── eventos/       # lista de CalendarEvent (pestaña Eventos del Calendario)
 │   ├── planificacion/
 │   │   └── objetivos/
 │   ├── equipo/
 │   │   └── roles/
-│   ├── sectores/          ← ruta canónica de Location; label configurable (Sedes, Sectores, etc.)
+│   ├── sectores/          ← ruta canónica de Location (fuera del sidebar); label configurable
 │   ├── reportes/          # métricas + filtros fecha/persona + export Excel .xlsx (ver sección Reportes)
 │   ├── billing/
 │   ├── config/
@@ -223,7 +223,7 @@ La pantalla `/dashboard/sectores` usa `SectorList` como **tabla HTML semántica*
 
 ## Sedes (`/dashboard/sectores`)
 
-Módulo central con etiqueta configurable, visible en el sidebar solo para admin/superadmin. La ruta legacy `/dashboard/equipo/sectores` redirige por compatibilidad.
+Módulo con etiqueta configurable. **Fuera del sidebar** desde el enfoque en proyectos de software (se accede por URL; el modelo `Location` sigue intacto). La ruta legacy `/dashboard/equipo/sectores` redirige por compatibilidad.
 
 ## Proyectos (`/dashboard/tareas/tableros`)
 

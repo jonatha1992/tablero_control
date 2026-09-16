@@ -32,33 +32,36 @@ function renderSidebar() {
   );
 }
 
-describe('Sidebar — Eventos top-level', () => {
+describe('Sidebar — Calendario unificado', () => {
   beforeEach(() => {
     nav.pathname = '/dashboard';
   });
 
-  it('muestra Eventos como ítem principal entre Tareas y Calendario', () => {
+  it('no muestra Eventos ni Agenda como ítems propios del menú', () => {
+    nav.pathname = '/dashboard/tareas';
     renderSidebar();
 
-    const tasks = screen.getByRole('link', { name: 'Tareas' });
-    const events = screen.getByRole('link', { name: 'Eventos' });
-    const calendar = screen.getByRole('link', { name: 'Calendario' });
-
-    expect(events).toHaveAttribute('href', '/dashboard/eventos');
-    expect(tasks.compareDocumentPosition(events) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(events.compareDocumentPosition(calendar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Calendario' })).toHaveAttribute('href', '/dashboard/tareas/calendario');
+    expect(screen.queryByRole('link', { name: 'Eventos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Agenda' })).not.toBeInTheDocument();
   });
 
-  it('no anida Eventos bajo Planificación', () => {
+  it.each(['/dashboard/eventos', '/dashboard/tareas/agenda', '/dashboard/tareas/calendario'])(
+    'marca Calendario como activo en %s',
+    (pathname) => {
+      nav.pathname = pathname;
+      renderSidebar();
+
+      expect(screen.getByRole('link', { name: 'Calendario' })).toHaveClass('bg-primary');
+      expect(screen.getByRole('link', { name: 'Tareas' })).not.toHaveClass('bg-primary');
+    },
+  );
+
+  it('muestra Sprints y la etiqueta configurable de épicas bajo Planificación', () => {
     nav.pathname = '/dashboard/planificacion';
     renderSidebar();
 
-    expect(screen.getByRole('link', { name: 'Períodos' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Objetivos' })).toBeInTheDocument();
-
-    const planning = screen.getByRole('link', { name: 'Planificación' });
-    const events = screen.getByRole('link', { name: 'Eventos' });
-    expect(events).toHaveAttribute('href', '/dashboard/eventos');
-    expect(events.compareDocumentPosition(planning) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Sprints' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Objetivos' })).toHaveAttribute('href', '/dashboard/planificacion/objetivos');
   });
 });
