@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AgendaView } from '@/components/tareas/agenda-view';
+import { CalendarSectionTabs } from '@/components/calendario/calendar-section-tabs';
 import { TaskFilterBar } from '@/components/tareas/task-filter-bar';
 import { useAuth } from '@/hooks/auth-context';
 import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
@@ -63,6 +64,7 @@ export default function AgendaPage() {
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+      <CalendarSectionTabs className="mb-4" />
       <div className="mb-4">
         <TaskFilterBar
           filters={filters}

@@ -2,15 +2,17 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useActiveTasksQuery } from '@/hooks/queries/use-active-tasks-query';
-import { useLocationsQuery } from '@/hooks/queries/use-locations-query';
+import { useAuth } from '@/hooks/auth-context';
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
 import { DashboardUpcomingEvents } from '@/components/dashboard/dashboard-upcoming-events';
+import { DashboardMyTasks } from '@/components/dashboard/dashboard-my-tasks';
+import { DashboardActiveSprints } from '@/components/dashboard/dashboard-active-sprints';
 import { AlertCircle, CheckCircle2, Clock, Zap, TrendingUp } from 'lucide-react';
 import { isActionableUpToToday } from '@/lib/tasks/task-status';
 
 export default function DashboardPage() {
   const { data: tasks = [], isLoading } = useActiveTasksQuery();
-  const { data: locations = [] } = useLocationsQuery();
+  const { user } = useAuth();
 
   const now = new Date();
   const metrics = {
@@ -20,20 +22,6 @@ export default function DashboardPage() {
     blocked: tasks.filter((t) => t.status === 'blocked').length,
     urgent: tasks.filter((t) => t.priority === 'urgent' && isActionableUpToToday(t, now)).length,
   };
-
-  // Group by location/sector
-  const locationStats = tasks.reduce((acc, task) => {
-    const loc = locations.find((l) => l.id === task.locationId);
-    const name = loc?.name ?? 'Sin Local';
-    if (!acc[name]) acc[name] = { total: 0, done: 0 };
-    acc[name].total++;
-    if (task.status === 'done') acc[name].done++;
-    return acc;
-  }, {} as Record<string, { total: number; done: number }>);
-
-  const sortedLocations = Object.entries(locationStats)
-    .sort((a, b) => b[1].total - a[1].total)
-    .slice(0, 5);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto space-y-6 pb-8">
@@ -97,43 +85,14 @@ export default function DashboardPage() {
         <DashboardUpcomingEvents />
       </div>
 
-      <div className="grid gap-6 grid-cols-1 xl:grid-cols-3">
-        {/* Main Charts Section */}
-        <div className="xl:col-span-2 space-y-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">Análisis de Operaciones</h2>
-          <DashboardMetrics />
-        </div>
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <DashboardMyTasks tasks={tasks} userId={user?.id} isLoading={isLoading} />
+        <DashboardActiveSprints tasks={tasks} businessId={user?.businessId} />
+      </div>
 
-        {/* Report Summary Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Resumen por Local/Sector</h2>
-          <Card className="shadow-sm border bg-card">
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {sortedLocations.map(([name, stats]) => (
-                  <div key={name} className="space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium truncate mr-2">{name}</span>
-                      <span className="text-muted-foreground shrink-0">{Math.round((stats.done / stats.total) * 100)}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 transition-all duration-500"
-                        style={{ width: `${(stats.done / stats.total) * 100}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      {stats.done} de {stats.total} tareas finalizadas
-                    </p>
-                  </div>
-                ))}
-                {sortedLocations.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">No hay datos disponibles.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Progreso del equipo</h2>
+        <DashboardMetrics />
       </div>
     </div>
   );

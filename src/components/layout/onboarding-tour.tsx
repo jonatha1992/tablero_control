@@ -11,8 +11,16 @@ const STEPS = [
   {
     element: '#tour-nav-dashboard',
     popover: {
-      title: '📊 Dashboard',
-      description: 'Vista general con métricas clave: tareas activas, completadas, bloqueadas y urgentes.',
+      title: '🏠 Inicio',
+      description: 'Tus tareas pendientes, el sprint activo, próximos eventos y el progreso del equipo.',
+      side: 'right' as const,
+    },
+  },
+  {
+    element: '#tour-nav-proyectos',
+    popover: {
+      title: '📁 Proyectos',
+      description: 'Cada sistema o producto que desarrollan. Agrupa sus tareas, sprints y épicas.',
       side: 'right' as const,
     },
   },
@@ -20,15 +28,7 @@ const STEPS = [
     element: '#tour-nav-tareas',
     popover: {
       title: '✅ Tablero Kanban',
-      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye vistas de Agenda y Cronograma.',
-      side: 'right' as const,
-    },
-  },
-  {
-    element: '#tour-nav-eventos',
-    popover: {
-      title: '📅 Eventos',
-      description: 'Lista de reuniones, exámenes e hitos del espacio. No son tareas: reciben aviso por notificación y email.',
+      description: 'Gestioná tareas en columnas (Pendiente → En progreso → Revisión → Hecho). Arrastrá y soltá para mover. Incluye el Roadmap del proyecto.',
       side: 'right' as const,
     },
   },
@@ -44,7 +44,7 @@ const STEPS = [
     element: '#tour-nav-calendario',
     popover: {
       title: '📅 Calendario',
-      description: 'Vista mensual/semanal de tareas con fecha y eventos del espacio. Arrastrá tareas para cambiar la fecha.',
+      description: 'Tareas con fecha y eventos del equipo en un solo lugar. Pestañas Mes, Agenda y Eventos. Arrastrá tareas para cambiar la fecha.',
       side: 'right' as const,
     },
   },
@@ -52,15 +52,7 @@ const STEPS = [
     element: '#tour-nav-planificacion',
     popover: {
       title: '🎯 Planificación',
-      description: 'Períodos (sprints) y objetivos de negocio vinculados a tareas.',
-      side: 'right' as const,
-    },
-  },
-  {
-    element: '#tour-nav-sedes',
-    popover: {
-      title: '🏢 Sedes',
-      description: 'Organizá sucursales, locales o áreas y vinculá cada tarea con su lugar de trabajo.',
+      description: 'Sprints y épicas vinculados a las tareas de cada proyecto.',
       side: 'right' as const,
     },
   },
@@ -119,7 +111,7 @@ export function OnboardingTour() {
     if (!user) return;
     let driverObj: ReturnType<typeof import('driver.js')['driver']> | null = null;
     const key = TOUR_KEY(user.id);
-    const skipForCollaborator = new Set(['#tour-nav-billing', '#tour-nav-equipo', '#tour-nav-sedes']);
+    const skipForCollaborator = new Set(['#tour-nav-billing', '#tour-nav-equipo']);
 
     import('driver.js').then(({ driver }) => {
       const availableSteps = STEPS.filter((s) => {

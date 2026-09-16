@@ -39,31 +39,17 @@ function renderSidebar() {
   );
 }
 
-describe('Sedes como módulo central', () => {
+describe('Sedes fuera del menú (enfoque software)', () => {
   beforeEach(() => {
     auth.role = 'admin';
     auth.isAdmin = true;
   });
 
-  it('muestra la etiqueta configurable como fila principal entre Planificación y Equipo', () => {
-    renderSidebar();
-
-    const planning = screen.getByRole('link', { name: 'Planificación' });
-    const sites = screen.getByRole('link', { name: 'Sucursales' });
-    const team = screen.getByRole('link', { name: 'Equipo' });
-
-    expect(sites).toHaveAttribute('href', '/dashboard/sectores');
-    expect(planning.compareDocumentPosition(sites) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(sites.compareDocumentPosition(team) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Sucursales', hidden: true })).toBe(sites);
-  });
-
-  it('oculta la fila a roles que no son admin ni superadmin', () => {
-    auth.role = 'responsable';
-    auth.isAdmin = false;
+  it('no muestra la fila de sedes ni siquiera a admins', () => {
     renderSidebar();
 
     expect(screen.queryByRole('link', { name: 'Sucursales' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Equipo' })).toBeInTheDocument();
   });
 
   it('precarga las sedes desde la ruta canónica', () => {

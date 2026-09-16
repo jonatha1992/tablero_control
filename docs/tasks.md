@@ -103,6 +103,8 @@ Dashboard, agenda, reportes y burndown deben usar este helper para evitar que ba
 
 ## Agenda Inteligente (`/dashboard/tareas/agenda`)
 
+Es una pestaña del Calendario (`CalendarSectionTabs`: Mes / Agenda / Eventos), no un ítem propio del sidebar.
+
 Componente: `src/components/tareas/agenda-view.tsx`.
 
 **Secciones (orden de urgencia):**

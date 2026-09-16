@@ -13,6 +13,7 @@ export type LocationLabelPreset =
   | 'custom';
 
 export type ObjectiveLabelPreset =
+  | 'epica'
   | 'objetivo'
   | 'iniciativa'
   | 'causa'
@@ -25,7 +26,7 @@ export interface SpaceTerminology {
   /** When locationPreset is `custom` */
   locationSingular?: string;
   locationPlural?: string;
-  /** How completable goals (Objective) are named. Default: objetivo */
+  /** How completable goals (Objective) are named. Default: epica */
   objectivePreset?: ObjectiveLabelPreset;
   objectiveSingular?: string;
   objectivePlural?: string;

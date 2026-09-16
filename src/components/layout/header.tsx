@@ -48,22 +48,24 @@ export function Header({ userName, onMobileMenuOpen }: HeaderProps) {
 
   const getPageContext = () => {
     if (!pathname) return { title: 'Tablero de Control' };
-    if (pathname === '/dashboard') return { title: 'Dashboard' };
-    if (pathname === '/dashboard/tareas/calendario') return { title: 'Calendario' };
-    if (pathname === '/dashboard/eventos') return { title: 'Eventos' };
+    if (pathname === '/dashboard') return { title: 'Inicio' };
+    if (
+      pathname === '/dashboard/tareas/calendario' ||
+      pathname === '/dashboard/tareas/agenda' ||
+      pathname === '/dashboard/eventos'
+    ) {
+      return { title: 'Calendario' };
+    }
     if (pathname === '/dashboard/tareas/tableros') return { title: 'Proyectos' };
+    if (pathname === '/dashboard/tareas/cronograma') return { title: 'Roadmap' };
     if (pathname.startsWith('/dashboard/tareas')) return { title: 'Tareas' };
     if (pathname === '/dashboard/equipo') return { title: 'Equipo' };
     if (pathname === '/dashboard/equipo/roles') return { title: 'Roles y Permisos' };
     if (pathname === '/dashboard/equipo/sectores' || pathname === '/dashboard/sectores') {
       return { title: labels.sites };
     }
-    if (pathname === '/dashboard/calendario') return { title: 'Calendario' };
-    if (pathname === '/dashboard/ciclos') return { title: 'Ciclos' };
-    if (pathname === '/dashboard/objetivos') return { title: 'Objetivos' };
-    if (pathname === '/dashboard/planificacion') return { title: 'Planificación' };
-    if (pathname === '/dashboard/planificacion/objetivos') return { title: 'Objetivos' };
-    if (pathname === '/dashboard/cronograma') return { title: 'Cronograma' };
+    if (pathname === '/dashboard/planificacion') return { title: 'Sprints' };
+    if (pathname === '/dashboard/planificacion/objetivos') return { title: labels.objectives };
     if (pathname === '/dashboard/billing') return { title: 'Facturación' };
     if (pathname === '/dashboard/reportes') return { title: 'Reportes' };
     if (pathname === '/dashboard/ayuda') return { title: 'Ayuda' };
