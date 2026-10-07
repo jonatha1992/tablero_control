@@ -289,14 +289,20 @@ export const POST = handle(async (req: NextRequest) => {
           },
         });
 
+        const auditAction = invoiceStatus === 'paid'
+          ? 'invoice.paid'
+          : invoiceStatus === 'pending'
+            ? 'invoice.pending'
+            : 'invoice.failed';
+
         await writeAuditLog({
           actorId: 'system',
           actorRole: 'superadmin',
           businessId: ref.businessId,
-          action: invoiceStatus === 'paid' ? 'invoice.paid' : 'invoice.failed',
+          action: auditAction,
           targetType: 'invoice',
           targetId: sub.id,
-          metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id },
+          metadata: { amount: payment.transaction_amount, mpPaymentId: payment.id, status: payment.status },
         });
 
         if (invoiceStatus === 'paid' || invoiceStatus === 'failed') {

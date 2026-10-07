@@ -14,6 +14,7 @@ export interface AuthedUser {
   businessId?: string;
   businessStatus?: string;
   email?: string;
+  emailVerified?: boolean;
   data: User;
 }
 
@@ -138,6 +139,7 @@ export async function requireUser(req: NextRequest): Promise<AuthedUser | NextRe
     businessId: effectiveBusinessId,
     businessStatus,
     email: decoded.email,
+    emailVerified: Boolean(decoded.email_verified),
     data,
   };
 
@@ -164,6 +166,17 @@ export function requireRole(user: AuthedUser, roles: UserRole[]): NextResponse |
     (roles.includes('superadmin') && isPlatformSuperAdminEmail(user.email));
   if (!allowed) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+  return null;
+}
+
+export function requireEmailVerified(user: AuthedUser): NextResponse | null {
+  if (process.env.NODE_ENV === 'development') return null;
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      { error: 'email_not_verified', detail: 'Debe verificar su dirección de correo electrónico para continuar' },
+      { status: 403 }
+    );
   }
   return null;
 }
