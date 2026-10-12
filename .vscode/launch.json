@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js (dev)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Tests (Vitest)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run test:run",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

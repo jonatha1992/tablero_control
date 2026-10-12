@@ -65,3 +65,7 @@ kimi-export-*.md
 
 # Backups de scripts de mantenimiento (datos productivos - never commit)
 /backups/
+
+!.vscode/
+!.vscode/launch.json
+!.vscode/tasks.json
