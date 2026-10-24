@@ -1,6 +1,6 @@
 {
   "name": "tablero_control",
-  "version": "0.1.41",
+  "version": "0.1.42",
   "private": true,
   "scripts": {
     "postinstall": "prisma generate",
@@ -10,8 +10,8 @@
     "emulators:auth": "firebase emulators:start --only auth",
     "emulators:clean": "firebase emulators:start --only auth",
     "prebuild": "tsx scripts/bump-version.ts",
-    "build": "next build",
-    "build:prod": "next build",
+    "build": "next build && node scripts/write-version.mjs",
+    "build:prod": "next build && node scripts/write-version.mjs",
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
