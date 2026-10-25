@@ -12,12 +12,12 @@ export function Footer() {
           <Heart className="h-3 w-3 text-red-500 fill-red-500" />
           <span>por</span>
           <a
-            href="https://tecnofusion-it.web.app/"
+            href="https://tecnofusion.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline"
           >
-            TecnoFusión.it
+            tecnofusion.dev
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>
