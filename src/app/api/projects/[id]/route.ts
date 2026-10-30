@@ -128,6 +128,23 @@ export const DELETE = handle(async (request: NextRequest, { params }: { params: 
 
   assertResourceBelongsToBusiness(user.data, project.businessId);
 
+  const body = await request.json().catch(() => null);
+  if (body?.action === 'archive') {
+    const archived = await projectService.archive(id);
+
+    await writeAuditLog({
+      actorId: user.uid,
+      actorRole: user.role,
+      businessId: user.businessId,
+      action: 'project.update',
+      targetType: 'PROJECT',
+      targetId: id,
+      metadata: { action: 'archive', status: 'archived', name: archived.name },
+    });
+
+    return NextResponse.json(archived);
+  }
+
   await projectService.delete(id);
 
   await writeAuditLog({
