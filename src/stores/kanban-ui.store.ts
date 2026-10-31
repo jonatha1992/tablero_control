@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type {
   KanbanColumnSortModes,
   KanbanDragState,
@@ -143,5 +143,10 @@ export const useKanbanUIStore = create<KanbanUIStore>()(persist((set) => ({
   })),
 }), {
   name: 'kanban-column-sort-modes',
+  storage: createJSONStorage(() => typeof window !== 'undefined' && window.localStorage ? window.localStorage : ({
+    getItem: () => null,
+    setItem: () => undefined,
+    removeItem: () => undefined,
+  })),
   partialize: (state) => ({ columnSortModes: state.columnSortModes }),
 }));

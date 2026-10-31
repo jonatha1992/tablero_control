@@ -1,3 +1,4 @@
+import { File as NodeFile } from 'node:buffer';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 import { POST } from '@/app/api/upload/route';
@@ -33,10 +34,14 @@ const authedUser = {
   data: { id: 'user-1', role: 'miembro', businessId: 'biz-1' } as never,
 };
 
-function makeFormDataRequest(fields: Record<string, string | File>): NextRequest {
+async function makeFormDataRequest(fields: Record<string, string | File>): Promise<NextRequest> {
   const formData = new FormData();
   for (const [key, value] of Object.entries(fields)) {
-    formData.append(key, value);
+    if (typeof value === 'string') {
+      formData.append(key, value);
+    } else {
+      formData.append(key, new NodeFile([Buffer.from(await value.arrayBuffer())], value.name, { type: value.type }) as unknown as Blob);
+    }
   }
   return new NextRequest('http://localhost/api/upload', { method: 'POST', body: formData });
 }
@@ -45,11 +50,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockRequireUser.mockResolvedValue(authedUser as never);
 });
-
 describe('POST /api/upload', () => {
   it('retorna 401 si no está autenticado', async () => {
     mockRequireUser.mockResolvedValueOnce(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) as never);
-    const req = makeFormDataRequest({ type: 'avatar', id: 'user-1', file: new File([''], 'avatar.jpg') });
+    const req = await makeFormDataRequest({ type: 'avatar', id: 'user-1', file: new File([''], 'avatar.jpg') });
     const res = await POST(req);
     expect(res.status).toBe(401);
   });
@@ -65,7 +69,7 @@ describe('POST /api/upload', () => {
   });
 
   it('retorna 400 para tipo de upload inválido', async () => {
-    const req = makeFormDataRequest({
+    const req = await makeFormDataRequest({
       type: 'invalid_type',
       id: 'user-1',
       file: new File(['data'], 'file.jpg'),
@@ -78,7 +82,7 @@ describe('POST /api/upload', () => {
 
   it('sube avatar y retorna la URL', async () => {
     mockUploadAvatar.mockResolvedValueOnce('https://cloudinary.com/avatar.jpg');
-    const req = makeFormDataRequest({
+    const req = await makeFormDataRequest({
       type: 'avatar',
       id: 'user-1',
       file: new File(['img'], 'avatar.jpg', { type: 'image/jpeg' }),
@@ -96,13 +100,14 @@ describe('POST /api/upload', () => {
       public_id: 'tasks/task-1/file',
     } as never);
     vi.mocked(prisma.task.findUnique).mockResolvedValueOnce({
+      businessId: 'biz-1',
       project: { businessId: 'biz-1' },
       location: null,
       creator: null,
     } as never);
     vi.mocked(prisma.attachment.create).mockResolvedValueOnce({} as never);
 
-    const req = makeFormDataRequest({
+    const req = await makeFormDataRequest({
       type: 'attachment',
       id: 'task-1',
       fileName: 'informe.pdf',
