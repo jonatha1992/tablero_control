@@ -6,6 +6,7 @@ services:
     environment:
       POSTGRES_DB: tablero_control_test
       POSTGRES_USER: tablero_control_test
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env.test}
     volumes:
       - tablero_control_test_db:/var/lib/postgresql/data
     networks: [isolated]
@@ -17,7 +18,7 @@ services:
       NODE_ENV: test
       PORT: "3000"
       HOSTNAME: 0.0.0.0
-      DATABASE_URL: postgresql://tablero_control_test:DUMMY-password@db:5432/tablero_control_test
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in deploy/.env.test}
       NEXT_PUBLIC_USE_EMULATOR: "true"
       MP_ACCESS_TOKEN: DUMMY
       GEMINI_API_KEY1: DUMMY
