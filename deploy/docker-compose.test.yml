@@ -1,0 +1,40 @@
+name: tablero_control-test
+services:
+  db:
+    image: postgres:18-alpine
+    env_file: .env.test
+    environment:
+      POSTGRES_DB: tablero_control_test
+      POSTGRES_USER: tablero_control_test
+    volumes:
+      - tablero_control_test_db:/var/lib/postgresql/data
+    networks: [isolated]
+    restart: "no"
+  backend:
+    build: ..
+    env_file: .env.test
+    environment:
+      NODE_ENV: test
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgresql://tablero_control_test:DUMMY-password@db:5432/tablero_control_test
+      NEXT_PUBLIC_USE_EMULATOR: "true"
+      MP_ACCESS_TOKEN: DUMMY
+      GEMINI_API_KEY1: DUMMY
+      GMAIL_APP_PASSWORD: DUMMY
+    ports:
+      - "127.0.0.1:13400:3000"
+    depends_on:
+      - db
+    networks: [isolated, edge]
+    labels:
+      sablier.enable: "true"
+      sablier.group: tablero_control-test
+    restart: "no"
+volumes:
+  tablero_control_test_db:
+networks:
+  isolated:
+    driver: bridge
+  edge:
+    external: true
