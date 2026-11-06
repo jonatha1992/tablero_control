@@ -70,3 +70,7 @@ kimi-export-*.md
 !.vscode/
 !.vscode/launch.json
 !.vscode/tasks.json
+.audit/
+.gstack/
+.scratch*
+scratch/
