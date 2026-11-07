@@ -38,10 +38,8 @@ function bumpVersion(): void {
   pkg.version = newVersion;
   fs.writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
 
-  const versionJson = {
-    version: newVersion,
-    buildDate: today,
-  };
+  const sha = require('node:child_process').execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim();
+  const versionJson = { version: newVersion, sha };
   fs.writeFileSync(versionJsonPath, `${JSON.stringify(versionJson, null, 2)}\n`, 'utf8');
 
   console.log(`Version bumped: ${major}.${minor}.${patch} → ${newVersion}`);
