@@ -22,7 +22,7 @@ services:
       NEXT_PUBLIC_USE_EMULATOR: "true"
       MP_ACCESS_TOKEN: DUMMY
       GEMINI_API_KEY1: DUMMY
-      GMAIL_APP_PASSWORD: DUMMY
+      CORREO_API_KEY: DUMMY
     ports:
       - "127.0.0.1:13400:3000"
     depends_on:

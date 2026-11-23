@@ -17,7 +17,7 @@
 | Base de datos | PostgreSQL + Prisma ORM | Prisma 7 (`@prisma/adapter-pg`) |
 | Archivos | Cloudinary | SDK v2 |
 | Pagos | MercadoPago | Preapproval API |
-| Email | Resend + React Email | — |
+| Email | correo-central (HTTP + plantillas) | — |
 | IA / Audio | Groq SDK | Whisper Large V3 Turbo + LLM |
 | Calendario | FullCalendar | 6 |
 | Gráficos | Recharts | 3 |
@@ -260,8 +260,9 @@ MP_ACCESS_TOKEN=
 MP_WEBHOOK_SECRET=
 NEXT_PUBLIC_MP_PUBLIC_KEY=
 
-# Resend (email)
-RESEND_API_KEY=
+# Correo transaccional (correo-central)
+CORREO_CENTRAL_URL=https://correo.tecnofusion.dev
+CORREO_API_KEY=
 
 # Superadmin
 SUPERADMIN_EMAILS=tu@email.com         # Coma-separated, auto-provisiona como superadmin

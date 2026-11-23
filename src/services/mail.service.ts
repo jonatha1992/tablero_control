@@ -1,58 +1,88 @@
-import { render } from '@react-email/render';
-import React from 'react';
-import { WelcomeEmail } from '@/lib/mail/templates/welcome-email';
-import { ResetPasswordEmail } from '@/lib/mail/templates/reset-password-email';
-import { TeamInviteEmail } from '@/lib/mail/templates/team-invite-email';
-import { SubscriptionExpiryEmail } from '@/lib/mail/templates/subscription-expiry-email';
-import { SubscriptionActivatedEmail } from '@/lib/mail/templates/subscription-activated-email';
-import { PaymentSuccessEmail } from '@/lib/mail/templates/payment-success-email';
-import { PaymentFailedEmail } from '@/lib/mail/templates/payment-failed-email';
-import { TaskAssignedEmail } from '@/lib/mail/templates/task-assigned-email';
-import { EventReminderEmail } from '@/lib/mail/templates/event-reminder-email';
+import { sendCorreoCentral, type CorreoButton, type CorreoTemplate } from '@/lib/correo-central';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+function getAppUrl(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+}
 
-// Resend: solo si RESEND_API_KEY está configurada (requiere dominio verificado).
-// Sin dominio: dejar RESEND_API_KEY vacío/comentado y usar Gmail SMTP (GMAIL_USER).
-const useResend = !!(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'no-key');
+function buildHttpsButton(texto: string, url: string): CorreoButton | undefined {
+  return url.startsWith('https://') ? { texto, url } : undefined;
+}
 
-async function sendMail(to: string, subject: string, html: string) {
-  if (useResend) {
-    const { resend } = await import('@/lib/resend');
-    const FROM = `Tablero de Control <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`;
-    const { error } = await resend.emails.send({ from: FROM, to: [to], subject, html });
-    if (error) throw new Error(error.message);
-  } else {
-    const { mailer } = await import('@/lib/gmail');
-    const FROM = `Tablero de Control <${process.env.GMAIL_USER ?? 'noreply@tablero.app'}>`;
-    await mailer.sendMail({ from: FROM, to, subject, html, textEncoding: 'base64' });
+function formatArDateTime(date: Date): string {
+  return new Intl.DateTimeFormat('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+const EVENT_COPY_BY_LABEL: Record<'mañana' | 'hoy' | 'pasó', string> = {
+  mañana: 'Tenés un evento programado para mañana.',
+  hoy: 'Tenés un evento programado para hoy.',
+  pasó: 'Tu evento quedó marcado como pasado.',
+};
+
+async function dispatchTemplate(
+  to: string,
+  subject: string,
+  template: CorreoTemplate,
+  errorLabel: string,
+): Promise<{ success: true; error?: undefined } | { success: false; error: string }> {
+  try {
+    await sendCorreoCentral({ to, subject, template });
+    return { success: true };
+  } catch (err) {
+    console.error(`Error enviando ${errorLabel}:`, err);
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
 export class MailService {
   static async sendWelcomeEmail(to: string, userName: string) {
-    try {
-      const html = await render(React.createElement(WelcomeEmail, {
-        userName,
-        loginUrl: `${APP_URL}/login`,
-      }));
-      await sendMail(to, `¡Bienvenido a Tablero de Control, ${userName}!`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de bienvenida:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const loginUrl = `${getAppUrl()}/login`;
+    const boton = buildHttpsButton('Acceder a mi Tablero', loginUrl);
+    const mensaje = boton
+      ? 'Tu cuenta fue creada exitosamente y ya podés empezar a organizar tus tareas y equipos en Tablero de Control.'
+      : `Tu cuenta fue creada exitosamente y ya podés empezar a organizar tus tareas y equipos en Tablero de Control.
+Ingresá en: ${loginUrl}`;
+
+    return dispatchTemplate(
+      to,
+      `Bienvenido a Tablero de Control, ${userName}`,
+      {
+        id: 'bienvenida',
+        data: { nombre: userName, mensaje, ...(boton ? { boton } : {}) },
+      },
+      'email de bienvenida',
+    );
   }
 
   static async sendPasswordResetEmail(to: string, resetLink: string) {
-    try {
-      const html = await render(React.createElement(ResetPasswordEmail, { resetLink }));
-      await sendMail(to, 'Recupera tu acceso - Tablero de Control', html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de recuperación:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const boton = buildHttpsButton('Restablecer contraseña', resetLink);
+    const lines = [
+      'Recibimos una solicitud para restablecer la contraseña de tu cuenta en Tablero de Control.',
+      'Si no realizaste esta solicitud, podés ignorar este correo de forma segura.',
+      'Este enlace expirará en una hora por motivos de seguridad.',
+    ];
+    if (!boton) lines.push(`Enlace de recuperación: ${resetLink}`);
+
+    return dispatchTemplate(
+      to,
+      'Recupera tu acceso - Tablero de Control',
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Recupera tu acceso',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de recuperación',
+    );
   }
 
   static async sendInviteEmail(
@@ -61,93 +91,181 @@ export class MailService {
     teamName: string,
     inviterEmail?: string,
     resetLink?: string,
-    inviteLinkOverride?: string
+    inviteLinkOverride?: string,
   ) {
-    try {
-      const html = await render(React.createElement(TeamInviteEmail, {
-        invitedByUsername: invitedBy,
-        invitedByEmail: inviterEmail,
-        teamName,
-        inviteLink: inviteLinkOverride ?? `${APP_URL}/login`,
-        resetLink,
-      }));
-      await sendMail(to, `Te han invitado a unirte a ${teamName}`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de invitación:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    const inviteLink = inviteLinkOverride ?? `${getAppUrl()}/login`;
+    const inviterLabel = inviterEmail ? `${invitedBy} (${inviterEmail})` : invitedBy;
+    const primaryUrl = resetLink ?? inviteLink;
+    const boton = buildHttpsButton(
+      resetLink ? 'Establecer contraseña' : 'Aceptar invitación',
+      primaryUrl,
+    );
+
+    const lines = [
+      `${inviterLabel} te invitó a formar parte del equipo de ${teamName} en Tablero de Control.`,
+    ];
+    if (resetLink) {
+      lines.push('Para acceder, primero establecé tu contraseña con el botón de abajo.');
+      lines.push(`También podés iniciar sesión con tu cuenta de Google en ${inviteLink}.`);
     }
+    if (!boton) lines.push(`Enlace de acceso: ${primaryUrl}`);
+    lines.push('Si no esperabas esta invitación, podés ignorar este correo.');
+
+    return dispatchTemplate(
+      to,
+      `Te han invitado a unirte a ${teamName}`,
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Te invitaron a unirte al equipo',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de invitación',
+    );
   }
 
   static async sendSubscriptionExpiryEmail(
     to: string,
-    data: { businessName: string; planName: string; expiryDate: string; renewUrl: string; daysLeft: number }
+    data: { businessName: string; planName: string; expiryDate: string; renewUrl: string; daysLeft: number },
   ) {
-    try {
-      const html = await render(React.createElement(SubscriptionExpiryEmail, data));
-      await sendMail(to, `Tu suscripción vence en ${data.daysLeft} días`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de expiración:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const dayWord = data.daysLeft === 1 ? 'día restante' : 'días restantes';
+    const boton = buildHttpsButton('Renovar suscripción', data.renewUrl);
+    const lines = [
+      `El plan ${data.planName} de ${data.businessName} vence el ${data.expiryDate} (${data.daysLeft} ${dayWord}).`,
+      'Para continuar usando Tablero de Control sin interrupciones, renová tu suscripción antes de esa fecha.',
+      'Si ya realizaste el pago, podés ignorar este mensaje.',
+    ];
+    if (!boton) lines.push(`Renovar en: ${data.renewUrl}`);
+
+    return dispatchTemplate(
+      to,
+      `Tu suscripción vence en ${data.daysLeft} días`,
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Tu suscripción está por vencer',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de expiración',
+    );
   }
 
   static async sendSubscriptionActivatedEmail(to: string, businessName: string, planName: string) {
-    try {
-      const html = await render(React.createElement(SubscriptionActivatedEmail, { businessName, planName }));
-      await sendMail(to, `Suscripción activada — ${businessName}`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de suscripción activada:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const dashboardUrl = `${getAppUrl()}/dashboard`;
+    const boton = buildHttpsButton('Ir al dashboard', dashboardUrl);
+    const lines = [
+      `El plan ${planName} de ${businessName} fue activado exitosamente.`,
+      'Ya podés usar todas las funciones incluidas en tu plan.',
+    ];
+    if (!boton) lines.push(`Ir al dashboard: ${dashboardUrl}`);
+
+    return dispatchTemplate(
+      to,
+      `Suscripción activada — ${businessName}`,
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Suscripción activada',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de suscripción activada',
+    );
   }
 
   static async sendPaymentSuccessEmail(to: string, businessName: string, amount: number) {
-    try {
-      const html = await render(React.createElement(PaymentSuccessEmail, { businessName, amount }));
-      await sendMail(to, `Pago recibido — ${businessName}`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de pago exitoso:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const monto = amount.toLocaleString('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    return dispatchTemplate(
+      to,
+      `Pago recibido — ${businessName}`,
+      {
+        id: 'pago-recibido',
+        data: {
+          monto,
+          moneda: 'ARS',
+          pagador: businessName,
+          fecha: formatArDateTime(new Date()),
+        },
+      },
+      'email de pago exitoso',
+    );
   }
 
   static async sendPaymentFailedEmail(to: string, businessName: string) {
-    try {
-      const html = await render(React.createElement(PaymentFailedEmail, { businessName }));
-      await sendMail(to, `Problema con el pago — ${businessName}`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de pago fallido:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const billingUrl = `${getAppUrl()}/dashboard/billing`;
+    const boton = buildHttpsButton('Ir a facturación', billingUrl);
+    const lines = [
+      `No pudimos procesar el pago de la suscripción de ${businessName}.`,
+      'Esto puede deberse a fondos insuficientes, tarjeta vencida u otro problema con tu método de pago.',
+      'Para evitar la suspensión de tu cuenta, actualizá tu método de pago desde el panel de facturación.',
+    ];
+    if (!boton) lines.push(`Ir a facturación: ${billingUrl}`);
+
+    return dispatchTemplate(
+      to,
+      `Problema con el pago — ${businessName}`,
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Problema con el pago',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de pago fallido',
+    );
   }
 
   static async sendTaskAssignedEmail(to: string, taskTitle: string, assignerName: string) {
-    try {
-      const html = await render(React.createElement(TaskAssignedEmail, { taskTitle, assignerName }));
-      await sendMail(to, `Nueva tarea asignada: ${taskTitle}`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de tarea asignada:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const tasksUrl = `${getAppUrl()}/dashboard/tareas`;
+    const boton = buildHttpsButton('Ver mis tareas', tasksUrl);
+    const lines = [`${assignerName} te asignó la siguiente tarea:`, taskTitle];
+    if (!boton) lines.push(`Ver tareas: ${tasksUrl}`);
+
+    return dispatchTemplate(
+      to,
+      `Nueva tarea asignada: ${taskTitle}`,
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Te asignaron una tarea',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de tarea asignada',
+    );
   }
 
   static async sendEventReminderEmail(
     to: string,
     data: { eventTitle: string; whenLabel: 'mañana' | 'hoy' | 'pasó'; eventsUrl: string },
   ) {
-    try {
-      const html = await render(React.createElement(EventReminderEmail, data));
-      await sendMail(to, `📅 Evento ${data.whenLabel}`, html);
-      return { success: true };
-    } catch (err) {
-      console.error('Error enviando email de recordatorio de evento:', err);
-      return { success: false, error: err instanceof Error ? err.message : String(err) };
-    }
+    const boton = buildHttpsButton('Ver eventos', data.eventsUrl);
+    const lines = [EVENT_COPY_BY_LABEL[data.whenLabel], `Evento: ${data.eventTitle}`];
+    if (!boton) lines.push(`Ver eventos: ${data.eventsUrl}`);
+
+    return dispatchTemplate(
+      to,
+      `Recordatorio de evento (${data.whenLabel}): ${data.eventTitle}`,
+      {
+        id: 'aviso',
+        data: {
+          titulo: 'Recordatorio de evento',
+          mensaje: lines.join('\n'),
+          ...(boton ? { boton } : {}),
+        },
+      },
+      'email de recordatorio de evento',
+    );
   }
 }

@@ -297,34 +297,23 @@ CLOUDINARY_API_SECRET=
 
 ---
 
-## Email (`src/lib/mail/`)
-
-### Templates (react-email)
-```
-WelcomeEmail, ResetPasswordEmail, TeamInviteEmail
-SubscriptionActivatedEmail, SubscriptionExpiryEmail
-PaymentSuccessEmail, PaymentFailedEmail, TaskAssignedEmail, EventReminderEmail
-```
+## Email (`src/lib/correo-central.ts` + `src/services/mail.service.ts`)
 
 ### Delivery
-- **Gmail SMTP** (`src/lib/gmail.ts`) — **primario sin dominio propio**. FROM = `GMAIL_USER` (ej. `tecnofusion.it@gmail.com` + App Password).
-- **Resend** (`src/lib/resend.ts`) — solo si `RESEND_API_KEY` está seteada **y** hay dominio verificado (`RESEND_FROM_EMAIL=noreply@tudominio.com`). Sin dominio, Resend con `onboarding@resend.dev` solo entrega al dueño de la cuenta Resend.
-- `MailService` elige Resend si hay key; si no, Gmail.
-- `MailService.sendEventReminderEmail()` envía recordatorios de eventos para el cron `GET /api/cron/event-reminders`
+- Todos los correos transaccionales salen vía el servicio central **`correo-central`** (`POST /v1/send`, `Authorization: Bearer <CORREO_API_KEY>`, timeout con `AbortController`).
+- Remitente administrado por `correo-central`: `Tablero de Control <avisos@tecnofusion.dev>`.
+- Plantillas usadas por los 9 tipos en `MailService`:
+  - `bienvenida`: `sendWelcomeEmail`
+  - `pago-recibido`: `sendPaymentSuccessEmail`
+  - `aviso`: `sendPasswordResetEmail`, `sendInviteEmail`, `sendSubscriptionExpiryEmail`, `sendSubscriptionActivatedEmail`, `sendPaymentFailedEmail`, `sendTaskAssignedEmail`, `sendEventReminderEmail`
+- `MailService.sendEventReminderEmail()` envía recordatorios de eventos para el cron `GET /api/cron/event-reminders`.
 - Los avisos de suscripción y pagos resuelven `Business.adminId` mediante la membresía activa del negocio (`src/lib/business-admin-recipient.ts`), no desde el espacio abierto actualmente por el usuario. Esto conserva la entrega después de transferir propiedad.
 
 Variables:
 ```env
-# Sin dominio → usá Gmail (dejá RESEND_API_KEY comentada/vacía)
-GMAIL_USER=tecnofusion.it@gmail.com
-GMAIL_APP_PASSWORD=
-
-# Con dominio verificado en Resend → descomentá y priorizá Resend
-# RESEND_API_KEY=
-# RESEND_FROM_EMAIL=noreply@tudominio.com
+CORREO_CENTRAL_URL=https://correo.tecnofusion.dev
+CORREO_API_KEY=
 ```
-
-**Resend sin dominio verificado:** no uses Resend; comentá `RESEND_API_KEY` para forzar Gmail.
 
 ---
 

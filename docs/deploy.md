@@ -65,10 +65,8 @@ Tras cambiar `NEXT_PUBLIC_*`, hace falta **redeploy** (las vars públicas se iny
 
 ```env
 CRON_SECRET=                     # Habilita cron jobs internos (ver instrumentation.ts)
-RESEND_API_KEY=                  # Email primario (Resend); sin esto usa Gmail SMTP
-RESEND_FROM_EMAIL=               # Remitente Resend (default onboarding@resend.dev)
-GMAIL_USER=                      # Gmail SMTP fallback
-GMAIL_APP_PASSWORD=
+CORREO_CENTRAL_URL=              # URL del servicio correo-central (default https://correo.tecnofusion.dev)
+CORREO_API_KEY=                  # API key de la app tablero en correo-central
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
