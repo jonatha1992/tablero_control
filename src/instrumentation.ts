@@ -9,6 +9,11 @@ export async function register() {
       console.error('[db] error de conexión:', error);
     }
 
+    if (process.env.INTERNAL_CRON === 'off') {
+      console.log('[cron] scheduler interno desactivado; disparador externo');
+      return;
+    }
+
     // Cron jobs internos — solo corren si CRON_SECRET está configurado
     const secret = process.env.CRON_SECRET;
     if (!secret) {
