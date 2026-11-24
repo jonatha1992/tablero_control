@@ -11,11 +11,6 @@ const versionJsonPath = path.join(root, 'public/version.json');
 const packageJsonPath = path.join(root, 'package.json');
 
 function bumpVersion(): void {
-  if (process.env.SKIP_VERSION_BUMP === '1') {
-    console.log('Skipping version bump (SKIP_VERSION_BUMP=1)');
-    return;
-  }
-
   const content = fs.readFileSync(versionFilePath, 'utf8');
 
   const versionMatch = content.match(/APP_VERSION = ['"](\d+)\.(\d+)\.(\d+)['"]/);
@@ -24,7 +19,7 @@ function bumpVersion(): void {
   }
 
   const [, major, minor, patch] = versionMatch;
-  const newPatch = parseInt(patch, 10) + 1;
+  const newPatch = parseInt(patch, 10) + (process.env.SKIP_VERSION_BUMP === '1' ? 0 : 1);
   const newVersion = `${major}.${minor}.${newPatch}`;
   const today = new Date().toISOString().split('T')[0];
 
@@ -38,7 +33,7 @@ function bumpVersion(): void {
   pkg.version = newVersion;
   fs.writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
 
-  const sha = require('node:child_process').execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim();
+  const sha = process.env.GIT_SHA || require('node:child_process').execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim();
   const versionJson = { version: newVersion, sha };
   fs.writeFileSync(versionJsonPath, `${JSON.stringify(versionJson, null, 2)}\n`, 'utf8');
 

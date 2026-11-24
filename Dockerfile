@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
-RUN npm ci
+RUN npm ci --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 FROM node:22.15-alpine AS builder
 WORKDIR /app
@@ -29,8 +29,10 @@ ARG NEXT_PUBLIC_USE_EMULATOR
 ENV NEXT_PUBLIC_USE_EMULATOR=$NEXT_PUBLIC_USE_EMULATOR
 ARG NEXT_PUBLIC_MP_PUBLIC_KEY
 ENV NEXT_PUBLIC_MP_PUBLIC_KEY=$NEXT_PUBLIC_MP_PUBLIC_KEY
+ARG GIT_SHA
+ENV GIT_SHA=$GIT_SHA
 RUN npx prisma generate
-RUN npm run build
+RUN SKIP_VERSION_BUMP=1 npm run build
 
 FROM node:22.15-alpine AS runner
 WORKDIR /app
