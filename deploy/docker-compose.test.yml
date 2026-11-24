@@ -12,7 +12,10 @@ services:
     networks: [isolated]
     restart: "no"
   backend:
-    build: ..
+    build:
+      context: ..
+      args:
+        GIT_SHA: ${GIT_SHA:?Set GIT_SHA to the commit being built}
     env_file: .env.test
     environment:
       NODE_ENV: test
